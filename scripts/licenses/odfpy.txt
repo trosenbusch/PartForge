@@ -1,0 +1,9 @@
+odfpy (https://github.com/eea/odfpy) is distributed under both the GNU General Public License v2 or
+(at your option) any later version and the Apache License 2.0. PartForge uses odfpy under the terms
+of the Apache License 2.0 (full text: see "Apache License 2.0" in this file).
+
+This project, with the exception of the OpenDocument schemas, are Copyright (C) 2006-2014, Daniel
+Carrera, Alex Hudson, Søren Roug, Thomas Zander, Roman Fordinal, Michael Howitz and Georges
+Khaznadar.
+
+The odfpy wheel ships no licence file; the statement above is taken from the project's README.
