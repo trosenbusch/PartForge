@@ -1,0 +1,272 @@
+{
+ "fixture_version": 1,
+ "kind": "find",
+ "query": "OPA656",
+ "manufacturer": "Texas Instruments",
+ "recorded": "2026-10-08T17:02:21",
+ "probed": "2026-10-08T17:04:24",
+ "tool": "web_search_20260318",
+ "note": "Eine echte Suche (claude-opus-5-5, web_search_20260318, 1 Suche, 0,090 $), aufgenommen am 2026-10-08. PDF-Prüfungen ('probes') ohne Claude-Aufruf aktualisiert (--refresh-probes). Im Testmodus liefern die 'downloads' die Korpus-Fassung tests/data/corpus/pdfs/opa656.pdf, damit die aufgezeichnete Analyse (ai_fixtures/opa656.json) dazu passt.",
+ "stripped": [
+  "encrypted_content",
+  "encrypted_index"
+ ],
+ "calls": [
+  {
+   "kind": "find",
+   "model": "claude-opus-5-5",
+   "effort": "low",
+   "pages": [],
+   "request_id": "req_011CfpyLmrMXeKvcRHua22NH",
+   "duration_s": 9.89,
+   "cost_usd": 0.090028,
+   "recorded": "2026-10-08T17:02:20",
+   "message": {
+    "id": "msg_011CfpyLnvMpdXabSuSZHozS",
+    "container": null,
+    "content": [
+     {
+      "id": "srvtoolu_018JArtJhGQ4Wk8t99NbEHuw",
+      "caller": null,
+      "input": {
+       "query": "OPA656 datasheet pdf ti.com"
+      },
+      "name": "web_search",
+      "type": "server_tool_use"
+     },
+     {
+      "caller": {
+       "type": "direct"
+      },
+      "content": [
+       {
+        "encrypted_content": "<entfernt>",
+        "page_age": null,
+        "title": "OPA656 Datasheet(PDF) - National Semiconductor (TI)",
+        "type": "web_search_result",
+        "url": "https://www.alldatasheet.com/datasheet-pdf/pdf/578200/NSC/OPA656.html"
+       },
+       {
+        "encrypted_content": "<entfernt>",
+        "page_age": null,
+        "title": "OPA656 Datasheet(PDF) - Texas Instruments",
+        "type": "web_search_result",
+        "url": "https://www.alldatasheet.com/datasheet-pdf/pdf/82901/TI/OPA656.html"
+       },
+       {
+        "encrypted_content": "<entfernt>",
+        "page_age": null,
+        "title": "OPA656N Datasheet(PDF) - Texas Instruments",
+        "type": "web_search_result",
+        "url": "https://www.alldatasheet.com/datasheet-pdf/pdf/530504/TI/OPA656N.html"
+       },
+       {
+        "encrypted_content": "<entfernt>",
+        "page_age": null,
+        "title": "OPA656UB Datasheet(PDF) - Texas Instruments",
+        "type": "web_search_result",
+        "url": "https://www.alldatasheet.com/datasheet-pdf/pdf/530512/TI/OPA656UB.html"
+       },
+       {
+        "encrypted_content": "<entfernt>",
+        "page_age": null,
+        "title": "OPA656",
+        "type": "web_search_result",
+        "url": "https://www.ti.com/product/OPA656/part-details/OPA656N/250"
+       },
+       {
+        "encrypted_content": "<entfernt>",
+        "page_age": null,
+        "title": "OPA656 (47 pF) λ –Vb 499 kΩ 499 kΩ VO 1 pF Frequency 130 120 110 100 90 80",
+        "type": "web_search_result",
+        "url": "https://www.mouser.com/datasheet/2/405/1/opa656-3379087.pdf"
+       },
+       {
+        "encrypted_content": "<entfernt>",
+        "page_age": null,
+        "title": "OPA656N/250 Datasheet(PDF) - Texas Instruments",
+        "type": "web_search_result",
+        "url": "https://www.alldatasheet.com/datasheet-pdf/pdf/517757/TI/OPA656N/250.html"
+       },
+       {
+        "encrypted_content": "<entfernt>",
+        "page_age": "2485 days ago",
+        "title": "OPA656 data sheet, product information and support",
+        "type": "web_search_result",
+        "url": "https://www.ti.com/product/OPA656"
+       },
+       {
+        "encrypted_content": "<entfernt>",
+        "page_age": null,
+        "title": "DESCRIPTION The OPA656 combines a very wideband, unity-gain stable,",
+        "type": "web_search_result",
+        "url": "https://www.kontest.ru/datasheet/ti/opa656.pdf"
+       },
+       {
+        "encrypted_content": "<entfernt>",
+        "page_age": null,
+        "title": "OPA656 Texas Instruments Wideband, Unity-Gain Stable, FET-Input OPERATIONAL AMPLIFIER ChipFind Datasheet Archive",
+        "type": "web_search_result",
+        "url": "https://www.chipfind.net/datasheet/ti/opa656.htm"
+       }
+      ],
+      "tool_use_id": "srvtoolu_018JArtJhGQ4Wk8t99NbEHuw",
+      "type": "web_search_tool_result"
+     },
+     {
+      "citations": null,
+      "text": "{\"candidates\":[{\"url\":\"https://www.ti.com/product/OPA656\",\"title\":\"OPA656 data sheet, product information and support\",\"manufacturer\":\"Texas Instruments\",\"part_numbers\":[\"OPA656\"],\"source\":\"manufacturer\",\"is_pdf_link\":false,\"note\":\"Produktseite; Datenblatt Rev. I (Feb 2024)\"},{\"url\":\"https://www.mouser.com/datasheet/2/405/1/opa656-3379087.pdf\",\"title\":\"OPA656 Wideband, Unity-Gain Stable, FET-Input Operational Amplifier\",\"manufacturer\":\"Texas Instruments\",\"part_numbers\":[\"OPA656\"],\"source\":\"distributor\",\"is_pdf_link\":true,\"note\":\"Rev. H (SBOS196H, Sept. 2015), ältere Revision\"},{\"url\":\"https://www.kontest.ru/datasheet/ti/opa656.pdf\",\"title\":\"OPA656 Datasheet\",\"manufacturer\":\"Texas Instruments\",\"part_numbers\":[\"OPA656\"],\"source\":\"other\",\"is_pdf_link\":true,\"note\":\"Sehr alte Rev. B (SBOS196B)\"}],\"note\":\"Kein direkter PDF-Link von ti.com gefunden; aktuelle Rev. I über die Produktseite verfügbar.\"}",
+      "type": "text"
+     }
+    ],
+    "diagnostics": null,
+    "model": "claude-opus-5-5",
+    "role": "assistant",
+    "stop_details": null,
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "type": "message",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0,
+     "inference_geo": "global",
+     "input_tokens": 17457,
+     "output_tokens": 510,
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "server_tool_use": {
+      "web_fetch_requests": 0,
+      "web_search_requests": 1
+     },
+     "service_tier": "standard"
+    }
+   }
+  }
+ ],
+ "probes": {
+  "https://www.ti.com/lit/ds/symlink/opa656.pdf": {
+   "is_pdf": true,
+   "size_bytes": 1730468,
+   "final_url": null,
+   "status": 206,
+   "content_type": "application/pdf",
+   "message": null,
+   "blocked": false
+  },
+  "https://www.mouser.com/datasheet/2/405/1/opa656-3379087.pdf": {
+   "is_pdf": true,
+   "size_bytes": 1112719,
+   "final_url": null,
+   "status": 206,
+   "content_type": "application/pdf",
+   "message": null,
+   "blocked": false
+  },
+  "https://www.ti.com/product/OPA656": {
+   "is_pdf": false,
+   "size_bytes": 39684,
+   "final_url": null,
+   "status": 206,
+   "content_type": "text/html",
+   "message": "Webseite statt PDF",
+   "blocked": false
+  },
+  "https://www.kontest.ru/datasheet/ti/opa656.pdf": {
+   "is_pdf": true,
+   "size_bytes": 299853,
+   "final_url": null,
+   "status": 206,
+   "content_type": "application/pdf",
+   "message": null,
+   "blocked": false
+  }
+ },
+ "downloads": {
+  "https://www.ti.com/lit/ds/symlink/opa656.pdf": "../../corpus/pdfs/opa656.pdf",
+  "https://www.mouser.com/datasheet/2/405/1/opa656-3379087.pdf": "../../corpus/pdfs/opa656.pdf"
+ },
+ "result": {
+  "query": "OPA656",
+  "manufacturer": "Texas Instruments",
+  "candidates": [
+   {
+    "url": "https://www.ti.com/lit/ds/symlink/opa656.pdf",
+    "title": "OPA656 – Datenblatt des Herstellers",
+    "manufacturer": "Texas Instruments",
+    "part_numbers": [
+     "OPA656"
+    ],
+    "source": "hersteller",
+    "is_pdf": true,
+    "size_bytes": 1730468,
+    "note": "Direktlink nach dem Dateimuster des Herstellers (geprüft)",
+    "check": null,
+    "final_url": null,
+    "in_search_results": false,
+    "derived": true
+   },
+   {
+    "url": "https://www.mouser.com/datasheet/2/405/1/opa656-3379087.pdf",
+    "title": "OPA656 Wideband, Unity-Gain Stable, FET-Input Operational Amplifier",
+    "manufacturer": "Texas Instruments",
+    "part_numbers": [
+     "OPA656"
+    ],
+    "source": "distributor",
+    "is_pdf": true,
+    "size_bytes": 1112719,
+    "note": "Rev. H (SBOS196H, Sept. 2015), ältere Revision",
+    "check": null,
+    "final_url": null,
+    "in_search_results": true,
+    "derived": false
+   },
+   {
+    "url": "https://www.kontest.ru/datasheet/ti/opa656.pdf",
+    "title": "OPA656 Datasheet",
+    "manufacturer": "Texas Instruments",
+    "part_numbers": [
+     "OPA656"
+    ],
+    "source": "andere",
+    "is_pdf": true,
+    "size_bytes": 299853,
+    "note": "Sehr alte Rev. B (SBOS196B)",
+    "check": null,
+    "final_url": null,
+    "in_search_results": true,
+    "derived": false
+   },
+   {
+    "url": "https://www.ti.com/product/OPA656",
+    "title": "OPA656 data sheet, product information and support",
+    "manufacturer": "Texas Instruments",
+    "part_numbers": [
+     "OPA656"
+    ],
+    "source": "hersteller",
+    "is_pdf": false,
+    "size_bytes": 39684,
+    "note": "Produktseite; Datenblatt Rev. I (Feb 2024)",
+    "check": "Webseite statt PDF",
+    "final_url": null,
+    "in_search_results": true,
+    "derived": false
+   }
+  ],
+  "cost_usd": 0.090028,
+  "searches": [
+   "OPA656 datasheet pdf ti.com"
+  ],
+  "note": "Kein direkter PDF-Link von ti.com gefunden; aktuelle Rev. I über die Produktseite verfügbar.",
+  "model": "claude-opus-5-5",
+  "model_label": "Claude Opus 5.5 · Aufwand niedrig",
+  "structured": true,
+  "message": "Gefunden: 4 Kandidaten, davon 3 PDFs – 0,090 $"
+ }
+}

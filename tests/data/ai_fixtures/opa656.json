@@ -1,0 +1,206 @@
+{
+ "fixture_version": 1,
+ "pdf": "opa656.pdf",
+ "sha256": "e9e615f9f2ebf4dcfd82a2b47850f337924cba94dabfc2a4faf725cd7343be37",
+ "schema": "3333381c49d4",
+ "recorded": "2026-10-08T01:56:11",
+ "options": {
+  "model": null,
+  "effort": null,
+  "pages": null,
+  "max_pages": 12,
+  "triage": "auto",
+  "vision": "auto",
+  "max_cost_usd": null
+ },
+ "settings": {
+  "model": "claude-opus-5-5",
+  "effort": "low",
+  "fast_model": "claude-haiku-5-5",
+  "use_fallbacks": true
+ },
+ "calls": [
+  {
+   "kind": "identity",
+   "model": "claude-opus-5-5",
+   "effort": "low",
+   "pages": [
+    1,
+    2,
+    17,
+    18
+   ],
+   "request_id": "req_011CfonFsq6yex8HTuCBotMN",
+   "duration_s": 17.19,
+   "cost_usd": 0.135149,
+   "recorded": "2026-10-08T01:56:30",
+   "message": {
+    "id": "msg_011CfonFt8TTGqv3TiVtVptx",
+    "container": null,
+    "content": [
+     {
+      "citations": null,
+      "text": "{\"manufacturer\":\"Texas Instruments\",\"document_id\":\"SBOS196G\",\"document_title\":\"OPA656 Wideband, Unity-Gain Stable, FET-Input Operational Amplifier\",\"document_date\":\"November 2008\",\"devices\":[{\"base_part_number\":\"OPA656\",\"description\":\"Wideband unity-gain stable FET-input op amp, 230MHz GBW\",\"category\":\"Amplifiers\",\"parameters\":[{\"column\":\"Amplifier Type\",\"value\":\"Operationsverstärker\",\"page\":1},{\"column\":\"Channels\",\"value\":\"1\",\"page\":2},{\"column\":\"GBW\",\"value\":\"230MHz\",\"page\":1},{\"column\":\"Input Offset\",\"value\":\"±0.25mV\",\"page\":1},{\"column\":\"Operating Temperature\",\"value\":\"-40°C to 85°C\",\"page\":2}],\"variants\":[{\"mpn\":\"OPA656U\",\"package_code\":\"D\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Rails, 100\",\"status\":\"ACTIVE\",\"notes\":\"Standard grade\",\"values\":[],\"page\":2},{\"mpn\":\"OPA656U/2K5\",\"package_code\":\"D\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tape and Reel, 2500\",\"status\":\"ACTIVE\",\"notes\":\"Standard grade\",\"values\":[],\"page\":2},{\"mpn\":\"OPA656UB\",\"package_code\":\"D\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Rails, 100\",\"status\":\"ACTIVE\",\"notes\":\"High grade\",\"values\":[],\"page\":2},{\"mpn\":\"OPA656UB/2K5\",\"package_code\":\"D\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tape and Reel, 2500\",\"status\":\"ACTIVE\",\"notes\":\"High grade\",\"values\":[],\"page\":2},{\"mpn\":\"OPA656N/250\",\"package_code\":\"DBV\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tape and Reel, 250\",\"status\":\"ACTIVE\",\"notes\":\"Standard grade, marking B56\",\"values\":[],\"page\":2},{\"mpn\":\"OPA656N/3K\",\"package_code\":\"DBV\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tape and Reel, 3000\",\"status\":\"\",\"notes\":\"Standard grade, marking B56; not in addendum\",\"values\":[],\"page\":2},{\"mpn\":\"OPA656NB/250\",\"package_code\":\"DBV\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tape and Reel, 250\",\"status\":\"ACTIVE\",\"notes\":\"High grade, marking B56\",\"values\":[],\"page\":2},{\"mpn\":\"OPA656NB/3K\",\"package_code\":\"DBV\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tape and Reel, 3000\",\"status\":\"\",\"notes\":\"High grade, marking B56; not in addendum\",\"values\":[],\"page\":2},{\"mpn\":\"OPA656N/250G4\",\"package_code\":\"DBV\",\"temperature_range\":\"\",\"packaging\":\"250\",\"status\":\"ACTIVE\",\"notes\":\"Green\",\"values\":[],\"page\":3},{\"mpn\":\"OPA656NB/250G4\",\"package_code\":\"DBV\",\"temperature_range\":\"\",\"packaging\":\"250\",\"status\":\"ACTIVE\",\"notes\":\"Green, high grade\",\"values\":[],\"page\":3},{\"mpn\":\"OPA656U/2K5G4\",\"package_code\":\"D\",\"temperature_range\":\"\",\"packaging\":\"2500\",\"status\":\"ACTIVE\",\"notes\":\"Green\",\"values\":[],\"page\":3},{\"mpn\":\"OPA656UB/2K5G4\",\"package_code\":\"D\",\"temperature_range\":\"\",\"packaging\":\"\",\"status\":\"PREVIEW\",\"notes\":\"High grade\",\"values\":[],\"page\":3},{\"mpn\":\"OPA656UBG4\",\"package_code\":\"D\",\"temperature_range\":\"\",\"packaging\":\"75\",\"status\":\"ACTIVE\",\"notes\":\"Green, high grade\",\"values\":[],\"page\":3},{\"mpn\":\"OPA656UG4\",\"package_code\":\"D\",\"temperature_range\":\"\",\"packaging\":\"75\",\"status\":\"ACTIVE\",\"notes\":\"Green\",\"values\":[],\"page\":3}],\"pin_tables\":[{\"package_code\":\"D\",\"source_pages\":[2],\"pins\":[{\"number\":\"1\",\"name\":\"NC\",\"function\":\"No connect\",\"electrical_type\":\"Passive\",\"active_low\":false,\"no_connect\":true,\"group\":\"\",\"part\":1},{\"number\":\"2\",\"name\":\"-IN\",\"function\":\"Inverting Input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Inputs\",\"part\":1},{\"number\":\"3\",\"name\":\"+IN\",\"function\":\"Noninverting Input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Inputs\",\"part\":1},{\"number\":\"4\",\"name\":\"-VS\",\"function\":\"Negative supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"5\",\"name\":\"NC\",\"function\":\"No connect\",\"electrical_type\":\"Passive\",\"active_low\":false,\"no_connect\":true,\"group\":\"\",\"part\":1},{\"number\":\"6\",\"name\":\"OUT\",\"function\":\"Output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Output\",\"part\":1},{\"number\":\"7\",\"name\":\"+VS\",\"function\":\"Positive supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"8\",\"name\":\"NC\",\"function\":\"No connect\",\"electrical_type\":\"Passive\",\"active_low\":false,\"no_connect\":true,\"group\":\"\",\"part\":1}]},{\"package_code\":\"DBV\",\"source_pages\":[2],\"pins\":[{\"number\":\"1\",\"name\":\"OUT\",\"function\":\"Output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Output\",\"part\":1},{\"number\":\"2\",\"name\":\"-VS\",\"function\":\"Negative supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"3\",\"name\":\"+IN\",\"function\":\"Noninverting Input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Inputs\",\"part\":1},{\"number\":\"4\",\"name\":\"-IN\",\"function\":\"Inverting Input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Inputs\",\"part\":1},{\"number\":\"5\",\"name\":\"+VS\",\"function\":\"Positive supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1}]}]}],\"packages\":[{\"package_code\":\"D\",\"package_name\":\"SOIC-8\",\"pin_count\":8,\"exposed_pad\":false},{\"package_code\":\"DBV\",\"package_name\":\"SOT-23-5\",\"pin_count\":5,\"exposed_pad\":false}],\"warnings\":[\"Rail quantity for OPA656U/UB: 100 on page 2 vs 75 in addendum page 3.\",\"OPA656N/3K and OPA656NB/3K listed on page 2 but not in package addendum.\",\"Supply voltage operating range and slew rate not on supplied pages; abs max ±6.5V only.\"]}",
+      "type": "text"
+     }
+    ],
+    "context_management": null,
+    "diagnostics": null,
+    "model": "claude-opus-5-5",
+    "role": "assistant",
+    "stop_details": null,
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "type": "message",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 15109
+     },
+     "cache_creation_input_tokens": 15109,
+     "cache_read_input_tokens": 0,
+     "fallback_credit": null,
+     "inference_geo": "global",
+     "input_tokens": 2961,
+     "iterations": [
+      {
+       "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 15109
+       },
+       "cache_creation_input_tokens": 15109,
+       "cache_read_input_tokens": 0,
+       "input_tokens": 2961,
+       "model": null,
+       "output_tokens": 2388,
+       "type": "message"
+      }
+     ],
+     "output_tokens": 2388,
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "speed": null
+    },
+    "input_transformations": null
+   }
+  },
+  {
+   "kind": "geometry",
+   "model": "claude-opus-5-5",
+   "effort": "low",
+   "pages": [
+    17,
+    21,
+    22,
+    23,
+    24
+   ],
+   "request_id": "req_011CfonH96PsZZPiuE8K8dy1",
+   "duration_s": 10.94,
+   "cost_usd": 0.09429,
+   "recorded": "2026-10-08T01:56:41",
+   "message": {
+    "id": "msg_011CfonHASGhEoaDGAkWteZY",
+    "container": null,
+    "content": [
+     {
+      "citations": null,
+      "text": "{\"packages\":[{\"package_code\":\"D\",\"package_name\":\"SOIC-8\",\"family\":\"gullwing\",\"pin_count\":8,\"mounting\":\"SMD\",\"outline_reference\":\"JEDEC MS-012 variation AA\",\"exposed_pad\":false,\"exposed_pad_number\":\"\",\"source_pages\":[4],\"dimensions\":[{\"symbol\":\"D\",\"description\":\"body length\",\"unit\":\"mm\",\"min\":4.8,\"nom\":-1,\"max\":5.0},{\"symbol\":\"E1\",\"description\":\"body width\",\"unit\":\"mm\",\"min\":3.8,\"nom\":-1,\"max\":4.0},{\"symbol\":\"E\",\"description\":\"overall width incl. leads\",\"unit\":\"mm\",\"min\":5.8,\"nom\":-1,\"max\":6.2},{\"symbol\":\"e\",\"description\":\"lead pitch (basic)\",\"unit\":\"mm\",\"min\":-1,\"nom\":1.27,\"max\":-1},{\"symbol\":\"b\",\"description\":\"lead width\",\"unit\":\"mm\",\"min\":0.31,\"nom\":-1,\"max\":0.51},{\"symbol\":\"A\",\"description\":\"total height\",\"unit\":\"mm\",\"min\":-1,\"nom\":-1,\"max\":1.75},{\"symbol\":\"A1\",\"description\":\"standoff\",\"unit\":\"mm\",\"min\":0.1,\"nom\":-1,\"max\":0.25},{\"symbol\":\"c\",\"description\":\"lead thickness\",\"unit\":\"mm\",\"min\":0.13,\"nom\":-1,\"max\":0.25},{\"symbol\":\"L\",\"description\":\"foot length\",\"unit\":\"mm\",\"min\":0.4,\"nom\":-1,\"max\":1.27},{\"symbol\":\"theta\",\"description\":\"foot angle\",\"unit\":\"deg\",\"min\":0,\"nom\":-1,\"max\":8}],\"land_pattern\":{\"present\":true,\"source_pages\":[5],\"pad_shape\":\"rectangle\",\"pad_width\":0.6,\"pad_length\":2.0,\"pitch\":1.27,\"row_spacing\":4.8,\"row_spacing_reference\":\"center_to_center\",\"thermal_pad_width\":-1,\"thermal_pad_length\":-1,\"solder_mask_expansion\":0.07,\"notes\":\"Non solder mask defined pad. Stencil 0.55x1.95.\"}},{\"package_code\":\"DBV\",\"package_name\":\"SOT-23-5\",\"family\":\"sot23\",\"pin_count\":5,\"mounting\":\"SMD\",\"outline_reference\":\"JEDEC MO-178 Variation AA\",\"exposed_pad\":false,\"exposed_pad_number\":\"\",\"source_pages\":[2],\"dimensions\":[{\"symbol\":\"D\",\"description\":\"body length\",\"unit\":\"mm\",\"min\":2.75,\"nom\":-1,\"max\":3.05},{\"symbol\":\"E1\",\"description\":\"body width\",\"unit\":\"mm\",\"min\":1.45,\"nom\":-1,\"max\":1.75},{\"symbol\":\"E\",\"description\":\"overall width incl. leads\",\"unit\":\"mm\",\"min\":2.6,\"nom\":-1,\"max\":3.0},{\"symbol\":\"e\",\"description\":\"lead pitch (basic)\",\"unit\":\"mm\",\"min\":-1,\"nom\":0.95,\"max\":-1},{\"symbol\":\"b\",\"description\":\"lead width\",\"unit\":\"mm\",\"min\":0.3,\"nom\":-1,\"max\":0.5},{\"symbol\":\"A\",\"description\":\"total height\",\"unit\":\"mm\",\"min\":-1,\"nom\":-1,\"max\":1.45},{\"symbol\":\"A1\",\"description\":\"standoff\",\"unit\":\"mm\",\"min\":0.0,\"nom\":-1,\"max\":0.15},{\"symbol\":\"c\",\"description\":\"lead thickness\",\"unit\":\"mm\",\"min\":0.08,\"nom\":-1,\"max\":0.22},{\"symbol\":\"L\",\"description\":\"foot length\",\"unit\":\"mm\",\"min\":0.3,\"nom\":-1,\"max\":0.55},{\"symbol\":\"theta\",\"description\":\"foot angle\",\"unit\":\"deg\",\"min\":0,\"nom\":-1,\"max\":8}],\"land_pattern\":{\"present\":true,\"source_pages\":[3],\"pad_shape\":\"rectangle\",\"pad_width\":0.6,\"pad_length\":1.05,\"pitch\":0.95,\"row_spacing\":2.7,\"row_spacing_reference\":\"center_to_center\",\"thermal_pad_width\":-1,\"thermal_pad_length\":-1,\"solder_mask_expansion\":0.07,\"notes\":\"Stencil 0.55x1.00. Pins 5-4 spaced 1.90.\"}}],\"warnings\":[\"OPA656UB/2K5G4 is PREVIEW status.\"]}",
+      "type": "text"
+     }
+    ],
+    "context_management": null,
+    "diagnostics": null,
+    "model": "claude-opus-5-5",
+    "role": "assistant",
+    "stop_details": null,
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "type": "message",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 12902
+     },
+     "cache_creation_input_tokens": 12902,
+     "cache_read_input_tokens": 0,
+     "fallback_credit": null,
+     "inference_geo": "global",
+     "input_tokens": 160,
+     "iterations": [
+      {
+       "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 12902
+       },
+       "cache_creation_input_tokens": 12902,
+       "cache_read_input_tokens": 0,
+       "input_tokens": 160,
+       "model": null,
+       "output_tokens": 1457,
+       "type": "message"
+      }
+     ],
+     "output_tokens": 1457,
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "speed": null
+    },
+    "input_transformations": null
+   }
+  }
+ ],
+ "summary": {
+  "datasheet_id": "e9e615f9f2ebf4dc",
+  "model": "claude-opus-5-5",
+  "served_model": "claude-opus-5-5",
+  "effort": "low",
+  "pages": [
+   1,
+   2,
+   17,
+   18,
+   21,
+   22,
+   23,
+   24
+  ],
+  "identity_pages": [
+   1,
+   2,
+   17,
+   18
+  ],
+  "geometry_pages": [
+   17,
+   21,
+   22,
+   23,
+   24
+  ],
+  "selection_method": "heuristic",
+  "devices": [
+   "OPA656"
+  ],
+  "mpns": 14,
+  "packages": [
+   "SOIC-8 (D)",
+   "SOT-23-5 (DBV)"
+  ],
+  "pins": 13,
+  "issues": {
+   "error": 0,
+   "warning": 0,
+   "info": 0
+  },
+  "vision": false,
+  "cost_usd": 0.229439,
+  "duration_s": 29.3
+ }
+}

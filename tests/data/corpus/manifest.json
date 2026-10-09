@@ -1,0 +1,6128 @@
+{
+ "schema": "partforge-datasheet-corpus/1",
+ "created": "2026-10-07",
+ "root": "corpus/ (paths in 'file' are relative to this folder)",
+ "status_legend": {
+  "VERIFIED": "value read from the PDF (rendered page and/or text layer)",
+  "DERIVED": "computed from verified values or naming rules",
+  "UNVERIFIED": "assumption, not checked"
+ },
+ "conventions": {
+  "dims_mm": "min/nom/max in millimetres; basic=True means BSC; ref=True means REF; JEDEC-style symbols (D body length, E lead span, E1 body width, e pitch, b lead width, c lead thickness, L foot length, A height, A1 standoff)",
+  "electrical_type": "Altium pin electrical types used: Input, IO, Output, OpenCollector, Passive, HiZ, OpenEmitter, Power. Mapping from datasheet text is DERIVED.",
+  "sections": "1-based PDF page numbers (not printed page labels) where each information type is found",
+  "fields_ending_DERIVED_or_UNVERIFIED": "carry that status; everything else is VERIFIED"
+ },
+ "entries": [
+  {
+   "file": "pdfs/opa656.pdf",
+   "sha256": "e9e615f9f2ebf4dcfd82a2b47850f337924cba94dabfc2a4faf725cd7343be37",
+   "bytes": 853689,
+   "origin": "C:/PartForge-Examples/ExampleProject/opa656.pdf",
+   "kind": "ic",
+   "pages": 25,
+   "encrypted": false,
+   "text_extractable": true,
+   "pages_without_text_layer": [
+    21,
+    22,
+    23,
+    24
+   ],
+   "manufacturer": "Texas Instruments",
+   "document": {
+    "id": "SBOS196G",
+    "title": "Wideband, Unity-Gain Stable, FET-Input Operational Amplifier",
+    "revision": "G (Nov 2008); addendum 26-May-2010; pack materials 17-Dec-2011"
+   },
+   "sections": {
+    "ordering": [
+     2,
+     17,
+     18
+    ],
+    "pinout": [
+     2
+    ],
+    "package_outline": [
+     21,
+     23
+    ],
+    "land_pattern": [
+     22,
+     24
+    ],
+    "abs_max": [
+     2
+    ],
+    "tape_reel": [
+     19,
+     20
+    ]
+   },
+   "extraction_notes": [
+    "Pages 21-24 (mechanical + land pattern) have NO text layer (vector outlines, 0 chars, 0 images) -> vision required.",
+    "Page 2 says OPA656U 'Rails, 100' but the Package Option Addendum (p17) lists OPA656U package qty 75 (document-internal conflict).",
+    "Pin names are spelled out ('Inverting Input', 'Noninverting Input', '-VS', '+VS', 'Output', 'NC')."
+   ],
+   "devices": [
+    {
+     "base_part": "OPA656",
+     "description": "Wideband, unity-gain stable, FET-input operational amplifier (single)",
+     "category": "Operational Amplifier",
+     "mpns": [
+      {
+       "mpn": "OPA656U",
+       "package": "SOIC-8",
+       "grade": "standard",
+       "packing": "Rails, 100 (p2) / tube 75 (addendum p17)",
+       "marking": "OPA656U"
+      },
+      {
+       "mpn": "OPA656U/2K5",
+       "package": "SOIC-8",
+       "grade": "standard",
+       "packing": "Tape and Reel, 2500",
+       "marking": "OPA656U"
+      },
+      {
+       "mpn": "OPA656UB",
+       "package": "SOIC-8",
+       "grade": "high",
+       "packing": "Rails, 100",
+       "marking": "OPA656UB"
+      },
+      {
+       "mpn": "OPA656UB/2K5",
+       "package": "SOIC-8",
+       "grade": "high",
+       "packing": "Tape and Reel, 2500",
+       "marking": "OPA656UB"
+      },
+      {
+       "mpn": "OPA656N/250",
+       "package": "SOT-23-5",
+       "grade": "standard",
+       "packing": "Tape and Reel, 250",
+       "marking": "B56"
+      },
+      {
+       "mpn": "OPA656N/3K",
+       "package": "SOT-23-5",
+       "grade": "standard",
+       "packing": "Tape and Reel, 3000",
+       "marking": "B56"
+      },
+      {
+       "mpn": "OPA656NB/250",
+       "package": "SOT-23-5",
+       "grade": "high",
+       "packing": "Tape and Reel, 250",
+       "marking": "B56"
+      },
+      {
+       "mpn": "OPA656NB/3K",
+       "package": "SOT-23-5",
+       "grade": "high",
+       "packing": "Tape and Reel, 3000",
+       "marking": "B56"
+      }
+     ],
+     "additional_orderables_addendum": [
+      "OPA656N/250G4",
+      "OPA656NB/250G4",
+      "OPA656U/2K5G4",
+      "OPA656UB/2K5G4 (PREVIEW)",
+      "OPA656UBG4",
+      "OPA656UG4"
+     ],
+     "temperature_range": "-40 C to +85 C",
+     "pin_tables": {
+      "SOIC-8": [
+       {
+        "number": "1",
+        "name": "NC",
+        "function": "No connection",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "2",
+        "name": "Inverting Input",
+        "function": "Inverting input (-IN)",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "3",
+        "name": "Noninverting Input",
+        "function": "Noninverting input (+IN)",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "4",
+        "name": "-VS",
+        "function": "Negative supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "5",
+        "name": "NC",
+        "function": "No connection",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "6",
+        "name": "Output",
+        "function": "Output",
+        "electrical_type": "Output"
+       },
+       {
+        "number": "7",
+        "name": "+VS",
+        "function": "Positive supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "8",
+        "name": "NC",
+        "function": "No connection",
+        "electrical_type": "Passive"
+       }
+      ],
+      "SOT-23-5": [
+       {
+        "number": "1",
+        "name": "Output",
+        "function": "Output",
+        "electrical_type": "Output"
+       },
+       {
+        "number": "2",
+        "name": "-VS",
+        "function": "Negative supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "3",
+        "name": "Noninverting Input",
+        "function": "Noninverting input (+IN)",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "4",
+        "name": "Inverting Input",
+        "function": "Inverting input (-IN)",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "5",
+        "name": "+VS",
+        "function": "Positive supply",
+        "electrical_type": "Power"
+       }
+      ]
+     }
+    }
+   ],
+   "packages": {
+    "SOIC-8": {
+     "vendor_code": "D (R-PDSO-G8)",
+     "drawing": "4040047-3/M 06/11",
+     "jedec": "MS-012 variation AA",
+     "pins": 8,
+     "page": 23,
+     "units_in_drawing": "inches (millimeters)",
+     "dims_mm": {
+      "e_pitch": {
+       "min": null,
+       "nom": 1.27,
+       "max": null,
+       "basic": true
+      },
+      "D_body_length": {
+       "min": 4.8,
+       "nom": null,
+       "max": 5.0,
+       "note": "excl. mold flash <=0.15/side"
+      },
+      "E1_body_width": {
+       "min": 3.8,
+       "nom": null,
+       "max": 4.0,
+       "note": "excl. interlead flash <=0.43/side"
+      },
+      "E_lead_span": {
+       "min": 5.8,
+       "nom": null,
+       "max": 6.2
+      },
+      "A_height": {
+       "min": null,
+       "nom": null,
+       "max": 1.75
+      },
+      "A1_standoff": {
+       "min": 0.1,
+       "nom": null,
+       "max": 0.25
+      },
+      "b_lead_width": {
+       "min": 0.31,
+       "nom": null,
+       "max": 0.51
+      },
+      "c_lead_thickness": {
+       "min": 0.13,
+       "nom": null,
+       "max": 0.25
+      },
+      "L_foot_length": {
+       "min": 0.4,
+       "nom": null,
+       "max": 1.27
+      },
+      "gauge_plane": {
+       "min": null,
+       "nom": 0.25,
+       "max": null
+      },
+      "theta_deg": {
+       "min": 0,
+       "nom": null,
+       "max": 8
+      },
+      "coplanarity": {
+       "min": null,
+       "nom": null,
+       "max": 0.1
+      }
+     },
+     "land_pattern": {
+      "page": 24,
+      "drawing": "4211283-2/D 06/11",
+      "type": "example board layout (IPC-7351 recommended for alternates)",
+      "pad_width_mm": 0.6,
+      "pad_length_mm": 2.0,
+      "pitch_mm": 1.27,
+      "row_center_distance_mm": 4.8,
+      "solder_mask_expansion_mm": 0.07,
+      "stencil_opening_mm": [
+       0.55,
+       1.95
+      ]
+     }
+    },
+    "SOT-23-5": {
+     "vendor_code": "DBV (R-PDSO-G5)",
+     "drawing": "4073253-4/K 03/2006",
+     "jedec": "MO-178 variation AA",
+     "pins": 5,
+     "page": 21,
+     "dims_mm": {
+      "e_pitch": {
+       "min": null,
+       "nom": 0.95,
+       "max": null,
+       "basic": true
+      },
+      "D_body_length": {
+       "min": 2.75,
+       "nom": null,
+       "max": 3.05
+      },
+      "E1_body_width": {
+       "min": 1.45,
+       "nom": null,
+       "max": 1.75
+      },
+      "E_lead_span": {
+       "min": 2.6,
+       "nom": null,
+       "max": 3.0
+      },
+      "A_height": {
+       "min": null,
+       "nom": null,
+       "max": 1.45
+      },
+      "A1_standoff": {
+       "min": 0.0,
+       "nom": null,
+       "max": 0.15
+      },
+      "b_lead_width": {
+       "min": 0.3,
+       "nom": null,
+       "max": 0.5
+      },
+      "c_lead_thickness": {
+       "min": 0.08,
+       "nom": null,
+       "max": 0.22
+      },
+      "L_foot_length": {
+       "min": 0.3,
+       "nom": null,
+       "max": 0.55
+      },
+      "gauge_plane": {
+       "min": null,
+       "nom": 0.25,
+       "max": null
+      },
+      "theta_deg": {
+       "min": 0,
+       "nom": null,
+       "max": 8
+      },
+      "coplanarity": {
+       "min": null,
+       "nom": null,
+       "max": 0.1
+      }
+     },
+     "land_pattern": {
+      "page": 22,
+      "drawing": "4209593-3/C 08/11",
+      "pad_width_mm": 0.6,
+      "pad_length_mm": 1.05,
+      "pitch_mm": 0.95,
+      "pin4_to_pin5_mm": 1.9,
+      "row_center_distance_mm": 2.7,
+      "solder_mask_expansion_mm": 0.07,
+      "stencil_opening_mm": [
+       0.55,
+       1.0
+      ],
+      "stencil_thickness_mm": 0.127
+     }
+    }
+   },
+   "abs_max": [
+    {
+     "parameter": "Supply Voltage",
+     "value": "±6.5V"
+    },
+    {
+     "parameter": "Internal Power Dissipation",
+     "value": "See Thermal Characteristics"
+    },
+    {
+     "parameter": "Differential Input Voltage",
+     "value": "±VS"
+    },
+    {
+     "parameter": "Input Voltage Range",
+     "value": "±VS"
+    },
+    {
+     "parameter": "Storage Temperature Range",
+     "value": "-65°C to +125°C"
+    },
+    {
+     "parameter": "Lead Temperature",
+     "value": "+260°C"
+    },
+    {
+     "parameter": "Junction Temperature (TJ)",
+     "value": "+150°C"
+    },
+    {
+     "parameter": "ESD Rating (Human Body Model)",
+     "value": "2000V"
+    },
+    {
+     "parameter": "ESD Rating (Machine Model)",
+     "value": "200V"
+    }
+   ]
+  },
+  {
+   "file": "pdfs/LTC6244.pdf",
+   "sha256": "4dfa300bc118057dee0c304b7783ef43274e50454421e43790c70e899bd72960",
+   "bytes": 367457,
+   "origin": "C:/PartForge-Examples/ExampleProject/LTC6244.pdf",
+   "kind": "ic",
+   "pages": 26,
+   "encrypted": false,
+   "text_extractable": true,
+   "pages_without_text_layer": [],
+   "manufacturer": "Linear Technology (now Analog Devices)",
+   "document": {
+    "id": "6244fb",
+    "title": "LTC6244 - Dual 50MHz, Low Noise, Rail-to-Rail, CMOS Op Amp",
+    "revision": "B"
+   },
+   "sections": {
+    "ordering": [
+     2
+    ],
+    "pinout": [
+     2
+    ],
+    "package_outline": [
+     23,
+     24
+    ],
+    "land_pattern": [
+     23,
+     24
+    ],
+    "abs_max": [
+     2
+    ]
+   },
+   "extraction_notes": [
+    "Text layer complete; ligature 'fi' extracted as 'fi ' ('Specifi ed', 'amplifi ers').",
+    "No pin-function table: names only in pin-configuration drawings. Datasheet typo 'CONNEECTED'.",
+    "Pin 9 = exposed pad of DD package, connected to V- (PCB connection optional).",
+    "MPN suffixes: C/I/H temperature grade, HV = high-voltage version, DD/MS8 package, #PBF lead free, #TRPBF tape&reel."
+   ],
+   "devices": [
+    {
+     "base_part": "LTC6244",
+     "description": "Dual 50MHz, low noise, rail-to-rail CMOS op amp",
+     "category": "Operational Amplifier",
+     "mpns": [
+      {
+       "mpn": "LTC6244CDD#PBF",
+       "package": "DFN-8 3x3 (DD)",
+       "marking": "LCCF",
+       "temperature_range": "0°C to 70°C"
+      },
+      {
+       "mpn": "LTC6244CDD#TRPBF",
+       "package": "DFN-8 3x3 (DD)",
+       "marking": "LCCF",
+       "temperature_range": "0°C to 70°C"
+      },
+      {
+       "mpn": "LTC6244HVCDD#PBF",
+       "package": "DFN-8 3x3 (DD)",
+       "marking": "LCGD",
+       "temperature_range": "0°C to 70°C"
+      },
+      {
+       "mpn": "LTC6244HVCDD#TRPBF",
+       "package": "DFN-8 3x3 (DD)",
+       "marking": "LCGD",
+       "temperature_range": "0°C to 70°C"
+      },
+      {
+       "mpn": "LTC6244IDD#PBF",
+       "package": "DFN-8 3x3 (DD)",
+       "marking": "LCCF",
+       "temperature_range": "-40°C to 85°C"
+      },
+      {
+       "mpn": "LTC6244IDD#TRPBF",
+       "package": "DFN-8 3x3 (DD)",
+       "marking": "LCCF",
+       "temperature_range": "-40°C to 85°C"
+      },
+      {
+       "mpn": "LTC6244HVIDD#PBF",
+       "package": "DFN-8 3x3 (DD)",
+       "marking": "LCGD",
+       "temperature_range": "-40°C to 85°C"
+      },
+      {
+       "mpn": "LTC6244HVIDD#TRPBF",
+       "package": "DFN-8 3x3 (DD)",
+       "marking": "LCGD",
+       "temperature_range": "-40°C to 85°C"
+      },
+      {
+       "mpn": "LTC6244HDD#PBF",
+       "package": "DFN-8 3x3 (DD)",
+       "marking": "LCCF",
+       "temperature_range": "-40°C to 125°C"
+      },
+      {
+       "mpn": "LTC6244HDD#TRPBF",
+       "package": "DFN-8 3x3 (DD)",
+       "marking": "LCCF",
+       "temperature_range": "-40°C to 125°C"
+      },
+      {
+       "mpn": "LTC6244HVHDD#PBF",
+       "package": "DFN-8 3x3 (DD)",
+       "marking": "LCGD",
+       "temperature_range": "-40°C to 125°C"
+      },
+      {
+       "mpn": "LTC6244HVHDD#TRPBF",
+       "package": "DFN-8 3x3 (DD)",
+       "marking": "LCGD",
+       "temperature_range": "-40°C to 125°C"
+      },
+      {
+       "mpn": "LTC6244CMS8#PBF",
+       "package": "MSOP-8 (MS8)",
+       "marking": "LTCCM",
+       "temperature_range": "0°C to 70°C"
+      },
+      {
+       "mpn": "LTC6244CMS8#TRPBF",
+       "package": "MSOP-8 (MS8)",
+       "marking": "LTCCM",
+       "temperature_range": "0°C to 70°C"
+      },
+      {
+       "mpn": "LTC6244HVCMS8#PBF",
+       "package": "MSOP-8 (MS8)",
+       "marking": "LTCGF",
+       "temperature_range": "0°C to 70°C"
+      },
+      {
+       "mpn": "LTC6244HVCMS8#TRPBF",
+       "package": "MSOP-8 (MS8)",
+       "marking": "LTCGF",
+       "temperature_range": "0°C to 70°C"
+      },
+      {
+       "mpn": "LTC6244IMS8#PBF",
+       "package": "MSOP-8 (MS8)",
+       "marking": "LTCCM",
+       "temperature_range": "-40°C to 85°C"
+      },
+      {
+       "mpn": "LTC6244IMS8#TRPBF",
+       "package": "MSOP-8 (MS8)",
+       "marking": "LTCCM",
+       "temperature_range": "-40°C to 85°C"
+      },
+      {
+       "mpn": "LTC6244HVIMS8#PBF",
+       "package": "MSOP-8 (MS8)",
+       "marking": "LTCGF",
+       "temperature_range": "-40°C to 85°C"
+      },
+      {
+       "mpn": "LTC6244HVIMS8#TRPBF",
+       "package": "MSOP-8 (MS8)",
+       "marking": "LTCGF",
+       "temperature_range": "-40°C to 85°C"
+      },
+      {
+       "mpn": "LTC6244HMS8#PBF",
+       "package": "MSOP-8 (MS8)",
+       "marking": "LTCCM",
+       "temperature_range": "-40°C to 125°C"
+      },
+      {
+       "mpn": "LTC6244HMS8#TRPBF",
+       "package": "MSOP-8 (MS8)",
+       "marking": "LTCCM",
+       "temperature_range": "-40°C to 125°C"
+      }
+     ],
+     "not_offered": [
+      "LTC6244HVHMS8 (no HV + H-grade MSOP row in table)"
+     ],
+     "pin_tables": {
+      "MSOP-8 (MS8)": [
+       {
+        "number": "1",
+        "name": "OUT A",
+        "function": "Output amplifier A",
+        "electrical_type": "Output"
+       },
+       {
+        "number": "2",
+        "name": "-IN A",
+        "function": "Inverting input A",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "3",
+        "name": "+IN A",
+        "function": "Noninverting input A",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "4",
+        "name": "V-",
+        "function": "Negative supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "5",
+        "name": "+IN B",
+        "function": "Noninverting input B",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "6",
+        "name": "-IN B",
+        "function": "Inverting input B",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "7",
+        "name": "OUT B",
+        "function": "Output amplifier B",
+        "electrical_type": "Output"
+       },
+       {
+        "number": "8",
+        "name": "V+",
+        "function": "Positive supply",
+        "electrical_type": "Power"
+       }
+      ],
+      "DFN-8 3x3 (DD)": [
+       {
+        "number": "1",
+        "name": "OUT A",
+        "function": "Output amplifier A",
+        "electrical_type": "Output"
+       },
+       {
+        "number": "2",
+        "name": "-IN A",
+        "function": "Inverting input A",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "3",
+        "name": "+IN A",
+        "function": "Noninverting input A",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "4",
+        "name": "V-",
+        "function": "Negative supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "5",
+        "name": "+IN B",
+        "function": "Noninverting input B",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "6",
+        "name": "-IN B",
+        "function": "Inverting input B",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "7",
+        "name": "OUT B",
+        "function": "Output amplifier B",
+        "electrical_type": "Output"
+       },
+       {
+        "number": "8",
+        "name": "V+",
+        "function": "Positive supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "9",
+        "name": "V-",
+        "function": "Exposed pad, connected to V- (PCB connection optional)",
+        "electrical_type": "Power",
+        "exposed_pad": true
+       }
+      ]
+     },
+     "symbol_hint": "dual op amp: 2 functional parts (A: 1,2,3; B: 5,6,7) + shared power 4,8 (+9 EP on DFN) - DERIVED"
+    }
+   ],
+   "packages": {
+    "DFN-8 3x3 (DD)": {
+     "drawing": "LTC DWG # 05-08-1698 Rev C",
+     "jedec": "MO-229 variation (WEED-1)",
+     "pins": 8,
+     "exposed_pad_pin": "9",
+     "page": 23,
+     "dims_mm": {
+      "D_body": {
+       "min": 2.9,
+       "nom": 3.0,
+       "max": 3.1
+      },
+      "E_body": {
+       "min": 2.9,
+       "nom": 3.0,
+       "max": 3.1
+      },
+      "A_height": {
+       "min": 0.7,
+       "nom": 0.75,
+       "max": 0.8
+      },
+      "A1_standoff": {
+       "min": 0.0,
+       "nom": null,
+       "max": 0.05
+      },
+      "A3_terminal_thickness": {
+       "min": null,
+       "nom": 0.2,
+       "max": null,
+       "ref": true
+      },
+      "e_pitch": {
+       "min": null,
+       "nom": 0.5,
+       "max": null,
+       "basic": true
+      },
+      "b_terminal_width": {
+       "min": 0.2,
+       "nom": 0.25,
+       "max": 0.3
+      },
+      "L_terminal_length": {
+       "min": 0.3,
+       "nom": 0.4,
+       "max": 0.5
+      },
+      "EP_D2": {
+       "min": 2.28,
+       "nom": 2.38,
+       "max": 2.48
+      },
+      "EP_E2": {
+       "min": 1.55,
+       "nom": 1.65,
+       "max": 1.75
+      },
+      "pin1_notch_R": {
+       "min": null,
+       "nom": 0.125,
+       "max": null
+      }
+     },
+     "land_pattern": {
+      "page": 23,
+      "type": "recommended solder pad pitch and dimensions",
+      "pad_width_mm": {
+       "min": 0.2,
+       "nom": 0.25,
+       "max": 0.3
+      },
+      "pad_length_mm": {
+       "min": 0.65,
+       "nom": 0.7,
+       "max": 0.75
+      },
+      "pitch_mm": 0.5,
+      "outer_span_mm": {
+       "min": 3.45,
+       "nom": 3.5,
+       "max": 3.55
+      },
+      "inner_span_mm": {
+       "min": 2.05,
+       "nom": 2.1,
+       "max": 2.15
+      },
+      "row_center_distance_mm_DERIVED": 2.8,
+      "thermal_pad_mm": [
+       {
+        "min": 2.33,
+        "nom": 2.38,
+        "max": 2.43
+       },
+       {
+        "min": 1.6,
+        "nom": 1.65,
+        "max": 1.7
+       }
+      ],
+      "note": "Apply solder mask to areas that are not soldered"
+     }
+    },
+    "MSOP-8 (MS8)": {
+     "drawing": "LTC DWG # 05-08-1660 Rev F",
+     "pins": 8,
+     "page": 24,
+     "units_in_drawing": "millimeter (inch)",
+     "dims_mm": {
+      "e_pitch": {
+       "min": null,
+       "nom": 0.65,
+       "max": null,
+       "basic": true
+      },
+      "D_body_length": {
+       "min": 2.898,
+       "nom": 3.0,
+       "max": 3.102,
+       "note": "note 3: excl. mold flash <=0.152/side"
+      },
+      "E1_body_width": {
+       "min": 2.898,
+       "nom": 3.0,
+       "max": 3.102,
+       "note": "note 4: excl. interlead flash <=0.152/side"
+      },
+      "E_lead_span": {
+       "min": 4.748,
+       "nom": 4.9,
+       "max": 5.052
+      },
+      "A_height": {
+       "min": null,
+       "nom": null,
+       "max": 1.1
+      },
+      "A2_body_thickness": {
+       "min": null,
+       "nom": 0.86,
+       "max": null,
+       "ref": true
+      },
+      "A1_standoff": {
+       "min": 0.0508,
+       "nom": 0.1016,
+       "max": 0.1524
+      },
+      "b_lead_width": {
+       "min": 0.22,
+       "nom": null,
+       "max": 0.38
+      },
+      "c_lead_thickness": {
+       "min": null,
+       "nom": 0.18,
+       "max": null
+      },
+      "L_foot_length": {
+       "min": 0.378,
+       "nom": 0.53,
+       "max": 0.682
+      },
+      "gauge_plane": {
+       "min": null,
+       "nom": 0.254,
+       "max": null
+      },
+      "theta_deg": {
+       "min": 0,
+       "nom": null,
+       "max": 6,
+       "note": "0-6 TYP"
+      },
+      "coplanarity": {
+       "min": null,
+       "nom": null,
+       "max": 0.102
+      },
+      "unlabeled_0p52_ref": {
+       "min": null,
+       "nom": 0.52,
+       "max": null,
+       "ref": true,
+       "note": "dimension at leads in top view, meaning not labeled"
+      }
+     },
+     "land_pattern": {
+      "page": 24,
+      "type": "recommended solder pad layout",
+      "pad_width_mm": {
+       "min": 0.382,
+       "nom": 0.42,
+       "max": 0.458
+      },
+      "pad_length_mm": {
+       "min": 0.762,
+       "nom": 0.889,
+       "max": 1.016
+      },
+      "pitch_mm": 0.65,
+      "outer_span_min_mm": 5.23,
+      "inner_span_mm": [
+       3.2,
+       3.45
+      ],
+      "row_center_distance_mm_DERIVED": 4.34
+     }
+    }
+   },
+   "abs_max": [
+    {
+     "parameter": "Total Supply Voltage (V+ to V-) LTC6244",
+     "value": "7V"
+    },
+    {
+     "parameter": "Total Supply Voltage (V+ to V-) LTC6244HV",
+     "value": "12V"
+    },
+    {
+     "parameter": "Input Voltage",
+     "value": "(V+ + 0.3V) to (V- - 0.3V)"
+    },
+    {
+     "parameter": "Input Current",
+     "value": "±10mA"
+    },
+    {
+     "parameter": "Output Short Circuit Duration",
+     "value": "Indefinite"
+    },
+    {
+     "parameter": "Operating Temperature Range",
+     "value": "C: -40°C to 85°C; I: -40°C to 85°C; H: -40°C to 125°C"
+    },
+    {
+     "parameter": "Specified Temperature Range",
+     "value": "C: 0°C to 70°C; I: -40°C to 85°C; H: -40°C to 125°C"
+    },
+    {
+     "parameter": "Junction Temperature",
+     "value": "150°C"
+    },
+    {
+     "parameter": "Storage Temperature Range",
+     "value": "-65°C to 150°C"
+    },
+    {
+     "parameter": "Lead Temperature (Soldering, 10 sec)",
+     "value": "300°C"
+    },
+    {
+     "parameter": "Thermal",
+     "value": "DD: TJMAX=150°C, θJA=43°C/W; MS8: TJMAX=150°C, θJA=250°C/W"
+    }
+   ]
+  },
+  {
+   "file": "pdfs/6N137.pdf",
+   "sha256": "e0fc15c42989c62aef81517343d216b0cea2516385e26bc31c0410a9e4c498c1",
+   "bytes": 646981,
+   "origin": "C:/PartForge-Examples/ExampleProject/6N137.pdf",
+   "kind": "ic",
+   "pages": 12,
+   "encrypted": false,
+   "text_extractable": true,
+   "pages_without_text_layer": [],
+   "manufacturer": "Fairchild Semiconductor (now onsemi)",
+   "document": {
+    "id": "6N137, HCPL2601, HCPL2611, HCPL2630, HCPL2631 Rev. 1.0.8",
+    "title": "High Speed 10MBit/s Logic Gate Optocouplers",
+    "date": "January 2011"
+   },
+   "sections": {
+    "ordering": [
+     10
+    ],
+    "pinout": [
+     1
+    ],
+    "package_outline": [
+     9
+    ],
+    "land_pattern": [
+     9
+    ],
+    "abs_max": [
+     2
+    ],
+    "tape_reel": [
+     11
+    ]
+   },
+   "extraction_notes": [
+    "Multi-device datasheet: single-channel 6N137/HCPL2601/HCPL2611 and dual-channel HCPL2630/HCPL2631 share one PDF with different pinouts.",
+    "No pin table: pin names only in the 'Schematics' drawings on page 1 (VF, VE, VO, VCC, GND, N/C).",
+    "Page 9 dimension labels: rotated text is scrambled in the text layer -> vision required.",
+    "Ordering options are given only as examples for 6N137 (6N137S, 6N137SD, ...)."
+   ],
+   "devices": [
+    {
+     "base_part": "6N137",
+     "channels": 1,
+     "description": "Single-channel 10 MBit/s logic gate optocoupler",
+     "category": "Optocoupler",
+     "mpns": [
+      "6N137",
+      "6N137S",
+      "6N137SD",
+      "6N137W",
+      "6N137V",
+      "6N137WV",
+      "6N137SV",
+      "6N137SDV"
+     ],
+     "pin_tables": {
+      "DIP-8 / SMD-8 (all options)": [
+       {
+        "number": "1",
+        "name": "N/C",
+        "function": "No connection",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "2",
+        "name": "VF+",
+        "function": "LED anode (+)",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "3",
+        "name": "VF-",
+        "function": "LED cathode (-)",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "4",
+        "name": "N/C",
+        "function": "No connection",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "5",
+        "name": "GND",
+        "function": "Ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "6",
+        "name": "VO",
+        "function": "Open-collector output",
+        "electrical_type": "OpenCollector"
+       },
+       {
+        "number": "7",
+        "name": "VE",
+        "function": "Enable (strobe) input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "8",
+        "name": "VCC",
+        "function": "Supply; 0.1uF bypass between pins 8 and 5 required",
+        "electrical_type": "Power"
+       }
+      ]
+     }
+    },
+    {
+     "base_part": "HCPL2601",
+     "channels": 1,
+     "description": "Single-channel, min CMR 5 kV/us",
+     "category": "Optocoupler",
+     "mpns_DERIVED": [
+      "HCPL2601",
+      "HCPL2601S",
+      "HCPL2601SD",
+      "HCPL2601W",
+      "HCPL2601V",
+      "HCPL2601WV",
+      "HCPL2601SV",
+      "HCPL2601SDV"
+     ],
+     "pin_tables": {
+      "DIP-8 / SMD-8 (all options)": [
+       {
+        "number": "1",
+        "name": "N/C",
+        "function": "No connection",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "2",
+        "name": "VF+",
+        "function": "LED anode (+)",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "3",
+        "name": "VF-",
+        "function": "LED cathode (-)",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "4",
+        "name": "N/C",
+        "function": "No connection",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "5",
+        "name": "GND",
+        "function": "Ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "6",
+        "name": "VO",
+        "function": "Open-collector output",
+        "electrical_type": "OpenCollector"
+       },
+       {
+        "number": "7",
+        "name": "VE",
+        "function": "Enable (strobe) input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "8",
+        "name": "VCC",
+        "function": "Supply; 0.1uF bypass between pins 8 and 5 required",
+        "electrical_type": "Power"
+       }
+      ]
+     }
+    },
+    {
+     "base_part": "HCPL2611",
+     "channels": 1,
+     "description": "Single-channel, min CMR 10 kV/us",
+     "category": "Optocoupler",
+     "mpns_DERIVED": [
+      "HCPL2611",
+      "HCPL2611S",
+      "HCPL2611SD",
+      "HCPL2611W",
+      "HCPL2611V",
+      "HCPL2611WV",
+      "HCPL2611SV",
+      "HCPL2611SDV"
+     ],
+     "pin_tables": {
+      "DIP-8 / SMD-8 (all options)": [
+       {
+        "number": "1",
+        "name": "N/C",
+        "function": "No connection",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "2",
+        "name": "VF+",
+        "function": "LED anode (+)",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "3",
+        "name": "VF-",
+        "function": "LED cathode (-)",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "4",
+        "name": "N/C",
+        "function": "No connection",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "5",
+        "name": "GND",
+        "function": "Ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "6",
+        "name": "VO",
+        "function": "Open-collector output",
+        "electrical_type": "OpenCollector"
+       },
+       {
+        "number": "7",
+        "name": "VE",
+        "function": "Enable (strobe) input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "8",
+        "name": "VCC",
+        "function": "Supply; 0.1uF bypass between pins 8 and 5 required",
+        "electrical_type": "Power"
+       }
+      ]
+     }
+    },
+    {
+     "base_part": "HCPL2630",
+     "channels": 2,
+     "description": "Dual-channel",
+     "category": "Optocoupler",
+     "mpns_DERIVED": [
+      "HCPL2630",
+      "HCPL2630S",
+      "HCPL2630SD",
+      "HCPL2630W",
+      "HCPL2630V",
+      "HCPL2630WV",
+      "HCPL2630SV",
+      "HCPL2630SDV"
+     ],
+     "pin_tables": {
+      "DIP-8 / SMD-8 (all options)": [
+       {
+        "number": "1",
+        "name": "VF1+",
+        "function": "LED 1 anode (+)",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "2",
+        "name": "VF1-",
+        "function": "LED 1 cathode (-)",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "3",
+        "name": "VF2-",
+        "function": "LED 2 cathode (-)",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "4",
+        "name": "VF2+",
+        "function": "LED 2 anode (+)",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "5",
+        "name": "GND",
+        "function": "Ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "6",
+        "name": "VO2",
+        "function": "Open-collector output 2",
+        "electrical_type": "OpenCollector"
+       },
+       {
+        "number": "7",
+        "name": "VO1",
+        "function": "Open-collector output 1",
+        "electrical_type": "OpenCollector"
+       },
+       {
+        "number": "8",
+        "name": "VCC",
+        "function": "Supply",
+        "electrical_type": "Power"
+       }
+      ]
+     }
+    },
+    {
+     "base_part": "HCPL2631",
+     "channels": 2,
+     "description": "Dual-channel, min CMR 5 kV/us",
+     "category": "Optocoupler",
+     "mpns_DERIVED": [
+      "HCPL2631",
+      "HCPL2631S",
+      "HCPL2631SD",
+      "HCPL2631W",
+      "HCPL2631V",
+      "HCPL2631WV",
+      "HCPL2631SV",
+      "HCPL2631SDV"
+     ],
+     "pin_tables": {
+      "DIP-8 / SMD-8 (all options)": [
+       {
+        "number": "1",
+        "name": "VF1+",
+        "function": "LED 1 anode (+)",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "2",
+        "name": "VF1-",
+        "function": "LED 1 cathode (-)",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "3",
+        "name": "VF2-",
+        "function": "LED 2 cathode (-)",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "4",
+        "name": "VF2+",
+        "function": "LED 2 anode (+)",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "5",
+        "name": "GND",
+        "function": "Ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "6",
+        "name": "VO2",
+        "function": "Open-collector output 2",
+        "electrical_type": "OpenCollector"
+       },
+       {
+        "number": "7",
+        "name": "VO1",
+        "function": "Open-collector output 1",
+        "electrical_type": "OpenCollector"
+       },
+       {
+        "number": "8",
+        "name": "VCC",
+        "function": "Supply",
+        "electrical_type": "Power"
+       }
+      ]
+     }
+    }
+   ],
+   "ordering_options": [
+    {
+     "suffix": "(none)",
+     "description": "Standard through hole 0.3in"
+    },
+    {
+     "suffix": "S",
+     "description": "Surface Mount Lead Bend"
+    },
+    {
+     "suffix": "SD",
+     "description": "Surface Mount; Tape and Reel"
+    },
+    {
+     "suffix": "W",
+     "description": "0.4in Lead Spacing"
+    },
+    {
+     "suffix": "V",
+     "description": "VDE0884"
+    },
+    {
+     "suffix": "WV",
+     "description": "VDE0884; 0.4in Lead Spacing"
+    },
+    {
+     "suffix": "SV",
+     "description": "VDE0884; Surface Mount"
+    },
+    {
+     "suffix": "SDV",
+     "description": "VDE0884; Surface Mount; Tape and Reel"
+    }
+   ],
+   "package_by_option": {
+    "(none)": "DIP-8 (through hole, 0.3in rows)",
+    "V": "DIP-8 (through hole, 0.3in rows)",
+    "W": "DIP-8 (0.4in lead spacing, option W)",
+    "WV": "DIP-8 (0.4in lead spacing, option W)",
+    "S": "SMD-8 gull wing (option S)",
+    "SD": "SMD-8 gull wing (option S)",
+    "SV": "SMD-8 gull wing (option S)",
+    "SDV": "SMD-8 gull wing (option S)"
+   },
+   "packages": {
+    "DIP-8 (through hole, 0.3in rows)": {
+     "page": 9,
+     "units_in_drawing": "inches (millimeters)",
+     "pins": 8,
+     "dims_mm": {
+      "D_body_length": {
+       "min": 9.4,
+       "nom": null,
+       "max": 9.91
+      },
+      "E1_body_width": {
+       "min": 6.35,
+       "nom": null,
+       "max": 6.86
+      },
+      "A_seating_to_top": {
+       "min": 3.55,
+       "nom": null,
+       "max": 5.08
+      },
+      "A1_standoff": {
+       "min": 0.51,
+       "nom": null,
+       "max": null
+      },
+      "L_lead_below_seating": {
+       "min": 3.05,
+       "nom": null,
+       "max": 3.9
+      },
+      "b_lead_width": {
+       "min": 0.41,
+       "nom": null,
+       "max": 0.56
+      },
+      "b2_shoulder_width": {
+       "min": 1.14,
+       "nom": null,
+       "max": 1.78
+      },
+      "e_pitch": {
+       "min": null,
+       "nom": 2.54,
+       "max": null,
+       "note": "TYP"
+      },
+      "c_lead_thickness": {
+       "min": 0.2,
+       "nom": null,
+       "max": 0.4
+      },
+      "eA_row_spacing": {
+       "min": null,
+       "nom": 7.62,
+       "max": null,
+       "note": "TYP"
+      },
+      "lead_angle": "15° MAX"
+     }
+    },
+    "DIP-8 (0.4in lead spacing, option W)": {
+     "page": 9,
+     "pins": 8,
+     "dims_mm": {
+      "D_body_length": {
+       "min": 9.4,
+       "nom": null,
+       "max": 9.91
+      },
+      "E1_body_width": {
+       "min": 6.35,
+       "nom": null,
+       "max": 6.86
+      },
+      "A_seating_to_top": {
+       "min": 3.55,
+       "nom": null,
+       "max": 5.08
+      },
+      "A1_standoff": {
+       "min": 0.1,
+       "nom": null,
+       "max": null
+      },
+      "L_lead_below_seating": {
+       "min": 3.05,
+       "nom": null,
+       "max": 3.9
+      },
+      "b_lead_width": {
+       "min": 0.41,
+       "nom": null,
+       "max": 0.56
+      },
+      "b2_shoulder_width": {
+       "min": 1.14,
+       "nom": null,
+       "max": 1.78
+      },
+      "e_pitch": {
+       "min": null,
+       "nom": 2.54,
+       "max": null,
+       "note": "TYP"
+      },
+      "c_lead_thickness": {
+       "min": 0.2,
+       "nom": null,
+       "max": 0.4
+      },
+      "eA_row_spacing": {
+       "min": null,
+       "nom": 10.16,
+       "max": null,
+       "note": "TYP"
+      },
+      "lead_angle": "0° to 15°"
+     }
+    },
+    "SMD-8 gull wing (option S)": {
+     "page": 9,
+     "pins": 8,
+     "dims_mm": {
+      "D_body_length": {
+       "min": 9.4,
+       "nom": null,
+       "max": 9.91
+      },
+      "E1_body_width": {
+       "min": 6.35,
+       "nom": null,
+       "max": 6.86
+      },
+      "e_pitch": {
+       "min": null,
+       "nom": 2.54,
+       "max": null,
+       "note": "TYP"
+      },
+      "b_lead_width": {
+       "min": 0.41,
+       "nom": null,
+       "max": 0.56
+      },
+      "b2_shoulder_width": {
+       "min": 1.14,
+       "nom": null,
+       "max": 1.78
+      },
+      "A1_standoff": {
+       "min": 0.51,
+       "nom": null,
+       "max": null
+      },
+      "c_lead_thickness": {
+       "min": 0.2,
+       "nom": null,
+       "max": 0.41
+      },
+      "L_foot": {
+       "min": null,
+       "nom": 1.14,
+       "max": null
+      },
+      "inner_span_min": {
+       "min": 8.0,
+       "nom": null,
+       "max": null
+      },
+      "E_lead_span": {
+       "min": null,
+       "nom": null,
+       "max": 10.3
+      },
+      "eA_row_spacing": {
+       "min": null,
+       "nom": 7.62,
+       "max": null,
+       "note": "TYP"
+      },
+      "coplanarity": {
+       "min": null,
+       "nom": null,
+       "max": 0.1
+      }
+     },
+     "land_pattern": {
+      "page": 9,
+      "title": "8-Pin DIP - Land Pattern",
+      "pad_width_mm": 1.78,
+      "pad_length_mm": 1.52,
+      "pitch_mm": 2.54,
+      "pad_gap_mm": 0.76,
+      "outer_span_mm": 10.54,
+      "inner_span_mm": 7.49,
+      "row_center_distance_mm_DERIVED": 9.015
+     }
+    }
+   },
+   "abs_max": [
+    {
+     "parameter": "TSTG Storage Temperature",
+     "value": "-55 to +125 °C"
+    },
+    {
+     "parameter": "TOPR Operating Temperature",
+     "value": "-40 to +85 °C"
+    },
+    {
+     "parameter": "TSOL Lead Solder Temperature (wave only)",
+     "value": "260 for 10 sec °C"
+    },
+    {
+     "parameter": "IF DC/Average Forward Input Current",
+     "value": "single 50 mA; dual 30 mA each channel"
+    },
+    {
+     "parameter": "VE Enable Input Voltage (not to exceed VCC by more than 500mV)",
+     "value": "5.5 V (single channel)"
+    },
+    {
+     "parameter": "VR Reverse Input Voltage",
+     "value": "5.0 V each channel"
+    },
+    {
+     "parameter": "PI Power Dissipation (emitter)",
+     "value": "single 100 mW; dual 45 mW each channel"
+    },
+    {
+     "parameter": "VCC Supply Voltage (1 minute max)",
+     "value": "7.0 V"
+    },
+    {
+     "parameter": "IO Output Current",
+     "value": "single 50 mA; dual 50 mA each channel"
+    },
+    {
+     "parameter": "VO Output Voltage",
+     "value": "7.0 V each channel"
+    },
+    {
+     "parameter": "PO Collector Output Power Dissipation",
+     "value": "single 85 mW; dual 60 mW each channel"
+    }
+   ]
+  },
+  {
+   "file": "pdfs/25AA02E48.pdf",
+   "sha256": "4ba0e5b4784dd70e58c49f2156e8ae0c3fe7b4c20e01e1f8b978933fd651f4c0",
+   "bytes": 474256,
+   "origin": "C:/PartForge-Examples/ExampleProject/doc/datasheets/25AA02E48.pdf",
+   "kind": "ic",
+   "pages": 26,
+   "encrypted": true,
+   "text_extractable": true,
+   "pages_without_text_layer": [],
+   "manufacturer": "Microchip Technology",
+   "document": {
+    "id": "DS22123B",
+    "title": "2K SPI Bus Serial EEPROM with EUI-48 Node Identity",
+    "date": "2010"
+   },
+   "sections": {
+    "ordering": [
+     1,
+     23
+    ],
+    "pinout": [
+     1,
+     14
+    ],
+    "package_outline": [
+     16,
+     18
+    ],
+    "land_pattern": [
+     17,
+     19
+    ],
+    "abs_max": [
+     2
+    ],
+    "marking": [
+     15
+    ]
+   },
+   "extraction_notes": [
+    "PDF is encrypted (owner password only); opens with empty user password (pypdf decrypt('') ok).",
+    "Package pages 16-19: text layer is glyph-ID encoded (pdfplumber '(cid:N)', pypdf '/gNN'). Decoding chr(N+29) recovers the tables on p16 (VERIFIED); otherwise vision required.",
+    "Active-low pins CS, WP, HOLD carry overbars that are lost in the text layer.",
+    "SOT-23 pin 6 is labelled 'VDD' in the p1 package drawing but 'VCC' in the pin function table (name normalisation needed).",
+    "MPN template: 25AA02E48[T]-I/<pkg>; T = tape&reel; I = -40..+85 C; SN = SOIC 3.90mm 8-lead; OT = SOT-23 6-lead (tape&reel only)."
+   ],
+   "devices": [
+    {
+     "base_part": "25AA02E48",
+     "description": "2 Kbit SPI serial EEPROM with pre-programmed EUI-48 node address",
+     "category": "Memory / EEPROM",
+     "mpns": [
+      {
+       "mpn": "25AA02E48-I/SN",
+       "package": "SOIC-8"
+      },
+      {
+       "mpn": "25AA02E48T-I/SN",
+       "package": "SOIC-8",
+       "packing": "Tape & Reel"
+      },
+      {
+       "mpn": "25AA02E48T-I/OT",
+       "package": "SOT-23-6",
+       "packing": "Tape & Reel (only option)"
+      }
+     ],
+     "marking": {
+      "SOIC-8": "25A2E48I + YYWW + NNN (example '25A2E48I / SN e3 0827 / 1L7')",
+      "SOT-23-6": "20NN"
+     },
+     "pin_tables": {
+      "SOIC-8": [
+       {
+        "number": "1",
+        "name": "CS",
+        "function": "Chip Select Input",
+        "electrical_type": "Input",
+        "active_low": true,
+        "altium_name_UNVERIFIED": "C\\S\\"
+       },
+       {
+        "number": "2",
+        "name": "SO",
+        "function": "Serial Data Output",
+        "electrical_type": "Output"
+       },
+       {
+        "number": "3",
+        "name": "WP",
+        "function": "Write-Protect",
+        "electrical_type": "Input",
+        "active_low": true,
+        "altium_name_UNVERIFIED": "W\\P\\"
+       },
+       {
+        "number": "4",
+        "name": "VSS",
+        "function": "Ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "5",
+        "name": "SI",
+        "function": "Serial Data Input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "6",
+        "name": "SCK",
+        "function": "Serial Clock Input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "7",
+        "name": "HOLD",
+        "function": "Hold Input",
+        "electrical_type": "Input",
+        "active_low": true,
+        "altium_name_UNVERIFIED": "H\\O\\L\\D\\"
+       },
+       {
+        "number": "8",
+        "name": "VCC",
+        "function": "Supply Voltage",
+        "electrical_type": "Power"
+       }
+      ],
+      "SOT-23-6": [
+       {
+        "number": "1",
+        "name": "SCK",
+        "function": "Serial Clock Input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "2",
+        "name": "VSS",
+        "function": "Ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "3",
+        "name": "SI",
+        "function": "Serial Data Input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "4",
+        "name": "SO",
+        "function": "Serial Data Output",
+        "electrical_type": "Output"
+       },
+       {
+        "number": "5",
+        "name": "CS",
+        "function": "Chip Select Input",
+        "electrical_type": "Input",
+        "active_low": true
+       },
+       {
+        "number": "6",
+        "name": "VCC",
+        "function": "Supply Voltage (drawn as 'VDD' on p1)",
+        "electrical_type": "Power"
+       }
+      ]
+     }
+    }
+   ],
+   "packages": {
+    "SOIC-8": {
+     "vendor_code": "SN",
+     "drawing": "C04-057B",
+     "page": 16,
+     "pins": 8,
+     "dims_mm": {
+      "e_pitch": {
+       "min": null,
+       "nom": 1.27,
+       "max": null,
+       "basic": true
+      },
+      "A_height": {
+       "min": null,
+       "nom": null,
+       "max": 1.75
+      },
+      "A2_body_thickness": {
+       "min": 1.25,
+       "nom": null,
+       "max": null
+      },
+      "A1_standoff": {
+       "min": 0.1,
+       "nom": null,
+       "max": 0.25
+      },
+      "E_lead_span": {
+       "min": null,
+       "nom": 6.0,
+       "max": null,
+       "basic": true
+      },
+      "E1_body_width": {
+       "min": null,
+       "nom": 3.9,
+       "max": null,
+       "basic": true
+      },
+      "D_body_length": {
+       "min": null,
+       "nom": 4.9,
+       "max": null,
+       "basic": true
+      },
+      "h_chamfer": {
+       "min": 0.25,
+       "nom": null,
+       "max": 0.5
+      },
+      "L_foot_length": {
+       "min": 0.4,
+       "nom": null,
+       "max": 1.27
+      },
+      "L1_footprint": {
+       "min": null,
+       "nom": 1.04,
+       "max": null,
+       "ref": true
+      },
+      "phi_foot_angle_deg": {
+       "min": 0,
+       "nom": null,
+       "max": 8
+      },
+      "c_lead_thickness": {
+       "min": 0.17,
+       "nom": null,
+       "max": 0.25
+      },
+      "b_lead_width": {
+       "min": 0.31,
+       "nom": null,
+       "max": 0.51
+      },
+      "alpha_mold_draft_top_deg": {
+       "min": 5,
+       "nom": null,
+       "max": 15
+      },
+      "beta_mold_draft_bottom_deg": {
+       "min": 5,
+       "nom": null,
+       "max": 15
+      }
+     },
+     "land_pattern": {
+      "page": 17,
+      "drawing": "C04-2057A",
+      "E_pitch_mm": 1.27,
+      "C_pad_center_spacing_mm": 5.4,
+      "X1_pad_width_max_mm": 0.6,
+      "Y1_pad_length_max_mm": 1.55
+     }
+    },
+    "SOT-23-6": {
+     "vendor_code": "OT",
+     "drawing": "C04-028B",
+     "page": 18,
+     "pins": 6,
+     "dims_mm": {
+      "e_pitch": {
+       "min": null,
+       "nom": 0.95,
+       "max": null,
+       "basic": true
+      },
+      "e1_outside_lead_pitch": {
+       "min": null,
+       "nom": 1.9,
+       "max": null,
+       "basic": true
+      },
+      "A_height": {
+       "min": 0.9,
+       "nom": null,
+       "max": 1.45
+      },
+      "A2_body_thickness": {
+       "min": 0.89,
+       "nom": null,
+       "max": 1.3
+      },
+      "A1_standoff": {
+       "min": 0.0,
+       "nom": null,
+       "max": 0.15
+      },
+      "E_lead_span": {
+       "min": 2.2,
+       "nom": null,
+       "max": 3.2
+      },
+      "E1_body_width": {
+       "min": 1.3,
+       "nom": null,
+       "max": 1.8
+      },
+      "D_body_length": {
+       "min": 2.7,
+       "nom": null,
+       "max": 3.1
+      },
+      "L_foot_length": {
+       "min": 0.1,
+       "nom": null,
+       "max": 0.6
+      },
+      "L1_footprint": {
+       "min": 0.35,
+       "nom": null,
+       "max": 0.8
+      },
+      "phi_foot_angle_deg": {
+       "min": 0,
+       "nom": null,
+       "max": 30
+      },
+      "c_lead_thickness": {
+       "min": 0.08,
+       "nom": null,
+       "max": 0.26
+      },
+      "b_lead_width": {
+       "min": 0.2,
+       "nom": null,
+       "max": 0.51
+      }
+     },
+     "land_pattern": {
+      "page": 19,
+      "drawing": "C04-2028A",
+      "E_pitch_mm": 0.95,
+      "C_pad_center_spacing_mm": 2.8,
+      "X_pad_width_max_mm": 0.6,
+      "Y_pad_length_max_mm": 1.1,
+      "G_min_mm": 1.7,
+      "GX_min_mm": 0.35,
+      "Z_max_mm": 3.9
+     }
+    }
+   },
+   "abs_max": [
+    {
+     "parameter": "VCC",
+     "value": "6.5V"
+    },
+    {
+     "parameter": "All inputs and outputs w.r.t. VSS",
+     "value": "-0.6V to VCC +1.0V"
+    },
+    {
+     "parameter": "Storage temperature",
+     "value": "-65°C to 150°C"
+    },
+    {
+     "parameter": "Ambient temperature under bias",
+     "value": "-40°C to 85°C"
+    },
+    {
+     "parameter": "ESD protection on all pins",
+     "value": "4kV"
+    }
+   ]
+  },
+  {
+   "file": "pdfs/AD7983.pdf",
+   "sha256": "17458549e17422d467c790153daa2edd39e35fe2524d137b520d5acf5112c3e2",
+   "bytes": 459378,
+   "origin": "C:/PartForge-Examples/ExampleProject/doc/datasheets/AD7983.pdf",
+   "kind": "ic",
+   "pages": 24,
+   "encrypted": false,
+   "text_extractable": true,
+   "pages_without_text_layer": [],
+   "manufacturer": "Analog Devices",
+   "document": {
+    "id": "D06974-0-3/10(A)",
+    "title": "16-Bit, 1.33 MSPS PulSAR ADC in MSOP/QFN",
+    "revision": "A"
+   },
+   "sections": {
+    "ordering": [
+     24
+    ],
+    "pinout": [
+     7
+    ],
+    "package_outline": [
+     24
+    ],
+    "land_pattern": [],
+    "abs_max": [
+     6
+    ]
+   },
+   "extraction_notes": [
+    "Pin table has a Type column (AI/DI/DO/P) -> direct electrical-type mapping.",
+    "No recommended land pattern in this datasheet (p23 shows an example PCB layout image only).",
+    "QFN exposed paddle has no pin number; note: 'paddle connected to GND, not required to meet electrical performance'.",
+    "Ordering guide as printed: BCPZ-RL = Reel 1000, BCPZ-RL7 = Reel 5000 (unusual vs ADI convention; keep as printed)."
+   ],
+   "devices": [
+    {
+     "base_part": "AD7983",
+     "description": "16-bit 1.33 MSPS PulSAR ADC",
+     "category": "ADC",
+     "temperature_range": "-40°C to +85°C",
+     "branding": "C5Y",
+     "mpns": [
+      {
+       "mpn": "AD7983BRMZ",
+       "package": "MSOP-10 (RM-10)",
+       "packing": "Tube, 50"
+      },
+      {
+       "mpn": "AD7983BRMZRL7",
+       "package": "MSOP-10 (RM-10)",
+       "packing": "Reel, 1000"
+      },
+      {
+       "mpn": "AD7983BCPZ-R2",
+       "package": "LFCSP_WD-10 3x3 (CP-10-9)",
+       "packing": "Reel, 250"
+      },
+      {
+       "mpn": "AD7983BCPZ-RL",
+       "package": "LFCSP_WD-10 3x3 (CP-10-9)",
+       "packing": "Reel, 1000"
+      },
+      {
+       "mpn": "AD7983BCPZ-RL7",
+       "package": "LFCSP_WD-10 3x3 (CP-10-9)",
+       "packing": "Reel, 5000"
+      }
+     ],
+     "pin_tables": {
+      "MSOP-10 (RM-10)": [
+       {
+        "number": "1",
+        "name": "REF",
+        "function": "Reference input voltage (2.9 V to 5.1 V), decouple with 10 uF",
+        "electrical_type": "Input",
+        "ds_type": "AI"
+       },
+       {
+        "number": "2",
+        "name": "VDD",
+        "function": "Power supply",
+        "electrical_type": "Power",
+        "ds_type": "P"
+       },
+       {
+        "number": "3",
+        "name": "IN+",
+        "function": "Analog input",
+        "electrical_type": "Input",
+        "ds_type": "AI"
+       },
+       {
+        "number": "4",
+        "name": "IN-",
+        "function": "Analog input ground sense",
+        "electrical_type": "Input",
+        "ds_type": "AI"
+       },
+       {
+        "number": "5",
+        "name": "GND",
+        "function": "Power supply ground",
+        "electrical_type": "Power",
+        "ds_type": "P"
+       },
+       {
+        "number": "6",
+        "name": "CNV",
+        "function": "Convert input",
+        "electrical_type": "Input",
+        "ds_type": "DI"
+       },
+       {
+        "number": "7",
+        "name": "SDO",
+        "function": "Serial data output",
+        "electrical_type": "Output",
+        "ds_type": "DO"
+       },
+       {
+        "number": "8",
+        "name": "SCK",
+        "function": "Serial data clock input",
+        "electrical_type": "Input",
+        "ds_type": "DI"
+       },
+       {
+        "number": "9",
+        "name": "SDI",
+        "function": "Serial data input",
+        "electrical_type": "Input",
+        "ds_type": "DI"
+       },
+       {
+        "number": "10",
+        "name": "VIO",
+        "function": "Input/output interface digital power",
+        "electrical_type": "Power",
+        "ds_type": "P"
+       }
+      ],
+      "LFCSP_WD-10 3x3 (CP-10-9)": [
+       {
+        "number": "1",
+        "name": "REF",
+        "function": "Reference input voltage (2.9 V to 5.1 V), decouple with 10 uF",
+        "electrical_type": "Input",
+        "ds_type": "AI"
+       },
+       {
+        "number": "2",
+        "name": "VDD",
+        "function": "Power supply",
+        "electrical_type": "Power",
+        "ds_type": "P"
+       },
+       {
+        "number": "3",
+        "name": "IN+",
+        "function": "Analog input",
+        "electrical_type": "Input",
+        "ds_type": "AI"
+       },
+       {
+        "number": "4",
+        "name": "IN-",
+        "function": "Analog input ground sense",
+        "electrical_type": "Input",
+        "ds_type": "AI"
+       },
+       {
+        "number": "5",
+        "name": "GND",
+        "function": "Power supply ground",
+        "electrical_type": "Power",
+        "ds_type": "P"
+       },
+       {
+        "number": "6",
+        "name": "CNV",
+        "function": "Convert input",
+        "electrical_type": "Input",
+        "ds_type": "DI"
+       },
+       {
+        "number": "7",
+        "name": "SDO",
+        "function": "Serial data output",
+        "electrical_type": "Output",
+        "ds_type": "DO"
+       },
+       {
+        "number": "8",
+        "name": "SCK",
+        "function": "Serial data clock input",
+        "electrical_type": "Input",
+        "ds_type": "DI"
+       },
+       {
+        "number": "9",
+        "name": "SDI",
+        "function": "Serial data input",
+        "electrical_type": "Input",
+        "ds_type": "DI"
+       },
+       {
+        "number": "10",
+        "name": "VIO",
+        "function": "Input/output interface digital power",
+        "electrical_type": "Power",
+        "ds_type": "P"
+       },
+       {
+        "number": "EP",
+        "name": "GND",
+        "function": "Exposed paddle connected to GND (connection optional); no pin number in datasheet",
+        "electrical_type": "Power",
+        "exposed_pad": true
+       }
+      ]
+     }
+    }
+   ],
+   "packages": {
+    "MSOP-10 (RM-10)": {
+     "jedec": "MO-187-BA",
+     "page": 24,
+     "pins": 10,
+     "dims_mm": {
+      "D_body_length": {
+       "min": 2.9,
+       "nom": 3.0,
+       "max": 3.1
+      },
+      "E1_body_width": {
+       "min": 2.9,
+       "nom": 3.0,
+       "max": 3.1
+      },
+      "E_lead_span": {
+       "min": 4.65,
+       "nom": 4.9,
+       "max": 5.15
+      },
+      "e_pitch": {
+       "min": null,
+       "nom": 0.5,
+       "max": null,
+       "basic": true
+      },
+      "A_height": {
+       "min": null,
+       "nom": null,
+       "max": 1.1
+      },
+      "A2_body_thickness": {
+       "min": 0.75,
+       "nom": 0.85,
+       "max": 0.95
+      },
+      "A1_standoff": {
+       "min": 0.05,
+       "nom": null,
+       "max": 0.15
+      },
+      "b_lead_width": {
+       "min": 0.17,
+       "nom": null,
+       "max": 0.33
+      },
+      "c_lead_thickness": {
+       "min": 0.08,
+       "nom": null,
+       "max": 0.23
+      },
+      "L_foot_length": {
+       "min": 0.4,
+       "nom": 0.6,
+       "max": 0.8
+      },
+      "theta_deg": {
+       "min": 0,
+       "nom": null,
+       "max": 8
+      },
+      "coplanarity": {
+       "min": null,
+       "nom": null,
+       "max": 0.1
+      }
+     }
+    },
+    "LFCSP_WD-10 3x3 (CP-10-9)": {
+     "page": 24,
+     "pins": 10,
+     "exposed_pad": true,
+     "dims_mm": {
+      "D_E_body": {
+       "min": null,
+       "nom": 3.0,
+       "max": null,
+       "basic": true,
+       "note": "BSC SQ"
+      },
+      "A_height": {
+       "min": 0.7,
+       "nom": 0.75,
+       "max": 0.8
+      },
+      "A1_standoff": {
+       "min": null,
+       "nom": 0.02,
+       "max": 0.05
+      },
+      "A3_terminal_thickness": {
+       "min": null,
+       "nom": 0.2,
+       "max": null,
+       "ref": true
+      },
+      "unlabeled_side_view": "0.80 MAX / 0.55 NOM",
+      "b_terminal_width": {
+       "min": 0.18,
+       "nom": 0.23,
+       "max": 0.3
+      },
+      "e_pitch": {
+       "min": null,
+       "nom": 0.5,
+       "max": null,
+       "basic": true
+      },
+      "L_terminal_length": {
+       "min": 0.3,
+       "nom": 0.4,
+       "max": 0.5
+      },
+      "EP_D2": {
+       "min": 2.23,
+       "nom": 2.38,
+       "max": 2.48
+      },
+      "EP_E2": {
+       "min": 1.49,
+       "nom": 1.64,
+       "max": 1.74
+      },
+      "pin1_indicator": "R 0.19"
+     }
+    }
+   },
+   "abs_max": [
+    {
+     "parameter": "Analog Inputs IN+, IN- to GND",
+     "value": "-0.3 V to VREF + 0.3 V or ±130 mA"
+    },
+    {
+     "parameter": "REF, VIO to GND",
+     "value": "-0.3 V to +6 V"
+    },
+    {
+     "parameter": "VDD to GND",
+     "value": "-0.3 V to +3 V"
+    },
+    {
+     "parameter": "VDD to VIO",
+     "value": "+3 V to -6 V"
+    },
+    {
+     "parameter": "Digital Inputs to GND",
+     "value": "-0.3 V to VIO + 0.3 V"
+    },
+    {
+     "parameter": "Digital Outputs to GND",
+     "value": "-0.3 V to VIO + 0.3 V"
+    },
+    {
+     "parameter": "Storage Temperature Range",
+     "value": "-65°C to +150°C"
+    },
+    {
+     "parameter": "Junction Temperature",
+     "value": "150°C"
+    },
+    {
+     "parameter": "θJA",
+     "value": "MSOP 200°C/W; QFN (LFCSP) 48.7°C/W"
+    },
+    {
+     "parameter": "θJC",
+     "value": "MSOP 44°C/W; QFN (LFCSP) 2.96°C/W"
+    },
+    {
+     "parameter": "Lead Temperature",
+     "value": "Vapor Phase (60 sec) 215°C; Infrared (15 sec) 220°C"
+    }
+   ]
+  },
+  {
+   "file": "pdfs/sn65lv1023a.pdf",
+   "sha256": "d9c1094065bf0e44a66d13b6a54d8f11f500bbb0a26e7553e19356b8f065f244",
+   "bytes": 698552,
+   "origin": "C:/PartForge-Examples/ExampleProject/doc/datasheets/sn65lv1023a.pdf",
+   "kind": "ic",
+   "pages": 30,
+   "encrypted": false,
+   "text_extractable": true,
+   "pages_without_text_layer": [
+    26,
+    27,
+    28
+   ],
+   "manufacturer": "Texas Instruments",
+   "document": {
+    "id": "SLLS621E",
+    "title": "10-MHz To 66-MHz, 10:1 LVDS Serializer/Deserializer (SN65LV1023A, SN65LV1224B)",
+    "revision": "E (Dec 2009)"
+   },
+   "sections": {
+    "ordering": [
+     22,
+     23
+    ],
+    "pinout": [
+     1,
+     6
+    ],
+    "package_outline": [
+     26,
+     27,
+     29
+    ],
+    "land_pattern": [
+     28
+    ],
+    "abs_max": [
+     7
+    ],
+    "tape_reel": [
+     24,
+     25
+    ]
+   },
+   "extraction_notes": [
+    "Two devices in one datasheet (serializer SN65LV1023A, deserializer SN65LV1224B); file name only names the serializer.",
+    "Pinout drawings on p1 exist only for SN65LV1023A (DB 28-SSOP, RHB 32-QFN); the deserializer pinout is only in the PIN FUNCTIONS table (p6).",
+    "pdfplumber default x_tolerance=3 merges words on this TI/SPDF file ('Analogcircuitground'); x_tolerance=1.5 restores spaces (VERIFIED).",
+    "Pages 26-28 (RHB mechanical, thermal pad, land pattern) have no text layer -> vision required.",
+    "p29 DB drawing is a family drawing (14-38 pins); D depends on pin count table (28 pins: 9.90-10.50).",
+    "Package option addendum contains the manufacturer typo 'SNLV1023ARHBTG4' (VERIFIED visually).",
+    "RHB exposed thermal pad: no pin number/net in pin table; mechanical note: must be soldered to the board."
+   ],
+   "devices": [
+    {
+     "base_part": "SN65LV1023A",
+     "description": "10:1 LVDS serializer, 10-66 MHz",
+     "category": "Interface / SerDes",
+     "mpns": [
+      {
+       "mpn": "SN65LV1023ADB",
+       "package": "SSOP-28 (DB)",
+       "qty": 50
+      },
+      {
+       "mpn": "SN65LV1023ADBG4",
+       "package": "SSOP-28 (DB)",
+       "qty": 50
+      },
+      {
+       "mpn": "SN65LV1023ADBR",
+       "package": "SSOP-28 (DB)",
+       "qty": 2000
+      },
+      {
+       "mpn": "SN65LV1023ADBRG4",
+       "package": "SSOP-28 (DB)",
+       "qty": 2000
+      },
+      {
+       "mpn": "SN65LV1023ARHBR",
+       "package": "VQFN-32 5x5 (RHB)",
+       "qty": 3000
+      },
+      {
+       "mpn": "SN65LV1023ARHBRG4",
+       "package": "VQFN-32 5x5 (RHB)",
+       "qty": 3000
+      },
+      {
+       "mpn": "SN65LV1023ARHBT",
+       "package": "VQFN-32 5x5 (RHB)",
+       "qty": 250
+      },
+      {
+       "mpn": "SNLV1023ARHBTG4",
+       "package": "VQFN-32 5x5 (RHB)",
+       "qty": 250,
+       "note": "as printed (typo for SN65LV1023ARHBTG4)"
+      }
+     ],
+     "pin_tables": {
+      "SSOP-28 (DB)": [
+       {
+        "number": "1",
+        "name": "SYNC1",
+        "function": "SYNC pattern request input (ORed with SYNC2)",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "2",
+        "name": "SYNC2",
+        "function": "SYNC pattern request input (ORed with SYNC1)",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "3",
+        "name": "DIN0",
+        "function": "Parallel LVTTL data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "4",
+        "name": "DIN1",
+        "function": "Parallel LVTTL data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "5",
+        "name": "DIN2",
+        "function": "Parallel LVTTL data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "6",
+        "name": "DIN3",
+        "function": "Parallel LVTTL data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "7",
+        "name": "DIN4",
+        "function": "Parallel LVTTL data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "8",
+        "name": "DIN5",
+        "function": "Parallel LVTTL data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "9",
+        "name": "DIN6",
+        "function": "Parallel LVTTL data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "10",
+        "name": "DIN7",
+        "function": "Parallel LVTTL data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "11",
+        "name": "DIN8",
+        "function": "Parallel LVTTL data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "12",
+        "name": "DIN9",
+        "function": "Parallel LVTTL data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "13",
+        "name": "TCLK_R/F",
+        "function": "TCLK edge select (low = falling, high = rising)",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "14",
+        "name": "TCLK",
+        "function": "LVTTL reference clock input 10-66 MHz",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "15",
+        "name": "DGND",
+        "function": "Digital circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "16",
+        "name": "DGND",
+        "function": "Digital circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "17",
+        "name": "AVCC",
+        "function": "Analog circuit power supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "18",
+        "name": "AGND",
+        "function": "Analog circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "19",
+        "name": "DEN",
+        "function": "LVDS output enable (low = high-Z)",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "20",
+        "name": "AGND",
+        "function": "Analog circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "21",
+        "name": "DO-",
+        "function": "Inverting LVDS differential output",
+        "electrical_type": "Output"
+       },
+       {
+        "number": "22",
+        "name": "DO+",
+        "function": "Noninverting LVDS differential output",
+        "electrical_type": "Output"
+       },
+       {
+        "number": "23",
+        "name": "AGND",
+        "function": "Analog circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "24",
+        "name": "PWRDN",
+        "function": "Power down, active low",
+        "electrical_type": "Input",
+        "active_low": true
+       },
+       {
+        "number": "25",
+        "name": "AGND",
+        "function": "Analog circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "26",
+        "name": "AVCC",
+        "function": "Analog circuit power supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "27",
+        "name": "DVCC",
+        "function": "Digital circuit power supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "28",
+        "name": "DVCC",
+        "function": "Digital circuit power supply",
+        "electrical_type": "Power"
+       }
+      ],
+      "VQFN-32 5x5 (RHB)": [
+       {
+        "number": "1",
+        "name": "DIN1",
+        "function": "Parallel LVTTL data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "2",
+        "name": "DIN2",
+        "function": "Parallel LVTTL data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "3",
+        "name": "DIN3",
+        "function": "Parallel LVTTL data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "4",
+        "name": "DIN4",
+        "function": "Parallel LVTTL data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "5",
+        "name": "DIN5",
+        "function": "Parallel LVTTL data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "6",
+        "name": "DIN6",
+        "function": "Parallel LVTTL data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "7",
+        "name": "DIN7",
+        "function": "Parallel LVTTL data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "8",
+        "name": "DIN8",
+        "function": "Parallel LVTTL data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "9",
+        "name": "DIN9",
+        "function": "Parallel LVTTL data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "10",
+        "name": "TCLK_R/F",
+        "function": "TCLK edge select (low = falling, high = rising)",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "11",
+        "name": "TCLK",
+        "function": "LVTTL reference clock input 10-66 MHz",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "12",
+        "name": "DGND",
+        "function": "Digital circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "13",
+        "name": "DGND",
+        "function": "Digital circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "14",
+        "name": "DGND",
+        "function": "Digital circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "15",
+        "name": "DGND",
+        "function": "Digital circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "16",
+        "name": "AVCC",
+        "function": "Analog circuit power supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "17",
+        "name": "AGND",
+        "function": "Analog circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "18",
+        "name": "DEN",
+        "function": "LVDS output enable (low = high-Z)",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "19",
+        "name": "AGND",
+        "function": "Analog circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "20",
+        "name": "DO-",
+        "function": "Inverting LVDS differential output",
+        "electrical_type": "Output"
+       },
+       {
+        "number": "21",
+        "name": "DO+",
+        "function": "Noninverting LVDS differential output",
+        "electrical_type": "Output"
+       },
+       {
+        "number": "22",
+        "name": "AGND",
+        "function": "Analog circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "23",
+        "name": "PWRDN",
+        "function": "Power down, active low",
+        "electrical_type": "Input",
+        "active_low": true
+       },
+       {
+        "number": "24",
+        "name": "AGND",
+        "function": "Analog circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "25",
+        "name": "AVCC",
+        "function": "Analog circuit power supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "26",
+        "name": "DVCC",
+        "function": "Digital circuit power supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "27",
+        "name": "DVCC",
+        "function": "Digital circuit power supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "28",
+        "name": "DVCC",
+        "function": "Digital circuit power supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "29",
+        "name": "DVCC",
+        "function": "Digital circuit power supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "30",
+        "name": "SYNC1",
+        "function": "SYNC pattern request input (ORed with SYNC2)",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "31",
+        "name": "SYNC2",
+        "function": "SYNC pattern request input (ORed with SYNC1)",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "32",
+        "name": "DIN0",
+        "function": "Parallel LVTTL data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "EP",
+        "name": "EP",
+        "function": "Exposed thermal pad, must be soldered (net not specified)",
+        "electrical_type": "Passive",
+        "exposed_pad": true
+       }
+      ]
+     }
+    },
+    {
+     "base_part": "SN65LV1224B",
+     "description": "1:10 LVDS deserializer, 10-66 MHz",
+     "category": "Interface / SerDes",
+     "mpns": [
+      "SN65LV1224BDB",
+      "SN65LV1224BDBG4",
+      "SN65LV1224BDBR",
+      "SN65LV1224BDBRG4",
+      "SN65LV1224BRHBR",
+      "SN65LV1224BRHBRG4",
+      "SN65LV1224BRHBT",
+      "SN65LV1224BRHBTG4"
+     ],
+     "pin_functions_as_printed": {
+      "SSOP-28 (DB)": {
+       "AGND": [
+        1,
+        12,
+        13
+       ],
+       "AVCC": [
+        4,
+        11
+       ],
+       "DGND": [
+        14,
+        20,
+        22
+       ],
+       "DVCC": [
+        21,
+        23
+       ],
+       "LOCK": [
+        10
+       ],
+       "PWRDN": [
+        7
+       ],
+       "RCLK_R/F": [
+        2
+       ],
+       "RCLK": [
+        9
+       ],
+       "REFCLK": [
+        3
+       ],
+       "REN": [
+        8
+       ],
+       "RI+": [
+        5
+       ],
+       "RI-": [
+        6
+       ],
+       "ROUT0-ROUT9": "28-24, 19-15"
+      },
+      "VQFN-32 5x5 (RHB)": {
+       "AGND": [
+        10,
+        11,
+        28,
+        29,
+        30
+       ],
+       "AVCC": [
+        1,
+        8,
+        9
+       ],
+       "DGND": [
+        12,
+        13,
+        19,
+        21
+       ],
+       "DVCC": [
+        20,
+        22
+       ],
+       "LOCK": [
+        7
+       ],
+       "PWRDN": [
+        4
+       ],
+       "RCLK_R/F": [
+        31
+       ],
+       "RCLK": [
+        6
+       ],
+       "REFCLK": [
+        32
+       ],
+       "REN": [
+        5
+       ],
+       "RI+": [
+        2
+       ],
+       "RI-": [
+        3
+       ],
+       "ROUT0-ROUT9": "27-23, 18-14"
+      }
+     },
+     "pin_tables": {
+      "SSOP-28 (DB)": [
+       {
+        "number": "1",
+        "name": "AGND",
+        "function": "Analog circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "2",
+        "name": "RCLK_R/F",
+        "function": "RCLK edge select",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "3",
+        "name": "REFCLK",
+        "function": "PLL reference clock input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "4",
+        "name": "AVCC",
+        "function": "Analog circuit power supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "5",
+        "name": "RI+",
+        "function": "Noninverting LVDS serial data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "6",
+        "name": "RI-",
+        "function": "Inverting LVDS serial data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "7",
+        "name": "PWRDN",
+        "function": "Power down, active low",
+        "electrical_type": "Input",
+        "active_low": true
+       },
+       {
+        "number": "8",
+        "name": "REN",
+        "function": "Output enable (low = ROUT/RCLK high-Z)",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "9",
+        "name": "RCLK",
+        "function": "Recovered clock output",
+        "electrical_type": "Output"
+       },
+       {
+        "number": "10",
+        "name": "LOCK",
+        "function": "LVTTL output, low when PLL locked",
+        "electrical_type": "Output",
+        "active_low": true
+       },
+       {
+        "number": "11",
+        "name": "AVCC",
+        "function": "Analog circuit power supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "12",
+        "name": "AGND",
+        "function": "Analog circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "13",
+        "name": "AGND",
+        "function": "Analog circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "14",
+        "name": "DGND",
+        "function": "Digital circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "15",
+        "name": "ROUT9",
+        "function": "Parallel LVTTL data output",
+        "electrical_type": "Output",
+        "order_inferred_UNVERIFIED": true
+       },
+       {
+        "number": "16",
+        "name": "ROUT8",
+        "function": "Parallel LVTTL data output",
+        "electrical_type": "Output",
+        "order_inferred_UNVERIFIED": true
+       },
+       {
+        "number": "17",
+        "name": "ROUT7",
+        "function": "Parallel LVTTL data output",
+        "electrical_type": "Output",
+        "order_inferred_UNVERIFIED": true
+       },
+       {
+        "number": "18",
+        "name": "ROUT6",
+        "function": "Parallel LVTTL data output",
+        "electrical_type": "Output",
+        "order_inferred_UNVERIFIED": true
+       },
+       {
+        "number": "19",
+        "name": "ROUT5",
+        "function": "Parallel LVTTL data output",
+        "electrical_type": "Output",
+        "order_inferred_UNVERIFIED": true
+       },
+       {
+        "number": "20",
+        "name": "DGND",
+        "function": "Digital circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "21",
+        "name": "DVCC",
+        "function": "Digital circuit power supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "22",
+        "name": "DGND",
+        "function": "Digital circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "23",
+        "name": "DVCC",
+        "function": "Digital circuit power supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "24",
+        "name": "ROUT4",
+        "function": "Parallel LVTTL data output",
+        "electrical_type": "Output",
+        "order_inferred_UNVERIFIED": true
+       },
+       {
+        "number": "25",
+        "name": "ROUT3",
+        "function": "Parallel LVTTL data output",
+        "electrical_type": "Output",
+        "order_inferred_UNVERIFIED": true
+       },
+       {
+        "number": "26",
+        "name": "ROUT2",
+        "function": "Parallel LVTTL data output",
+        "electrical_type": "Output",
+        "order_inferred_UNVERIFIED": true
+       },
+       {
+        "number": "27",
+        "name": "ROUT1",
+        "function": "Parallel LVTTL data output",
+        "electrical_type": "Output",
+        "order_inferred_UNVERIFIED": true
+       },
+       {
+        "number": "28",
+        "name": "ROUT0",
+        "function": "Parallel LVTTL data output",
+        "electrical_type": "Output",
+        "order_inferred_UNVERIFIED": true
+       }
+      ],
+      "VQFN-32 5x5 (RHB)": [
+       {
+        "number": "1",
+        "name": "AVCC",
+        "function": "Analog circuit power supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "2",
+        "name": "RI+",
+        "function": "Noninverting LVDS serial data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "3",
+        "name": "RI-",
+        "function": "Inverting LVDS serial data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "4",
+        "name": "PWRDN",
+        "function": "Power down, active low",
+        "electrical_type": "Input",
+        "active_low": true
+       },
+       {
+        "number": "5",
+        "name": "REN",
+        "function": "Output enable (low = ROUT/RCLK high-Z)",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "6",
+        "name": "RCLK",
+        "function": "Recovered clock output",
+        "electrical_type": "Output"
+       },
+       {
+        "number": "7",
+        "name": "LOCK",
+        "function": "LVTTL output, low when PLL locked",
+        "electrical_type": "Output",
+        "active_low": true
+       },
+       {
+        "number": "8",
+        "name": "AVCC",
+        "function": "Analog circuit power supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "9",
+        "name": "AVCC",
+        "function": "Analog circuit power supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "10",
+        "name": "AGND",
+        "function": "Analog circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "11",
+        "name": "AGND",
+        "function": "Analog circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "12",
+        "name": "DGND",
+        "function": "Digital circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "13",
+        "name": "DGND",
+        "function": "Digital circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "14",
+        "name": "ROUT9",
+        "function": "Parallel LVTTL data output",
+        "electrical_type": "Output",
+        "order_inferred_UNVERIFIED": true
+       },
+       {
+        "number": "15",
+        "name": "ROUT8",
+        "function": "Parallel LVTTL data output",
+        "electrical_type": "Output",
+        "order_inferred_UNVERIFIED": true
+       },
+       {
+        "number": "16",
+        "name": "ROUT7",
+        "function": "Parallel LVTTL data output",
+        "electrical_type": "Output",
+        "order_inferred_UNVERIFIED": true
+       },
+       {
+        "number": "17",
+        "name": "ROUT6",
+        "function": "Parallel LVTTL data output",
+        "electrical_type": "Output",
+        "order_inferred_UNVERIFIED": true
+       },
+       {
+        "number": "18",
+        "name": "ROUT5",
+        "function": "Parallel LVTTL data output",
+        "electrical_type": "Output",
+        "order_inferred_UNVERIFIED": true
+       },
+       {
+        "number": "19",
+        "name": "DGND",
+        "function": "Digital circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "20",
+        "name": "DVCC",
+        "function": "Digital circuit power supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "21",
+        "name": "DGND",
+        "function": "Digital circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "22",
+        "name": "DVCC",
+        "function": "Digital circuit power supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "23",
+        "name": "ROUT4",
+        "function": "Parallel LVTTL data output",
+        "electrical_type": "Output",
+        "order_inferred_UNVERIFIED": true
+       },
+       {
+        "number": "24",
+        "name": "ROUT3",
+        "function": "Parallel LVTTL data output",
+        "electrical_type": "Output",
+        "order_inferred_UNVERIFIED": true
+       },
+       {
+        "number": "25",
+        "name": "ROUT2",
+        "function": "Parallel LVTTL data output",
+        "electrical_type": "Output",
+        "order_inferred_UNVERIFIED": true
+       },
+       {
+        "number": "26",
+        "name": "ROUT1",
+        "function": "Parallel LVTTL data output",
+        "electrical_type": "Output",
+        "order_inferred_UNVERIFIED": true
+       },
+       {
+        "number": "27",
+        "name": "ROUT0",
+        "function": "Parallel LVTTL data output",
+        "electrical_type": "Output",
+        "order_inferred_UNVERIFIED": true
+       },
+       {
+        "number": "28",
+        "name": "AGND",
+        "function": "Analog circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "29",
+        "name": "AGND",
+        "function": "Analog circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "30",
+        "name": "AGND",
+        "function": "Analog circuit ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "31",
+        "name": "RCLK_R/F",
+        "function": "RCLK edge select",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "32",
+        "name": "REFCLK",
+        "function": "PLL reference clock input",
+        "electrical_type": "Input"
+       }
+      ]
+     },
+     "note": "Active-low: LOCK, PWRDN (overbars). Pin tables built from the PIN FUNCTIONS table; ROUTx order inferred from range notation (UNVERIFIED: no pinout drawing). RHB thermal pad not listed."
+    }
+   ],
+   "packages": {
+    "SSOP-28 (DB)": {
+     "vendor_code": "DB (R-PDSO-G**)",
+     "drawing": "4040065/E 12/01",
+     "jedec": "MO-150",
+     "page": 29,
+     "pins": 28,
+     "dims_mm": {
+      "e_pitch": {
+       "min": null,
+       "nom": 0.65,
+       "max": null
+      },
+      "b_lead_width": {
+       "min": 0.22,
+       "nom": null,
+       "max": 0.38
+      },
+      "E1_body_width": {
+       "min": 5.0,
+       "nom": null,
+       "max": 5.6
+      },
+      "E_lead_span": {
+       "min": 7.4,
+       "nom": null,
+       "max": 8.2
+      },
+      "D_body_length": {
+       "min": 9.9,
+       "nom": null,
+       "max": 10.5,
+       "note": "28-pin row of the A dimension table"
+      },
+      "A_height": {
+       "min": null,
+       "nom": null,
+       "max": 2.0
+      },
+      "A1_standoff": {
+       "min": 0.05,
+       "nom": null,
+       "max": null
+      },
+      "c_lead_thickness": {
+       "min": 0.09,
+       "nom": null,
+       "max": 0.25
+      },
+      "L_foot_length": {
+       "min": 0.55,
+       "nom": null,
+       "max": 0.95
+      },
+      "gauge_plane": {
+       "min": null,
+       "nom": 0.25,
+       "max": null
+      },
+      "theta_deg": {
+       "min": 0,
+       "nom": null,
+       "max": 8
+      },
+      "coplanarity": {
+       "min": null,
+       "nom": null,
+       "max": 0.1
+      }
+     },
+     "land_pattern": null
+    },
+    "VQFN-32 5x5 (RHB)": {
+     "vendor_code": "RHB (S-PQFP-N32 / S-PVQFN-N32)",
+     "drawing": "4204326/C",
+     "jedec": "MO-220",
+     "page": 26,
+     "pins": 32,
+     "exposed_pad": true,
+     "dims_mm": {
+      "D_E_body": {
+       "min": 4.85,
+       "nom": null,
+       "max": 5.15
+      },
+      "A_height": {
+       "min": 0.8,
+       "nom": null,
+       "max": 1.0
+      },
+      "A1_standoff": {
+       "min": 0.0,
+       "nom": null,
+       "max": 0.05
+      },
+      "A3_terminal_thickness": {
+       "min": null,
+       "nom": 0.2,
+       "max": null,
+       "ref": true
+      },
+      "e_pitch": {
+       "min": null,
+       "nom": 0.5,
+       "max": null,
+       "basic": true
+      },
+      "b_terminal_width": {
+       "min": 0.18,
+       "nom": null,
+       "max": 0.3
+      },
+      "L_terminal_length": {
+       "min": 0.3,
+       "nom": null,
+       "max": 0.5
+      },
+      "terminal_center_span_per_side": {
+       "min": null,
+       "nom": 3.5,
+       "max": null,
+       "basic": true
+      },
+      "coplanarity": {
+       "min": null,
+       "nom": null,
+       "max": 0.08
+      },
+      "EP_D2_E2": {
+       "min": 3.35,
+       "nom": 3.45,
+       "max": 3.55,
+       "note": "p27 drawing 4206356-2/N"
+      }
+     },
+     "land_pattern": {
+      "page": 28,
+      "drawing": "4207808-2/I 03/10",
+      "pad_width_mm": 0.28,
+      "pad_length_mm": 0.85,
+      "pad_end_radius_mm": 0.14,
+      "pitch_mm": 0.5,
+      "outer_span_mm": 5.8,
+      "inner_span_mm": 4.1,
+      "row_center_distance_mm_DERIVED": 4.95,
+      "thermal_pad_mm": [
+       3.45,
+       3.45
+      ],
+      "solder_mask_expansion_mm": 0.07,
+      "solder_mask_web_mm": 0.08,
+      "stencil": {
+       "thickness_mm": 0.125,
+       "pad_mm": [
+        0.23,
+        0.8
+       ],
+       "corner_radius_mm": 0.115,
+       "inner_span_mm": 4.15,
+       "outer_span_mm": 5.75,
+       "thermal_windows": "4 x 1.45 x 1.45 mm, 0.3 mm web (71% coverage)"
+      },
+      "thermal_vias": "9 x Ø0.3 mm on 1.0 mm grid (example)"
+     }
+    }
+   },
+   "abs_max": [
+    {
+     "parameter": "VCC to GND",
+     "value": "-0.3V to 4V"
+    },
+    {
+     "parameter": "LVTTL input voltage",
+     "value": "-0.3V to (VCC + 0.3V)"
+    },
+    {
+     "parameter": "LVTTL output voltage",
+     "value": "-0.3V to (VCC + 0.3V)"
+    },
+    {
+     "parameter": "LVDS receiver input voltage",
+     "value": "-0.3V to 3.9V"
+    },
+    {
+     "parameter": "LVDS driver output voltage",
+     "value": "-0.3V to 3.9V"
+    },
+    {
+     "parameter": "LVDS output short circuit duration",
+     "value": "10ms"
+    },
+    {
+     "parameter": "Electrostatic discharge",
+     "value": "HBM up to 6kV; MM up to 200V"
+    },
+    {
+     "parameter": "Junction temperature",
+     "value": "150°C"
+    },
+    {
+     "parameter": "Storage temperature",
+     "value": "-65°C to 150°C"
+    },
+    {
+     "parameter": "Package power dissipation TA=25°C",
+     "value": "DB 1.27W (derate 10.3mW/°C); RHB 2.85W (derate 23.6mW/°C)"
+    }
+   ]
+  },
+  {
+   "file": "pdfs/ADG736.pdf",
+   "sha256": "5c2a71ba97ee6be507d4eaf67dd99b3a480a5d5d5602f1330a1141ecbfd89cef",
+   "bytes": 249184,
+   "origin": "C:/PartForge-Examples/ExampleProject/ExampleProject/Dokumentation/ADG736.pdf",
+   "kind": "ic",
+   "pages": 12,
+   "encrypted": false,
+   "text_extractable": true,
+   "pages_without_text_layer": [],
+   "manufacturer": "Analog Devices",
+   "document": {
+    "id": "D00046-0-2/12(D)",
+    "title": "CMOS Low Voltage 2.5 Ω Dual SPDT Switch",
+    "revision": "D"
+   },
+   "sections": {
+    "ordering": [
+     12
+    ],
+    "pinout": [
+     6
+    ],
+    "package_outline": [
+     12
+    ],
+    "land_pattern": [],
+    "abs_max": [
+     5
+    ]
+   },
+   "extraction_notes": [
+    "PDF metadata subject reads '25 Ohm' while the page says '2.5 Ω' -> never trust metadata.",
+    "Same RM-10 package code as AD7983 but different printed tolerances (b 0.15-0.30 vs 0.17-0.33, c 0.13-0.23 vs 0.08-0.23, L nom 0.55 vs 0.60, 0-6° vs 0-8°).",
+    "Ordering guide has no quantities; 'W' prefix = automotive (ADW54010Z-0REEL)."
+   ],
+   "devices": [
+    {
+     "base_part": "ADG736",
+     "description": "Dual SPDT analog switch, 2.5 Ω, 1.8-5.5 V",
+     "category": "Analog Switch",
+     "temperature_range": "-40°C to +125°C",
+     "mpns": [
+      {
+       "mpn": "ADG736BRM",
+       "package": "MSOP-10 (RM-10)",
+       "branding": "SAB"
+      },
+      {
+       "mpn": "ADG736BRM-REEL",
+       "package": "MSOP-10 (RM-10)",
+       "branding": "SAB"
+      },
+      {
+       "mpn": "ADG736BRM-REEL7",
+       "package": "MSOP-10 (RM-10)",
+       "branding": "SAB"
+      },
+      {
+       "mpn": "ADG736BRMZ",
+       "package": "MSOP-10 (RM-10)",
+       "branding": "SAB#"
+      },
+      {
+       "mpn": "ADG736BRMZ-REEL",
+       "package": "MSOP-10 (RM-10)",
+       "branding": "SAB#"
+      },
+      {
+       "mpn": "ADG736BRMZ-REEL7",
+       "package": "MSOP-10 (RM-10)",
+       "branding": "SAB#"
+      },
+      {
+       "mpn": "ADW54010Z-0REEL",
+       "package": "MSOP-10 (RM-10)",
+       "branding": "SAB#"
+      }
+     ],
+     "pin_tables": {
+      "MSOP-10 (RM-10)": [
+       {
+        "number": "1",
+        "name": "IN1",
+        "function": "Logic control input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "2",
+        "name": "S1A",
+        "function": "Source terminal (input or output)",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "3",
+        "name": "GND",
+        "function": "Ground (0 V) reference",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "4",
+        "name": "S2A",
+        "function": "Source terminal (input or output)",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "5",
+        "name": "IN2",
+        "function": "Logic control input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "6",
+        "name": "D2",
+        "function": "Drain terminal (input or output)",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "7",
+        "name": "S2B",
+        "function": "Source terminal (input or output)",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "8",
+        "name": "VDD",
+        "function": "Most positive power supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "9",
+        "name": "S1B",
+        "function": "Source terminal (input or output)",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "10",
+        "name": "D1",
+        "function": "Drain terminal (input or output)",
+        "electrical_type": "Passive"
+       }
+      ]
+     },
+     "truth_table": {
+      "logic 0": "Switch A off, Switch B on",
+      "logic 1": "Switch A on, Switch B off"
+     }
+    }
+   ],
+   "packages": {
+    "MSOP-10 (RM-10)": {
+     "jedec": "MO-187-BA",
+     "drawing": "091709-A",
+     "page": 12,
+     "pins": 10,
+     "dims_mm": {
+      "D_body_length": {
+       "min": 2.9,
+       "nom": 3.0,
+       "max": 3.1
+      },
+      "E1_body_width": {
+       "min": 2.9,
+       "nom": 3.0,
+       "max": 3.1
+      },
+      "E_lead_span": {
+       "min": 4.65,
+       "nom": 4.9,
+       "max": 5.15
+      },
+      "e_pitch": {
+       "min": null,
+       "nom": 0.5,
+       "max": null,
+       "basic": true
+      },
+      "A_height": {
+       "min": null,
+       "nom": null,
+       "max": 1.1
+      },
+      "A2_body_thickness": {
+       "min": 0.75,
+       "nom": 0.85,
+       "max": 0.95
+      },
+      "A1_standoff": {
+       "min": 0.05,
+       "nom": null,
+       "max": 0.15
+      },
+      "b_lead_width": {
+       "min": 0.15,
+       "nom": null,
+       "max": 0.3
+      },
+      "c_lead_thickness": {
+       "min": 0.13,
+       "nom": null,
+       "max": 0.23
+      },
+      "L_foot_length": {
+       "min": 0.4,
+       "nom": 0.55,
+       "max": 0.7
+      },
+      "theta_deg": {
+       "min": 0,
+       "nom": null,
+       "max": 6
+      },
+      "mold_draft": "15° MAX",
+      "coplanarity": {
+       "min": null,
+       "nom": null,
+       "max": 0.1
+      }
+     }
+    }
+   },
+   "abs_max": [
+    {
+     "parameter": "VDD to GND",
+     "value": "-0.3 V to +6 V"
+    },
+    {
+     "parameter": "Analog, Digital Inputs",
+     "value": "-0.3 V to VDD + 0.3 V or 30 mA, whichever occurs first"
+    },
+    {
+     "parameter": "Continuous Current, S or D",
+     "value": "30 mA"
+    },
+    {
+     "parameter": "Peak Current, S or D",
+     "value": "100 mA (pulsed at 1 ms, 10% duty cycle max)"
+    },
+    {
+     "parameter": "Operating Temperature Range (Automotive)",
+     "value": "-40°C to +125°C"
+    },
+    {
+     "parameter": "Storage Temperature Range",
+     "value": "-65°C to +150°C"
+    },
+    {
+     "parameter": "Junction Temperature",
+     "value": "150°C"
+    },
+    {
+     "parameter": "MSOP Package Power Dissipation",
+     "value": "315 mW"
+    },
+    {
+     "parameter": "θJA",
+     "value": "205°C/W"
+    },
+    {
+     "parameter": "Lead Temperature (Soldering, 10 sec)",
+     "value": "300°C"
+    },
+    {
+     "parameter": "IR Reflow (Peak, <20 sec)",
+     "value": "235°C"
+    },
+    {
+     "parameter": "Lead-Free Reflow Peak",
+     "value": "260(+0/-5)°C, 10 sec to 40 sec"
+    },
+    {
+     "parameter": "ESD",
+     "value": "2 kV"
+    }
+   ]
+  },
+  {
+   "file": "pdfs/AD5235.pdf",
+   "sha256": "cfe1b2e773902141684b351dd65466bebd6c5d377f1c44713a4578cf2531be17",
+   "bytes": 799989,
+   "origin": "C:/PartForge-Examples/ExampleProject/ExampleProject/Dokumentation/AD5235.pdf",
+   "kind": "ic",
+   "pages": 32,
+   "encrypted": false,
+   "text_extractable": true,
+   "pages_without_text_layer": [],
+   "manufacturer": "Analog Devices",
+   "document": {
+    "id": "D02816-0-6/12(F)",
+    "title": "Nonvolatile Memory, Dual 1024-Position Digital Potentiometer",
+    "revision": "F"
+   },
+   "sections": {
+    "ordering": [
+     30
+    ],
+    "pinout": [
+     9
+    ],
+    "package_outline": [
+     30
+    ],
+    "land_pattern": [],
+    "abs_max": [
+     8
+    ]
+   },
+   "extraction_notes": [
+    "MPN encodes a parametric value: BRUZ25 = 25 kΩ, BRUZ250 = 250 kΩ end-to-end resistance (RAB) -> same footprint/symbol, different value parameter.",
+    "Reel suffix differs between variants as printed: '-RL7' (25k) vs '-R7' (250k).",
+    "Active-low CS, WP and PR shown with overbars in drawing; RDY is an open-drain output; SDO needs pull-up (open-drain behaviour)."
+   ],
+   "devices": [
+    {
+     "base_part": "AD5235",
+     "description": "Dual 1024-position nonvolatile digital potentiometer, SPI",
+     "category": "Digital Potentiometer",
+     "temperature_range": "-40°C to +85°C",
+     "mpns": [
+      {
+       "mpn": "AD5235BRUZ25",
+       "RAB_kohm": 25,
+       "packing": "96",
+       "branding": "5235B25"
+      },
+      {
+       "mpn": "AD5235BRUZ25-RL7",
+       "RAB_kohm": 25,
+       "packing": "1,000",
+       "branding": "5235B25"
+      },
+      {
+       "mpn": "AD5235BRUZ250",
+       "RAB_kohm": 250,
+       "packing": "96",
+       "branding": "5235B250"
+      },
+      {
+       "mpn": "AD5235BRUZ250-R7",
+       "RAB_kohm": 250,
+       "packing": "1,000",
+       "branding": "5235B250"
+      }
+     ],
+     "pin_tables": {
+      "TSSOP-16 (RU-16)": [
+       {
+        "number": "1",
+        "name": "CLK",
+        "function": "Serial input register clock",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "2",
+        "name": "SDI",
+        "function": "Serial data input",
+        "electrical_type": "Input"
+       },
+       {
+        "number": "3",
+        "name": "SDO",
+        "function": "Serial data output (needs 1k-10k pull-up)",
+        "electrical_type": "OpenCollector"
+       },
+       {
+        "number": "4",
+        "name": "GND",
+        "function": "Logic ground",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "5",
+        "name": "VSS",
+        "function": "Negative supply (0 V for single supply)",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "6",
+        "name": "A1",
+        "function": "Terminal A of RDAC1",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "7",
+        "name": "W1",
+        "function": "Wiper of RDAC1",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "8",
+        "name": "B1",
+        "function": "Terminal B of RDAC1",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "9",
+        "name": "B2",
+        "function": "Terminal B of RDAC2",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "10",
+        "name": "W2",
+        "function": "Wiper of RDAC2",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "11",
+        "name": "A2",
+        "function": "Terminal A of RDAC2",
+        "electrical_type": "Passive"
+       },
+       {
+        "number": "12",
+        "name": "VDD",
+        "function": "Positive power supply",
+        "electrical_type": "Power"
+       },
+       {
+        "number": "13",
+        "name": "WP",
+        "function": "Optional write protect (active low)",
+        "electrical_type": "Input",
+        "active_low": true
+       },
+       {
+        "number": "14",
+        "name": "PR",
+        "function": "Optional hardware override preset",
+        "electrical_type": "Input",
+        "active_low": true
+       },
+       {
+        "number": "15",
+        "name": "CS",
+        "function": "Serial register chip select, active low",
+        "electrical_type": "Input",
+        "active_low": true
+       },
+       {
+        "number": "16",
+        "name": "RDY",
+        "function": "Ready, active-high open-drain output",
+        "electrical_type": "OpenCollector"
+       }
+      ]
+     }
+    }
+   ],
+   "packages": {
+    "TSSOP-16 (RU-16)": {
+     "jedec": "MO-153-AB",
+     "page": 30,
+     "pins": 16,
+     "dims_mm": {
+      "D_body_length": {
+       "min": 4.9,
+       "nom": 5.0,
+       "max": 5.1
+      },
+      "E1_body_width": {
+       "min": 4.3,
+       "nom": 4.4,
+       "max": 4.5
+      },
+      "E_lead_span": {
+       "min": null,
+       "nom": 6.4,
+       "max": null,
+       "basic": true
+      },
+      "e_pitch": {
+       "min": null,
+       "nom": 0.65,
+       "max": null,
+       "basic": true
+      },
+      "b_lead_width": {
+       "min": 0.19,
+       "nom": null,
+       "max": 0.3
+      },
+      "A_height": {
+       "min": null,
+       "nom": null,
+       "max": 1.2
+      },
+      "A1_standoff": {
+       "min": 0.05,
+       "nom": null,
+       "max": 0.15
+      },
+      "c_lead_thickness": {
+       "min": 0.09,
+       "nom": null,
+       "max": 0.2
+      },
+      "L_foot_length": {
+       "min": 0.45,
+       "nom": 0.6,
+       "max": 0.75
+      },
+      "theta_deg": {
+       "min": 0,
+       "nom": null,
+       "max": 8
+      },
+      "coplanarity": {
+       "min": null,
+       "nom": null,
+       "max": 0.1
+      }
+     }
+    }
+   },
+   "abs_max": [
+    {
+     "parameter": "VDD to GND",
+     "value": "-0.3 V to +7 V"
+    },
+    {
+     "parameter": "VSS to GND",
+     "value": "+0.3 V to -7 V"
+    },
+    {
+     "parameter": "VDD to VSS",
+     "value": "7 V"
+    },
+    {
+     "parameter": "VA, VB, VW to GND",
+     "value": "VSS - 0.3 V to VDD + 0.3 V"
+    },
+    {
+     "parameter": "IA, IB, IW",
+     "value": "Pulsed ±20 mA; Continuous ±2 mA"
+    },
+    {
+     "parameter": "Digital Input and Output Voltage to GND",
+     "value": "-0.3 V to VDD + 0.3 V"
+    },
+    {
+     "parameter": "Operating Temperature Range",
+     "value": "-40°C to +85°C"
+    },
+    {
+     "parameter": "Maximum Junction Temperature",
+     "value": "150°C"
+    },
+    {
+     "parameter": "Storage Temperature Range",
+     "value": "-65°C to +150°C"
+    },
+    {
+     "parameter": "Lead Temperature, Soldering",
+     "value": "Vapor Phase (60 sec) 215°C; Infrared (15 sec) 220°C"
+    },
+    {
+     "parameter": "Thermal Resistance",
+     "value": "θJA TSSOP-16 150°C/W; θJC 28°C/W"
+    }
+   ]
+  },
+  {
+   "file": "pdfs/vishay_dcrcwe3.pdf",
+   "sha256": "04331e240a6ed97e9489b73f6f1958220ed2620e3e27057dc1b178ad9be93aa1",
+   "bytes": 150402,
+   "origin": "https://www.vishay.com/docs/20035/dcrcwe3.pdf (downloaded 2026-10-07)",
+   "kind": "passive_series",
+   "pages": 13,
+   "encrypted": false,
+   "text_extractable": true,
+   "pages_without_text_layer": [],
+   "manufacturer": "Vishay",
+   "document": {
+    "id": "Document Number 20035",
+    "title": "D/CRCW e3 Standard Thick Film Chip Resistors",
+    "revision": "14-Apr-2026"
+   },
+   "sections": {
+    "ordering": [
+     3
+    ],
+    "value_ranges": [
+     1,
+     2
+    ],
+    "package_outline": [
+     11
+    ],
+    "land_pattern": [
+     11
+    ],
+    "ratings": [
+     1,
+     2
+    ],
+    "abs_max": []
+   },
+   "extraction_notes": [
+    "Merged table cells on p1 (resistance range spans 0402-1210, 1218 alone, 2010-2512) are flattened in the text layer.",
+    "Two operation modes: p1 lists extended-mode P70 for 0402/0603/0805 (0.10/0.125/0.25 W); standard mode is 0.063/0.10/0.125 W (p2).",
+    "Solder pad naming: G = inner gap, Y = pad length, X = pad width, Z = outer extent (Z = G + 2Y holds for all rows)."
+   ],
+   "series": {
+    "name": "CRCW e3 (D/CRCW e3)",
+    "type": "thick film chip resistor",
+    "sizes": [
+     "0402",
+     "0603",
+     "0805",
+     "1206",
+     "1210",
+     "1218",
+     "2010",
+     "2512"
+    ],
+    "metric_codes": {
+     "0402": "RR1005M",
+     "0603": "RR1608M",
+     "0805": "RR2012M",
+     "1206": "RR3216M",
+     "1210": "RR3225M",
+     "1218": "RR3246M",
+     "2010": "RR5025M",
+     "2512": "RR6332M"
+    },
+    "mpn_scheme": {
+     "pattern": "CRCW{size:4}{resistance:4}{tolerance:1}{tcr:1}{packaging:2}",
+     "examples_from_datasheet": {
+      "CRCW0603562RFKEA": "0603, 562 Ω, ±1 %, ±100 ppm/K, packaging EA",
+      "CRCW06030000Z0EA": "0603 jumper (0 Ω), tolerance Z, TCR 0, packaging EA"
+     },
+     "resistance_code": "4 characters; R = decimal point (Ω), K = thousand, M = million; '0000' = jumper",
+     "tolerance": {
+      "F": "±1 %",
+      "J": "±5 %",
+      "Z": "jumper"
+     },
+     "tcr": {
+      "K": "±100 ppm/K",
+      "N": "±200 ppm/K",
+      "0": "jumper"
+     },
+     "packaging_codes": [
+      "EA",
+      "EC",
+      "ED",
+      "EE",
+      "EF",
+      "EG",
+      "EH",
+      "EI",
+      "EK"
+     ],
+     "lead_free": "E.. = lead (Pb)-free",
+     "product_description_format": "D11/CRCW0603 100 562R 1 % ET1 e3 (type/size, TCR, resistance, tolerance, packaging, e3)"
+    },
+    "decode_test_vectors_DERIVED": {
+     "CRCW060310K0FKEA": {
+      "size": "0603",
+      "R_ohm": 10000,
+      "tol": "±1 %",
+      "tcr": "±100 ppm/K",
+      "pack": "EA = ET1 5000 pcs 7in"
+     },
+     "CRCW08054K70JNEA": {
+      "size": "0805",
+      "R_ohm": 4700,
+      "tol": "±5 %",
+      "tcr": "±200 ppm/K",
+      "pack": "EA"
+     },
+     "CRCW04021M00FKED": {
+      "size": "0402",
+      "R_ohm": 1000000,
+      "tol": "±1 %",
+      "tcr": "±100 ppm/K",
+      "pack": "ED = ET7 10000 pcs"
+     },
+     "CRCW12064R70FNEA": {
+      "size": "1206",
+      "R_ohm": 4.7,
+      "tol": "±1 %",
+      "tcr": "±200 ppm/K",
+      "pack": "EA",
+      "valid": "yes (F+N only 1 Ω-9.76 Ω)"
+     }
+    },
+    "value_rules_p2": [
+     {
+      "tcr": "±200 ppm/K",
+      "tol": "±5 %",
+      "range_ohm": "1 to 10M (1218: 2.2M)",
+      "series": "E24"
+     },
+     {
+      "tcr": "±200 ppm/K",
+      "tol": "±1 %",
+      "range_ohm": "1 to 9.76",
+      "series": "E24; E96"
+     },
+     {
+      "tcr": "±100 ppm/K",
+      "tol": "±1 %",
+      "range_ohm": "1 to 10M (1218: 2.2M)",
+      "series": "E24; E96"
+     },
+     {
+      "jumper": "0 Ω, ≤ 20 mΩ",
+      "Imax_A": {
+       "0402": 1.5,
+       "0603": 2.0,
+       "0805": 2.5,
+       "1206": 3.5,
+       "1210": 5.0,
+       "1218": 7.0,
+       "2010": 6.0,
+       "2512": 7.0
+      }
+     }
+    ],
+    "value_counts_DERIVED": {
+     "E24 1Ω..10MΩ": 169,
+     "E24∪E96 1Ω..10MΩ": 799,
+     "E24 1Ω..2.2MΩ (1218)": 153,
+     "E24∪E96 1Ω..2.2MΩ (1218)": 721
+    },
+    "ratings": [
+     {
+      "size": "0402",
+      "P70_W": 0.1,
+      "Umax_V": 75,
+      "Uins_V": 100
+     },
+     {
+      "size": "0603",
+      "P70_W": 0.125,
+      "Umax_V": 75,
+      "Uins_V": 100
+     },
+     {
+      "size": "0805",
+      "P70_W": 0.25,
+      "Umax_V": 150,
+      "Uins_V": 200
+     },
+     {
+      "size": "1206",
+      "P70_W": 0.25,
+      "Umax_V": 200,
+      "Uins_V": 300
+     },
+     {
+      "size": "1210",
+      "P70_W": 0.5,
+      "Umax_V": 200,
+      "Uins_V": 300
+     },
+     {
+      "size": "1218",
+      "P70_W": 1.0,
+      "Umax_V": 200,
+      "Uins_V": 300
+     },
+     {
+      "size": "2010",
+      "P70_W": 0.75,
+      "Umax_V": 400,
+      "Uins_V": 300
+     },
+     {
+      "size": "2512",
+      "P70_W": 1.0,
+      "Umax_V": 500,
+      "Uins_V": 300
+     }
+    ],
+    "ratings_standard_mode_p2": {
+     "0402": {
+      "P70_W": 0.063,
+      "Umax_V": 50
+     },
+     "0603": {
+      "P70_W": 0.1,
+      "Umax_V": 75
+     },
+     "0805": {
+      "P70_W": 0.125,
+      "Umax_V": 150
+     }
+    },
+    "operating_temperature": "-55 °C to +155 °C",
+    "film_temperature_max": "155 °C",
+    "dimensions_mm": {
+     "0402": {
+      "L": "1.0 ± 0.05",
+      "W": "0.5 ± 0.05",
+      "H": "0.35 ± 0.05",
+      "T1": "0.25 ± 0.10",
+      "T2": "0.2 ± 0.10",
+      "mass_mg": 0.65
+     },
+     "0603": {
+      "L": "1.55 + 0.10 / - 0.05",
+      "W": "0.85 ± 0.10",
+      "H": "0.45 ± 0.05",
+      "T1": "0.3 ± 0.20",
+      "T2": "0.3 ± 0.20",
+      "mass_mg": 2
+     },
+     "0805": {
+      "L": "2.0 + 0.20 / - 0.10",
+      "W": "1.25 ± 0.15",
+      "H": "0.5 ± 0.10",
+      "T1": "0.3 + 0.20 / - 0.10",
+      "T2": "0.3 ± 0.20",
+      "mass_mg": 5.5
+     },
+     "1206": {
+      "L": "3.2 + 0.10 / - 0.20",
+      "W": "1.6 ± 0.15",
+      "H": "0.55 ± 0.05",
+      "T1": "0.45 ± 0.20",
+      "T2": "0.4 ± 0.20",
+      "mass_mg": 10
+     },
+     "1210": {
+      "L": "3.2 ± 0.20",
+      "W": "2.5 ± 0.20",
+      "H": "0.55 ± 0.05",
+      "T1": "0.45 ± 0.20",
+      "T2": "0.4 ± 0.20",
+      "mass_mg": 16
+     },
+     "1218": {
+      "L": "3.2 + 0.10 / - 0.20",
+      "W": "4.6 ± 0.15",
+      "H": "0.55 ± 0.05",
+      "T1": "0.45 ± 0.20",
+      "T2": "0.4 ± 0.20",
+      "mass_mg": 29.5
+     },
+     "2010": {
+      "L": "5.0 ± 0.15",
+      "W": "2.5 ± 0.15",
+      "H": "0.6 ± 0.10",
+      "T1": "0.6 ± 0.20",
+      "T2": "0.6 ± 0.20",
+      "mass_mg": 25.5
+     },
+     "2512": {
+      "L": "6.3 ± 0.20",
+      "W": "3.15 ± 0.15",
+      "H": "0.6 ± 0.10",
+      "T1": "0.6 ± 0.20",
+      "T2": "0.6 ± 0.20",
+      "mass_mg": 40.5
+     }
+    },
+    "solder_pads_mm": {
+     "0402": {
+      "wave": null,
+      "reflow": {
+       "G": 0.45,
+       "Y": 0.6,
+       "X": 0.6,
+       "Z": 1.65
+      }
+     },
+     "0603": {
+      "wave": {
+       "G": 0.65,
+       "Y": 1.1,
+       "X": 1.25,
+       "Z": 2.85
+      },
+      "reflow": {
+       "G": 0.75,
+       "Y": 0.75,
+       "X": 1.0,
+       "Z": 2.25
+      }
+     },
+     "0805": {
+      "wave": {
+       "G": 0.9,
+       "Y": 1.3,
+       "X": 1.6,
+       "Z": 3.5
+      },
+      "reflow": {
+       "G": 1.0,
+       "Y": 0.95,
+       "X": 1.45,
+       "Z": 2.9
+      }
+     },
+     "1206": {
+      "wave": {
+       "G": 1.4,
+       "Y": 1.4,
+       "X": 1.95,
+       "Z": 4.2
+      },
+      "reflow": {
+       "G": 1.5,
+       "Y": 1.05,
+       "X": 1.8,
+       "Z": 3.6
+      }
+     },
+     "1210": {
+      "wave": {
+       "G": 1.8,
+       "Y": 1.45,
+       "X": 2.95,
+       "Z": 4.7
+      },
+      "reflow": {
+       "G": 1.7,
+       "Y": 1.1,
+       "X": 2.8,
+       "Z": 3.9
+      }
+     },
+     "1218": {
+      "wave": {
+       "G": 1.8,
+       "Y": 1.3,
+       "X": 5.1,
+       "Z": 4.4
+      },
+      "reflow": {
+       "G": 1.9,
+       "Y": 1.1,
+       "X": 4.9,
+       "Z": 4.1
+      }
+     },
+     "2010": {
+      "wave": {
+       "G": 3.4,
+       "Y": 1.65,
+       "X": 2.85,
+       "Z": 6.7
+      },
+      "reflow": {
+       "G": 3.5,
+       "Y": 1.45,
+       "X": 2.8,
+       "Z": 6.4
+      }
+     },
+     "2512": {
+      "wave": {
+       "G": 4.6,
+       "Y": 1.6,
+       "X": 3.65,
+       "Z": 7.8
+      },
+      "reflow": {
+       "G": 4.75,
+       "Y": 1.45,
+       "X": 3.5,
+       "Z": 7.65
+      }
+     }
+    },
+    "packaging": {
+     "0402": [
+      {
+       "code": "ED",
+       "alt_code": "ET7",
+       "qty": 10000,
+       "desc": "paper 8 mm, 2 mm pitch, 180 mm/7in"
+      },
+      {
+       "code": "EE",
+       "alt_code": "EF4",
+       "qty": 50000,
+       "desc": "paper 8 mm, 2 mm pitch, 330 mm/13in"
+      }
+     ],
+     "0603": [
+      {
+       "code": "EI",
+       "alt_code": "ET2",
+       "qty": 5000,
+       "desc": "paper 8 mm, 2 mm pitch, 7in"
+      },
+      {
+       "code": "ED",
+       "alt_code": "ET3",
+       "qty": 10000,
+       "desc": "paper 8 mm, 2 mm pitch, 7in"
+      },
+      {
+       "code": "EE",
+       "alt_code": "ET8",
+       "qty": 50000,
+       "desc": "paper 8 mm, 2 mm pitch, 13in"
+      },
+      {
+       "code": "EA",
+       "alt_code": "ET1",
+       "qty": 5000,
+       "desc": "paper 8 mm, 4 mm pitch, 7in"
+      },
+      {
+       "code": "EC",
+       "alt_code": "ET6",
+       "qty": 20000,
+       "desc": "paper 8 mm, 4 mm pitch, 13in"
+      }
+     ],
+     "0805": [
+      {
+       "code": "EA",
+       "alt_code": "ET1",
+       "qty": 5000,
+       "desc": "paper 8 mm, 4 mm, 7in"
+      },
+      {
+       "code": "EC",
+       "alt_code": "ET6",
+       "qty": 20000,
+       "desc": "paper 8 mm, 4 mm, 13in"
+      }
+     ],
+     "1206": [
+      {
+       "code": "EA",
+       "alt_code": "ET1",
+       "qty": 5000,
+       "desc": "paper 8 mm, 4 mm, 7in"
+      },
+      {
+       "code": "EC",
+       "alt_code": "ET6",
+       "qty": 20000,
+       "desc": "paper 8 mm, 4 mm, 13in"
+      }
+     ],
+     "1210": [
+      {
+       "code": "EA",
+       "alt_code": "ET1",
+       "qty": 5000,
+       "desc": "paper 8 mm, 4 mm, 7in"
+      },
+      {
+       "code": "EC",
+       "alt_code": "ET6",
+       "qty": 20000,
+       "desc": "paper 8 mm, 4 mm, 13in"
+      }
+     ],
+     "1218": [
+      {
+       "code": "EK",
+       "alt_code": "ET9",
+       "qty": 4000,
+       "desc": "blister 12 mm, 4 mm, 7in"
+      }
+     ],
+     "2010": [
+      {
+       "code": "EF",
+       "alt_code": "E02",
+       "qty": 4000,
+       "desc": "blister 12 mm, 4 mm, 7in"
+      }
+     ],
+     "2512": [
+      {
+       "code": "EG",
+       "alt_code": "E67",
+       "qty": 2000,
+       "desc": "blister 12 mm, 8 mm, 7in"
+      },
+      {
+       "code": "EH",
+       "alt_code": "E82",
+       "qty": 4000,
+       "desc": "blister 12 mm, 4 mm, 7in"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "file": "pdfs/kemet_C1002_X7R_SMD.pdf",
+   "sha256": "d8e6ca6631862e31a19b90b6cfe13f1b20153c2efd6c8e30f1a5d5ba147aa908",
+   "bytes": 3316643,
+   "origin": "https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf (downloaded 2026-10-07)",
+   "kind": "passive_series",
+   "pages": 28,
+   "encrypted": false,
+   "text_extractable": true,
+   "pages_without_text_layer": [],
+   "manufacturer": "KEMET (YAGEO Group)",
+   "document": {
+    "id": "C1002_X7R",
+    "title": "Surface Mount Multilayer Ceramic Chip Capacitors (SMD MLCCs) X7R Dielectric, 6.3-250 VDC (Commercial Grade)",
+    "revision": "2026-09-01"
+   },
+   "sections": {
+    "ordering": [
+     2
+    ],
+    "value_ranges": [
+     4,
+     5,
+     6,
+     7,
+     8
+    ],
+    "package_outline": [
+     3
+    ],
+    "thickness_and_packaging_qty": [
+     9,
+     10,
+     11
+    ],
+    "land_pattern": [
+     12
+    ],
+    "abs_max": []
+   },
+   "extraction_notes": [
+    "Availability tables are sparse matrices (cap rows x case/voltage columns): plain text loses column alignment -> use char x-coordinates (kemet_matrix.py) or vision.",
+    "Superscript footnote markers precede size codes on p3 ('¹0402' extracted as '10402').",
+    "Footnote '¹' in matrix cells (U+00B9 at body size) = 'available only in K and M tolerance'.",
+    "Land pattern 'C' is the distance from component centre to pad centre (half the pad pitch), per drawing on p12.",
+    "Row labels '100 - 200*' etc. are value ranges: * = E24 decade values, ** = E12 decade values."
+   ],
+   "series": {
+    "name": "KEMET X7R commercial SMD MLCC (C-series, Standard)",
+    "mpn_scheme": {
+     "pattern": "C{case:4}{spec:1}{cap_code:3}{tol:1}{voltage:1}{dielectric:1}{failure_rate:1}{termination:1}{cspec:0-4}",
+     "example_from_datasheet": "C1206C106M4RACTU",
+     "case": [
+      "0402",
+      "0603",
+      "0805",
+      "1206",
+      "1210",
+      "1805",
+      "1808",
+      "1812",
+      "1825",
+      "2220",
+      "2225"
+     ],
+     "spec": {
+      "C": "Standard"
+     },
+     "cap_code": "two significant digits + number of zeros, in pF",
+     "tolerance": {
+      "J": "±5%",
+      "K": "±10%",
+      "M": "±20%"
+     },
+     "voltage": {
+      "9": 6.3,
+      "8": 10,
+      "4": 16,
+      "3": 25,
+      "6": 35,
+      "5": 50,
+      "1": 100,
+      "2": 200,
+      "A": 250
+     },
+     "dielectric": {
+      "R": "X7R"
+     },
+     "failure_rate": {
+      "A": "N/A"
+     },
+     "termination": {
+      "C": "100% Matte Sn"
+     },
+     "cspec": {
+      "(blank)": "Bulk Bag/Unmarked (default)",
+      "TU": "7in Reel/Unmarked",
+      "7411": "13in Reel/Unmarked (EIA 0603 and smaller)",
+      "7210": "13in Reel/Unmarked (EIA 0805 and larger)",
+      "TM": "7in Reel/Marked",
+      "7040": "13in Reel/Marked (EIA 0603)",
+      "7215": "13in Reel/Marked (EIA 0805 and larger)"
+     }
+    },
+    "decode_test_vectors_DERIVED": {
+     "C1206C106M4RACTU": {
+      "case": "1206",
+      "C": "10 µF",
+      "tol": "±20%",
+      "V": 16,
+      "available": "EH (1.60±0.20 mm), J/K/M"
+     },
+     "C0603C104K5RACTU": {
+      "case": "0603",
+      "C": "100 nF",
+      "tol": "±10%",
+      "V": 50,
+      "available": "CJ (0.80±0.15 mm)"
+     },
+     "C0402C104K3RACTU": {
+      "case": "0402",
+      "C": "100 nF",
+      "tol": "±10%",
+      "V": 25,
+      "available": "BB¹ -> K/M only"
+     },
+     "C0805C106J8RACTU": {
+      "case": "0805",
+      "C": "10 µF",
+      "tol": "±5%",
+      "V": 10,
+      "available": "NOT orderable (DH¹: K/M only)"
+     },
+     "C1210C476M8RACTU": {
+      "case": "1210",
+      "C": "47 µF",
+      "tol": "±20%",
+      "V": 10,
+      "available": "FS¹ (2.50±0.30 mm)"
+     },
+     "C0402C105K8RACTU": {
+      "case": "0402",
+      "C": "1 µF",
+      "tol": "±10%",
+      "V": 10,
+      "available": "NOT in table (0402 max 0.47 µF)"
+     }
+    },
+    "dimensions_mm": {
+     "0402": {
+      "metric": "1005",
+      "L": "1.00 ±0.05",
+      "W": "0.50 ±0.05",
+      "B": "0.30 ±0.10",
+      "S_min": 0.3,
+      "mounting": "reflow only"
+     },
+     "0603": {
+      "metric": "1608",
+      "L": "1.60 ±0.15",
+      "W": "0.80 ±0.15",
+      "B": "0.35 ±0.15",
+      "S_min": 0.5,
+      "mounting": "wave or reflow"
+     },
+     "0805": {
+      "metric": "2012",
+      "L": "2.00 ±0.20",
+      "W": "1.25 ±0.20",
+      "B": "0.50 ±0.25",
+      "S_min": 0.7,
+      "mounting": "wave or reflow"
+     },
+     "1206": {
+      "metric": "3216",
+      "L": "3.20 ±0.20",
+      "W": "1.60 ±0.20",
+      "B": "0.50 ±0.25",
+      "S_min": 1.5,
+      "mounting": "wave or reflow"
+     },
+     "1210": {
+      "metric": "3225",
+      "L": "3.20 ±0.20",
+      "W": "2.50 ±0.20",
+      "B": "0.50 ±0.25",
+      "S_min": 1.5,
+      "mounting": "reflow only"
+     },
+     "1805": {
+      "metric": "4513",
+      "L": "4.50 ±0.50",
+      "W": "1.27 ±0.38",
+      "B": "0.60 ±0.35",
+      "S_min": 2.9,
+      "mounting": "reflow only"
+     },
+     "1808": {
+      "metric": "4520",
+      "L": "4.70 ±0.50",
+      "W": "2.00 ±0.20",
+      "B": "0.60 ±0.35",
+      "S_min": 2.9,
+      "mounting": "reflow only"
+     },
+     "1812": {
+      "metric": "4532",
+      "L": "4.50 ±0.30",
+      "W": "3.20 ±0.30",
+      "B": "0.60 ±0.35",
+      "S_min": 2.3,
+      "mounting": "reflow only"
+     },
+     "1825": {
+      "metric": "4564",
+      "L": "4.50 ±0.30",
+      "W": "6.40 ±0.40",
+      "B": "0.60 ±0.35",
+      "S_min": 2.3,
+      "mounting": "reflow only"
+     },
+     "2220": {
+      "metric": "5650",
+      "L": "5.70 ±0.40",
+      "W": "5.00 ±0.40",
+      "B": "0.60 ±0.35",
+      "S_min": 3.5,
+      "mounting": "reflow only"
+     },
+     "2225": {
+      "metric": "5664",
+      "L": "5.60 ±0.40",
+      "W": "6.40 ±0.40",
+      "B": "0.60 ±0.35",
+      "S_min": 3.2,
+      "mounting": "reflow only"
+     },
+     "T": "per thickness code (Table 2A) -> see groundtruth file"
+    },
+    "land_pattern_ipc7351": {
+     "0402": {
+      "A_most": {
+       "C_center_to_pad_center": 0.5,
+       "Y_pad_length": 0.72,
+       "X_pad_width": 0.72,
+       "V1_courtyard_x": 2.2,
+       "V2_courtyard_y": 1.2
+      },
+      "B_nominal": {
+       "C_center_to_pad_center": 0.45,
+       "Y_pad_length": 0.62,
+       "X_pad_width": 0.62,
+       "V1_courtyard_x": 1.9,
+       "V2_courtyard_y": 1.0
+      },
+      "C_least": {
+       "C_center_to_pad_center": 0.4,
+       "Y_pad_length": 0.52,
+       "X_pad_width": 0.52,
+       "V1_courtyard_x": 1.6,
+       "V2_courtyard_y": 0.8
+      }
+     },
+     "0603": {
+      "A_most": {
+       "C_center_to_pad_center": 0.9,
+       "Y_pad_length": 1.15,
+       "X_pad_width": 1.1,
+       "V1_courtyard_x": 4.0,
+       "V2_courtyard_y": 2.1
+      },
+      "B_nominal": {
+       "C_center_to_pad_center": 0.8,
+       "Y_pad_length": 0.95,
+       "X_pad_width": 1.0,
+       "V1_courtyard_x": 3.1,
+       "V2_courtyard_y": 1.5
+      },
+      "C_least": {
+       "C_center_to_pad_center": 0.6,
+       "Y_pad_length": 0.75,
+       "X_pad_width": 0.9,
+       "V1_courtyard_x": 2.4,
+       "V2_courtyard_y": 1.2
+      }
+     },
+     "0805": {
+      "A_most": {
+       "C_center_to_pad_center": 1.0,
+       "Y_pad_length": 1.35,
+       "X_pad_width": 1.55,
+       "V1_courtyard_x": 4.4,
+       "V2_courtyard_y": 2.6
+      },
+      "B_nominal": {
+       "C_center_to_pad_center": 0.9,
+       "Y_pad_length": 1.15,
+       "X_pad_width": 1.45,
+       "V1_courtyard_x": 3.5,
+       "V2_courtyard_y": 2.0
+      },
+      "C_least": {
+       "C_center_to_pad_center": 0.75,
+       "Y_pad_length": 0.95,
+       "X_pad_width": 1.35,
+       "V1_courtyard_x": 2.8,
+       "V2_courtyard_y": 1.7
+      }
+     },
+     "1206": {
+      "A_most": {
+       "C_center_to_pad_center": 1.6,
+       "Y_pad_length": 1.35,
+       "X_pad_width": 1.9,
+       "V1_courtyard_x": 5.6,
+       "V2_courtyard_y": 2.9
+      },
+      "B_nominal": {
+       "C_center_to_pad_center": 1.5,
+       "Y_pad_length": 1.15,
+       "X_pad_width": 1.8,
+       "V1_courtyard_x": 4.7,
+       "V2_courtyard_y": 2.3
+      },
+      "C_least": {
+       "C_center_to_pad_center": 1.4,
+       "Y_pad_length": 0.95,
+       "X_pad_width": 1.7,
+       "V1_courtyard_x": 4.0,
+       "V2_courtyard_y": 2.0
+      }
+     },
+     "1210": {
+      "A_most": {
+       "C_center_to_pad_center": 1.6,
+       "Y_pad_length": 1.35,
+       "X_pad_width": 2.8,
+       "V1_courtyard_x": 5.65,
+       "V2_courtyard_y": 3.8
+      },
+      "B_nominal": {
+       "C_center_to_pad_center": 1.5,
+       "Y_pad_length": 1.15,
+       "X_pad_width": 2.7,
+       "V1_courtyard_x": 4.7,
+       "V2_courtyard_y": 3.2
+      },
+      "C_least": {
+       "C_center_to_pad_center": 1.4,
+       "Y_pad_length": 0.95,
+       "X_pad_width": 2.6,
+       "V1_courtyard_x": 4.0,
+       "V2_courtyard_y": 2.9
+      }
+     },
+     "1210 (>=22uF)": {
+      "A_most": {
+       "C_center_to_pad_center": 1.5,
+       "Y_pad_length": 1.6,
+       "X_pad_width": 2.9,
+       "V1_courtyard_x": 5.6,
+       "V2_courtyard_y": 3.9
+      },
+      "B_nominal": {
+       "C_center_to_pad_center": 1.4,
+       "Y_pad_length": 1.4,
+       "X_pad_width": 2.8,
+       "V1_courtyard_x": 4.7,
+       "V2_courtyard_y": 3.3
+      },
+      "C_least": {
+       "C_center_to_pad_center": 1.3,
+       "Y_pad_length": 1.2,
+       "X_pad_width": 2.7,
+       "V1_courtyard_x": 4.0,
+       "V2_courtyard_y": 3.0
+      }
+     },
+     "1808": {
+      "A_most": {
+       "C_center_to_pad_center": 2.3,
+       "Y_pad_length": 1.75,
+       "X_pad_width": 2.3,
+       "V1_courtyard_x": 7.4,
+       "V2_courtyard_y": 3.3
+      },
+      "B_nominal": {
+       "C_center_to_pad_center": 2.2,
+       "Y_pad_length": 1.55,
+       "X_pad_width": 2.2,
+       "V1_courtyard_x": 6.5,
+       "V2_courtyard_y": 2.7
+      },
+      "C_least": {
+       "C_center_to_pad_center": 2.1,
+       "Y_pad_length": 1.35,
+       "X_pad_width": 2.1,
+       "V1_courtyard_x": 5.8,
+       "V2_courtyard_y": 2.4
+      }
+     },
+     "1812": {
+      "A_most": {
+       "C_center_to_pad_center": 2.15,
+       "Y_pad_length": 1.6,
+       "X_pad_width": 3.6,
+       "V1_courtyard_x": 6.9,
+       "V2_courtyard_y": 4.6
+      },
+      "B_nominal": {
+       "C_center_to_pad_center": 2.05,
+       "Y_pad_length": 1.4,
+       "X_pad_width": 3.5,
+       "V1_courtyard_x": 6.0,
+       "V2_courtyard_y": 4.0
+      },
+      "C_least": {
+       "C_center_to_pad_center": 1.95,
+       "Y_pad_length": 1.2,
+       "X_pad_width": 3.4,
+       "V1_courtyard_x": 5.3,
+       "V2_courtyard_y": 3.7
+      }
+     },
+     "1825": {
+      "A_most": {
+       "C_center_to_pad_center": 2.15,
+       "Y_pad_length": 1.6,
+       "X_pad_width": 6.9,
+       "V1_courtyard_x": 6.9,
+       "V2_courtyard_y": 7.9
+      },
+      "B_nominal": {
+       "C_center_to_pad_center": 2.05,
+       "Y_pad_length": 1.4,
+       "X_pad_width": 6.8,
+       "V1_courtyard_x": 6.0,
+       "V2_courtyard_y": 7.3
+      },
+      "C_least": {
+       "C_center_to_pad_center": 1.95,
+       "Y_pad_length": 1.2,
+       "X_pad_width": 6.7,
+       "V1_courtyard_x": 5.3,
+       "V2_courtyard_y": 7.0
+      }
+     },
+     "2220": {
+      "A_most": {
+       "C_center_to_pad_center": 2.75,
+       "Y_pad_length": 1.7,
+       "X_pad_width": 5.5,
+       "V1_courtyard_x": 8.2,
+       "V2_courtyard_y": 6.5
+      },
+      "B_nominal": {
+       "C_center_to_pad_center": 2.65,
+       "Y_pad_length": 1.5,
+       "X_pad_width": 5.4,
+       "V1_courtyard_x": 7.3,
+       "V2_courtyard_y": 5.9
+      },
+      "C_least": {
+       "C_center_to_pad_center": 2.55,
+       "Y_pad_length": 1.3,
+       "X_pad_width": 5.3,
+       "V1_courtyard_x": 6.6,
+       "V2_courtyard_y": 5.6
+      }
+     },
+     "2225": {
+      "A_most": {
+       "C_center_to_pad_center": 2.7,
+       "Y_pad_length": 1.7,
+       "X_pad_width": 6.9,
+       "V1_courtyard_x": 8.1,
+       "V2_courtyard_y": 7.9
+      },
+      "B_nominal": {
+       "C_center_to_pad_center": 2.6,
+       "Y_pad_length": 1.5,
+       "X_pad_width": 6.8,
+       "V1_courtyard_x": 7.2,
+       "V2_courtyard_y": 7.3
+      },
+      "C_least": {
+       "C_center_to_pad_center": 2.5,
+       "Y_pad_length": 1.3,
+       "X_pad_width": 6.7,
+       "V1_courtyard_x": 6.5,
+       "V2_courtyard_y": 7.0
+      }
+     }
+    },
+    "availability_summary_by_case_and_voltage": {
+     "0402": {
+      "6.3": {
+       "min_pF": 10,
+       "max_pF": 470000,
+       "count": 63
+      },
+      "10": {
+       "min_pF": 10,
+       "max_pF": 470000,
+       "count": 63
+      },
+      "16": {
+       "min_pF": 10,
+       "max_pF": 220000,
+       "count": 62
+      },
+      "25": {
+       "min_pF": 10,
+       "max_pF": 220000,
+       "count": 59
+      },
+      "50": {
+       "min_pF": 10,
+       "max_pF": 22000,
+       "count": 53
+      },
+      "100": {
+       "min_pF": 1000,
+       "max_pF": 10000,
+       "count": 10
+      },
+      "200": {
+       "min_pF": 1000,
+       "max_pF": 1500,
+       "count": 3
+      },
+      "250": {
+       "min_pF": 1000,
+       "max_pF": 1500,
+       "count": 3
+      }
+     },
+     "0603": {
+      "6.3": {
+       "min_pF": 10,
+       "max_pF": 4700000,
+       "count": 72
+      },
+      "10": {
+       "min_pF": 10,
+       "max_pF": 2200000,
+       "count": 71
+      },
+      "16": {
+       "min_pF": 10,
+       "max_pF": 1000000,
+       "count": 70
+      },
+      "25": {
+       "min_pF": 10,
+       "max_pF": 1000000,
+       "count": 67
+      },
+      "50": {
+       "min_pF": 10,
+       "max_pF": 220000,
+       "count": 64
+      },
+      "100": {
+       "min_pF": 10,
+       "max_pF": 100000,
+       "count": 61
+      },
+      "200": {
+       "min_pF": 10,
+       "max_pF": 10000,
+       "count": 49
+      },
+      "250": {
+       "min_pF": 1000,
+       "max_pF": 10000,
+       "count": 13
+      }
+     },
+     "0805": {
+      "6.3": {
+       "min_pF": 10,
+       "max_pF": 10000000,
+       "count": 79
+      },
+      "10": {
+       "min_pF": 10,
+       "max_pF": 10000000,
+       "count": 79
+      },
+      "16": {
+       "min_pF": 10,
+       "max_pF": 4700000,
+       "count": 78
+      },
+      "25": {
+       "min_pF": 10,
+       "max_pF": 4700000,
+       "count": 75
+      },
+      "35": {
+       "min_pF": 10,
+       "max_pF": 2200000,
+       "count": 73
+      },
+      "50": {
+       "min_pF": 10,
+       "max_pF": 2200000,
+       "count": 73
+      },
+      "100": {
+       "min_pF": 10,
+       "max_pF": 270000,
+       "count": 66
+      },
+      "200": {
+       "min_pF": 10,
+       "max_pF": 68000,
+       "count": 59
+      },
+      "250": {
+       "min_pF": 180,
+       "max_pF": 68000,
+       "count": 32
+      }
+     },
+     "1206": {
+      "6.3": {
+       "min_pF": 10,
+       "max_pF": 22000000,
+       "count": 86
+      },
+      "10": {
+       "min_pF": 10,
+       "max_pF": 22000000,
+       "count": 86
+      },
+      "16": {
+       "min_pF": 10,
+       "max_pF": 10000000,
+       "count": 85
+      },
+      "25": {
+       "min_pF": 10,
+       "max_pF": 10000000,
+       "count": 82
+      },
+      "35": {
+       "min_pF": 10,
+       "max_pF": 4700000,
+       "count": 78
+      },
+      "50": {
+       "min_pF": 10,
+       "max_pF": 4700000,
+       "count": 78
+      },
+      "100": {
+       "min_pF": 10,
+       "max_pF": 1000000,
+       "count": 73
+      },
+      "200": {
+       "min_pF": 10,
+       "max_pF": 220000,
+       "count": 65
+      },
+      "250": {
+       "min_pF": 1000,
+       "max_pF": 220000,
+       "count": 29
+      }
+     },
+     "1210": {
+      "6.3": {
+       "min_pF": 10,
+       "max_pF": 47000000,
+       "count": 87
+      },
+      "10": {
+       "min_pF": 10,
+       "max_pF": 47000000,
+       "count": 87
+      },
+      "16": {
+       "min_pF": 10,
+       "max_pF": 22000000,
+       "count": 85
+      },
+      "25": {
+       "min_pF": 10,
+       "max_pF": 22000000,
+       "count": 85
+      },
+      "50": {
+       "min_pF": 10,
+       "max_pF": 10000000,
+       "count": 81
+      },
+      "100": {
+       "min_pF": 10,
+       "max_pF": 2200000,
+       "count": 76
+      },
+      "200": {
+       "min_pF": 10,
+       "max_pF": 470000,
+       "count": 68
+      },
+      "250": {
+       "min_pF": 2200,
+       "max_pF": 470000,
+       "count": 29
+      }
+     },
+     "1805": {
+      "50": {
+       "min_pF": 220,
+       "max_pF": 100000,
+       "count": 33
+      },
+      "100": {
+       "min_pF": 220,
+       "max_pF": 27000,
+       "count": 26
+      },
+      "200": {
+       "min_pF": 220,
+       "max_pF": 5600,
+       "count": 14
+      }
+     },
+     "1808": {
+      "50": {
+       "min_pF": 330,
+       "max_pF": 180000,
+       "count": 34
+      },
+      "100": {
+       "min_pF": 330,
+       "max_pF": 56000,
+       "count": 28
+      },
+      "200": {
+       "min_pF": 330,
+       "max_pF": 18000,
+       "count": 20
+      }
+     },
+     "1812": {
+      "25": {
+       "min_pF": 470,
+       "max_pF": 10000000,
+       "count": 50
+      },
+      "50": {
+       "min_pF": 470,
+       "max_pF": 4700000,
+       "count": 49
+      },
+      "100": {
+       "min_pF": 470,
+       "max_pF": 3300000,
+       "count": 47
+      },
+      "200": {
+       "min_pF": 470,
+       "max_pF": 470000,
+       "count": 37
+      },
+      "250": {
+       "min_pF": 6800,
+       "max_pF": 470000,
+       "count": 23
+      }
+     },
+     "1825": {
+      "50": {
+       "min_pF": 3900,
+       "max_pF": 2200000,
+       "count": 34
+      },
+      "100": {
+       "min_pF": 3900,
+       "max_pF": 1000000,
+       "count": 30
+      },
+      "200": {
+       "min_pF": 3900,
+       "max_pF": 1000000,
+       "count": 28
+      },
+      "250": {
+       "min_pF": 22000,
+       "max_pF": 1000000,
+       "count": 21
+      }
+     },
+     "2225": {
+      "50": {
+       "min_pF": 4700,
+       "max_pF": 2200000,
+       "count": 28
+      },
+      "100": {
+       "min_pF": 4700,
+       "max_pF": 1200000,
+       "count": 24
+      },
+      "200": {
+       "min_pF": 4700,
+       "max_pF": 1200000,
+       "count": 21
+      },
+      "250": {
+       "min_pF": 100000,
+       "max_pF": 1200000,
+       "count": 14
+      }
+     },
+     "2220": {
+      "25": {
+       "min_pF": 6800,
+       "max_pF": 22000000,
+       "count": 35
+      },
+      "50": {
+       "min_pF": 6800,
+       "max_pF": 15000000,
+       "count": 34
+      },
+      "100": {
+       "min_pF": 6800,
+       "max_pF": 1000000,
+       "count": 27
+      },
+      "200": {
+       "min_pF": 82000,
+       "max_pF": 1000000,
+       "count": 14
+      },
+      "250": {
+       "min_pF": 82000,
+       "max_pF": 1000000,
+       "count": 14
+      }
+     }
+    },
+    "availability_detail_file": "groundtruth/kemet_C1002_X7R_series.json",
+    "availability_cell_count": 3342,
+    "thickness_code_count": 70,
+    "operating_temperature": "-55°C to +125°C",
+    "capacitance_range": "10 pF to 47 µF",
+    "tolerances": "±5%, ±10%, ±20%"
+   }
+  },
+  {
+   "file": "pdfs/bourns_SRR1260.pdf",
+   "sha256": "63df6a6f7b86505210bf5ceb5a374ddbccfabf002331b3cc95877dc1b38b1e5f",
+   "bytes": 716143,
+   "origin": "https://www.bourns.com/docs/Product-Datasheets/SRR1260.pdf (downloaded 2026-10-07)",
+   "kind": "passive_series",
+   "pages": 4,
+   "encrypted": false,
+   "text_extractable": true,
+   "pages_without_text_layer": [],
+   "manufacturer": "Bourns",
+   "document": {
+    "id": "SRR1260 Series",
+    "title": "SRR1260 Series - Shielded SMD Power Inductors",
+    "revision": "REV. 03/26 (packaging page)"
+   },
+   "sections": {
+    "ordering": [
+     1
+    ],
+    "value_ranges": [
+     1
+    ],
+    "package_outline": [
+     1
+    ],
+    "land_pattern": [
+     2
+    ],
+    "ratings": [
+     1
+    ],
+    "tape_reel": [
+     3
+    ],
+    "abs_max": []
+   },
+   "extraction_notes": [
+    "RDC column unit is mΩ but the Symbol-font Ω is extracted as 'W' -> text says '(mW)'.",
+    "Off-page/clipped text: p1 text layer contains the recommended-layout labels (2.9/5.4/6.8) positioned below the page (y > 792 pt); p2 contains product-dimension labels outside/clipped. Filter chars by page bbox.",
+    "No explicit ordering-code legend: inductance code = 2 significant digits + zeros in µH, 'R' = decimal point; tolerance letter Y=±30 %, M=±20 %, K=±10 % (DERIVED from the table, consistent for all 38 rows).",
+    "'Available in E12 values' claim, yet 2.4/3.5/6.1/7.6 µH are not E12 values."
+   ],
+   "series": {
+    "name": "SRR1260",
+    "type": "shielded SMD power inductor",
+    "pins": 2,
+    "polarized": false,
+    "mpn_scheme_DERIVED": {
+     "pattern": "SRR1260-{L_code:3}{tol:1}",
+     "L_code": "R = decimal point (µH), else 2 digits + number of zeros (µH)",
+     "tol": {
+      "Y": "±30 %",
+      "M": "±20 %",
+      "K": "±10 %"
+     }
+    },
+    "parts": [
+     {
+      "mpn": "SRR1260-1R0Y",
+      "L_uH": 1.0,
+      "tol_pct": 30,
+      "Q_typ": 26,
+      "test_freq_MHz": 7.96,
+      "SRF_typ_MHz": 100.0,
+      "RDC_max_mohm": 7.8,
+      "Irms_max_A": 9.4,
+      "Isat_typ_A": 10.0,
+      "K_factor": 158
+     },
+     {
+      "mpn": "SRR1260-1R2Y",
+      "L_uH": 1.2,
+      "tol_pct": 30,
+      "Q_typ": 18,
+      "test_freq_MHz": 7.96,
+      "SRF_typ_MHz": 91.1,
+      "RDC_max_mohm": 8.0,
+      "Irms_max_A": 9.2,
+      "Isat_typ_A": 9.8,
+      "K_factor": 123
+     },
+     {
+      "mpn": "SRR1260-1R5Y",
+      "L_uH": 1.5,
+      "tol_pct": 30,
+      "Q_typ": 24,
+      "test_freq_MHz": 7.96,
+      "SRF_typ_MHz": 86.0,
+      "RDC_max_mohm": 9.5,
+      "Irms_max_A": 8.8,
+      "Isat_typ_A": 9.0,
+      "K_factor": 123
+     },
+     {
+      "mpn": "SRR1260-2R2Y",
+      "L_uH": 2.2,
+      "tol_pct": 30,
+      "Q_typ": 22,
+      "test_freq_MHz": 7.96,
+      "SRF_typ_MHz": 70.0,
+      "RDC_max_mohm": 10.5,
+      "Irms_max_A": 8.2,
+      "Isat_typ_A": 8.5,
+      "K_factor": 100
+     },
+     {
+      "mpn": "SRR1260-2R4Y",
+      "L_uH": 2.4,
+      "tol_pct": 30,
+      "Q_typ": 18,
+      "test_freq_MHz": 7.96,
+      "SRF_typ_MHz": 63.8,
+      "RDC_max_mohm": 11.5,
+      "Irms_max_A": 7.8,
+      "Isat_typ_A": 8.0,
+      "K_factor": 100
+     },
+     {
+      "mpn": "SRR1260-3R3Y",
+      "L_uH": 3.3,
+      "tol_pct": 30,
+      "Q_typ": 20,
+      "test_freq_MHz": 7.96,
+      "SRF_typ_MHz": 40.0,
+      "RDC_max_mohm": 12.0,
+      "Irms_max_A": 7.6,
+      "Isat_typ_A": 7.8,
+      "K_factor": 74
+     },
+     {
+      "mpn": "SRR1260-3R5Y",
+      "L_uH": 3.5,
+      "tol_pct": 30,
+      "Q_typ": 22,
+      "test_freq_MHz": 7.96,
+      "SRF_typ_MHz": 37.6,
+      "RDC_max_mohm": 13.0,
+      "Irms_max_A": 7.5,
+      "Isat_typ_A": 7.6,
+      "K_factor": 74
+     },
+     {
+      "mpn": "SRR1260-4R7Y",
+      "L_uH": 4.7,
+      "tol_pct": 30,
+      "Q_typ": 19,
+      "test_freq_MHz": 7.96,
+      "SRF_typ_MHz": 36.7,
+      "RDC_max_mohm": 15.5,
+      "Irms_max_A": 6.8,
+      "Isat_typ_A": 7.0,
+      "K_factor": 65
+     },
+     {
+      "mpn": "SRR1260-5R6Y",
+      "L_uH": 5.6,
+      "tol_pct": 30,
+      "Q_typ": 19,
+      "test_freq_MHz": 7.96,
+      "SRF_typ_MHz": 33.0,
+      "RDC_max_mohm": 16.2,
+      "Irms_max_A": 6.7,
+      "Isat_typ_A": 6.9,
+      "K_factor": 58
+     },
+     {
+      "mpn": "SRR1260-6R1Y",
+      "L_uH": 6.1,
+      "tol_pct": 30,
+      "Q_typ": 21,
+      "test_freq_MHz": 7.96,
+      "SRF_typ_MHz": 29.8,
+      "RDC_max_mohm": 17.0,
+      "Irms_max_A": 6.6,
+      "Isat_typ_A": 6.8,
+      "K_factor": 58
+     },
+     {
+      "mpn": "SRR1260-6R8Y",
+      "L_uH": 6.8,
+      "tol_pct": 30,
+      "Q_typ": 20,
+      "test_freq_MHz": 7.96,
+      "SRF_typ_MHz": 28.2,
+      "RDC_max_mohm": 18.0,
+      "Irms_max_A": 6.3,
+      "Isat_typ_A": 6.5,
+      "K_factor": 53
+     },
+     {
+      "mpn": "SRR1260-7R6Y",
+      "L_uH": 7.6,
+      "tol_pct": 30,
+      "Q_typ": 16,
+      "test_freq_MHz": 7.96,
+      "SRF_typ_MHz": 27.9,
+      "RDC_max_mohm": 19.0,
+      "Irms_max_A": 6.0,
+      "Isat_typ_A": 6.2,
+      "K_factor": 53
+     },
+     {
+      "mpn": "SRR1260-8R2Y",
+      "L_uH": 8.2,
+      "tol_pct": 30,
+      "Q_typ": 18,
+      "test_freq_MHz": 7.96,
+      "SRF_typ_MHz": 24.0,
+      "RDC_max_mohm": 19.5,
+      "Irms_max_A": 5.7,
+      "Isat_typ_A": 5.8,
+      "K_factor": 48
+     },
+     {
+      "mpn": "SRR1260-100M",
+      "L_uH": 10.0,
+      "tol_pct": 20,
+      "Q_typ": 32,
+      "test_freq_MHz": 2.52,
+      "SRF_typ_MHz": 21.0,
+      "RDC_max_mohm": 20.0,
+      "Irms_max_A": 5.5,
+      "Isat_typ_A": 5.5,
+      "K_factor": 44
+     },
+     {
+      "mpn": "SRR1260-120M",
+      "L_uH": 12.0,
+      "tol_pct": 20,
+      "Q_typ": 27,
+      "test_freq_MHz": 2.52,
+      "SRF_typ_MHz": 19.4,
+      "RDC_max_mohm": 23.0,
+      "Irms_max_A": 5.2,
+      "Isat_typ_A": 5.0,
+      "K_factor": 41
+     },
+     {
+      "mpn": "SRR1260-150M",
+      "L_uH": 15.0,
+      "tol_pct": 20,
+      "Q_typ": 25,
+      "test_freq_MHz": 2.52,
+      "SRF_typ_MHz": 17.6,
+      "RDC_max_mohm": 27.0,
+      "Irms_max_A": 5.0,
+      "Isat_typ_A": 4.6,
+      "K_factor": 36
+     },
+     {
+      "mpn": "SRR1260-180M",
+      "L_uH": 18.0,
+      "tol_pct": 20,
+      "Q_typ": 28,
+      "test_freq_MHz": 2.52,
+      "SRF_typ_MHz": 15.5,
+      "RDC_max_mohm": 36.0,
+      "Irms_max_A": 4.2,
+      "Isat_typ_A": 3.9,
+      "K_factor": 32
+     },
+     {
+      "mpn": "SRR1260-220M",
+      "L_uH": 22.0,
+      "tol_pct": 20,
+      "Q_typ": 29,
+      "test_freq_MHz": 2.52,
+      "SRF_typ_MHz": 13.4,
+      "RDC_max_mohm": 43.0,
+      "Irms_max_A": 4.0,
+      "Isat_typ_A": 3.7,
+      "K_factor": 30
+     },
+     {
+      "mpn": "SRR1260-270M",
+      "L_uH": 27.0,
+      "tol_pct": 20,
+      "Q_typ": 26,
+      "test_freq_MHz": 2.52,
+      "SRF_typ_MHz": 12.7,
+      "RDC_max_mohm": 45.0,
+      "Irms_max_A": 3.6,
+      "Isat_typ_A": 3.3,
+      "K_factor": 28
+     },
+     {
+      "mpn": "SRR1260-330M",
+      "L_uH": 33.0,
+      "tol_pct": 20,
+      "Q_typ": 27,
+      "test_freq_MHz": 2.52,
+      "SRF_typ_MHz": 9.97,
+      "RDC_max_mohm": 60.0,
+      "Irms_max_A": 3.0,
+      "Isat_typ_A": 2.8,
+      "K_factor": 24
+     },
+     {
+      "mpn": "SRR1260-390M",
+      "L_uH": 39.0,
+      "tol_pct": 20,
+      "Q_typ": 22,
+      "test_freq_MHz": 2.52,
+      "SRF_typ_MHz": 10.4,
+      "RDC_max_mohm": 70.0,
+      "Irms_max_A": 2.8,
+      "Isat_typ_A": 2.7,
+      "K_factor": 22
+     },
+     {
+      "mpn": "SRR1260-470M",
+      "L_uH": 47.0,
+      "tol_pct": 20,
+      "Q_typ": 22,
+      "test_freq_MHz": 2.52,
+      "SRF_typ_MHz": 7.63,
+      "RDC_max_mohm": 86.0,
+      "Irms_max_A": 2.6,
+      "Isat_typ_A": 2.5,
+      "K_factor": 20
+     },
+     {
+      "mpn": "SRR1260-560M",
+      "L_uH": 56.0,
+      "tol_pct": 20,
+      "Q_typ": 24,
+      "test_freq_MHz": 2.52,
+      "SRF_typ_MHz": 7.92,
+      "RDC_max_mohm": 100.0,
+      "Irms_max_A": 2.3,
+      "Isat_typ_A": 2.2,
+      "K_factor": 18
+     },
+     {
+      "mpn": "SRR1260-680M",
+      "L_uH": 68.0,
+      "tol_pct": 20,
+      "Q_typ": 22,
+      "test_freq_MHz": 2.52,
+      "SRF_typ_MHz": 7.43,
+      "RDC_max_mohm": 110.0,
+      "Irms_max_A": 2.1,
+      "Isat_typ_A": 2.1,
+      "K_factor": 17
+     },
+     {
+      "mpn": "SRR1260-820M",
+      "L_uH": 82.0,
+      "tol_pct": 20,
+      "Q_typ": 25,
+      "test_freq_MHz": 2.52,
+      "SRF_typ_MHz": 6.85,
+      "RDC_max_mohm": 145.0,
+      "Irms_max_A": 1.95,
+      "Isat_typ_A": 1.9,
+      "K_factor": 15
+     },
+     {
+      "mpn": "SRR1260-101M",
+      "L_uH": 100.0,
+      "tol_pct": 20,
+      "Q_typ": 26,
+      "test_freq_MHz": 0.796,
+      "SRF_typ_MHz": 6.07,
+      "RDC_max_mohm": 180.0,
+      "Irms_max_A": 1.7,
+      "Isat_typ_A": 1.7,
+      "K_factor": 14
+     },
+     {
+      "mpn": "SRR1260-121K",
+      "L_uH": 120.0,
+      "tol_pct": 10,
+      "Q_typ": 26,
+      "test_freq_MHz": 0.796,
+      "SRF_typ_MHz": 5.5,
+      "RDC_max_mohm": 210.0,
+      "Irms_max_A": 1.65,
+      "Isat_typ_A": 1.65,
+      "K_factor": 13
+     },
+     {
+      "mpn": "SRR1260-151K",
+      "L_uH": 150.0,
+      "tol_pct": 10,
+      "Q_typ": 20,
+      "test_freq_MHz": 0.796,
+      "SRF_typ_MHz": 5.0,
+      "RDC_max_mohm": 260.0,
+      "Irms_max_A": 1.55,
+      "Isat_typ_A": 1.55,
+      "K_factor": 11
+     },
+     {
+      "mpn": "SRR1260-181K",
+      "L_uH": 180.0,
+      "tol_pct": 10,
+      "Q_typ": 26,
+      "test_freq_MHz": 0.796,
+      "SRF_typ_MHz": 4.5,
+      "RDC_max_mohm": 320.0,
+      "Irms_max_A": 1.4,
+      "Isat_typ_A": 1.4,
+      "K_factor": 10
+     },
+     {
+      "mpn": "SRR1260-221K",
+      "L_uH": 220.0,
+      "tol_pct": 10,
+      "Q_typ": 22,
+      "test_freq_MHz": 0.796,
+      "SRF_typ_MHz": 4.2,
+      "RDC_max_mohm": 380.0,
+      "Irms_max_A": 1.38,
+      "Isat_typ_A": 1.3,
+      "K_factor": 9
+     },
+     {
+      "mpn": "SRR1260-271K",
+      "L_uH": 270.0,
+      "tol_pct": 10,
+      "Q_typ": 20,
+      "test_freq_MHz": 0.796,
+      "SRF_typ_MHz": 3.6,
+      "RDC_max_mohm": 450.0,
+      "Irms_max_A": 1.3,
+      "Isat_typ_A": 1.2,
+      "K_factor": 8
+     },
+     {
+      "mpn": "SRR1260-331K",
+      "L_uH": 330.0,
+      "tol_pct": 10,
+      "Q_typ": 22,
+      "test_freq_MHz": 0.796,
+      "SRF_typ_MHz": 3.2,
+      "RDC_max_mohm": 580.0,
+      "Irms_max_A": 1.15,
+      "Isat_typ_A": 1.1,
+      "K_factor": 8
+     },
+     {
+      "mpn": "SRR1260-391K",
+      "L_uH": 390.0,
+      "tol_pct": 10,
+      "Q_typ": 20,
+      "test_freq_MHz": 0.796,
+      "SRF_typ_MHz": 2.8,
+      "RDC_max_mohm": 700.0,
+      "Irms_max_A": 1.08,
+      "Isat_typ_A": 1.0,
+      "K_factor": 7
+     },
+     {
+      "mpn": "SRR1260-471K",
+      "L_uH": 470.0,
+      "tol_pct": 10,
+      "Q_typ": 18,
+      "test_freq_MHz": 0.796,
+      "SRF_typ_MHz": 2.6,
+      "RDC_max_mohm": 820.0,
+      "Irms_max_A": 0.95,
+      "Isat_typ_A": 0.9,
+      "K_factor": 6
+     },
+     {
+      "mpn": "SRR1260-561K",
+      "L_uH": 560.0,
+      "tol_pct": 10,
+      "Q_typ": 22,
+      "test_freq_MHz": 0.796,
+      "SRF_typ_MHz": 2.4,
+      "RDC_max_mohm": 1000.0,
+      "Irms_max_A": 0.88,
+      "Isat_typ_A": 0.8,
+      "K_factor": 6
+     },
+     {
+      "mpn": "SRR1260-681K",
+      "L_uH": 680.0,
+      "tol_pct": 10,
+      "Q_typ": 18,
+      "test_freq_MHz": 0.796,
+      "SRF_typ_MHz": 2.2,
+      "RDC_max_mohm": 1150.0,
+      "Irms_max_A": 0.8,
+      "Isat_typ_A": 0.75,
+      "K_factor": 5
+     },
+     {
+      "mpn": "SRR1260-821K",
+      "L_uH": 820.0,
+      "tol_pct": 10,
+      "Q_typ": 20,
+      "test_freq_MHz": 0.796,
+      "SRF_typ_MHz": 2.0,
+      "RDC_max_mohm": 1500.0,
+      "Irms_max_A": 0.73,
+      "Isat_typ_A": 0.63,
+      "K_factor": 5
+     },
+     {
+      "mpn": "SRR1260-102K",
+      "L_uH": 1000.0,
+      "tol_pct": 10,
+      "Q_typ": 30,
+      "test_freq_MHz": 0.252,
+      "SRF_typ_MHz": 1.8,
+      "RDC_max_mohm": 1700.0,
+      "Irms_max_A": 0.68,
+      "Isat_typ_A": 0.6,
+      "K_factor": 4
+     }
+    ],
+    "general": {
+     "inductance_test": "1R0Y-8R2Y: 100 kHz/0.1 V; 100M-102K: 1 kHz/0.1 V",
+     "operating_temperature": "-40 °C to +125 °C (temperature rise included)",
+     "storage_temperature": "-40 °C to +125 °C",
+     "temperature_rise": "40 °C typ. at rated Irms",
+     "inductance_drop": "25 % typ. at Isat",
+     "MSL": 1,
+     "packaging": "600 pcs per reel (330 mm reel, 24 mm tape)",
+     "terminal_finish": "Sn"
+    },
+    "dimensions_mm": {
+     "L": "12.5 ± 0.3",
+     "W": "12.5 ± 0.3",
+     "H": "6.0 ± 0.5",
+     "terminal_width": "5.0 ± 0.3",
+     "terminal_inner_gap": "7.0 TYP",
+     "marking": "inductance code printed on top (e.g. '100')"
+    },
+    "land_pattern_mm": {
+     "pad_width_X": "2.9 REF",
+     "pad_length_Y": "5.4 REF",
+     "pad_gap_G": "6.8 REF",
+     "pad_center_distance_DERIVED": 9.7,
+     "outer_extent_DERIVED": 12.6,
+     "orientation": "pads side by side along X"
+    }
+   }
+  }
+ ]
+}

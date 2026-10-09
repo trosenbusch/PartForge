@@ -1,0 +1,279 @@
+{
+ "fixture_version": 1,
+ "pdf": "sn65lv1023a.pdf",
+ "sha256": "d9c1094065bf0e44a66d13b6a54d8f11f500bbb0a26e7553e19356b8f065f244",
+ "schema": "3333381c49d4",
+ "recorded": "2026-10-08T01:58:55",
+ "options": {
+  "model": null,
+  "effort": null,
+  "pages": null,
+  "max_pages": 12,
+  "triage": "auto",
+  "vision": "auto",
+  "max_cost_usd": null
+ },
+ "settings": {
+  "model": "claude-opus-5-5",
+  "effort": "low",
+  "fast_model": "claude-haiku-5-5",
+  "use_fallbacks": true
+ },
+ "calls": [
+  {
+   "kind": "identity",
+   "model": "claude-opus-5-5",
+   "effort": "low",
+   "pages": [
+    1,
+    6,
+    22,
+    23
+   ],
+   "request_id": "req_011CfonTzJNazxxMPvwznjce",
+   "duration_s": 70.97,
+   "cost_usd": 0.303479,
+   "recorded": "2026-10-08T02:00:08",
+   "message": {
+    "id": "msg_011CfonU1Gfn9A3wxovYd5R6",
+    "container": null,
+    "content": [
+     {
+      "signature": "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",
+      "thinking": "",
+      "type": "thinking"
+     },
+     {
+      "citations": null,
+      "text": "{\"manufacturer\":\"Texas Instruments\",\"document_id\":\"SLLS621E\",\"document_title\":\"SN65LV1023A, SN65LV1224B 10-MHz To 66-MHz, 10:1 LVDS Serializer/Deserializer\",\"document_date\":\"December 2009\",\"devices\":[{\"base_part_number\":\"SN65LV1023A\",\"description\":\"10:1 LVDS serializer, 10-66 MHz, 100-660 Mbps\",\"category\":\"Integrated Circuits\",\"parameters\":[{\"column\":\"Function\",\"value\":\"Schnittstelle\",\"page\":1},{\"column\":\"Interface\",\"value\":\"LVDS\",\"page\":1},{\"column\":\"Operating Temperature\",\"value\":\"-40°C to 85°C\",\"page\":1}],\"variants\":[{\"mpn\":\"SN65LV1023ADB\",\"package_code\":\"DB\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tube, 50\",\"status\":\"ACTIVE\",\"notes\":\"\",\"values\":[],\"page\":3},{\"mpn\":\"SN65LV1023ADBG4\",\"package_code\":\"DB\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tube, 50\",\"status\":\"ACTIVE\",\"notes\":\"\",\"values\":[],\"page\":3},{\"mpn\":\"SN65LV1023ADBR\",\"package_code\":\"DB\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tape and Reel, 2000\",\"status\":\"ACTIVE\",\"notes\":\"\",\"values\":[],\"page\":3},{\"mpn\":\"SN65LV1023ADBRG4\",\"package_code\":\"DB\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tape and Reel, 2000\",\"status\":\"ACTIVE\",\"notes\":\"\",\"values\":[],\"page\":3},{\"mpn\":\"SN65LV1023ARHBR\",\"package_code\":\"RHB\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tape and Reel, 3000\",\"status\":\"ACTIVE\",\"notes\":\"\",\"values\":[],\"page\":3},{\"mpn\":\"SN65LV1023ARHBRG4\",\"package_code\":\"RHB\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tape and Reel, 3000\",\"status\":\"ACTIVE\",\"notes\":\"\",\"values\":[],\"page\":3},{\"mpn\":\"SN65LV1023ARHBT\",\"package_code\":\"RHB\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tape and Reel, 250\",\"status\":\"ACTIVE\",\"notes\":\"\",\"values\":[],\"page\":3},{\"mpn\":\"SNLV1023ARHBTG4\",\"package_code\":\"RHB\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tape and Reel, 250\",\"status\":\"ACTIVE\",\"notes\":\"Printed as SNLV1023ARHBTG4 (no '65')\",\"values\":[],\"page\":3}],\"pin_tables\":[{\"package_code\":\"DB\",\"source_pages\":[1,2],\"pins\":[{\"number\":\"1\",\"name\":\"SYNC1\",\"function\":\"Sync pattern request\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Control\",\"part\":1},{\"number\":\"2\",\"name\":\"SYNC2\",\"function\":\"Sync pattern request\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Control\",\"part\":1},{\"number\":\"3\",\"name\":\"DIN0\",\"function\":\"Parallel data input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data inputs\",\"part\":1},{\"number\":\"4\",\"name\":\"DIN1\",\"function\":\"Parallel data input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data inputs\",\"part\":1},{\"number\":\"5\",\"name\":\"DIN2\",\"function\":\"Parallel data input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data inputs\",\"part\":1},{\"number\":\"6\",\"name\":\"DIN3\",\"function\":\"Parallel data input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data inputs\",\"part\":1},{\"number\":\"7\",\"name\":\"DIN4\",\"function\":\"Parallel data input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data inputs\",\"part\":1},{\"number\":\"8\",\"name\":\"DIN5\",\"function\":\"Parallel data input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data inputs\",\"part\":1},{\"number\":\"9\",\"name\":\"DIN6\",\"function\":\"Parallel data input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data inputs\",\"part\":1},{\"number\":\"10\",\"name\":\"DIN7\",\"function\":\"Parallel data input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data inputs\",\"part\":1},{\"number\":\"11\",\"name\":\"DIN8\",\"function\":\"Parallel data input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data inputs\",\"part\":1},{\"number\":\"12\",\"name\":\"DIN9\",\"function\":\"Parallel data input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data inputs\",\"part\":1},{\"number\":\"13\",\"name\":\"TCLK_R/F\\\\\",\"function\":\"TCLK edge select\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Clock\",\"part\":1},{\"number\":\"14\",\"name\":\"TCLK\",\"function\":\"Reference clock input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Clock\",\"part\":1},{\"number\":\"15\",\"name\":\"DGND\",\"function\":\"Digital ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"16\",\"name\":\"DGND\",\"function\":\"Digital ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"17\",\"name\":\"AVCC\",\"function\":\"Analog supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"18\",\"name\":\"AGND\",\"function\":\"Analog ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"19\",\"name\":\"DEN\",\"function\":\"Serial output enable\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Control\",\"part\":1},{\"number\":\"20\",\"name\":\"AGND\",\"function\":\"Analog ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"21\",\"name\":\"DO-\",\"function\":\"Inverting LVDS output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"LVDS\",\"part\":1},{\"number\":\"22\",\"name\":\"DO+\",\"function\":\"Noninverting LVDS output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"LVDS\",\"part\":1},{\"number\":\"23\",\"name\":\"AGND\",\"function\":\"Analog ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"24\",\"name\":\"P\\\\W\\\\R\\\\D\\\\N\\\\\",\"function\":\"Power down\",\"electrical_type\":\"Input\",\"active_low\":true,\"no_connect\":false,\"group\":\"Control\",\"part\":1},{\"number\":\"25\",\"name\":\"AGND\",\"function\":\"Analog ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"26\",\"name\":\"AVCC\",\"function\":\"Analog supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"27\",\"name\":\"DVCC\",\"function\":\"Digital supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"28\",\"name\":\"DVCC\",\"function\":\"Digital supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1}]},{\"package_code\":\"RHB\",\"source_pages\":[1,2],\"pins\":[{\"number\":\"1\",\"name\":\"DIN1\",\"function\":\"Parallel data input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data inputs\",\"part\":1},{\"number\":\"2\",\"name\":\"DIN2\",\"function\":\"Parallel data input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data inputs\",\"part\":1},{\"number\":\"3\",\"name\":\"DIN3\",\"function\":\"Parallel data input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data inputs\",\"part\":1},{\"number\":\"4\",\"name\":\"DIN4\",\"function\":\"Parallel data input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data inputs\",\"part\":1},{\"number\":\"5\",\"name\":\"DIN5\",\"function\":\"Parallel data input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data inputs\",\"part\":1},{\"number\":\"6\",\"name\":\"DIN6\",\"function\":\"Parallel data input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data inputs\",\"part\":1},{\"number\":\"7\",\"name\":\"DIN7\",\"function\":\"Parallel data input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data inputs\",\"part\":1},{\"number\":\"8\",\"name\":\"DIN8\",\"function\":\"Parallel data input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data inputs\",\"part\":1},{\"number\":\"9\",\"name\":\"DIN9\",\"function\":\"Parallel data input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data inputs\",\"part\":1},{\"number\":\"10\",\"name\":\"TCLK_R/F\\\\\",\"function\":\"TCLK edge select\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Clock\",\"part\":1},{\"number\":\"11\",\"name\":\"TCLK\",\"function\":\"Reference clock input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Clock\",\"part\":1},{\"number\":\"12\",\"name\":\"DGND\",\"function\":\"Digital ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"13\",\"name\":\"DGND\",\"function\":\"Digital ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"14\",\"name\":\"DGND\",\"function\":\"Digital ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"15\",\"name\":\"DGND\",\"function\":\"Digital ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"16\",\"name\":\"AVCC\",\"function\":\"Analog supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"17\",\"name\":\"AGND\",\"function\":\"Analog ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"18\",\"name\":\"DEN\",\"function\":\"Serial output enable\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Control\",\"part\":1},{\"number\":\"19\",\"name\":\"AGND\",\"function\":\"Analog ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"20\",\"name\":\"DO-\",\"function\":\"Inverting LVDS output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"LVDS\",\"part\":1},{\"number\":\"21\",\"name\":\"DO+\",\"function\":\"Noninverting LVDS output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"LVDS\",\"part\":1},{\"number\":\"22\",\"name\":\"AGND\",\"function\":\"Analog ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"23\",\"name\":\"P\\\\W\\\\R\\\\D\\\\N\\\\\",\"function\":\"Power down\",\"electrical_type\":\"Input\",\"active_low\":true,\"no_connect\":false,\"group\":\"Control\",\"part\":1},{\"number\":\"24\",\"name\":\"AGND\",\"function\":\"Analog ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"25\",\"name\":\"AVCC\",\"function\":\"Analog supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"26\",\"name\":\"DVCC\",\"function\":\"Digital supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"27\",\"name\":\"DVCC\",\"function\":\"Digital supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"28\",\"name\":\"DVCC\",\"function\":\"Digital supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"29\",\"name\":\"DVCC\",\"function\":\"Digital supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"30\",\"name\":\"SYNC1\",\"function\":\"Sync pattern request\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Control\",\"part\":1},{\"number\":\"31\",\"name\":\"SYNC2\",\"function\":\"Sync pattern request\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Control\",\"part\":1},{\"number\":\"32\",\"name\":\"DIN0\",\"function\":\"Parallel data input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data inputs\",\"part\":1}]}]},{\"base_part_number\":\"SN65LV1224B\",\"description\":\"1:10 LVDS deserializer, 10-66 MHz, 100-660 Mbps\",\"category\":\"Integrated Circuits\",\"parameters\":[{\"column\":\"Function\",\"value\":\"Schnittstelle\",\"page\":1},{\"column\":\"Interface\",\"value\":\"LVDS\",\"page\":1},{\"column\":\"Operating Temperature\",\"value\":\"-40°C to 85°C\",\"page\":1}],\"variants\":[{\"mpn\":\"SN65LV1224BDB\",\"package_code\":\"DB\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tube, 50\",\"status\":\"ACTIVE\",\"notes\":\"\",\"values\":[],\"page\":3},{\"mpn\":\"SN65LV1224BDBG4\",\"package_code\":\"DB\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tube, 50\",\"status\":\"ACTIVE\",\"notes\":\"\",\"values\":[],\"page\":3},{\"mpn\":\"SN65LV1224BDBR\",\"package_code\":\"DB\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tape and Reel, 2000\",\"status\":\"ACTIVE\",\"notes\":\"\",\"values\":[],\"page\":3},{\"mpn\":\"SN65LV1224BDBRG4\",\"package_code\":\"DB\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tape and Reel, 2000\",\"status\":\"ACTIVE\",\"notes\":\"\",\"values\":[],\"page\":3},{\"mpn\":\"SN65LV1224BRHBR\",\"package_code\":\"RHB\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tape and Reel, 3000\",\"status\":\"ACTIVE\",\"notes\":\"\",\"values\":[],\"page\":3},{\"mpn\":\"SN65LV1224BRHBRG4\",\"package_code\":\"RHB\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tape and Reel, 3000\",\"status\":\"ACTIVE\",\"notes\":\"\",\"values\":[],\"page\":3},{\"mpn\":\"SN65LV1224BRHBT\",\"package_code\":\"RHB\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tape and Reel, 250\",\"status\":\"ACTIVE\",\"notes\":\"\",\"values\":[],\"page\":3},{\"mpn\":\"SN65LV1224BRHBTG4\",\"package_code\":\"RHB\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tape and Reel, 250\",\"status\":\"ACTIVE\",\"notes\":\"\",\"values\":[],\"page\":3}],\"pin_tables\":[{\"package_code\":\"DB\",\"source_pages\":[2],\"pins\":[{\"number\":\"1\",\"name\":\"AGND\",\"function\":\"Analog ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"2\",\"name\":\"RCLK_R/F\\\\\",\"function\":\"RCLK edge select\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Clock\",\"part\":1},{\"number\":\"3\",\"name\":\"REFCLK\",\"function\":\"PLL reference clock\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Clock\",\"part\":1},{\"number\":\"4\",\"name\":\"AVCC\",\"function\":\"Analog supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"5\",\"name\":\"RI+\",\"function\":\"Noninverting LVDS input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"LVDS\",\"part\":1},{\"number\":\"6\",\"name\":\"RI-\",\"function\":\"Inverting LVDS input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"LVDS\",\"part\":1},{\"number\":\"7\",\"name\":\"P\\\\W\\\\R\\\\D\\\\N\\\\\",\"function\":\"Power down\",\"electrical_type\":\"Input\",\"active_low\":true,\"no_connect\":false,\"group\":\"Control\",\"part\":1},{\"number\":\"8\",\"name\":\"REN\",\"function\":\"Output enable\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Control\",\"part\":1},{\"number\":\"9\",\"name\":\"RCLK\",\"function\":\"Recovered clock output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Clock\",\"part\":1},{\"number\":\"10\",\"name\":\"L\\\\O\\\\C\\\\K\\\\\",\"function\":\"Lock indicator\",\"electrical_type\":\"Output\",\"active_low\":true,\"no_connect\":false,\"group\":\"Control\",\"part\":1},{\"number\":\"11\",\"name\":\"AVCC\",\"function\":\"Analog supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"12\",\"name\":\"AGND\",\"function\":\"Analog ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"13\",\"name\":\"AGND\",\"function\":\"Analog ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"14\",\"name\":\"DGND\",\"function\":\"Digital ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"15\",\"name\":\"ROUT9\",\"function\":\"Parallel data output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data outputs\",\"part\":1},{\"number\":\"16\",\"name\":\"ROUT8\",\"function\":\"Parallel data output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data outputs\",\"part\":1},{\"number\":\"17\",\"name\":\"ROUT7\",\"function\":\"Parallel data output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data outputs\",\"part\":1},{\"number\":\"18\",\"name\":\"ROUT6\",\"function\":\"Parallel data output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data outputs\",\"part\":1},{\"number\":\"19\",\"name\":\"ROUT5\",\"function\":\"Parallel data output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data outputs\",\"part\":1},{\"number\":\"20\",\"name\":\"DGND\",\"function\":\"Digital ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"21\",\"name\":\"DVCC\",\"function\":\"Digital supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"22\",\"name\":\"DGND\",\"function\":\"Digital ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"23\",\"name\":\"DVCC\",\"function\":\"Digital supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"24\",\"name\":\"ROUT4\",\"function\":\"Parallel data output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data outputs\",\"part\":1},{\"number\":\"25\",\"name\":\"ROUT3\",\"function\":\"Parallel data output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data outputs\",\"part\":1},{\"number\":\"26\",\"name\":\"ROUT2\",\"function\":\"Parallel data output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data outputs\",\"part\":1},{\"number\":\"27\",\"name\":\"ROUT1\",\"function\":\"Parallel data output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data outputs\",\"part\":1},{\"number\":\"28\",\"name\":\"ROUT0\",\"function\":\"Parallel data output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data outputs\",\"part\":1}]},{\"package_code\":\"RHB\",\"source_pages\":[2],\"pins\":[{\"number\":\"1\",\"name\":\"AVCC\",\"function\":\"Analog supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"2\",\"name\":\"RI+\",\"function\":\"Noninverting LVDS input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"LVDS\",\"part\":1},{\"number\":\"3\",\"name\":\"RI-\",\"function\":\"Inverting LVDS input\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"LVDS\",\"part\":1},{\"number\":\"4\",\"name\":\"P\\\\W\\\\R\\\\D\\\\N\\\\\",\"function\":\"Power down\",\"electrical_type\":\"Input\",\"active_low\":true,\"no_connect\":false,\"group\":\"Control\",\"part\":1},{\"number\":\"5\",\"name\":\"REN\",\"function\":\"Output enable\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Control\",\"part\":1},{\"number\":\"6\",\"name\":\"RCLK\",\"function\":\"Recovered clock output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Clock\",\"part\":1},{\"number\":\"7\",\"name\":\"L\\\\O\\\\C\\\\K\\\\\",\"function\":\"Lock indicator\",\"electrical_type\":\"Output\",\"active_low\":true,\"no_connect\":false,\"group\":\"Control\",\"part\":1},{\"number\":\"8\",\"name\":\"AVCC\",\"function\":\"Analog supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"9\",\"name\":\"AVCC\",\"function\":\"Analog supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"10\",\"name\":\"AGND\",\"function\":\"Analog ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"11\",\"name\":\"AGND\",\"function\":\"Analog ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"12\",\"name\":\"DGND\",\"function\":\"Digital ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"13\",\"name\":\"DGND\",\"function\":\"Digital ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"14\",\"name\":\"ROUT9\",\"function\":\"Parallel data output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data outputs\",\"part\":1},{\"number\":\"15\",\"name\":\"ROUT8\",\"function\":\"Parallel data output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data outputs\",\"part\":1},{\"number\":\"16\",\"name\":\"ROUT7\",\"function\":\"Parallel data output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data outputs\",\"part\":1},{\"number\":\"17\",\"name\":\"ROUT6\",\"function\":\"Parallel data output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data outputs\",\"part\":1},{\"number\":\"18\",\"name\":\"ROUT5\",\"function\":\"Parallel data output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data outputs\",\"part\":1},{\"number\":\"19\",\"name\":\"DGND\",\"function\":\"Digital ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"20\",\"name\":\"DVCC\",\"function\":\"Digital supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"21\",\"name\":\"DGND\",\"function\":\"Digital ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"22\",\"name\":\"DVCC\",\"function\":\"Digital supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"23\",\"name\":\"ROUT4\",\"function\":\"Parallel data output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data outputs\",\"part\":1},{\"number\":\"24\",\"name\":\"ROUT3\",\"function\":\"Parallel data output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data outputs\",\"part\":1},{\"number\":\"25\",\"name\":\"ROUT2\",\"function\":\"Parallel data output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data outputs\",\"part\":1},{\"number\":\"26\",\"name\":\"ROUT1\",\"function\":\"Parallel data output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data outputs\",\"part\":1},{\"number\":\"27\",\"name\":\"ROUT0\",\"function\":\"Parallel data output\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Data outputs\",\"part\":1},{\"number\":\"28\",\"name\":\"AGND\",\"function\":\"Analog ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"29\",\"name\":\"AGND\",\"function\":\"Analog ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"30\",\"name\":\"AGND\",\"function\":\"Analog ground\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":1},{\"number\":\"31\",\"name\":\"RCLK_R/F\\\\\",\"function\":\"RCLK edge select\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Clock\",\"part\":1},{\"number\":\"32\",\"name\":\"REFCLK\",\"function\":\"PLL reference clock\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Clock\",\"part\":1}]}]}],\"packages\":[{\"package_code\":\"DB\",\"package_name\":\"SSOP-28\",\"pin_count\":28,\"exposed_pad\":false},{\"package_code\":\"RHB\",\"package_name\":\"VQFN-32 5x5\",\"pin_count\":32,\"exposed_pad\":false}],\"warnings\":[\"RHB QFN exposed/thermal pad not shown or described on supplied pages; exposed_pad set false and no EP pin listed - verify with package drawing.\",\"SN65LV1224B pinout drawing not in supplied pages; pin table derived from pin function table. ROUT0-ROUT9 assignment assumed in listed order (DB 28-24,19-15; RHB 27-23,18-14).\",\"Orderable part 'SNLV1023ARHBTG4' printed without '65' in package addendum; assigned to SN65LV1023A as printed.\",\"Packaging media for 50-pc DB parts assumed Tube; addendum only gives quantity.\",\"Supply voltage not stated on supplied pages.\",\"Data rate inconsistency: features state 100-660 Mbps payload, description states 120-792 Mbps including overhead.\"]}",
+      "type": "text"
+     }
+    ],
+    "context_management": null,
+    "diagnostics": null,
+    "model": "claude-opus-5-5",
+    "role": "assistant",
+    "stop_details": null,
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "type": "message",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 15839
+     },
+     "cache_creation_input_tokens": 15839,
+     "cache_read_input_tokens": 0,
+     "fallback_credit": null,
+     "inference_geo": "global",
+     "input_tokens": 2961,
+     "iterations": [
+      {
+       "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 15839
+       },
+       "cache_creation_input_tokens": 15839,
+       "cache_read_input_tokens": 0,
+       "input_tokens": 2961,
+       "model": null,
+       "output_tokens": 10622,
+       "type": "message"
+      }
+     ],
+     "output_tokens": 10622,
+     "output_tokens_details": {
+      "thinking_tokens": 900
+     },
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "speed": null
+    },
+    "input_transformations": null
+   }
+  },
+  {
+   "kind": "geometry",
+   "model": "claude-opus-5-5",
+   "effort": "low",
+   "pages": [
+    22,
+    26,
+    27,
+    28,
+    29
+   ],
+   "request_id": "req_011CfonZDVWcaDeria1afW1a",
+   "duration_s": 12.04,
+   "cost_usd": 0.101146,
+   "recorded": "2026-10-08T02:00:20",
+   "message": {
+    "id": "msg_011CfonZER5kpSuWC8A26Y3w",
+    "container": null,
+    "content": [
+     {
+      "citations": null,
+      "text": "{\"packages\":[{\"package_code\":\"DB\",\"package_name\":\"SSOP-28\",\"family\":\"gullwing\",\"pin_count\":28,\"mounting\":\"SMD\",\"outline_reference\":\"MO-150\",\"exposed_pad\":false,\"exposed_pad_number\":\"\",\"source_pages\":[5],\"dimensions\":[{\"symbol\":\"A\",\"description\":\"body length (28 pins)\",\"unit\":\"mm\",\"min\":9.9,\"nom\":-1,\"max\":10.5},{\"symbol\":\"E1\",\"description\":\"body width\",\"unit\":\"mm\",\"min\":5.0,\"nom\":-1,\"max\":5.6},{\"symbol\":\"E\",\"description\":\"overall width incl. leads\",\"unit\":\"mm\",\"min\":7.4,\"nom\":-1,\"max\":8.2},{\"symbol\":\"e\",\"description\":\"lead pitch (basic)\",\"unit\":\"mm\",\"min\":-1,\"nom\":0.65,\"max\":-1},{\"symbol\":\"b\",\"description\":\"lead width\",\"unit\":\"mm\",\"min\":0.22,\"nom\":-1,\"max\":0.38},{\"symbol\":\"c\",\"description\":\"lead thickness\",\"unit\":\"mm\",\"min\":0.09,\"nom\":-1,\"max\":0.25},{\"symbol\":\"L\",\"description\":\"foot length\",\"unit\":\"mm\",\"min\":0.55,\"nom\":-1,\"max\":0.95},{\"symbol\":\"A\",\"description\":\"overall height\",\"unit\":\"mm\",\"min\":-1,\"nom\":-1,\"max\":2.0},{\"symbol\":\"A1\",\"description\":\"standoff\",\"unit\":\"mm\",\"min\":0.05,\"nom\":-1,\"max\":-1},{\"symbol\":\"theta\",\"description\":\"foot angle\",\"unit\":\"deg\",\"min\":0,\"nom\":-1,\"max\":8}],\"land_pattern\":{\"present\":false,\"source_pages\":[],\"pad_shape\":\"unknown\",\"pad_width\":-1,\"pad_length\":-1,\"pitch\":-1,\"row_spacing\":-1,\"row_spacing_reference\":\"not_applicable\",\"thermal_pad_width\":-1,\"thermal_pad_length\":-1,\"solder_mask_expansion\":-1,\"notes\":\"\"}},{\"package_code\":\"RHB\",\"package_name\":\"VQFN-32 5x5\",\"family\":\"nolead\",\"pin_count\":32,\"mounting\":\"SMD\",\"outline_reference\":\"MO-220\",\"exposed_pad\":true,\"exposed_pad_number\":\"\",\"source_pages\":[2,3],\"dimensions\":[{\"symbol\":\"D\",\"description\":\"body length\",\"unit\":\"mm\",\"min\":4.85,\"nom\":-1,\"max\":5.15},{\"symbol\":\"E\",\"description\":\"body width\",\"unit\":\"mm\",\"min\":4.85,\"nom\":-1,\"max\":5.15},{\"symbol\":\"A\",\"description\":\"overall height\",\"unit\":\"mm\",\"min\":0.8,\"nom\":-1,\"max\":1.0},{\"symbol\":\"A1\",\"description\":\"standoff\",\"unit\":\"mm\",\"min\":0,\"nom\":-1,\"max\":0.05},{\"symbol\":\"A3\",\"description\":\"terminal thickness\",\"unit\":\"mm\",\"min\":-1,\"nom\":0.2,\"max\":-1},{\"symbol\":\"e\",\"description\":\"pitch (basic)\",\"unit\":\"mm\",\"min\":-1,\"nom\":0.5,\"max\":-1},{\"symbol\":\"b\",\"description\":\"terminal width\",\"unit\":\"mm\",\"min\":0.18,\"nom\":-1,\"max\":0.3},{\"symbol\":\"L\",\"description\":\"terminal length\",\"unit\":\"mm\",\"min\":0.3,\"nom\":-1,\"max\":0.5},{\"symbol\":\"D2\",\"description\":\"exposed pad length\",\"unit\":\"mm\",\"min\":3.35,\"nom\":3.45,\"max\":3.55},{\"symbol\":\"E2\",\"description\":\"exposed pad width\",\"unit\":\"mm\",\"min\":3.35,\"nom\":3.45,\"max\":3.55}],\"land_pattern\":{\"present\":true,\"source_pages\":[4],\"pad_shape\":\"rounded_rectangle\",\"pad_width\":0.28,\"pad_length\":0.85,\"pitch\":0.5,\"row_spacing\":4.1,\"row_spacing_reference\":\"inner_edges\",\"thermal_pad_width\":3.45,\"thermal_pad_length\":3.45,\"solder_mask_expansion\":0.07,\"notes\":\"Outer edges 5.8 mm; inner 4.1 mm. Non solder mask defined pads; pad width 0.25 on main view vs 0.28 in detail. 9 vias dia 0.3 at 1.0 pitch.\"}}],\"warnings\":[\"RHB pad width shown as 0.25 in board layout and 0.28 in detail; 0.28 used.\",\"RHB exposed pad number not given.\",\"Page 2 shows 4X 3.50 basic, page 3 gives thermal pad 3.45±0.10; page 3 used.\"]}",
+      "type": "text"
+     }
+    ],
+    "context_management": null,
+    "diagnostics": null,
+    "model": "claude-opus-5-5",
+    "role": "assistant",
+    "stop_details": null,
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "type": "message",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 13898
+     },
+     "cache_creation_input_tokens": 13898,
+     "cache_read_input_tokens": 0,
+     "fallback_credit": null,
+     "inference_geo": "global",
+     "input_tokens": 164,
+     "iterations": [
+      {
+       "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 13898
+       },
+       "cache_creation_input_tokens": 13898,
+       "cache_read_input_tokens": 0,
+       "input_tokens": 164,
+       "model": null,
+       "output_tokens": 1550,
+       "type": "message"
+      }
+     ],
+     "output_tokens": 1550,
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "speed": null
+    },
+    "input_transformations": null
+   }
+  },
+  {
+   "kind": "verify_geometry",
+   "model": "claude-opus-5-5",
+   "effort": "low",
+   "pages": [
+    29,
+    26,
+    27,
+    28
+   ],
+   "request_id": "req_011Cfona9EoufmPHAezUP83F",
+   "duration_s": 12.96,
+   "cost_usd": 0.137075,
+   "recorded": "2026-10-08T02:00:34",
+   "message": {
+    "id": "msg_011CfonaBUFNMop8SfvqPvxo",
+    "container": null,
+    "content": [
+     {
+      "citations": null,
+      "text": "{\"packages\":[{\"package_code\":\"DB\",\"package_name\":\"SSOP-28\",\"family\":\"gullwing\",\"pin_count\":28,\"mounting\":\"SMD\",\"outline_reference\":\"MO-150\",\"exposed_pad\":false,\"exposed_pad_number\":\"\",\"source_pages\":[5],\"dimensions\":[{\"symbol\":\"D\",\"description\":\"body length (dimension A in table, 28-pin row)\",\"unit\":\"mm\",\"min\":9.9,\"nom\":-1,\"max\":10.5},{\"symbol\":\"E1\",\"description\":\"body width\",\"unit\":\"mm\",\"min\":5.0,\"nom\":-1,\"max\":5.6},{\"symbol\":\"E\",\"description\":\"overall width incl. leads\",\"unit\":\"mm\",\"min\":7.4,\"nom\":-1,\"max\":8.2},{\"symbol\":\"e\",\"description\":\"lead pitch (basic)\",\"unit\":\"mm\",\"min\":-1,\"nom\":0.65,\"max\":-1},{\"symbol\":\"b\",\"description\":\"lead width\",\"unit\":\"mm\",\"min\":0.22,\"nom\":-1,\"max\":0.38},{\"symbol\":\"c\",\"description\":\"lead thickness\",\"unit\":\"mm\",\"min\":0.09,\"nom\":-1,\"max\":0.25},{\"symbol\":\"L\",\"description\":\"foot length\",\"unit\":\"mm\",\"min\":0.55,\"nom\":-1,\"max\":0.95},{\"symbol\":\"A\",\"description\":\"overall height\",\"unit\":\"mm\",\"min\":-1,\"nom\":-1,\"max\":2.0},{\"symbol\":\"A1\",\"description\":\"standoff\",\"unit\":\"mm\",\"min\":0.05,\"nom\":-1,\"max\":-1},{\"symbol\":\"theta\",\"description\":\"foot angle\",\"unit\":\"deg\",\"min\":0,\"nom\":-1,\"max\":8}],\"land_pattern\":{\"present\":false,\"source_pages\":[],\"pad_shape\":\"unknown\",\"pad_width\":-1,\"pad_length\":-1,\"pitch\":-1,\"row_spacing\":-1,\"row_spacing_reference\":\"not_applicable\",\"thermal_pad_width\":-1,\"thermal_pad_length\":-1,\"solder_mask_expansion\":-1,\"notes\":\"\"}},{\"package_code\":\"RHB\",\"package_name\":\"VQFN-32 5x5\",\"family\":\"nolead\",\"pin_count\":32,\"mounting\":\"SMD\",\"outline_reference\":\"MO-220\",\"exposed_pad\":true,\"exposed_pad_number\":\"\",\"source_pages\":[2,3],\"dimensions\":[{\"symbol\":\"D\",\"description\":\"body length\",\"unit\":\"mm\",\"min\":4.85,\"nom\":-1,\"max\":5.15},{\"symbol\":\"E\",\"description\":\"body width\",\"unit\":\"mm\",\"min\":4.85,\"nom\":-1,\"max\":5.15},{\"symbol\":\"A\",\"description\":\"overall height\",\"unit\":\"mm\",\"min\":0.8,\"nom\":-1,\"max\":1.0},{\"symbol\":\"A1\",\"description\":\"standoff\",\"unit\":\"mm\",\"min\":0,\"nom\":-1,\"max\":0.05},{\"symbol\":\"A3\",\"description\":\"terminal thickness (ref)\",\"unit\":\"mm\",\"min\":-1,\"nom\":0.2,\"max\":-1},{\"symbol\":\"e\",\"description\":\"pitch (basic)\",\"unit\":\"mm\",\"min\":-1,\"nom\":0.5,\"max\":-1},{\"symbol\":\"b\",\"description\":\"terminal width\",\"unit\":\"mm\",\"min\":0.18,\"nom\":-1,\"max\":0.3},{\"symbol\":\"L\",\"description\":\"terminal length\",\"unit\":\"mm\",\"min\":0.3,\"nom\":-1,\"max\":0.5},{\"symbol\":\"D2\",\"description\":\"exposed pad length\",\"unit\":\"mm\",\"min\":3.35,\"nom\":3.45,\"max\":3.55},{\"symbol\":\"E2\",\"description\":\"exposed pad width\",\"unit\":\"mm\",\"min\":3.35,\"nom\":3.45,\"max\":3.55}],\"land_pattern\":{\"present\":true,\"source_pages\":[4],\"pad_shape\":\"rounded_rectangle\",\"pad_width\":0.28,\"pad_length\":0.85,\"pitch\":0.5,\"row_spacing\":4.1,\"row_spacing_reference\":\"inner_edges\",\"thermal_pad_width\":3.45,\"thermal_pad_length\":3.45,\"solder_mask_expansion\":0.07,\"notes\":\"Outer edges 5.8 mm; inner edges 4.1 mm. Non solder mask defined pads, R0.14 end radius. 9 vias dia 0.3 at 1.0 pitch.\"}}],\"warnings\":[\"Correction: DB body length now reported as D (9.90-10.50, from table column A for 28 pins) instead of symbol A.\",\"RHB pad width: 0.25 dimension in board layout appears to be pad spacing/width; detail gives 0.28 pad width, 0.28 used.\",\"RHB exposed pad number not given.\",\"RHB page 2 shows 4X 3.50 basic (lead span reference); page 3 gives thermal pad 3.45±0.10, used for D2/E2.\"]}",
+      "type": "text"
+     }
+    ],
+    "context_management": null,
+    "diagnostics": null,
+    "model": "claude-opus-5-5",
+    "role": "assistant",
+    "stop_details": null,
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "type": "message",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 20259
+     },
+     "cache_creation_input_tokens": 20259,
+     "cache_read_input_tokens": 13898,
+     "fallback_credit": null,
+     "inference_geo": "global",
+     "input_tokens": 150,
+     "iterations": [
+      {
+       "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 20259
+       },
+       "cache_creation_input_tokens": 20259,
+       "cache_read_input_tokens": 13898,
+       "input_tokens": 150,
+       "model": null,
+       "output_tokens": 1620,
+       "type": "message"
+      }
+     ],
+     "output_tokens": 1620,
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "speed": null
+    },
+    "input_transformations": null
+   }
+  }
+ ],
+ "summary": {
+  "datasheet_id": "d9c1094065bf0e44",
+  "model": "claude-opus-5-5",
+  "served_model": "claude-opus-5-5",
+  "effort": "low",
+  "pages": [
+   1,
+   6,
+   22,
+   23,
+   26,
+   27,
+   28,
+   29
+  ],
+  "identity_pages": [
+   1,
+   6,
+   22,
+   23
+  ],
+  "geometry_pages": [
+   22,
+   26,
+   27,
+   28,
+   29
+  ],
+  "selection_method": "heuristic",
+  "devices": [
+   "SN65LV1023A",
+   "SN65LV1224B"
+  ],
+  "mpns": 16,
+  "packages": [
+   "SSOP-28 (DB)",
+   "VQFN-32 5x5 (RHB)"
+  ],
+  "pins": 120,
+  "issues": {
+   "error": 0,
+   "warning": 0,
+   "info": 2
+  },
+  "vision": true,
+  "cost_usd": 0.5417,
+  "duration_s": 98.1
+ }
+}

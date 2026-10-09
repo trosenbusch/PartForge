@@ -1,0 +1,193 @@
+{
+ "fixture_version": 1,
+ "pdf": "LTC6244.pdf",
+ "sha256": "4dfa300bc118057dee0c304b7783ef43274e50454421e43790c70e899bd72960",
+ "schema": "3333381c49d4",
+ "recorded": "2026-10-08T01:56:59",
+ "options": {
+  "model": null,
+  "effort": null,
+  "pages": null,
+  "max_pages": 12,
+  "triage": "auto",
+  "vision": "auto",
+  "max_cost_usd": null
+ },
+ "settings": {
+  "model": "claude-opus-5-5",
+  "effort": "low",
+  "fast_model": "claude-haiku-5-5",
+  "use_fallbacks": true
+ },
+ "calls": [
+  {
+   "kind": "identity",
+   "model": "claude-opus-5-5",
+   "effort": "low",
+   "pages": [
+    1,
+    2
+   ],
+   "request_id": "req_011CfonKJxnJtWNAqrj37qcA",
+   "duration_s": 32.56,
+   "cost_usd": 0.161299,
+   "recorded": "2026-10-08T01:57:32",
+   "message": {
+    "id": "msg_011CfonKKDfZqfWJ7H3L5tM7",
+    "container": null,
+    "content": [
+     {
+      "citations": null,
+      "text": "{\"manufacturer\":\"Linear Technology\",\"document_id\":\"6244fb\",\"document_title\":\"LTC6244 Dual 50MHz, Low Noise, Rail-to-Rail, CMOS Op Amp\",\"document_date\":\"\",\"devices\":[{\"base_part_number\":\"LTC6244\",\"description\":\"Dual 50MHz low noise rail-to-rail output CMOS op amp, 2.8V to 6V\",\"category\":\"Amplifiers\",\"parameters\":[{\"column\":\"Amplifier Type\",\"value\":\"Operationsverstärker\",\"page\":1},{\"column\":\"Channels\",\"value\":\"2\",\"page\":1},{\"column\":\"GBW\",\"value\":\"50MHz\",\"page\":1},{\"column\":\"Slew Rate\",\"value\":\"40V/µs\",\"page\":1},{\"column\":\"Supply Voltage\",\"value\":\"2.8V to 6V\",\"page\":1},{\"column\":\"Input Offset\",\"value\":\"100µV\",\"page\":1},{\"column\":\"Rail-to-Rail\",\"value\":\"Ausgang\",\"page\":1},{\"column\":\"Operating Temperature\",\"value\":\"-40°C to 125°C\",\"page\":2}],\"variants\":[{\"mpn\":\"LTC6244CDD#PBF\",\"package_code\":\"DD\",\"temperature_range\":\"0°C to 70°C\",\"packaging\":\"\",\"status\":\"\",\"notes\":\"Marking LCCF\",\"values\":[],\"page\":2},{\"mpn\":\"LTC6244CDD#TRPBF\",\"package_code\":\"DD\",\"temperature_range\":\"0°C to 70°C\",\"packaging\":\"Tape and Reel\",\"status\":\"\",\"notes\":\"Marking LCCF\",\"values\":[],\"page\":2},{\"mpn\":\"LTC6244IDD#PBF\",\"package_code\":\"DD\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"\",\"status\":\"\",\"notes\":\"Marking LCCF\",\"values\":[],\"page\":2},{\"mpn\":\"LTC6244IDD#TRPBF\",\"package_code\":\"DD\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tape and Reel\",\"status\":\"\",\"notes\":\"Marking LCCF\",\"values\":[],\"page\":2},{\"mpn\":\"LTC6244HDD#PBF\",\"package_code\":\"DD\",\"temperature_range\":\"-40°C to 125°C\",\"packaging\":\"\",\"status\":\"\",\"notes\":\"Marking LCCF\",\"values\":[],\"page\":2},{\"mpn\":\"LTC6244HDD#TRPBF\",\"package_code\":\"DD\",\"temperature_range\":\"-40°C to 125°C\",\"packaging\":\"Tape and Reel\",\"status\":\"\",\"notes\":\"Marking LCCF\",\"values\":[],\"page\":2},{\"mpn\":\"LTC6244CMS8#PBF\",\"package_code\":\"MS8\",\"temperature_range\":\"0°C to 70°C\",\"packaging\":\"\",\"status\":\"\",\"notes\":\"Marking LTCCM\",\"values\":[],\"page\":2},{\"mpn\":\"LTC6244CMS8#TRPBF\",\"package_code\":\"MS8\",\"temperature_range\":\"0°C to 70°C\",\"packaging\":\"Tape and Reel\",\"status\":\"\",\"notes\":\"Marking LTCCM\",\"values\":[],\"page\":2},{\"mpn\":\"LTC6244IMS8#PBF\",\"package_code\":\"MS8\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"\",\"status\":\"\",\"notes\":\"Marking LTCCM\",\"values\":[],\"page\":2},{\"mpn\":\"LTC6244IMS8#TRPBF\",\"package_code\":\"MS8\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tape and Reel\",\"status\":\"\",\"notes\":\"Marking LTCCM\",\"values\":[],\"page\":2},{\"mpn\":\"LTC6244HMS8#PBF\",\"package_code\":\"MS8\",\"temperature_range\":\"-40°C to 125°C\",\"packaging\":\"\",\"status\":\"\",\"notes\":\"Marking LTCCM\",\"values\":[],\"page\":2},{\"mpn\":\"LTC6244HMS8#TRPBF\",\"package_code\":\"MS8\",\"temperature_range\":\"-40°C to 125°C\",\"packaging\":\"Tape and Reel\",\"status\":\"\",\"notes\":\"Marking LTCCM\",\"values\":[],\"page\":2}],\"pin_tables\":[{\"package_code\":\"DD\",\"source_pages\":[2],\"pins\":[{\"number\":\"1\",\"name\":\"OUT A\",\"function\":\"Output A\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Channel A\",\"part\":1},{\"number\":\"2\",\"name\":\"-IN A\",\"function\":\"Inverting input A\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Channel A\",\"part\":1},{\"number\":\"3\",\"name\":\"+IN A\",\"function\":\"Non-inverting input A\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Channel A\",\"part\":1},{\"number\":\"4\",\"name\":\"V-\",\"function\":\"Negative supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":0},{\"number\":\"5\",\"name\":\"+IN B\",\"function\":\"Non-inverting input B\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Channel B\",\"part\":2},{\"number\":\"6\",\"name\":\"-IN B\",\"function\":\"Inverting input B\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Channel B\",\"part\":2},{\"number\":\"7\",\"name\":\"OUT B\",\"function\":\"Output B\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Channel B\",\"part\":2},{\"number\":\"8\",\"name\":\"V+\",\"function\":\"Positive supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":0},{\"number\":\"9\",\"name\":\"V-\",\"function\":\"Exposed pad, connected to V- (PCB connection optional)\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":0}]},{\"package_code\":\"MS8\",\"source_pages\":[2],\"pins\":[{\"number\":\"1\",\"name\":\"OUT A\",\"function\":\"Output A\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Channel A\",\"part\":1},{\"number\":\"2\",\"name\":\"-IN A\",\"function\":\"Inverting input A\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Channel A\",\"part\":1},{\"number\":\"3\",\"name\":\"+IN A\",\"function\":\"Non-inverting input A\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Channel A\",\"part\":1},{\"number\":\"4\",\"name\":\"V-\",\"function\":\"Negative supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":0},{\"number\":\"5\",\"name\":\"+IN B\",\"function\":\"Non-inverting input B\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Channel B\",\"part\":2},{\"number\":\"6\",\"name\":\"-IN B\",\"function\":\"Inverting input B\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Channel B\",\"part\":2},{\"number\":\"7\",\"name\":\"OUT B\",\"function\":\"Output B\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Channel B\",\"part\":2},{\"number\":\"8\",\"name\":\"V+\",\"function\":\"Positive supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":0}]}]},{\"base_part_number\":\"LTC6244HV\",\"description\":\"Dual 50MHz low noise rail-to-rail output CMOS op amp, 2.8V to ±5.25V\",\"category\":\"Amplifiers\",\"parameters\":[{\"column\":\"Amplifier Type\",\"value\":\"Operationsverstärker\",\"page\":1},{\"column\":\"Channels\",\"value\":\"2\",\"page\":1},{\"column\":\"GBW\",\"value\":\"50MHz\",\"page\":1},{\"column\":\"Slew Rate\",\"value\":\"40V/µs\",\"page\":1},{\"column\":\"Supply Voltage\",\"value\":\"2.8V to ±5.25V\",\"page\":1},{\"column\":\"Input Offset\",\"value\":\"100µV\",\"page\":1},{\"column\":\"Rail-to-Rail\",\"value\":\"Ausgang\",\"page\":1},{\"column\":\"Operating Temperature\",\"value\":\"-40°C to 125°C\",\"page\":2}],\"variants\":[{\"mpn\":\"LTC6244HVCDD#PBF\",\"package_code\":\"DD\",\"temperature_range\":\"0°C to 70°C\",\"packaging\":\"\",\"status\":\"\",\"notes\":\"Marking LCGD\",\"values\":[],\"page\":2},{\"mpn\":\"LTC6244HVCDD#TRPBF\",\"package_code\":\"DD\",\"temperature_range\":\"0°C to 70°C\",\"packaging\":\"Tape and Reel\",\"status\":\"\",\"notes\":\"Marking LCGD\",\"values\":[],\"page\":2},{\"mpn\":\"LTC6244HVIDD#PBF\",\"package_code\":\"DD\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"\",\"status\":\"\",\"notes\":\"Marking LCGD\",\"values\":[],\"page\":2},{\"mpn\":\"LTC6244HVIDD#TRPBF\",\"package_code\":\"DD\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tape and Reel\",\"status\":\"\",\"notes\":\"Marking LCGD\",\"values\":[],\"page\":2},{\"mpn\":\"LTC6244HVHDD#PBF\",\"package_code\":\"DD\",\"temperature_range\":\"-40°C to 125°C\",\"packaging\":\"\",\"status\":\"\",\"notes\":\"Marking LCGD\",\"values\":[],\"page\":2},{\"mpn\":\"LTC6244HVHDD#TRPBF\",\"package_code\":\"DD\",\"temperature_range\":\"-40°C to 125°C\",\"packaging\":\"Tape and Reel\",\"status\":\"\",\"notes\":\"Marking LCGD\",\"values\":[],\"page\":2},{\"mpn\":\"LTC6244HVCMS8#PBF\",\"package_code\":\"MS8\",\"temperature_range\":\"0°C to 70°C\",\"packaging\":\"\",\"status\":\"\",\"notes\":\"Marking LTCGF\",\"values\":[],\"page\":2},{\"mpn\":\"LTC6244HVCMS8#TRPBF\",\"package_code\":\"MS8\",\"temperature_range\":\"0°C to 70°C\",\"packaging\":\"Tape and Reel\",\"status\":\"\",\"notes\":\"Marking LTCGF\",\"values\":[],\"page\":2},{\"mpn\":\"LTC6244HVIMS8#PBF\",\"package_code\":\"MS8\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"\",\"status\":\"\",\"notes\":\"Marking LTCGF\",\"values\":[],\"page\":2},{\"mpn\":\"LTC6244HVIMS8#TRPBF\",\"package_code\":\"MS8\",\"temperature_range\":\"-40°C to 85°C\",\"packaging\":\"Tape and Reel\",\"status\":\"\",\"notes\":\"Marking LTCGF\",\"values\":[],\"page\":2}],\"pin_tables\":[{\"package_code\":\"DD\",\"source_pages\":[2],\"pins\":[{\"number\":\"1\",\"name\":\"OUT A\",\"function\":\"Output A\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Channel A\",\"part\":1},{\"number\":\"2\",\"name\":\"-IN A\",\"function\":\"Inverting input A\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Channel A\",\"part\":1},{\"number\":\"3\",\"name\":\"+IN A\",\"function\":\"Non-inverting input A\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Channel A\",\"part\":1},{\"number\":\"4\",\"name\":\"V-\",\"function\":\"Negative supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":0},{\"number\":\"5\",\"name\":\"+IN B\",\"function\":\"Non-inverting input B\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Channel B\",\"part\":2},{\"number\":\"6\",\"name\":\"-IN B\",\"function\":\"Inverting input B\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Channel B\",\"part\":2},{\"number\":\"7\",\"name\":\"OUT B\",\"function\":\"Output B\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Channel B\",\"part\":2},{\"number\":\"8\",\"name\":\"V+\",\"function\":\"Positive supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":0},{\"number\":\"9\",\"name\":\"V-\",\"function\":\"Exposed pad, connected to V- (PCB connection optional)\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":0}]},{\"package_code\":\"MS8\",\"source_pages\":[2],\"pins\":[{\"number\":\"1\",\"name\":\"OUT A\",\"function\":\"Output A\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Channel A\",\"part\":1},{\"number\":\"2\",\"name\":\"-IN A\",\"function\":\"Inverting input A\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Channel A\",\"part\":1},{\"number\":\"3\",\"name\":\"+IN A\",\"function\":\"Non-inverting input A\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Channel A\",\"part\":1},{\"number\":\"4\",\"name\":\"V-\",\"function\":\"Negative supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":0},{\"number\":\"5\",\"name\":\"+IN B\",\"function\":\"Non-inverting input B\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Channel B\",\"part\":2},{\"number\":\"6\",\"name\":\"-IN B\",\"function\":\"Inverting input B\",\"electrical_type\":\"Input\",\"active_low\":false,\"no_connect\":false,\"group\":\"Channel B\",\"part\":2},{\"number\":\"7\",\"name\":\"OUT B\",\"function\":\"Output B\",\"electrical_type\":\"Output\",\"active_low\":false,\"no_connect\":false,\"group\":\"Channel B\",\"part\":2},{\"number\":\"8\",\"name\":\"V+\",\"function\":\"Positive supply\",\"electrical_type\":\"Power\",\"active_low\":false,\"no_connect\":false,\"group\":\"Supply\",\"part\":0}]}]}],\"packages\":[{\"package_code\":\"DD\",\"package_name\":\"DFN-8 3x3\",\"pin_count\":8,\"exposed_pad\":true},{\"package_code\":\"MS8\",\"package_name\":\"MSOP-8\",\"pin_count\":8,\"exposed_pad\":false}],\"warnings\":[\"No LTC6244HVHMS8 (HV, H-grade MSOP) part listed in order table; not invented.\",\"Operating temperature given per grade: C/I -40°C to 85°C, H -40°C to 125°C; specified ranges per variant used in variants.\",\"Tape and reel quantities not stated.\",\"Document date not stated on supplied pages.\"]}",
+      "type": "text"
+     }
+    ],
+    "context_management": null,
+    "diagnostics": null,
+    "model": "claude-opus-5-5",
+    "role": "assistant",
+    "stop_details": null,
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "type": "message",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 10339
+     },
+     "cache_creation_input_tokens": 10339,
+     "cache_read_input_tokens": 0,
+     "fallback_credit": null,
+     "inference_geo": "global",
+     "input_tokens": 2961,
+     "iterations": [
+      {
+       "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 10339
+       },
+       "cache_creation_input_tokens": 10339,
+       "cache_read_input_tokens": 0,
+       "input_tokens": 2961,
+       "model": null,
+       "output_tokens": 4888,
+       "type": "message"
+      }
+     ],
+     "output_tokens": 4888,
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "speed": null
+    },
+    "input_transformations": null
+   }
+  },
+  {
+   "kind": "geometry",
+   "model": "claude-opus-5-5",
+   "effort": "low",
+   "pages": [
+    23,
+    24
+   ],
+   "request_id": "req_011CfonMhyvrquXAU3aQqX8z",
+   "duration_s": 11.34,
+   "cost_usd": 0.074172,
+   "recorded": "2026-10-08T01:57:43",
+   "message": {
+    "id": "msg_011CfonMiKH6sespFw3sw8dD",
+    "container": null,
+    "content": [
+     {
+      "citations": null,
+      "text": "{\"packages\":[{\"package_code\":\"DD\",\"package_name\":\"DFN-8 3x3\",\"family\":\"nolead\",\"pin_count\":8,\"mounting\":\"SMD\",\"outline_reference\":\"MO-229 (WEED-1)\",\"exposed_pad\":true,\"exposed_pad_number\":\"\",\"source_pages\":[1],\"dimensions\":[{\"symbol\":\"D\",\"description\":\"body length\",\"unit\":\"mm\",\"min\":2.9,\"nom\":3.0,\"max\":3.1},{\"symbol\":\"E\",\"description\":\"body width\",\"unit\":\"mm\",\"min\":2.9,\"nom\":3.0,\"max\":3.1},{\"symbol\":\"A\",\"description\":\"package height\",\"unit\":\"mm\",\"min\":0.7,\"nom\":0.75,\"max\":0.8},{\"symbol\":\"A1\",\"description\":\"standoff\",\"unit\":\"mm\",\"min\":0.0,\"nom\":-1,\"max\":0.05},{\"symbol\":\"A3\",\"description\":\"lead frame thickness (REF)\",\"unit\":\"mm\",\"min\":-1,\"nom\":0.2,\"max\":-1},{\"symbol\":\"b\",\"description\":\"lead width\",\"unit\":\"mm\",\"min\":0.2,\"nom\":0.25,\"max\":0.3},{\"symbol\":\"e\",\"description\":\"lead pitch (basic)\",\"unit\":\"mm\",\"min\":-1,\"nom\":0.5,\"max\":-1},{\"symbol\":\"L\",\"description\":\"lead length\",\"unit\":\"mm\",\"min\":0.3,\"nom\":0.4,\"max\":0.5},{\"symbol\":\"D2\",\"description\":\"exposed pad length\",\"unit\":\"mm\",\"min\":2.28,\"nom\":2.38,\"max\":2.48},{\"symbol\":\"E2\",\"description\":\"exposed pad width\",\"unit\":\"mm\",\"min\":1.55,\"nom\":1.65,\"max\":1.75}],\"land_pattern\":{\"present\":true,\"source_pages\":[1],\"pad_shape\":\"rectangle\",\"pad_width\":0.25,\"pad_length\":0.7,\"pitch\":0.5,\"row_spacing\":2.1,\"row_spacing_reference\":\"inner_edges\",\"thermal_pad_width\":1.65,\"thermal_pad_length\":2.38,\"solder_mask_expansion\":-1,\"notes\":\"Outer edge span 3.5 mm; inner edge span 2.10 mm.\"}},{\"package_code\":\"MS8\",\"package_name\":\"MSOP-8\",\"family\":\"gullwing\",\"pin_count\":8,\"mounting\":\"SMD\",\"outline_reference\":\"\",\"exposed_pad\":false,\"exposed_pad_number\":\"\",\"source_pages\":[2],\"dimensions\":[{\"symbol\":\"D\",\"description\":\"body length\",\"unit\":\"mm\",\"min\":2.898,\"nom\":3.0,\"max\":3.102},{\"symbol\":\"E1\",\"description\":\"body width\",\"unit\":\"mm\",\"min\":2.898,\"nom\":3.0,\"max\":3.102},{\"symbol\":\"E\",\"description\":\"overall width incl. leads\",\"unit\":\"mm\",\"min\":4.748,\"nom\":4.9,\"max\":5.052},{\"symbol\":\"A\",\"description\":\"package height\",\"unit\":\"mm\",\"min\":-1,\"nom\":-1,\"max\":1.1},{\"symbol\":\"A1\",\"description\":\"standoff\",\"unit\":\"mm\",\"min\":0.0508,\"nom\":0.1016,\"max\":0.1524},{\"symbol\":\"A2\",\"description\":\"body thickness (REF)\",\"unit\":\"mm\",\"min\":-1,\"nom\":0.86,\"max\":-1},{\"symbol\":\"b\",\"description\":\"lead width\",\"unit\":\"mm\",\"min\":0.22,\"nom\":-1,\"max\":0.38},{\"symbol\":\"c\",\"description\":\"lead thickness\",\"unit\":\"mm\",\"min\":-1,\"nom\":0.18,\"max\":-1},{\"symbol\":\"e\",\"description\":\"lead pitch (basic)\",\"unit\":\"mm\",\"min\":-1,\"nom\":0.65,\"max\":-1},{\"symbol\":\"L\",\"description\":\"foot length\",\"unit\":\"mm\",\"min\":0.378,\"nom\":0.53,\"max\":0.682},{\"symbol\":\"theta\",\"description\":\"foot angle\",\"unit\":\"deg\",\"min\":0,\"nom\":-1,\"max\":6}],\"land_pattern\":{\"present\":true,\"source_pages\":[2],\"pad_shape\":\"rectangle\",\"pad_width\":0.42,\"pad_length\":0.889,\"pitch\":0.65,\"row_spacing\":3.2,\"row_spacing_reference\":\"inner_edges\",\"thermal_pad_width\":-1,\"thermal_pad_length\":-1,\"solder_mask_expansion\":-1,\"notes\":\"Inner edge spacing 3.20-3.45 mm; outer span 5.23 mm min.\"}}],\"warnings\":[\"MS8 land pattern inner row spacing given as range 3.20-3.45 mm; 3.20 reported.\",\"DD outline reference stated as 'MO-229 variation of (WEED-1)'.\"]}",
+      "type": "text"
+     }
+    ],
+    "context_management": null,
+    "diagnostics": null,
+    "model": "claude-opus-5-5",
+    "role": "assistant",
+    "stop_details": null,
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "type": "message",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 8440
+     },
+     "cache_creation_input_tokens": 8440,
+     "cache_read_input_tokens": 0,
+     "fallback_credit": null,
+     "inference_geo": "global",
+     "input_tokens": 163,
+     "iterations": [
+      {
+       "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 8440
+       },
+       "cache_creation_input_tokens": 8440,
+       "cache_read_input_tokens": 0,
+       "input_tokens": 163,
+       "model": null,
+       "output_tokens": 1566,
+       "type": "message"
+      }
+     ],
+     "output_tokens": 1566,
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "speed": null
+    },
+    "input_transformations": null
+   }
+  }
+ ],
+ "summary": {
+  "datasheet_id": "4dfa300bc118057d",
+  "model": "claude-opus-5-5",
+  "served_model": "claude-opus-5-5",
+  "effort": "low",
+  "pages": [
+   1,
+   2,
+   23,
+   24
+  ],
+  "identity_pages": [
+   1,
+   2
+  ],
+  "geometry_pages": [
+   23,
+   24
+  ],
+  "selection_method": "heuristic",
+  "devices": [
+   "LTC6244",
+   "LTC6244HV"
+  ],
+  "mpns": 22,
+  "packages": [
+   "DFN-8 3x3 (DD)",
+   "MSOP-8 (MS8)"
+  ],
+  "pins": 34,
+  "issues": {
+   "error": 0,
+   "warning": 0,
+   "info": 0
+  },
+  "vision": false,
+  "cost_usd": 0.235471,
+  "duration_s": 44.5
+ }
+}
