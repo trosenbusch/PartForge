@@ -1,0 +1,98 @@
+/*
+ * Feinschliff für den DataGrid (AG Grid, Theme „Forge“ in theme.ts). Farben ausschließlich über --pf-*-Tokens.
+ */
+.pf-grid .ag-root-wrapper {
+  border-radius: inherit;
+}
+
+/* Monospace-Spalten (Werte, MPNs, Footprint-Namen) */
+.pf-grid .pf-cell-mono,
+.pf-grid .pf-cell-mono .ag-cell-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  font-size: 12px;
+}
+
+.pf-grid .pf-cell-right {
+  text-align: right;
+}
+.pf-grid .pf-header-right .ag-header-cell-label {
+  flex-direction: row-reverse;
+}
+
+/* Renderer (inline-flex, vertikal mittig) nie breiter als die Zelle */
+.pf-grid .pf-cell-inline {
+  display: inline-flex;
+  max-width: 100%;
+  vertical-align: middle;
+  align-items: center;
+}
+
+/* Kopfzeile: ruhiges Mikro-Label-Gefühl ohne Großbuchstaben */
+.pf-grid .ag-header-cell-text {
+  letter-spacing: 0.005em;
+}
+.pf-grid .ag-header-cell-sorted-asc .ag-header-cell-text,
+.pf-grid .ag-header-cell-sorted-desc .ag-header-cell-text {
+  color: var(--pf-fg);
+}
+.pf-grid .ag-sort-indicator-icon {
+  color: var(--pf-accent);
+}
+
+/* Ausgewählte Zeilen: Kupfer-Kante links (nur im ersten sichtbaren Bereich) */
+.pf-grid .ag-row-selected .ag-cell[aria-colindex='1'] {
+  box-shadow: inset 2px 0 0 var(--pf-accent);
+}
+
+/* Fokus: Kupfer-Rahmen, auch für ganze Zeilen bei Tastaturnavigation */
+.pf-grid .ag-cell-focus:not(.ag-cell-range-selected):focus-within,
+.pf-grid .ag-cell.ag-cell-focus:focus-visible {
+  border-color: var(--pf-accent) !important;
+}
+
+/* Overlays: eigene Inhalte bleiben bedienbar */
+.pf-grid .ag-overlay-wrapper {
+  padding: 16px;
+}
+
+/* Ladebalken oben, solange Daten nachgeladen werden (Zeilen bleiben sichtbar) */
+.pf-grid-refreshing::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--pf-accent), transparent);
+  background-size: 50% 100%;
+  background-repeat: no-repeat;
+  animation: pf-grid-progress 1.1s ease-in-out infinite;
+  z-index: 5;
+}
+@keyframes pf-grid-progress {
+  0% {
+    background-position: -50% 0;
+  }
+  100% {
+    background-position: 150% 0;
+  }
+}
+
+/* Filter-Knöpfe in der Kopfzeile nur beim Überfahren, mit Tastaturfokus oder bei aktivem Filter */
+.pf-grid .ag-header-cell .ag-header-cell-filter-button,
+.pf-grid .ag-header-cell .ag-header-cell-menu-button {
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+.pf-grid .ag-header-cell:hover .ag-header-cell-filter-button,
+.pf-grid .ag-header-cell:hover .ag-header-cell-menu-button,
+.pf-grid .ag-header-cell:focus-within .ag-header-cell-filter-button,
+.pf-grid .ag-header-cell:focus-within .ag-header-cell-menu-button,
+.pf-grid .ag-header-cell.ag-header-cell-filtered .ag-header-cell-filter-button,
+.pf-grid .ag-header-cell .ag-header-cell-filter-button.ag-filter-active,
+.pf-grid .ag-header-cell .ag-header-menu-icon.ag-filter-active {
+  opacity: 1;
+}
+.pf-grid .ag-header-cell-filtered .ag-header-cell-filter-button {
+  color: var(--pf-accent);
+}

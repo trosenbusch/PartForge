@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="de" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="description" content="PartForge – datenbankbasierte Bauteilbibliotheken für Altium Designer" />
+    <title>PartForge</title>
+  </head>
+  <body>
+    <script>
+      // Theme vor dem ersten Rendern setzen (kein Aufblitzen). Steht am Anfang von <body>, damit auch vom
+      // Backend vor </head> eingefügte <meta>-Tags schon gelesen werden können.
+      // Reihenfolge: localStorage (diese Sitzung) → Cookie (überlebt den Neustart trotz wechselndem Port)
+      // → <meta name="partforge-theme"> (gespeicherte App-Einstellung, falls das Backend sie einsetzt) → dunkel.
+      ;(function () {
+        var t = null
+        try {
+          t = localStorage.getItem('pf-theme')
+        } catch (e) {}
+        if (!t) {
+          var m = document.cookie.match(/(?:^|;\s*)pf-theme=([^;]*)/)
+          if (m) t = decodeURIComponent(m[1])
+        }
+        if (!t) {
+          var meta = document.querySelector('meta[name="partforge-theme"]')
+          if (meta) t = meta.getAttribute('content')
+        }
+        if (t !== 'light' && t !== 'dark') {
+          t = t === 'system' && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+        }
+        document.documentElement.setAttribute('data-theme', t)
+        document.documentElement.style.colorScheme = t
+      })()
+    </script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,8 @@
+/* Serienvorschau: ungültige Zeilen gedämpft (Text bleibt AA), Konflikte mit rotem Anlauf am Zeilenanfang */
+.pf-series-grid .ag-row.pf-series-invalid .ag-cell {
+  color: var(--pf-fg-muted);
+}
+
+.pf-series-grid .ag-row.pf-series-conflict {
+  background-image: linear-gradient(90deg, color-mix(in oklab, var(--pf-danger) 10%, transparent), transparent 45%);
+}
