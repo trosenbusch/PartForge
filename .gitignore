@@ -1,0 +1,20 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+*.egg-info/
+*.log
+frontend/node_modules/
+frontend/dist/
+partforge/web/*
+!partforge/web/.gitkeep
+tests/_tmp/
+.secret/
+tests/data/corpus/pdfs/
+# Generierte Screenshots aus Tests/E2E (~800 MB); nur das README-Bild bleibt versioniert
+docs/screenshots/*
+!docs/screenshots/readme/

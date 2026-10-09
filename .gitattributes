@@ -1,0 +1,42 @@
+# Zeilenenden: Textdateien im Repository und beim Auschecken mit LF.
+* text=auto eol=lf
+
+# Windows-Skripte brauchen CRLF (cmd.exe liest LF-Dateien fehlerhaft) - Start-PartForge.cmd
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binärdateien: nie umwandeln, keine Textdiffs
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.7z binary
+*.gz binary
+*.exe binary
+*.dll binary
+*.pyd binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.sqlite binary
+*.sqlite3 binary
+*.db binary
+*.xlsx binary
+*.xls binary
+*.ods binary
+*.SchLib binary
+*.schlib binary
+*.PcbLib binary
+*.pcblib binary
+*.IntLib binary
+*.SchDoc binary
+*.PcbDoc binary
+*.step binary
+*.stp binary
+*.STEP binary
+*.stl binary
