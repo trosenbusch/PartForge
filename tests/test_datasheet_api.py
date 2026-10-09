@@ -307,7 +307,8 @@ def test_edited_extraction_is_cleaned_and_blockers_need_a_confirmation(client, a
     # K3: the JSON contract of the structured blocker targets (same order and text as the blockers)
     assert [t["blocker"] for t in proposal["blocker_targets"]] == proposal["blockers"]
     pads = next(t for t in proposal["blocker_targets"] if "Pads ohne Pin im Symbol: 4, 8" in t["blocker"])
-    assert pads == {"blocker": pads["blocker"], "package": "SN", "pins": [], "pads": ["4", "8"]}
+    # pins without pads concern the pairing: they block "Bauteil anlegen", not "Nur Symbol/Footprint speichern"
+    assert pads == {"blocker": pads["blocker"], "package": "SN", "pins": [], "pads": ["4", "8"], "scopes": ["part"]}
     refused = wait(client, client.post(f"/api/datasheets/{ds}/commit", json=choice).json()["job"])
     assert refused["status"] == "failed" and "bestätigen" in refused["error"]
     confirmed = {**choice, "accept_issues": True}

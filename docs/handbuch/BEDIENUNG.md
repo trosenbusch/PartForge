@@ -257,6 +257,32 @@ Datenblatt.
 
 ![Bauteile angelegt](bilder/23-bauteile-angelegt.png)
 
+**Nur Symbol oder nur Footprint speichern.** Über **Einzeln speichern** neben „Bauteile anlegen“ schreibt PartForge
+nur das Symbol in die SchLib oder nur den Footprint in die PcbLib – ohne Bauteil in der Datenbank. Das hilft, wenn
+noch etwas fehlt: Hat das Datenblatt z. B. keine Maßzeichnung, lässt sich das Symbol trotzdem schon speichern. Ein
+gesperrter Eintrag nennt den Grund.
+
+**Gehäusezeichnung in einem eigenen Dokument.** Manche Hersteller – etwa Texas Instruments – veröffentlichen die
+Gehäusezeichnung als eigenes PDF (z. B. „RGY0019B“ zum LM25190-Q1). So entsteht trotzdem das vollständige Bauteil:
+
+1. Das Datenblatt des Bauteils und die Gehäusezeichnung importieren und analysieren. Eine reine Gehäusezeichnung
+   erkennt PartForge: Ihre Prüfansicht zeigt nur das Gehäuse, **Footprint speichern** schreibt den Footprint in die
+   PcbLib.
+2. In der Prüfansicht des Bauteils unter **Gehäuse** auf **Maße übernehmen …** klicken (fehlen Maße, steht dort ein
+   Hinweis mit demselben Knopf). PartForge zeigt die passenden Zeichnungen der anderen Datenblätter, die beste zuerst,
+   und übernimmt Maße, Herstellerempfehlung, Exposed-Pad-Nummer und Anschlussanordnung. Aus der Gehäusezeichnung
+   heraus geht es umgekehrt mit **Einem Bauteil geben …** – oder in der Liste *Bisherige Datenblätter* über das
+   Menü **…**.
+3. Danach steht unten „Bereit zum Anlegen“. Das Gehäuse trägt den Hinweis „aus qfnd819.pdf“; darüber sehen Sie die
+   Zeichnung, wählen eine andere oder heben die Übernahme wieder auf.
+
+**Unregelmäßige QFN.** Sind die Anschlüsse nicht gleichmäßig auf vier Seiten verteilt (TI RGY: Pin 1 und 19 an der
+oberen Stirnseite im Abstand 1,5 mm, rechts eine Position frei), tragen Sie unter **Gehäuse › Anschlussanordnung**
+ein: Anschlüsse oben/unten und links/rechts je Seite, das Raster oben/unten, die Lage von Pin 1 und die fehlenden
+Positionen – gezählt ab Pin 1 gegen den Uhrzeigersinn, als wären alle bestückt. Für RGY0019B: 2 und 8 je Seite,
+1,5 mm, Pin 1 „Obere Seite, links“, fehlend 14. Für die Herstellerempfehlung braucht ein rechteckiges QFN zusätzlich
+den **Reihenabstand oben/unten**. Dieselben Angaben gibt es im Footprint-Generator (Familie QFN/DFN).
+
 **Kosten:** Der Betrag oben in der Kopfzeile (z. B. „0,23 $“) zeigt die Kosten der Analyse, aufgeteilt nach
 Anfragen. **Neu analysieren** zeigt vor dem Start die erwarteten Kosten und lässt Sie Seiten, Modell,
 Gründlichkeit und Kostenlimit wählen.

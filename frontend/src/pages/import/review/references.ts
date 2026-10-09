@@ -32,6 +32,7 @@ export function pageReferences(extraction: ExtractionData, device: DeviceData | 
     }
   }
   for (const pkg of extraction.packages) {
+    if (pkg.origin) continue // aus einem anderen Datenblatt übernommen: die Seiten gehören zu dessen PDF
     add(pkg.pages, { section: 'gehaeuse', label: `Maße ${packageLabel(pkg)}` })
     add(pkg.land_pattern.pages, { section: 'gehaeuse', label: `Lötflächen ${packageLabel(pkg)}` })
   }

@@ -98,23 +98,26 @@ INFO = FamilyInfo(
 )
 
 
-def side_counts(ctx: GenContext, pins: int) -> tuple[int, int]:
+def side_counts(ctx: GenContext, pins: int, omitted: int = 0) -> tuple[int, int]:
+    """Positions per side (top/bottom, left/right) for ``pins`` terminals and ``omitted`` positions without one."""
     p = ctx.p
+    positions = pins + omitted
     if p.given("pins_x") or p.given("pins_y"):
         nx = p.int("pins_x") if p.given("pins_x") else None
         ny = p.int("pins_y") if p.given("pins_y") else None
         if nx is None:
-            nx = pins // 2 - (ny or 0)
+            nx = positions // 2 - (ny or 0)
         if ny is None:
-            ny = pins // 2 - nx
-        if 2 * (nx + ny) != pins or nx < 1 or ny < 1:
-            raise ParamError(f"Anschlüsse je Seite ({nx} oben/unten, {ny} links/rechts) passen nicht zu {pins} "
-                             "Anschlüssen insgesamt.", params=("pins", "pins_x", "pins_y"))
+            ny = positions // 2 - nx
+        if 2 * (nx + ny) != positions or nx < 1 or ny < 1:
+            total = f"{pins} Anschlüssen" + (f" und {omitted} fehlenden" if omitted else "")
+            raise ParamError(f"Anschlüsse je Seite ({nx} oben/unten, {ny} links/rechts) passen nicht zu {total} "
+                             "insgesamt.", params=("pins", "pins_x", "pins_y"))
         return nx, ny
-    if pins % 4:
+    if positions % 4:
         raise ParamError("Bei gleichmäßiger Verteilung muss die Anschlusszahl durch 4 teilbar sein "
                          "(sonst Anschlüsse je Seite angeben).", params=("pins",))
-    return pins // 4, pins // 4
+    return positions // 4, positions // 4
 
 
 def build(ctx: GenContext) -> FootprintSpec:

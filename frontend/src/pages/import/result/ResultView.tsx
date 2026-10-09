@@ -42,7 +42,9 @@ const ALTIUM_ICON: Record<AfterWriteNotice['tone'], ReactNode> = {
 /** Erfolg nach „Bauteile anlegen“: angelegte/aktualisierte Bauteile (Links), Symbole, Footprints, Fehler, Kosten. */
 export function ResultView({ ds }: { ds: DatasheetDetail }) {
   const reduce = useReducedMotion()
-  const last = ds.committed[ds.committed.length - 1]
+  // „Nur Symbol/Footprint speichern“ legt keine Bauteile an – das Ergebnis zeigt die letzte Bauteil-Übernahme
+  const commits = ds.committed.filter((c) => c.scope === 'part')
+  const last = commits[commits.length - 1]
   const tableLabel = useCategoryLabel(last?.table)
   // geteilter, regelmäßig erneuerter Altium-Status (nach Altium-Jobs wie Installieren sofort neu geladen)
   const altium = useAltiumStatus(Boolean(last))
@@ -222,10 +224,10 @@ export function ResultView({ ds }: { ds: DatasheetDetail }) {
                   <span>{ds.runs.some((r) => r.kind === 'find') ? 'Kosten dieses Datenblatts (Suche und Analyse)' : 'Analysekosten dieses Datenblatts'}</span>
                   <span className="mono font-semibold text-fg">{formatUsd(ds.cost_usd)}</span>
                 </div>
-                {ds.committed.length > 1 && (
+                {commits.length > 1 && (
                   <div className="mt-1 flex items-center gap-1.5 text-2xs text-fg-subtle">
                     <RefreshCw aria-hidden className="size-3" />
-                    {formatNumber(ds.committed.length)}. Übernahme aus diesem Datenblatt
+                    {formatNumber(commits.length)}. Übernahme aus diesem Datenblatt
                   </div>
                 )}
               </div>

@@ -2272,6 +2272,89 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/datasheets/{datasheet_id}/package-sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Package Sources
+         * @description Packages of the other analysed datasheets whose drawing data (dimensions, land pattern) can be taken over into
+         *     ``package`` – best match first, with German notes (``matches``/``problems``).
+         */
+        get: operations["get_package_sources_api_datasheets__datasheet_id__package_sources_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/datasheets/{datasheet_id}/package-targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Package Targets
+         * @description The other way round: packages of device datasheets that the drawing of ``package`` of this datasheet (e.g. a
+         *     package-outline document) could complete – best match first (missing dimensions first).
+         */
+        get: operations["get_package_targets_api_datasheets__datasheet_id__package_targets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/datasheets/{datasheet_id}/merge-package": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Merge Package
+         * @description Take over the drawing data of a package of another datasheet (``source_id``/``source_package``) into
+         *     ``package`` of this one – stored like a correction, with the origin (``PackageData.origin``); ``notes`` = hints.
+         */
+        post: operations["post_merge_package_api_datasheets__datasheet_id__merge_package_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/datasheets/{datasheet_id}/unmerge-package": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Unmerge Package
+         * @description Undo a takeover: ``package`` as it was before the drawing data came from another datasheet.
+         */
+        post: operations["post_unmerge_package_api_datasheets__datasheet_id__unmerge_package_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/datasheets/{datasheet_id}/proposal": {
         parameters: {
             query?: never;
@@ -2283,8 +2366,8 @@ export interface paths {
         put?: never;
         /**
          * Post Proposal
-         * @description Dry run of "Bauteil anlegen": category, rows per variant, symbol(s), footprints, warnings, blockers and the
-         *     ``fingerprint`` the commit checks (``expected_fingerprint``).
+         * @description Dry run of "Bauteil anlegen": category, rows per variant, symbol(s), footprints, warnings, blockers, readiness
+         *     (also of "Nur Symbol/Footprint speichern") and the ``fingerprint`` the commit checks (``expected_fingerprint``).
          */
         post: operations["post_proposal_api_datasheets__datasheet_id__proposal_post"];
         delete?: never;
@@ -2304,8 +2387,9 @@ export interface paths {
         put?: never;
         /**
          * Post Commit
-         * @description Create symbols, footprints and parts (job). Refuses (failed job, nothing written) unconfirmed blockers
-         *     (``accept_issues``) and a plan that differs from ``expected_fingerprint`` – ``job.detail.code`` says which.
+         * @description Create symbols, footprints and parts (job) – with ``scope`` = ``symbols`` | ``footprints`` only the symbols or
+         *     only the footprints (no parts). Refuses (failed job, nothing written) unconfirmed blockers (``accept_issues``) and a
+         *     plan that differs from ``expected_fingerprint`` – ``job.detail.code`` says which.
          */
         post: operations["post_commit_api_datasheets__datasheet_id__commit_post"];
         delete?: never;
@@ -2726,6 +2810,8 @@ export interface components {
             pins?: string[];
             /** Pads */
             pads?: string[];
+            /** Scopes */
+            scopes?: ("part" | "symbols" | "footprints")[];
         };
         /**
          * Body3D
@@ -3017,6 +3103,12 @@ export interface components {
             ts: string;
             /** Table */
             table: string;
+            /**
+             * Scope
+             * @default part
+             * @enum {string}
+             */
+            scope: "part" | "symbols" | "footprints";
             /** Created */
             created?: string[];
             /** Updated */
@@ -3194,6 +3286,27 @@ export interface components {
             issues?: {
                 [key: string]: number;
             };
+            /**
+             * Package Only
+             * @description Nur Gehäusezeichnung, kein Bauteil (nur Footprints)
+             * @default false
+             */
+            package_only: boolean;
+            /**
+             * Saved Symbols
+             * @description Mit „Nur Symbol speichern“ gespeichert
+             */
+            saved_symbols?: string[];
+            /**
+             * Saved Footprints
+             * @description Mit „Nur Footprint speichern“ gespeichert
+             */
+            saved_footprints?: string[];
+            /**
+             * Merged From
+             * @description Dateinamen der Datenblätter, aus denen Gehäuse übernommen wurden
+             */
+            merged_from?: string[];
             /** Pages */
             pages?: components["schemas"]["PageInfo"][];
             /** Selected Pages */
@@ -3281,6 +3394,27 @@ export interface components {
             issues?: {
                 [key: string]: number;
             };
+            /**
+             * Package Only
+             * @description Nur Gehäusezeichnung, kein Bauteil (nur Footprints)
+             * @default false
+             */
+            package_only: boolean;
+            /**
+             * Saved Symbols
+             * @description Mit „Nur Symbol speichern“ gespeichert
+             */
+            saved_symbols?: string[];
+            /**
+             * Saved Footprints
+             * @description Mit „Nur Footprint speichern“ gespeichert
+             */
+            saved_footprints?: string[];
+            /**
+             * Merged From
+             * @description Dateinamen der Datenblätter, aus denen Gehäuse übernommen wurden
+             */
+            merged_from?: string[];
         };
         /**
          * DbLibInstallState
@@ -5243,6 +5377,8 @@ export interface components {
              * @enum {string}
              */
             row_spacing_reference: "center_to_center" | "inner_edges" | "outer_edges" | "pad_center_to_component_center" | "not_applicable" | "unclear";
+            /** Row Spacing Y */
+            row_spacing_y?: number | null;
             /** Thermal Pad Width */
             thermal_pad_width?: number | null;
             /** Thermal Pad Length */
@@ -5687,6 +5823,76 @@ export interface components {
              */
             enabled: boolean;
         };
+        /** MergeOut */
+        MergeOut: {
+            /** Datasheet Id */
+            datasheet_id: string;
+            extraction: components["schemas"]["ExtractionData"];
+            /**
+             * Model
+             * @default
+             */
+            model: string;
+            /**
+             * Model Label
+             * @default
+             */
+            model_label: string;
+            /**
+             * Effort
+             * @default
+             */
+            effort: string;
+            /** Extracted */
+            extracted?: string | null;
+            /**
+             * Edited
+             * @default false
+             */
+            edited: boolean;
+            /** Selected Pages */
+            selected_pages?: number[];
+            /**
+             * Selection Method
+             * @default
+             */
+            selection_method: string;
+            /** Runs */
+            runs?: components["schemas"]["RunInfo"][];
+            /**
+             * Cost Usd
+             * @default 0
+             */
+            cost_usd: number;
+            /**
+             * Budget Usd
+             * @default 0
+             */
+            budget_usd: number;
+            /**
+             * Notes
+             * @description Hinweise zur Übernahme (deutsch)
+             */
+            notes?: string[];
+        };
+        /** MergePackageIn */
+        MergePackageIn: {
+            /**
+             * Package
+             * @description Gehäusecode in diesem Datenblatt (bekommt die Maße)
+             */
+            package: string;
+            /**
+             * Source Id
+             * @description Datenblatt mit der Gehäusezeichnung
+             */
+            source_id: string;
+            /**
+             * Source Package
+             * @description Gehäusecode im anderen Datenblatt
+             */
+            source_package: string;
+        };
         /**
          * MpnSegment
          * @description One piece of a part number: fixed text or the code of a variable with its meaning.
@@ -5877,6 +6083,52 @@ export interface components {
              */
             path?: string | null;
         };
+        /**
+         * PackageBase
+         * @description A package of the extraction without its origin: :class:`PackageData` adds it, :attr:`PackageOrigin.replaced`
+         *     keeps the package as it was before a takeover in this form (no recursive schema).
+         */
+        PackageBase: {
+            /** Code */
+            code: string;
+            /**
+             * Name
+             * @default
+             */
+            name: string;
+            /** Family */
+            family?: string | null;
+            /**
+             * Family Raw
+             * @default
+             */
+            family_raw: string;
+            /** Pin Count */
+            pin_count?: number | null;
+            /** Mounting */
+            mounting?: ("SMD" | "THT") | null;
+            /**
+             * Outline Reference
+             * @default
+             */
+            outline_reference: string;
+            /**
+             * Exposed Pad
+             * @default false
+             */
+            exposed_pad: boolean;
+            /**
+             * Exposed Pad Number
+             * @default
+             */
+            exposed_pad_number: string;
+            /** Pages */
+            pages?: number[];
+            /** Dimensions */
+            dimensions?: components["schemas"]["DimValue"][];
+            land_pattern?: components["schemas"]["LandPatternData"];
+            layout?: components["schemas"]["TerminalLayout"] | null;
+        };
         /** PackageChoice */
         PackageChoice: {
             /**
@@ -5932,6 +6184,188 @@ export interface components {
             /** Dimensions */
             dimensions?: components["schemas"]["DimValue"][];
             land_pattern?: components["schemas"]["LandPatternData"];
+            layout?: components["schemas"]["TerminalLayout"] | null;
+            origin?: components["schemas"]["PackageOrigin"] | null;
+        };
+        /**
+         * PackageOrigin
+         * @description Where the drawing data of a package come from when they were taken over from another datasheet
+         *     (:func:`partforge.datasheet.combine.merge_package`) – e.g. a separate package-outline document of the manufacturer.
+         */
+        PackageOrigin: {
+            /** Datasheet Id */
+            datasheet_id: string;
+            /** Package */
+            package: string;
+            /**
+             * File
+             * @default
+             */
+            file: string;
+            /**
+             * Title
+             * @default
+             */
+            title: string;
+            /**
+             * Label
+             * @default
+             */
+            label: string;
+            /**
+             * Merged
+             * @default
+             */
+            merged: string;
+            replaced?: components["schemas"]["PackageBase"] | null;
+        };
+        /**
+         * PackageSource
+         * @description A package of another analysed datasheet whose drawing data can be taken over.
+         */
+        PackageSource: {
+            /** Datasheet Id */
+            datasheet_id: string;
+            /**
+             * File
+             * @description Dateiname des PDFs
+             */
+            file: string;
+            /**
+             * Title
+             * @default
+             */
+            title: string;
+            /**
+             * Manufacturer
+             * @default
+             */
+            manufacturer: string;
+            /**
+             * Package
+             * @description Gehäusecode im anderen Datenblatt
+             */
+            package: string;
+            /**
+             * Label
+             * @description „VQFN-19 3.5x4.5 (RGY0019B)“
+             */
+            label: string;
+            /** Family */
+            family?: string | null;
+            /** Pin Count */
+            pin_count?: number | null;
+            /**
+             * Exposed Pad
+             * @default false
+             */
+            exposed_pad: boolean;
+            /**
+             * Exposed Pad Number
+             * @default
+             */
+            exposed_pad_number: string;
+            /**
+             * Dimensions
+             * @description Verwertbare Maße (mm)
+             * @default 0
+             */
+            dimensions: number;
+            /**
+             * Land Pattern
+             * @description Vollständige Herstellerempfehlung (Land Pattern)
+             * @default false
+             */
+            land_pattern: boolean;
+            /**
+             * Layout
+             * @description Anschlussanordnung angegeben
+             * @default false
+             */
+            layout: boolean;
+            /**
+             * Package Only
+             * @description Das Datenblatt beschreibt kein Bauteil (Gehäusezeichnung)
+             * @default false
+             */
+            package_only: boolean;
+            /** Pages */
+            pages?: number[];
+            /**
+             * Score
+             * @description Passung – höher ist besser (Reihenfolge der Liste)
+             * @default 0
+             */
+            score: number;
+            /**
+             * Matches
+             * @description Was passt (deutsch)
+             */
+            matches?: string[];
+            /**
+             * Problems
+             * @description Was nicht passt (deutsch)
+             */
+            problems?: string[];
+        };
+        /**
+         * PackageTarget
+         * @description A package of a device datasheet that the drawing of a package drawing could complete.
+         */
+        PackageTarget: {
+            /** Datasheet Id */
+            datasheet_id: string;
+            /**
+             * File
+             * @description Dateiname des PDFs
+             */
+            file: string;
+            /**
+             * Title
+             * @default
+             */
+            title: string;
+            /**
+             * Devices
+             * @description Bauteile des Datenblatts
+             */
+            devices?: string[];
+            /**
+             * Package
+             * @description Gehäusecode im Bauteil-Datenblatt
+             */
+            package: string;
+            /** Label */
+            label: string;
+            /** Pin Count */
+            pin_count?: number | null;
+            /**
+             * Dimensions
+             * @description Verwertbare Maße, die es schon hat
+             * @default 0
+             */
+            dimensions: number;
+            /**
+             * Dims Missing
+             * @description Die Prüfung meldet fehlende Maße
+             * @default false
+             */
+            dims_missing: boolean;
+            /**
+             * Merged From
+             * @description Dateiname, aus dem es seine Maße schon übernommen hat
+             * @default
+             */
+            merged_from: string;
+            /**
+             * Score
+             * @default 0
+             */
+            score: number;
+            /** Matches */
+            matches?: string[];
+            /** Problems */
+            problems?: string[];
         };
         /** Pad */
         Pad: {
@@ -6197,6 +6631,11 @@ export interface components {
             /** Devices */
             devices?: string[];
             /**
+             * Package Only
+             * @default false
+             */
+            package_only: boolean;
+            /**
              * Manufacturer
              * @default
              */
@@ -6228,6 +6667,16 @@ export interface components {
              * @default false
              */
             ready: boolean;
+            /**
+             * Ready Symbols
+             * @default false
+             */
+            ready_symbols: boolean;
+            /**
+             * Ready Footprints
+             * @default false
+             */
+            ready_footprints: boolean;
             cost?: components["schemas"]["CostSummary"];
             /**
              * Fingerprint
@@ -6779,6 +7228,12 @@ export interface components {
             allow_pin_changes: boolean | string[];
             /** Expected Fingerprint */
             expected_fingerprint?: string | null;
+            /**
+             * Scope
+             * @default part
+             * @enum {string}
+             */
+            scope: "part" | "symbols" | "footprints";
         };
         /** RecentPart */
         RecentPart: {
@@ -8799,6 +9254,28 @@ export interface components {
             category_note?: string | null;
         };
         /**
+         * TerminalLayout
+         * @description Terminal arrangement of a QFN/QFP that the dimensions do not describe – entered in the review (or taken over with
+         *     the package from another datasheet) and passed to the footprint generator (``pins_x``, ``pins_y``, ``e_x``,
+         *     ``pin1``, ``missing``). ``None`` everywhere = evenly distributed, pin 1 at the top of the left side.
+         */
+        TerminalLayout: {
+            /** Pins X */
+            pins_x?: number | null;
+            /** Pins Y */
+            pins_y?: number | null;
+            /** Pitch X */
+            pitch_x?: number | null;
+            /**
+             * Pin1
+             * @default left
+             * @enum {string}
+             */
+            pin1: "left" | "top";
+            /** Missing */
+            missing?: number[];
+        };
+        /**
          * TextPos
          * @description Placement of the designator / comment text of a symbol (mil, anchor per justify).
          */
@@ -8831,6 +9308,14 @@ export interface components {
             y2: number;
             /** Width */
             width: number;
+        };
+        /** UnmergePackageIn */
+        UnmergePackageIn: {
+            /**
+             * Package
+             * @description Gehäusecode in diesem Datenblatt
+             */
+            package: string;
         };
         /** UploadOut */
         UploadOut: {
@@ -13813,6 +14298,144 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ExtractionData"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtractionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_package_sources_api_datasheets__datasheet_id__package_sources_get: {
+        parameters: {
+            query: {
+                /** @description Gehäusecode */
+                package: string;
+            };
+            header?: never;
+            path: {
+                datasheet_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PackageSource"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_package_targets_api_datasheets__datasheet_id__package_targets_get: {
+        parameters: {
+            query: {
+                /** @description Gehäusecode */
+                package: string;
+            };
+            header?: never;
+            path: {
+                datasheet_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PackageTarget"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_merge_package_api_datasheets__datasheet_id__merge_package_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                datasheet_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MergePackageIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MergeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_unmerge_package_api_datasheets__datasheet_id__unmerge_package_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                datasheet_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnmergePackageIn"];
             };
         };
         responses: {

@@ -1,13 +1,34 @@
 /**
  * Bereitschaft für „Bauteile anlegen“ – dieselben Regeln wie `proposal._ready` im Backend, aber mit Gründen
- * (für die Übernahmeleiste) und ohne erneute Anfrage beim Bestätigen von Problemen.
+ * (für die Übernahmeleiste) und ohne erneute Anfrage beim Bestätigen von Problemen. Dazu je Umfang die Bereitschaft
+ * für „Nur Symbol speichern“ / „Nur Footprint speichern“ (wie `proposal._scope_ready`).
  */
-import type { FootprintProposal, PartProposal, SymbolProposal } from '@/api/datasheets'
+import type { CommitScope, FootprintProposal, PartProposal, SymbolProposal } from '@/api/datasheets'
+import { plural } from '@/lib/format'
 import { pendingPicks, sameBlocker, type ChoiceDraft, type DataSection } from '../store'
 
 export interface ReadinessReason {
   text: string
   section: DataSection
+}
+
+/** „Nur Symbol/Footprint speichern“: geht es, was würde geschrieben, und wenn nicht – warum. */
+export interface ScopeReadiness {
+  scope: Exclude<CommitScope, 'part'>
+  ready: boolean
+  /** Namen, die geschrieben würden (neu, überschrieben oder mit bestätigter Pinänderung) */
+  writes: string[]
+  /** Alle Symbole bzw. Footprints des Vorschlags */
+  total: number
+  /** Erster Grund, warum es nicht geht (`null` = bereit) */
+  reason: string | null
+  /** Abschnitt zum Grund (Sprung aus dem Menü) */
+  section: DataSection
+  /** Alles schon in der Bibliothek – nichts zu schreiben */
+  saved: boolean
+  /** Offene bzw. bestätigte Probleme, die diesen Umfang betreffen (`BlockerTarget.scopes`) */
+  openBlockers: string[]
+  confirmedBlockers: string[]
 }
 
 export interface Readiness {
@@ -39,6 +60,59 @@ export interface Readiness {
   footprintsReused: number
   footprintsNew: number
   pinChanges: number
+  /** Gehäusezeichnung ohne Bauteil (`PartProposal.package_only`): nur Footprints */
+  packageOnly: boolean
+  symbols: ScopeReadiness
+  footprints: ScopeReadiness
+}
+
+function emptyScope(scope: ScopeReadiness['scope']): ScopeReadiness {
+  return {
+    scope,
+    ready: false,
+    writes: [],
+    total: 0,
+    reason: null,
+    section: scope === 'symbols' ? 'pins' : 'gehaeuse',
+    saved: false,
+    openBlockers: [],
+    confirmedBlockers: [],
+  }
+}
+
+function scopeReadiness(
+  p: PartProposal,
+  scope: ScopeReadiness['scope'],
+  choices: ChoiceDraft,
+  isAck: (blocker: string) => boolean,
+): ScopeReadiness {
+  const out = emptyScope(scope)
+  const items: (SymbolProposal | FootprintProposal)[] = scope === 'symbols' ? p.symbols : p.footprints
+  const noun = scope === 'symbols' ? 'Symbol' : 'Footprint'
+  const targets = p.blocker_targets.filter((t) => t.scopes.includes(scope))
+  out.openBlockers = targets.filter((t) => !isAck(t.blocker)).map((t) => t.blocker)
+  out.confirmedBlockers = targets.filter((t) => isAck(t.blocker)).map((t) => t.blocker)
+  out.total = items.length
+  out.writes = items.filter((i) => i.valid && willWrite(i, choices.overwriteExisting)).flatMap((i) => (i.name ? [i.name] : []))
+  const picks = pendingPicks(choices)
+  const invalid = items.find((i) => !i.valid)
+  if (!items.length) out.reason = `Kein ${noun} im Vorschlag`
+  else if (scope === 'symbols' && picks.symbols.length) out.reason = 'Vorhandenes Symbol wählen'
+  else if (scope === 'footprints' && picks.footprints.length) out.reason = 'Vorhandenen Footprint wählen'
+  else if (invalid) {
+    out.reason =
+      'package_label' in invalid
+        ? footprintReason(invalid)
+        : `Symbol${invalid.name ? ` „${invalid.name}“` : ''}: ${invalid.warnings[0] ?? 'ungültig'}`
+  } else if (!out.writes.length) {
+    out.saved = true
+    out.reason = items.length > 1 ? `Alle ${noun}s sind schon in der Bibliothek` : `${noun} ist schon in der Bibliothek`
+  } else if (out.openBlockers.length) {
+    out.reason = `${plural(out.openBlockers.length, 'Problem', 'Probleme')} bestätigen`
+    out.section = 'pruefen'
+  }
+  out.ready = out.reason === null
+  return out
 }
 
 /**
@@ -49,6 +123,13 @@ export interface Readiness {
 export function conflictName(s: SymbolProposal): string | null {
   if (!s.taken_changes.length) return null
   return s.taken_name ?? s.name
+}
+
+/** „Footprint für SOIC-8 (D): …“ – ohne den Gehäusenamen doppelt (Meldungen des Generators beginnen oft schon damit) */
+export function footprintReason(f: FootprintProposal): string {
+  const label = f.package_label || f.package
+  const warning = f.warnings[0] ?? 'ungültig'
+  return `Footprint für ${label}: ${warning.startsWith(`${label}: `) ? warning.slice(label.length + 2) : warning}`
 }
 
 /** Schreibt die Übernahme dieses Symbol/diesen Footprint? (wie `proposal._will_write`) */
@@ -79,11 +160,31 @@ export function readiness(p: PartProposal | undefined, choices: ChoiceDraft, ack
     footprintsReused: 0,
     footprintsNew: 0,
     pinChanges: 0,
+    packageOnly: false,
+    symbols: emptyScope('symbols'),
+    footprints: emptyScope('footprints'),
   }
   if (!p) return out
   const isAck = (b: string) => acknowledged.some((a) => sameBlocker(a, b))
   out.openBlockers = p.blockers.filter((b) => !isAck(b))
   out.confirmedBlockers = p.blockers.filter(isAck)
+  out.packageOnly = p.package_only
+  out.symbols = scopeReadiness(p, 'symbols', choices, isAck)
+  out.footprints = scopeReadiness(p, 'footprints', choices, isAck)
+  if (p.package_only) {
+    // Gehäusezeichnung: es gibt nur Footprints – deren Gründe gelten als offene Punkte der Ansicht
+    if (out.footprints.reason && !out.footprints.saved && out.footprints.section !== 'pruefen') {
+      out.reasons.push({ text: out.footprints.reason, section: 'gehaeuse' })
+    }
+    for (const f of p.footprints) {
+      if (f.valid) {
+        if (willWrite(f, choices.overwriteExisting)) out.footprintsWritten += 1
+        else out.footprintsReused += 1
+        if (!f.exists && f.mode !== 'existing') out.footprintsNew += 1
+      }
+    }
+    return out
+  }
   if (!p.category) out.reasons.push({ text: 'Kategorie wählen', section: 'identitaet' })
   if (!p.variants.length) out.reasons.push({ text: 'Mindestens eine Bestellnummer auswählen', section: 'varianten' })
   for (const s of p.symbols) {
@@ -101,7 +202,7 @@ export function readiness(p: PartProposal | undefined, choices: ChoiceDraft, ack
   }
   for (const f of p.footprints) {
     if (!f.valid) {
-      out.reasons.push({ text: `Footprint für ${f.package_label || f.package}: ${f.warnings[0] ?? 'ungültig'}`, section: 'gehaeuse' })
+      out.reasons.push({ text: footprintReason(f), section: 'gehaeuse' })
     } else {
       if (willWrite(f, choices.overwriteExisting)) out.footprintsWritten += 1
       else out.footprintsReused += 1

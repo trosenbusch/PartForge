@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'motion/react'
-import { CircleAlert, ExternalLink, FileScan, FileText, Globe, MoreHorizontal, RefreshCw, Search, Trash2 } from 'lucide-react'
+import { CircleAlert, Combine, ExternalLink, FileScan, FileStack, FileText, Globe, MoreHorizontal, RefreshCw, Search, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { toast } from 'sonner'
@@ -30,6 +30,7 @@ import { analysisFailed, formatUsd, hostOf, STATUS_META } from '../lib/format'
 import { importPath } from '../lib/useImportActions'
 import type { UrlImport } from '../store'
 import { openPdf } from '../lib/openPdf'
+import { DatasheetMergeDialog, type MergeDirection } from '../shared/PackageMergeDialogs'
 import { PageImage } from '../shared/PageImage'
 import { TipButton } from '../shared/TipButton'
 
@@ -96,6 +97,7 @@ export function DatasheetList({ items, loading, active, urlJobs, aiReady, onRean
   const [query, setQuery] = useState('')
   const reduce = useReducedMotion()
   const remove = useDeleteDatasheet()
+  const [merge, setMerge] = useState<{ datasheet: DatasheetSummary; direction: MergeDirection } | null>(null)
 
   const sorted = useMemo(() => {
     const list = [...(items ?? [])]
@@ -274,11 +276,31 @@ export function DatasheetList({ items, loading, active, urlJobs, aiReady, onRean
                         {when}
                       </span>
                     )}
+                    {d.merged_from.length > 0 && (
+                      <span className="flex min-w-0 shrink items-center gap-1.5 text-accent-text">
+                        <span aria-hidden className="text-fg-subtle">·</span>
+                        <Combine aria-hidden className="size-3 shrink-0" />
+                        <span className="truncate">Maße aus {d.merged_from.join(', ')}</span>
+                      </span>
+                    )}
+                    {d.status !== 'übernommen' && (d.saved_symbols.length > 0 || d.saved_footprints.length > 0) && (
+                      <span className="flex shrink-0 items-center gap-1.5 text-success-text">
+                        <span aria-hidden className="text-fg-subtle">·</span>
+                        {[d.saved_symbols.length ? 'Symbol gespeichert' : null, d.saved_footprints.length ? 'Footprint gespeichert' : null]
+                          .filter(Boolean)
+                          .join(', ')}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="hidden min-w-0 truncate text-xs text-fg-muted @[60rem]:block">{d.manufacturer || '–'}</div>
                 <div className="hidden min-w-0 items-center gap-1 @[44rem]:flex">
-                  {d.mpns.length ? (
+                  {d.package_only ? (
+                    <span className="flex min-w-0 items-center gap-1 text-xs text-fg-muted">
+                      <FileStack aria-hidden className="size-3.5 shrink-0 text-fg-subtle" />
+                      <span className="truncate">Gehäusezeichnung</span>
+                    </span>
+                  ) : d.mpns.length ? (
                     <>
                       <span className="mono truncate rounded-md bg-surface-3/70 px-1.5 py-0.5 text-2xs text-fg">{d.mpns[0]}</span>
                       {d.mpns.length > 1 && (
@@ -326,6 +348,26 @@ export function DatasheetList({ items, loading, active, urlJobs, aiReady, onRean
                       <DropdownMenuItem icon={<ExternalLink />} onSelect={() => void openPdf(d)}>
                         PDF öffnen
                       </DropdownMenuItem>
+                      {d.has_extraction && d.devices.length > 0 && (
+                        <DropdownMenuItem
+                          icon={<Combine />}
+                          disabled={running}
+                          description="Aus einer eigenen Gehäusezeichnung des Herstellers"
+                          onSelect={() => setMerge({ datasheet: d, direction: 'take' })}
+                        >
+                          Maße übernehmen …
+                        </DropdownMenuItem>
+                      )}
+                      {d.has_extraction && (d.package_only || d.mpns.length === 0) && (
+                        <DropdownMenuItem
+                          icon={<Combine />}
+                          disabled={running}
+                          description="In das Datenblatt des Bauteils, dem sie gehört"
+                          onSelect={() => setMerge({ datasheet: d, direction: 'give' })}
+                        >
+                          Zeichnung einem Bauteil geben …
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem
                         icon={<RefreshCw />}
                         disabled={!aiReady || running}
@@ -346,6 +388,14 @@ export function DatasheetList({ items, loading, active, urlJobs, aiReady, onRean
           })}
         </ul>
       )}
+      <DatasheetMergeDialog
+        datasheet={merge?.datasheet ?? null}
+        direction={merge?.direction ?? 'take'}
+        open={merge !== null}
+        onOpenChange={(open) => {
+          if (!open) setMerge(null)
+        }}
+      />
     </Card>
   )
 }

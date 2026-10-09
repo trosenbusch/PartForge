@@ -9,6 +9,8 @@
  *   const est = useCostEstimate(id, { vision: 'auto' })   // POST /api/datasheets/{id}/estimate (keine Claude-Anfrage)
  *   const { job } = await datasheetsApi.extract(id, opts) // POST /api/datasheets/{id}/extract → Job
  *   const { job } = await datasheetsApi.find({ query })   // POST /api/datasheets/find → Job „datasheet-find“
+ *   const src = usePackageSources(id, 'RGY')              // GET  /api/datasheets/{id}/package-sources (Gehäuse anderer
+ *   const merge = useMergePackage()                       //      Datenblätter) · POST …/merge-package · …/unmerge-package
  *   <img src={datasheetPageUrl(id, 3, 40)} />             // Seitenbild (PNG, serverseitig gecacht)
  *
  * Kosten: Jede bezahlte Claude-Anfrage steht in `runs` (auch fehlgeschlagene), `cost_usd` ist die Summe je
@@ -43,6 +45,16 @@ export type PackageData = ExtractionData['packages'][number]
 export type DimValue = PackageData['dimensions'][number]
 export type LandPatternData = PackageData['land_pattern']
 export type RowReference = LandPatternData['row_spacing_reference']
+/** Anschlussanordnung eines unregelmäßigen QFN/QFP (Generator: pins_x, pins_y, e_x, pin1, missing) */
+export type TerminalLayout = NonNullable<PackageData['layout']>
+/** Herkunft eines aus einem anderen Datenblatt übernommenen Gehäuses (seine Seiten sind Seiten jenes PDFs) */
+export type PackageOrigin = NonNullable<PackageData['origin']>
+/** Gehäuse eines anderen Datenblatts, dessen Maße übernommen werden können (bestes zuerst) */
+export type PackageSource = Filled<ResponseOf<'/api/datasheets/{datasheet_id}/package-sources', 'get'>>[number]
+/** Gehäuse eines Bauteil-Datenblatts, das die Zeichnung eines Gehäuses vervollständigen kann (fehlende Maße zuerst) */
+export type PackageTarget = Filled<ResponseOf<'/api/datasheets/{datasheet_id}/package-targets', 'get'>>[number]
+export type MergePackageInput = RequestBodyOf<'/api/datasheets/{datasheet_id}/merge-package', 'post'>
+export type MergeOut = Filled<ResponseOf<'/api/datasheets/{datasheet_id}/merge-package', 'post'>>
 export type ExtractionIssue = ExtractionData['issues'][number]
 export type IssueSeverity = ExtractionIssue['severity']
 
@@ -52,6 +64,8 @@ export type SymbolProposal = PartProposal['symbols'][number]
 export type FootprintProposal = PartProposal['footprints'][number]
 export type FootprintAlternative = FootprintProposal['alternatives'][number]
 export type ProposalChoices = NonNullable<RequestBodyOf<'/api/datasheets/{datasheet_id}/proposal', 'post'>>
+/** Was eine Übernahme schreibt: das ganze Bauteil, nur die Symbole (SchLib) oder nur die Footprints (PcbLib) */
+export type CommitScope = NonNullable<ProposalChoices['scope']>
 export type PackageChoice = NonNullable<ProposalChoices['packages']>[string]
 export type SymbolChoice = NonNullable<ProposalChoices['symbol']>
 export type ExtractOptions = NonNullable<RequestBodyOf<'/api/datasheets/{datasheet_id}/extract', 'post'>>
@@ -110,6 +124,8 @@ export type ImportJobResult = ExtractionSummary | AnalysisJobResult
 
 /** `partforge.datasheet.proposal.commit_proposal` – Ergebnis des Übernahme-Jobs */
 export interface CommitResult {
+  /** `symbols` / `footprints`: nur die Bibliotheksdateien geschrieben, keine Bauteile */
+  scope?: CommitScope
   table: string
   created: string[]
   updated: string[]
@@ -118,10 +134,12 @@ export interface CommitResult {
   errors: Record<string, string>
   symbols: string[]
   footprints: string[]
+  /** Nur Symbole/Footprints: die Bibliotheksdateien, in die geschrieben wurde (relativ zum Bibliotheksordner) */
+  libraries?: string[]
   warnings: string[]
   /** Fingerabdruck des geschriebenen Vorschlags */
   fingerprint?: string
-  /** „Angelegt: 2 Bauteile, 2 Symbole, 2 Footprints“ */
+  /** „Angelegt: 2 Bauteile, 2 Symbole, 2 Footprints“ bzw. „Gespeichert: 1 Symbol“ */
   message?: string
 }
 
@@ -192,6 +210,7 @@ export type CommitJobDetail = {
   steps: string[]
   step: string
   step_label: string
+  scope: CommitScope
   datasheet_id: string
   fingerprint: string
   code: 'unconfirmed_blockers' | 'proposal_changed'
@@ -238,6 +257,9 @@ export const datasheetKeys = {
   extraction: (id: string) => ['datasheets', 'extraction', id] as const,
   proposalAll: (id: string) => ['datasheets', 'proposal', id] as const,
   proposal: (id: string, choices: ProposalChoices) => ['datasheets', 'proposal', id, choices] as const,
+  packageLinksAll: ['datasheets', 'package-links'] as const,
+  packageSources: (id: string, pkg: string) => ['datasheets', 'package-links', 'sources', id, pkg] as const,
+  packageTargets: (id: string, pkg: string) => ['datasheets', 'package-links', 'targets', id, pkg] as const,
   estimate: (id: string, options: Partial<ExtractOptions> | null) => ['datasheets', 'estimate', id, options ?? {}] as const,
   aiStatus: ['datasheets', 'ai-status'] as const,
   symbols: ['datasheets', 'library-symbols'] as const,
@@ -295,6 +317,18 @@ export const datasheetsApi = {
    */
   commit: (id: string, choices: ProposalChoices) =>
     api.post<{ job: Job<CommitResult> }>(`/api/datasheets/${enc(id)}/commit`, choices),
+  /** Gehäuse anderer analysierter Datenblätter mit Maßen/Land Pattern für `pkg` – bestes zuerst */
+  packageSources: (id: string, pkg: string, signal?: AbortSignal) =>
+    api.get<PackageSource[]>(`/api/datasheets/${enc(id)}/package-sources`, { query: { package: pkg }, signal }),
+  /** Umgekehrt: Gehäuse von Bauteil-Datenblättern, die die Zeichnung von `pkg` vervollständigen kann */
+  packageTargets: (id: string, pkg: string, signal?: AbortSignal) =>
+    api.get<PackageTarget[]>(`/api/datasheets/${enc(id)}/package-targets`, { query: { package: pkg }, signal }),
+  /** Maße, Land Pattern und Anschlussanordnung eines Gehäuses aus einem anderen Datenblatt übernehmen (wie eine Korrektur) */
+  mergePackage: (id: string, input: MergePackageInput) =>
+    api.post<MergeOut>(`/api/datasheets/${enc(id)}/merge-package`, input),
+  /** Übernahme aufheben: das Gehäuse wie vor der ersten Übernahme */
+  unmergePackage: (id: string, pkg: string) =>
+    api.post<ExtractionOut>(`/api/datasheets/${enc(id)}/unmerge-package`, { package: pkg }),
   remove: (id: string, deleteFile = true) =>
     api.delete<DeleteResult>(`/api/datasheets/${enc(id)}`, { query: { delete_file: deleteFile } }),
   aiStatus: (signal?: AbortSignal) => api.get<AiStatus>('/api/ai/status', { signal }),
@@ -418,6 +452,54 @@ export function useSaveExtraction(id: string) {
       // optimistischer Stand verwerfen → Serverstand neu laden
       void qc.invalidateQueries({ queryKey: datasheetKeys.extraction(id) })
     },
+  })
+}
+
+/** Gehäuse anderer Datenblätter, aus denen `pkg` seine Maße übernehmen kann (für den Dialog „Maße übernehmen“). */
+export function usePackageSources(id: string | null | undefined, pkg: string | null | undefined, enabled = true) {
+  return useQuery({
+    queryKey: datasheetKeys.packageSources(id ?? '–', pkg ?? '–'),
+    queryFn: ({ signal }) => datasheetsApi.packageSources(id as string, pkg as string, signal),
+    enabled: Boolean(id && pkg) && enabled,
+    staleTime: 10_000,
+  })
+}
+
+/** Bauteil-Datenblätter, deren Gehäuse die Zeichnung `pkg` dieses Datenblatts übernehmen können. */
+export function usePackageTargets(id: string | null | undefined, pkg: string | null | undefined, enabled = true) {
+  return useQuery({
+    queryKey: datasheetKeys.packageTargets(id ?? '–', pkg ?? '–'),
+    queryFn: ({ signal }) => datasheetsApi.packageTargets(id as string, pkg as string, signal),
+    enabled: Boolean(id && pkg) && enabled,
+    staleTime: 10_000,
+  })
+}
+
+/** Nach Übernahme/Aufheben: neue Extraktion in den Cache, Vorschlag, Detail und Liste neu laden. */
+function afterPackageChange(qc: ReturnType<typeof useQueryClient>, id: string, out: ExtractionOut) {
+  qc.setQueryData(datasheetKeys.extraction(id), out)
+  void qc.invalidateQueries({ queryKey: datasheetKeys.proposalAll(id) })
+  void qc.invalidateQueries({ queryKey: datasheetKeys.detail(id) })
+  void qc.invalidateQueries({ queryKey: datasheetKeys.list })
+  void qc.invalidateQueries({ queryKey: datasheetKeys.packageLinksAll })
+}
+
+/** Gehäuse aus einem anderen Datenblatt übernehmen – `id` ist das Datenblatt, das die Maße bekommt. */
+export function useMergePackage() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...input }: MergePackageInput & { id: string }) => datasheetsApi.mergePackage(id, input),
+    meta: { errorTitle: 'Gehäuse konnte nicht übernommen werden' },
+    onSuccess: (out, { id }) => afterPackageChange(qc, id, out),
+  })
+}
+
+export function useUnmergePackage(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (pkg: string) => datasheetsApi.unmergePackage(id, pkg),
+    meta: { errorTitle: 'Übernahme konnte nicht aufgehoben werden' },
+    onSuccess: (out) => afterPackageChange(qc, id, out),
   })
 }
 

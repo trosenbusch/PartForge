@@ -1,5 +1,30 @@
 # Änderungen
 
+## Unveröffentlicht
+
+### Neu
+
+- Datenblatt-Import: **Einzeln speichern** – nur das Symbol (SchLib) oder nur den Footprint (PcbLib) eines Vorschlags
+  speichern, ohne Bauteil; etwa das Symbol eines Datenblatts, dessen Gehäusezeichnung fehlt.
+- Datenblatt-Import: **Gehäuse aus anderem Datenblatt übernehmen** – Maße, Herstellerempfehlung, Exposed-Pad-Nummer
+  und Anschlussanordnung aus einer eigenen Gehäusezeichnung des Herstellers (z. B. TI „RGY0019B“) in das Datenblatt
+  des Bauteils holen; passende Zeichnungen werden vorgeschlagen, die Herkunft angezeigt, die Übernahme lässt sich
+  aufheben. Auch aus der Gehäusezeichnung heraus („Einem Bauteil geben …“) und in der Datenblattliste.
+- Gehäusezeichnungen ohne Bauteil werden als solche erkannt: eigene Prüfansicht mit **Footprint speichern**.
+- Footprint-Generator QFN/DFN: unregelmäßige Gehäuse mit **Anschlüssen je Seite**, eigenem **Raster oben/unten**,
+  **Pin 1 an der oberen Seite** und **fehlenden Anschlüssen** (z. B. TI VQFN-19 RGY); im Datenblatt-Import als
+  „Anschlussanordnung“ am Gehäuse.
+- Herstellerempfehlung mit eigenem **Reihenabstand oben/unten** für rechteckige QFN/QFP.
+
+### Geändert
+
+- Ein Dokument ohne Bauteil, aber mit Gehäusezeichnung ist kein Fehler mehr: keine bezahlte Nachkontrolle, und Claude
+  erfindet kein Platzhalter-Bauteil.
+- Ein rechteckiger QFN mit Herstellerempfehlung ohne Reihenabstand oben/unten wird abgelehnt, statt die Stirnseiten-Pins
+  auf den falschen Abstand zu setzen.
+- Die Übernahmeleiste zeigt ungültige Symbole/Footprints als „ungültig“ statt „vorhanden“; Gründe nennen den
+  Gehäusenamen nicht mehr doppelt.
+
 ## 1.0.0 – 2026-10-09
 
 Erste Version von PartForge: datenbankbasierte Bauteilbibliotheken (DbLib) für Altium Designer anlegen, pflegen und

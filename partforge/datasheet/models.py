@@ -34,6 +34,11 @@ ROW_REFERENCES: tuple[str, ...] = ("center_to_center", "inner_edges", "outer_edg
                                    "not_applicable", "unclear")
 Severity = Literal["error", "warning", "info"]
 RunKind = Literal["triage", "identity", "geometry", "verify_identity", "verify_geometry", "test", "find"]
+CommitScope = Literal["part", "symbols", "footprints"]
+"""What a commit writes: ``part`` = symbols, footprints and the database rows („Bauteil anlegen“); ``symbols`` / ``footprints``
+= only the symbols (SchLib) or only the footprints (PcbLib) of the proposal, no rows."""
+COMMIT_SCOPES: tuple[CommitScope, ...] = ("part", "symbols", "footprints")
+_PART_ONLY: tuple[CommitScope, ...] = ("part",)
 
 
 # --------------------------------------------------------------------------- PDF analysis
@@ -86,6 +91,9 @@ class LandPatternData(BaseModel):
     pitch: float | None = None
     row_spacing: float | None = None
     row_spacing_reference: RowReference = "unclear"
+    # Quad packages (QFN/QFP) with a rectangular body: spacing of the top/bottom pad rows (same reference as
+    # row_spacing, which then is the left/right rows); None = the same as row_spacing (square body, two-row package).
+    row_spacing_y: float | None = None
     thermal_pad_width: float | None = None
     thermal_pad_length: float | None = None
     solder_mask_expansion: float | None = None
@@ -115,21 +123,60 @@ class LandPatternData(BaseModel):
         is converted to the centre-to-centre distance."""
         if not self.complete():
             return None
-        spacing, reference = self.row_spacing, str(self.row_spacing_reference)
+        spacing, spacing_y, reference = self.row_spacing, self.row_spacing_y, str(self.row_spacing_reference)
         if reference == "pad_center_to_component_center" and spacing is not None:
             spacing, reference = round(2 * spacing, 6), "center_to_center"
+            spacing_y = round(2 * spacing_y, 6) if spacing_y is not None else None
         out: dict[str, Any] = {
             "pad_width_mm": self.pad_width,
             "pad_length_mm": self.pad_length,
             "row_spacing_mm": spacing,
             "row_spacing_reference": reference,
         }
+        if spacing_y is not None:
+            out["row_spacing_y_mm"] = spacing_y
         if self.thermal_pad_width and self.thermal_pad_length:
             out["thermal_pad_mm"] = [self.thermal_pad_width, self.thermal_pad_length]
         return out
 
 
-class PackageData(BaseModel):
+PinOneSide = Literal["left", "top"]
+
+
+class TerminalLayout(BaseModel):
+    """Terminal arrangement of a QFN/QFP that the dimensions do not describe – entered in the review (or taken over with
+    the package from another datasheet) and passed to the footprint generator (``pins_x``, ``pins_y``, ``e_x``,
+    ``pin1``, ``missing``). ``None`` everywhere = evenly distributed, pin 1 at the top of the left side."""
+
+    pins_x: int | None = None  # positions on the top and on the bottom side each (missing ones included)
+    pins_y: int | None = None  # positions on the left and on the right side each
+    pitch_x: float | None = None  # pitch of the top/bottom rows (mm) when it differs from the pitch e
+    pin1: PinOneSide = "left"  # left: top of the left side (JEDEC); top: left end of the top side (TI RGY)
+    missing: list[int] = Field(default_factory=list)  # positions without terminal, counted from pin 1 (all populated)
+
+    def is_default(self) -> bool:
+        return (self.pins_x, self.pins_y, self.pitch_x, self.pin1, self.missing) == (None, None, None, "left", [])
+
+    def generator_params(self) -> dict[str, Any]:
+        """The footprint generator parameters this layout sets (only the given ones)."""
+        out: dict[str, Any] = {}
+        if self.pins_x:
+            out["pins_x"] = self.pins_x
+        if self.pins_y:
+            out["pins_y"] = self.pins_y
+        if self.pitch_x:
+            out["e_x"] = self.pitch_x
+        if self.pin1 != "left":
+            out["pin1"] = self.pin1
+        if self.missing:
+            out["missing"] = ", ".join(str(n) for n in self.missing)
+        return out
+
+
+class PackageBase(BaseModel):
+    """A package of the extraction without its origin: :class:`PackageData` adds it, :attr:`PackageOrigin.replaced`
+    keeps the package as it was before a takeover in this form (no recursive schema)."""
+
     code: str  # unique key within the extraction (manufacturer code, e.g. "D", "DBV"; else the name)
     name: str = ""  # common name, e.g. "SOIC-8"
     family: str | None = None  # footprint family key (partforge.footprints), None = unknown
@@ -142,6 +189,7 @@ class PackageData(BaseModel):
     pages: list[int] = Field(default_factory=list)  # outline drawing pages (real page numbers)
     dimensions: list[DimValue] = Field(default_factory=list)
     land_pattern: LandPatternData = Field(default_factory=LandPatternData)
+    layout: TerminalLayout | None = None  # terminal arrangement for the generator (irregular QFN/QFP)
 
     def dim(self, *symbols: str) -> DimValue | None:
         """First dimension with one of the symbols (case-sensitive JEDEC letters, mm only)."""
@@ -159,6 +207,30 @@ class PackageData(BaseModel):
             if self.code.casefold() not in tokens and self.code.casefold() != self.name.casefold():
                 return f"{self.name} ({self.code})"
         return self.name or self.code
+
+    def has_geometry(self) -> bool:
+        """Whether the drawing data can build a footprint (a usable dimension or a manufacturer land pattern)."""
+        return any(d.unit == "mm" and d.value() is not None for d in self.dimensions) or self.land_pattern.present
+
+
+class PackageOrigin(BaseModel):
+    """Where the drawing data of a package come from when they were taken over from another datasheet
+    (:func:`partforge.datasheet.combine.merge_package`) – e.g. a separate package-outline document of the manufacturer."""
+
+    datasheet_id: str
+    package: str  # package code in that datasheet
+    file: str = ""  # original file name of that PDF (also shown after it was deleted)
+    title: str = ""
+    label: str = ""  # PackageData.label of the source package ("VQFN-19 3.5x4.5 (RGY0019B)")
+    merged: str = ""  # ISO timestamp
+    # The package as it was before the (first) takeover – "Übernahme aufheben" restores it.
+    replaced: PackageBase | None = None
+
+
+class PackageData(PackageBase):
+    # Set when the drawing data (dimensions, land pattern, pages …) were taken over from another datasheet: its pages
+    # (``pages``, ``land_pattern.pages``) are pages of that PDF.
+    origin: PackageOrigin | None = None
 
 
 class PinData(BaseModel):
@@ -285,6 +357,7 @@ class RunInfo(BaseModel):
 class CommitInfo(BaseModel):
     ts: str
     table: str
+    scope: CommitScope = "part"  # symbols/footprints: only the library files were written, no parts
     created: list[str] = Field(default_factory=list)
     updated: list[str] = Field(default_factory=list)
     symbols: list[str] = Field(default_factory=list)
@@ -388,6 +461,10 @@ class ProposalChoices(BaseModel):
     # Commit only: PartProposal.fingerprint of the proposal the user reviewed – the commit refuses (nothing written)
     # when the rebuilt proposal differs. Ignored by the proposal itself.
     expected_fingerprint: str | None = None
+    # Commit only: what to write – the whole part (symbols, footprints, rows), only the symbols or only the footprints
+    # of the proposal (PartProposal.ready / ready_symbols / ready_footprints). Not part of the fingerprint: one reviewed
+    # proposal serves all three.
+    scope: CommitScope = "part"
 
     def accepts(self, blocker: str) -> bool:
         """Whether the user confirmed this blocker text."""
@@ -461,6 +538,9 @@ class BlockerTarget(BaseModel):
     package: str | None = None  # PackageData.code (None = the device or the whole datasheet)
     pins: list[str] = Field(default_factory=list)  # symbol pin designators without pad in the footprint
     pads: list[str] = Field(default_factory=list)  # footprint pad designators without pin in the symbol
+    # The commits it stops until confirmed: always "part"; "symbols" for pin-table problems, "footprints" for drawing
+    # problems (a pin count that does not match the package: both); pins without pads only the whole part.
+    scopes: list[CommitScope] = Field(default_factory=lambda: list(_PART_ONLY))
 
 
 class SymbolProposal(BaseModel):
@@ -512,8 +592,11 @@ class CostSummary(BaseModel):
 
 class PartProposal(BaseModel):
     datasheet_id: str
-    device: str
+    device: str  # "" for a package drawing without device (package_only)
     devices: list[str] = Field(default_factory=list)  # all devices of the datasheet (for the selection)
+    # The datasheet describes packages but no device (e.g. a separate package-outline document): the proposal has a
+    # footprint per package and nothing else – it can only save footprints (or give its packages to another datasheet).
+    package_only: bool = False
     manufacturer: str = ""
     category: str | None = None
     category_label: str | None = None
@@ -531,6 +614,10 @@ class PartProposal(BaseModel):
     blocker_targets: list[BlockerTarget] = Field(default_factory=list)
     unconfirmed_blockers: list[str] = Field(default_factory=list)  # blockers not (yet) in accept_issues
     ready: bool = False  # everything needed for "Bauteil anlegen" is valid (blockers confirmed)
+    # "Nur Symbol speichern" / "Nur Footprint speichern" (ProposalChoices.scope): every symbol (footprint) is valid, at
+    # least one would be written and no blocker of that scope is unconfirmed.
+    ready_symbols: bool = False
+    ready_footprints: bool = False
     cost: CostSummary = Field(default_factory=CostSummary)
     # Stable hash (16 hex) of the choices (without accept_issues/expected_fingerprint), the blockers and the plan
     # (names, write decisions, rows): the commit compares it with ProposalChoices.expected_fingerprint.

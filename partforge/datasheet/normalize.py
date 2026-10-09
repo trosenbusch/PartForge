@@ -37,10 +37,12 @@ from .models import (
     Issue,
     LandPatternData,
     PackageData,
+    PackageOrigin,
     ParameterData,
     PinData,
     PinTableData,
     RowReference,
+    TerminalLayout,
     VariantData,
 )
 from .pages import to_real_pages
@@ -688,7 +690,13 @@ def _check_pins(dev: DeviceData, table: PinTableData, pkg: PackageData | None, i
 def validate_extraction(data: ExtractionData) -> list[Issue]:
     """Plausibility checks (German messages); see the module docstring."""
     issues: list[Issue] = []
-    if not data.devices:
+    if not data.devices and any(p.has_geometry() for p in data.packages):
+        # a package-outline document (e.g. TI's separate package drawings): nothing to correct – never ask Claude to
+        # "find" a device there (it would invent one)
+        _issue(issues, "info", "package_only",
+               "Nur Gehäusezeichnung, kein Bauteil: Footprint speichern oder das Gehäuse in das Datenblatt des "
+               "Bauteils übernehmen.")
+    elif not data.devices:
         _issue(issues, "error", "no_device", "Im Datenblatt wurde kein Bauteil erkannt.", vision=True)
     codes = {p.code for p in data.packages}
     for dev in data.devices:
@@ -746,6 +754,36 @@ def _sanitize_parameters(params: Iterable[ParameterData], category: CategoryDef 
     return out
 
 
+_MAX_SIDE = 100  # positions per side (footprint generator: pins_x/pins_y)
+_MAX_POSITION = 4 * _MAX_SIDE
+
+
+def _positive(value: float | None, limit: float = 100.0) -> float | None:
+    """A positive, finite length up to ``limit`` mm – anything else is "not given"."""
+    if value is None or isinstance(value, bool) or not math.isfinite(value) or not 0 < value <= limit:
+        return None
+    return value
+
+
+def _sanitize_layout(layout: TerminalLayout | None) -> TerminalLayout | None:
+    """A terminal layout with plausible values only (None when nothing is left): positions per side 1–100, the pitch of
+    the top/bottom rows positive, missing positions unique and sorted."""
+    if layout is None:
+        return None
+    pins_x = layout.pins_x if layout.pins_x is not None and 1 <= layout.pins_x <= _MAX_SIDE else None
+    pins_y = layout.pins_y if layout.pins_y is not None and 1 <= layout.pins_y <= _MAX_SIDE else None
+    missing = sorted({n for n in layout.missing if 1 <= n <= _MAX_POSITION})
+    clean = TerminalLayout(pins_x=pins_x, pins_y=pins_y, pitch_x=_positive(layout.pitch_x, 10.0), pin1=layout.pin1,
+                           missing=missing)
+    return None if clean.is_default() else clean
+
+
+def _sanitize_origin(origin: PackageOrigin) -> None:
+    origin.package = _text(origin.package, 40)
+    origin.file, origin.title = _text(origin.file, 200), _text(origin.title, 200)
+    origin.label, origin.merged = _text(origin.label, 120), _text(origin.merged, 40)
+
+
 def _sanitize_pin(pin: PinData, package: PackageData | None) -> PinData:
     number = _text(pin.number, 12).replace(" ", "") or "?"
     raw_name = clean_pin_name(pin.name)
@@ -789,6 +827,10 @@ def sanitize_extraction(data: ExtractionData, *, categories: Sequence[CategoryDe
         lp = pkg.land_pattern
         lp.pad_shape, lp.notes = canonical_pad_shape(lp.pad_shape), _text(lp.notes, 300)
         lp.pages = sorted({p for p in lp.pages if p > 0})
+        lp.row_spacing_y = _positive(lp.row_spacing_y)
+        pkg.layout = _sanitize_layout(pkg.layout)
+        if pkg.origin is not None:
+            _sanitize_origin(pkg.origin)
     by_table = {c.table.casefold(): c for c in categories}
     for dev in out.devices:
         dev.base_part = _text(dev.base_part, 64) or "Bauteil"

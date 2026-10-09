@@ -1,5 +1,6 @@
 """API routes: datasheet import with Claude (upload, URL import, datasheet search, page images, cost estimate,
-extraction, proposal, commit) and the AI status/test endpoints.
+extraction, proposal, commit – also of only the symbols or only the footprints –, packages taken over from another
+datasheet) and the AI status/test endpoints.
 
 Long operations run as jobs (``{"job": snapshot}``): text-layer analysis after an upload, URL download, datasheet
 search (``datasheet-find``), extraction and commit. Errors: 404 unknown datasheet / no analysis yet, 409 no library
@@ -37,6 +38,14 @@ from pydantic import BaseModel, Field, ValidationError
 
 from ..config import load_settings
 from ..datasheet import find, llm, replay, search_costs, store
+from ..datasheet.combine import (
+    PackageSource,
+    PackageTarget,
+    merge_package,
+    package_sources,
+    package_targets,
+    unmerge_package,
+)
 from ..datasheet.errors import (
     AiUnavailable,
     BudgetExceeded,
@@ -149,6 +158,11 @@ class DatasheetOut(BaseModel):
     last_error: str | None = None  # reason of the last failed analysis
     devices: list[str] = Field(default_factory=list)
     issues: dict[str, int] = Field(default_factory=dict)
+    package_only: bool = Field(default=False, description="Nur Gehäusezeichnung, kein Bauteil (nur Footprints)")
+    saved_symbols: list[str] = Field(default_factory=list, description="Mit „Nur Symbol speichern“ gespeichert")
+    saved_footprints: list[str] = Field(default_factory=list, description="Mit „Nur Footprint speichern“ gespeichert")
+    merged_from: list[str] = Field(default_factory=list,
+                                   description="Dateinamen der Datenblätter, aus denen Gehäuse übernommen wurden")
 
 
 class DatasheetDetailOut(DatasheetOut):
@@ -192,6 +206,20 @@ class ExtractionOut(BaseModel):
     runs: list[RunInfo] = Field(default_factory=list)
     cost_usd: float = 0.0
     budget_usd: float = 0.0
+
+
+class MergePackageIn(BaseModel):
+    package: str = Field(description="Gehäusecode in diesem Datenblatt (bekommt die Maße)")
+    source_id: str = Field(description="Datenblatt mit der Gehäusezeichnung")
+    source_package: str = Field(description="Gehäusecode im anderen Datenblatt")
+
+
+class UnmergePackageIn(BaseModel):
+    package: str = Field(description="Gehäusecode in diesem Datenblatt")
+
+
+class MergeOut(ExtractionOut):
+    notes: list[str] = Field(default_factory=list, description="Hinweise zur Übernahme (deutsch)")
 
 
 class DeleteOut(BaseModel):
@@ -268,8 +296,15 @@ def ds_errors() -> Iterator[None]:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+def _package_only(meta: DatasheetMeta) -> bool:
+    data = meta.extraction
+    return data is not None and not data.devices and any(p.has_geometry() for p in data.packages)
+
+
 def _status(rec: DatasheetRecord, meta: DatasheetMeta) -> str:
-    if meta.committed:
+    """„übernommen“ once parts were created from it – or, for a package drawing, its footprints were saved; saving only
+    the symbol of a device datasheet keeps it „analysiert“ (the part is still to be created)."""
+    if any(c.scope == "part" for c in meta.committed) or (_package_only(meta) and meta.committed):
         return "übernommen"
     if meta.extraction is not None:
         return "analysiert"
@@ -278,10 +313,19 @@ def _status(rec: DatasheetRecord, meta: DatasheetMeta) -> str:
     return "neu"
 
 
+def _saved(meta: DatasheetMeta, scope: Literal["symbols", "footprints"]) -> list[str]:
+    names: list[str] = []
+    for commit in meta.committed:
+        if commit.scope == scope:
+            names.extend(commit.symbols if scope == "symbols" else commit.footprints)
+    return list(dict.fromkeys(names))
+
+
 def _out(rec: DatasheetRecord, ws: Workspace, *, detail: bool = False) -> DatasheetOut:
     meta = store.load_meta(rec)
     path = ws.abs(rec.file)
     data = meta.extraction
+    merged_from = list(dict.fromkeys(p.origin.file for p in data.packages if p.origin is not None)) if data else []
     base: dict[str, Any] = dict(
         id=rec.id, file=rec.file, path=str(path) if path is not None else "", original_name=rec.original_name,
         title=rec.title, manufacturer=rec.manufacturer, mpns=rec.mpns, page_count=rec.page_count,
@@ -289,7 +333,8 @@ def _out(rec: DatasheetRecord, ws: Workspace, *, detail: bool = False) -> Datash
         status=_status(rec, meta), has_extraction=data is not None, edited=meta.edited, model=meta.model,
         model_label=model_label(meta.model) if meta.model else "", extracted=meta.extracted, cost_usd=meta.cost_usd,
         last_error=meta.last_error, devices=[d.base_part for d in data.devices] if data else [],
-        issues=dict(issue_summary(data.issues)) if data else {},
+        issues=dict(issue_summary(data.issues)) if data else {}, package_only=_package_only(meta),
+        saved_symbols=_saved(meta, "symbols"), saved_footprints=_saved(meta, "footprints"), merged_from=merged_from,
     )
     if not detail:
         return DatasheetOut(**base)
@@ -559,27 +604,73 @@ def put_extraction(datasheet_id: str, body: ExtractionData, ws: Workspace = Depe
         return _extraction_out(store.get_record(datasheet_id))
 
 
+@router.get("/datasheets/{datasheet_id}/package-sources", response_model=list[PackageSource])
+def get_package_sources(datasheet_id: str, package: str = Query(..., min_length=1, description="Gehäusecode"),
+                        ws: Workspace = Depends(require_workspace)) -> list[PackageSource]:
+    """Packages of the other analysed datasheets whose drawing data (dimensions, land pattern) can be taken over into
+    ``package`` – best match first, with German notes (``matches``/``problems``)."""
+    with ds_errors():
+        return package_sources(datasheet_id, package)
+
+
+@router.get("/datasheets/{datasheet_id}/package-targets", response_model=list[PackageTarget])
+def get_package_targets(datasheet_id: str, package: str = Query(..., min_length=1, description="Gehäusecode"),
+                        ws: Workspace = Depends(require_workspace)) -> list[PackageTarget]:
+    """The other way round: packages of device datasheets that the drawing of ``package`` of this datasheet (e.g. a
+    package-outline document) could complete – best match first (missing dimensions first)."""
+    with ds_errors():
+        return package_targets(datasheet_id, package)
+
+
+@router.post("/datasheets/{datasheet_id}/merge-package", response_model=MergeOut)
+def post_merge_package(datasheet_id: str, body: MergePackageIn,
+                       ws: Workspace = Depends(require_workspace)) -> MergeOut:
+    """Take over the drawing data of a package of another datasheet (``source_id``/``source_package``) into
+    ``package`` of this one – stored like a correction, with the origin (``PackageData.origin``); ``notes`` = hints."""
+    with ds_errors():
+        with library_hold(None, ws.root):
+            result = merge_package(datasheet_id, body.package, body.source_id, body.source_package, ws=ws)
+        out = _extraction_out(store.get_record(datasheet_id))
+        return MergeOut(**out.model_dump(), notes=result.notes)
+
+
+@router.post("/datasheets/{datasheet_id}/unmerge-package", response_model=ExtractionOut)
+def post_unmerge_package(datasheet_id: str, body: UnmergePackageIn,
+                         ws: Workspace = Depends(require_workspace)) -> ExtractionOut:
+    """Undo a takeover: ``package`` as it was before the drawing data came from another datasheet."""
+    with ds_errors():
+        with library_hold(None, ws.root):
+            unmerge_package(datasheet_id, body.package, ws=ws)
+        return _extraction_out(store.get_record(datasheet_id))
+
+
 @router.post("/datasheets/{datasheet_id}/proposal", response_model=PartProposal)
 def post_proposal(datasheet_id: str, choices: ProposalChoices | None = None,
                   svg: bool = Query(default=True, description="SVG-Vorschauen mitliefern"),
                   ws: Workspace = Depends(require_workspace)) -> PartProposal:
-    """Dry run of "Bauteil anlegen": category, rows per variant, symbol(s), footprints, warnings, blockers and the
-    ``fingerprint`` the commit checks (``expected_fingerprint``)."""
+    """Dry run of "Bauteil anlegen": category, rows per variant, symbol(s), footprints, warnings, blockers, readiness
+    (also of "Nur Symbol/Footprint speichern") and the ``fingerprint`` the commit checks (``expected_fingerprint``)."""
     with ds_errors():
         return build_proposal(datasheet_id, choices, ws=ws, svg=svg)
+
+
+_COMMIT_TITLES = {"part": "Bauteil aus „{}“ anlegen", "symbols": "Symbol aus „{}“ speichern",
+                  "footprints": "Footprint aus „{}“ speichern"}
 
 
 @router.post("/datasheets/{datasheet_id}/commit", response_model=JobOut)
 def post_commit(datasheet_id: str, choices: ProposalChoices | None = None,
                 ws: Workspace = Depends(require_workspace)) -> dict[str, Any]:
-    """Create symbols, footprints and parts (job). Refuses (failed job, nothing written) unconfirmed blockers
-    (``accept_issues``) and a plan that differs from ``expected_fingerprint`` – ``job.detail.code`` says which."""
+    """Create symbols, footprints and parts (job) – with ``scope`` = ``symbols`` | ``footprints`` only the symbols or
+    only the footprints (no parts). Refuses (failed job, nothing written) unconfirmed blockers (``accept_issues``) and a
+    plan that differs from ``expected_fingerprint`` – ``job.detail.code`` says which."""
     with ds_errors():
         rec = store.get_record(datasheet_id)
         if store.load_meta(rec).extraction is None:
             raise NoExtraction(rec.id)
     author = resolve_author(None)
-    job = jobs.submit(COMMIT_JOB_KIND, f"Bauteil aus „{rec.original_name}“ anlegen", commit_proposal, rec.id,
+    scope = choices.scope if choices is not None else "part"
+    job = jobs.submit(COMMIT_JOB_KIND, _COMMIT_TITLES[scope].format(rec.original_name), commit_proposal, rec.id,
                       choices, ws=ws, author=author)
     return {"job": job.snapshot()}
 

@@ -171,7 +171,8 @@ function ReanalyzeForm({
             <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-warning-text" />
             <span>
               Das neue Ergebnis ersetzt die bisherige Analyse
-              {target.edited ? ' einschließlich Ihrer Korrekturen' : ''}. Bisher bezahlt: {formatUsd(target.costUsd)}.
+              {target.edited ? ' einschließlich Ihrer Korrekturen und übernommener Gehäusemaße' : ''}. Bisher bezahlt:{' '}
+              {formatUsd(target.costUsd)}.
             </span>
           </div>
         )}

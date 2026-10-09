@@ -226,6 +226,8 @@ export function toProposalChoices(c: ChoiceDraft): ProposalChoices {
     link: c.link,
     accept_issues: [],
     allow_pin_changes: [...new Set(c.allowPinChanges)].sort((a, b) => a.localeCompare(b)),
+    // „Nur Symbol/Footprint speichern“ setzt erst die Übernahme (zählt nicht zum Fingerabdruck)
+    scope: 'part',
   }
 }
 

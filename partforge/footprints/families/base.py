@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import copy
 import math
-from collections.abc import Callable, Mapping, Sequence
+import re
+from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import dataclass, field
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Literal
@@ -25,7 +26,7 @@ from ..geom import rect_inflate as geom_inflate
 from ..ipc7351 import Density, LandCalc, RoundingMode, fmt_mm
 from ..models import FamilyInfo, FootprintRequest, ParamSpec, Tol
 from ..naming import ascii_name, ascii_text
-from ..params import MAX_DIMENSION, Params, nom
+from ..params import MAX_DIMENSION, ParamError, Params, nom
 
 # Where a parameter value came from (GenContext.sources): the request itself, an explicitly chosen
 # preset, the preset an alias family name implies, a datasheet gap filled from a typical package
@@ -553,40 +554,74 @@ def row_positions(count: int, pitch: float) -> list[float]:
     return [r6(((count - 1) / 2 - i) * pitch) for i in range(count)]
 
 
-def dual_row(b: FootprintBuilder, land: LandCalc, per_side: int, pitch: float, *, start: int = 1) -> list[Pad]:
-    """Two rows along Y: left column top→bottom, right column bottom→top (pin 1 upper left)."""
+def dual_row(b: FootprintBuilder, land: LandCalc, per_side: int, pitch: float, *, start: int = 1,
+             omit: Collection[int] = ()) -> list[Pad]:
+    """Two rows along Y: left column top→bottom, right column bottom→top (pin 1 upper left).
+
+    ``omit``: positions without terminal (1-based, counted as if every position had one); the pins are numbered
+    consecutively over the remaining positions."""
     c = land.pad_center
     ys = row_positions(per_side, pitch)
-    pads = [b.smd_pad(str(start + i), -c, y, land.pad_length, land.x) for i, y in enumerate(ys)]
-    pads += [b.smd_pad(str(start + per_side + i), c, y, land.pad_length, land.x)
-             for i, y in enumerate(reversed(ys))]
+    slots = [(-c, y) for y in ys] + [(c, y) for y in reversed(ys)]
+    pads: list[Pad] = []
+    for index, (x, y) in enumerate(slots, start=1):
+        if index not in omit:
+            pads.append(b.smd_pad(str(start + len(pads)), x, y, land.pad_length, land.x))
     return pads
 
 
-def quad(b: FootprintBuilder, land_x: LandCalc, land_y: LandCalc, per_x: int, per_y: int, pitch: float) -> list[Pad]:
+def quad(b: FootprintBuilder, land_x: LandCalc, land_y: LandCalc, per_x: int, per_y: int, pitch: float, *,
+         pitch_x: float | None = None, first: Literal["left", "top"] = "left",
+         omit: Collection[int] = ()) -> list[Pad]:
     """Four sides, counter-clockwise from pin 1 at the top of the left side.
 
-    ``land_x``: rows on the left/right sides (pads extend along X), ``per_y`` pads each;
-    ``land_y``: rows on the bottom/top sides (pads extend along Y), ``per_x`` pads each.
+    ``land_x``: rows on the left/right sides (pads extend along X), ``per_y`` pads each at ``pitch``;
+    ``land_y``: rows on the bottom/top sides (pads extend along Y), ``per_x`` pads each at ``pitch_x`` (default
+    ``pitch``). ``first="top"``: pin 1 at the left end of the top side instead (e.g. TI RGY); the other positions
+    keep their counter-clockwise order. ``omit``: positions without terminal (1-based, counted from pin 1 as if every
+    position had one); the pins are numbered consecutively over the remaining positions.
     """
-    pads: list[Pad] = []
-    n = 1
     ys = row_positions(per_y, pitch)
-    xs = row_positions(per_x, pitch)
+    xs = row_positions(per_x, pitch_x or pitch)
     cx, cy = land_x.pad_center, land_y.pad_center
-    for y in ys:  # left, top -> bottom
-        pads.append(b.smd_pad(str(n), -cx, y, land_x.pad_length, land_x.x))
-        n += 1
-    for x in reversed(xs):  # bottom, left -> right
-        pads.append(b.smd_pad(str(n), x, -cy, land_y.x, land_y.pad_length))
-        n += 1
-    for y in reversed(ys):  # right, bottom -> top
-        pads.append(b.smd_pad(str(n), cx, y, land_x.pad_length, land_x.x))
-        n += 1
-    for x in xs:  # top, right -> left
-        pads.append(b.smd_pad(str(n), x, cy, land_y.x, land_y.pad_length))
-        n += 1
+    slots: list[tuple[float, float, bool]] = []  # (x, y, on the left/right side)
+    slots += [(-cx, y, True) for y in ys]  # left, top -> bottom
+    slots += [(x, -cy, False) for x in reversed(xs)]  # bottom, left -> right
+    slots += [(cx, y, True) for y in reversed(ys)]  # right, bottom -> top
+    slots += [(x, cy, False) for x in xs]  # top, right -> left
+    if first == "top" and per_x:
+        slots = slots[-1:] + slots[:-1]  # the left end of the top side comes first
+    pads: list[Pad] = []
+    for index, (x, y, left_right) in enumerate(slots, start=1):
+        if index in omit:
+            continue
+        designator = str(len(pads) + 1)
+        if left_right:
+            pads.append(b.smd_pad(designator, x, y, land_x.pad_length, land_x.x))
+        else:
+            pads.append(b.smd_pad(designator, x, y, land_y.x, land_y.pad_length))
     return pads
+
+
+def missing_positions(ctx: GenContext, positions: int | None = None) -> list[int]:
+    """Positions without terminal from the text parameter ``missing`` („14“, „5, 6“), sorted; with ``positions`` (the
+    number of positions of a fully populated package) each one is checked to exist."""
+    text = ctx.p.text("missing")
+    found: set[int] = set()
+    for token in re.split(r"[,;\s]+", text):
+        if not token:
+            continue
+        if not token.isdigit() or int(token) < 1:
+            raise ParamError(f"Fehlende Anschlüsse: „{token}“ ist keine Positionsnummer (z. B. „14“ oder „5, 6“).",
+                             params=("missing",))
+        found.add(int(token))
+    out = sorted(found)
+    if positions is not None:
+        beyond = [n for n in out if n > positions]
+        if beyond:
+            raise ParamError(f"Fehlende Anschlüsse: Position {beyond[0]} gibt es nicht – das Gehäuse hat {positions} "
+                             "Positionen.", params=("missing",))
+    return out
 
 
 def dot_above(b: FootprintBuilder, pad: Pad) -> XY:

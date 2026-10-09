@@ -15,9 +15,11 @@ export interface ReviewContextValue {
   ds: DatasheetDetail
   extractionOut: ExtractionOut
   extraction: ExtractionData
-  /** gewähltes Bauteil (Datenblätter mit mehreren Bauteilen) */
+  /** gewähltes Bauteil (Datenblätter mit mehreren Bauteilen); bei einer Gehäusezeichnung ein leeres Bauteil */
   device: DeviceData
   deviceIndex: number
+  /** Gehäusezeichnung ohne Bauteil: nur Gehäuse und Footprints (keine Identität, Varianten, Parameter, Pins) */
+  packageOnly: boolean
   proposal: PartProposal | undefined
   /** Vorschlag wird (neu) berechnet – vorhandene Daten bleiben sichtbar */
   proposalFetching: boolean

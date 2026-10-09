@@ -110,6 +110,8 @@ def identity_instruction(categories: Sequence[CategoryDef], *, page_count: int, 
         "Extract the part record: manufacturer and document, every device with its orderable part numbers, its "
         "field values and one complete pin table per package, and the list of packages (code, name, pin count "
         "without exposed pad, exposed pad yes/no). Package dimensions are extracted in a separate step.",
+        "If the pages describe no device at all (for example a separate package outline or land-pattern document), "
+        "return an empty devices list and only the packages – never a placeholder device.",
         "",
         "For each device choose the best matching category table of this library and give values for its fields "
         "(use the exact field name as column; for fields with options use one of the listed options exactly; skip "

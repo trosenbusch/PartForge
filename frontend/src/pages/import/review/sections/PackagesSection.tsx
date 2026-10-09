@@ -1,15 +1,32 @@
-import { Box, CircleAlert, TriangleAlert } from 'lucide-react'
-import type { DimValue, PackageChoice, RowReference } from '@/api/datasheets'
-import { useLibraryFootprintNames } from '@/api/datasheets'
-import { Badge, Combobox, SegmentedControl, Select } from '@/components/ui'
+import { Box, ChevronDown, CircleAlert, Combine, Eye, FileStack, LayoutGrid, Undo2, TriangleAlert } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
+import type { DimValue, PackageChoice, PackageData, PackageOrigin, RowReference, TerminalLayout } from '@/api/datasheets'
+import { useLibraryFootprintNames, useUnmergePackage } from '@/api/datasheets'
+import {
+  Badge,
+  Button,
+  Callout,
+  Combobox,
+  confirm,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  SegmentedControl,
+  Select,
+} from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { formatNumber } from '@/lib/format'
 import { CellInput, NumberCell } from '../../shared/CommitInput'
+import { PackageSourceDialog, PackageTargetDialog } from '../../shared/PackageMergeDialogs'
 import { SourceChip } from '../../shared/SourceChip'
 import { TipButton } from '../../shared/TipButton'
 import { useReviewUi } from '../../store'
 import { packageLabel, useReview } from '../context'
 import { sectionIssues } from '../issues'
+import { OriginPagesDialog } from './OriginPagesDialog'
 import { Section } from './Section'
 
 const FAMILY_LABEL: Record<string, string> = {
@@ -80,6 +97,50 @@ const DENSITY = [
   { value: 'M', label: 'M – robust' },
 ]
 
+/** Familien mit Anschlüssen auf vier Seiten (Anschlussanordnung, Reihenabstand oben/unten) */
+const QUAD_FAMILIES = new Set(['nolead', 'qfp'])
+/** Nur QFN kennt Raster oben/unten, Lage von Pin 1 und fehlende Anschlüsse (der QFP-Generator nur die Seitenzahlen) */
+const FULL_LAYOUT_FAMILIES = new Set(['nolead'])
+
+const PIN1_OPTIONS: { value: TerminalLayout['pin1']; label: string; description: string }[] = [
+  { value: 'left', label: 'Linke Seite, oben', description: 'JEDEC-Standard' },
+  { value: 'top', label: 'Obere Seite, links', description: 'z. B. TI RGY (Pins an den Stirnseiten)' },
+]
+
+const EMPTY_LAYOUT: TerminalLayout = { pins_x: null, pins_y: null, pitch_x: null, pin1: 'left', missing: [] }
+
+function isDefaultLayout(l: TerminalLayout): boolean {
+  return l.pins_x === null && l.pins_y === null && l.pitch_x === null && l.pin1 === 'left' && l.missing.length === 0
+}
+
+/** „2 oben/unten · 8 links/rechts · Pin 1 oben · ohne 14“ – Kurzfassung einer Anschlussanordnung */
+function layoutSummary(l: TerminalLayout | null | undefined): string {
+  if (!l || isDefaultLayout(l)) return 'gleichmäßig verteilt'
+  return [
+    l.pins_x !== null ? `${l.pins_x} oben/unten` : null,
+    l.pins_y !== null ? `${l.pins_y} links/rechts` : null,
+    l.pitch_x !== null ? `Raster oben/unten ${formatNumber(l.pitch_x)} mm` : null,
+    l.pin1 === 'top' ? 'Pin 1 oben' : null,
+    l.missing.length ? `ohne ${l.missing.join(', ')}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+}
+
+/** „14, 20“ → [14, 20] (ganze, positive Positionen; Rest wird ignoriert) */
+function parsePositions(text: string): number[] {
+  const out = new Set<number>()
+  for (const token of text.split(/[,;\s]+/)) {
+    if (/^\d+$/.test(token) && Number(token) > 0) out.add(Number(token))
+  }
+  return [...out].sort((a, b) => a - b)
+}
+
+/** Seiten der übernommenen Zeichnung (Umriss und Lötflächen) – Seiten des anderen PDFs */
+function originPages(pkg: PackageData): number[] {
+  return [...new Set([...pkg.pages, ...pkg.land_pattern.pages])].filter((p) => p > 0).sort((a, b) => a - b)
+}
+
 function DimRow({ dim, onChange }: { dim: DimValue; onChange: (field: 'min' | 'nom' | 'max', v: number | null) => void }) {
   const label = DIM_LABEL[dim.symbol] ?? DIM_LABEL[dim.symbol.toUpperCase()] ?? dim.description
   const bad = dim.min !== null && dim.max !== null && dim.min > dim.max
@@ -109,9 +170,13 @@ function DimRow({ dim, onChange }: { dim: DimValue; onChange: (field: 'min' | 'n
 }
 
 function PackageBlock({ code }: { code: string }) {
-  const { extraction, device, proposal, choices, setChoices, edit } = useReview()
+  const { ds, extraction, device, packageOnly, proposal, choices, setChoices, edit } = useReview()
   const setPreviewPackage = useReviewUi((s) => s.setPreviewPackage)
   const setPreviewTab = useReviewUi((s) => s.setPreviewTab)
+  const [sourceOpen, setSourceOpen] = useState(false)
+  const [targetOpen, setTargetOpen] = useState(false)
+  const [originOpen, setOriginOpen] = useState(false)
+  const unmerge = useUnmergePackage(ds.id)
   const pi = extraction.packages.findIndex((p) => p.code === code)
   const pkg = extraction.packages[pi]
   const fp = proposal?.footprints.find((f) => f.package === code)
@@ -120,6 +185,15 @@ function PackageBlock({ code }: { code: string }) {
   const lpComplete = Boolean(lp?.present && lp.pad_width !== null && lp.pad_length !== null && lp.row_spacing !== null)
   const library = useLibraryFootprintNames(choice.footprint === 'existing')
   const issues = sectionIssues(extraction.issues, 'gehaeuse', device, undefined, code)
+  const dimsMissing = issues.some((i) => i.code === 'dims_missing' && i.package === code)
+  const quad = Boolean(pkg?.family && QUAD_FAMILIES.has(pkg.family))
+  // Die Anordnung ist gefragt, wenn der Generator die Anschlüsse nicht verteilen kann (oder schon eine eingetragen ist)
+  const layoutNeeded = Boolean(fp && !fp.valid && fp.warnings.some((w) => /je Seite|durch 4 teilbar|passen nicht/.test(w)))
+  const [layoutOpen, setLayoutOpen] = useState(false)
+  const showLayout = quad && (layoutOpen || layoutNeeded || Boolean(pkg?.layout))
+  const label = pkg ? packageLabel(pkg) : code
+  // Zeichnung an ein Bauteil-Datenblatt geben: Gehäusezeichnungen – und Bauteile ohne Bestellnummer (oft ein Platzhalter)
+  const canGive = Boolean(pkg && !pkg.origin) && (packageOnly || device.variants.length === 0)
 
   const setChoice = (patch: Partial<PackageChoice>) => {
     setChoices((c) => ({ ...c, packages: { ...c.packages, [code]: { ...choice, ...patch } } }))
@@ -131,6 +205,21 @@ function PackageBlock({ code }: { code: string }) {
       const p = d.packages[pi]
       if (p) fn(p)
     })
+  const setLayout = (what: string, patch: Partial<TerminalLayout>) =>
+    patchPkg(what, (p) => {
+      const next: TerminalLayout = { ...EMPTY_LAYOUT, ...(p.layout ?? {}), ...patch }
+      p.layout = isDefaultLayout(next) ? null : next
+    })
+  const askUnmerge = async (origin: PackageOrigin) => {
+    const ok = await confirm({
+      title: 'Übernahme aufheben?',
+      description: `${label} bekommt wieder die Angaben aus diesem Datenblatt – die Maße aus „${origin.file}“ werden entfernt. Die Analyse von „${origin.file}“ bleibt unverändert.`,
+      confirmLabel: 'Aufheben',
+      icon: <Undo2 />,
+      onConfirm: () => unmerge.mutateAsync(code),
+    })
+    if (ok) toast.success('Übernahme aufgehoben', { description: `${label}: wieder die Angaben aus diesem Datenblatt` })
+  }
 
   if (!pkg) {
     return (
@@ -164,9 +253,50 @@ function PackageBlock({ code }: { code: string }) {
             .join(' · ')}
         </span>
         <div className="ml-auto flex items-center gap-1">
-          <SourceChip pages={pkg.pages} what={`Maßzeichnung ${packageLabel(pkg)}`} />
+          {pkg.origin ? (
+            <OriginMenu
+              origin={pkg.origin}
+              busy={unmerge.isPending}
+              onShow={() => setOriginOpen(true)}
+              onReplace={() => setSourceOpen(true)}
+              onUnmerge={() => void askUnmerge(pkg.origin as PackageOrigin)}
+            />
+          ) : (
+            <SourceChip pages={pkg.pages} what={`Maßzeichnung ${label}`} />
+          )}
+          {canGive && (
+            <Button
+              size="xs"
+              variant="ghost"
+              leftIcon={<Combine />}
+              onClick={() => setTargetOpen(true)}
+              title="Diese Zeichnung in das Datenblatt des Bauteils übernehmen, dem sie gehört"
+            >
+              Einem Bauteil geben …
+            </Button>
+          )}
+          {!packageOnly && !pkg.origin && (
+            <Button
+              size="xs"
+              variant="ghost"
+              leftIcon={<Combine />}
+              onClick={() => setSourceOpen(true)}
+              title="Maße, Herstellerempfehlung und Exposed Pad aus einer eigenen Gehäusezeichnung des Herstellers übernehmen"
+            >
+              Maße übernehmen …
+            </Button>
+          )}
         </div>
       </header>
+      {!packageOnly && (
+        <PackageSourceDialog open={sourceOpen} onOpenChange={setSourceOpen} datasheetId={ds.id} packageCode={code} packageLabel={label} />
+      )}
+      {canGive && (
+        <PackageTargetDialog open={targetOpen} onOpenChange={setTargetOpen} sourceId={ds.id} sourcePackage={code} sourceLabel={label} />
+      )}
+      {pkg.origin && (
+        <OriginPagesDialog open={originOpen} onOpenChange={setOriginOpen} origin={pkg.origin} pages={originPages(pkg)} label={label} />
+      )}
 
       {/* Footprint-Entscheidung */}
       <div className="flex flex-col gap-2 border-b border-line px-3 py-3">
@@ -272,9 +402,26 @@ function PackageBlock({ code }: { code: string }) {
 
       {/* Maße */}
       <div className="px-3 pb-2 pt-2.5">
+        {dimsMissing && !pkg.origin && !packageOnly && (
+          <Callout
+            tone="info"
+            icon={<FileStack />}
+            className="mb-2.5"
+            actions={
+              <Button size="sm" variant="secondary" leftIcon={<Combine />} onClick={() => setSourceOpen(true)}>
+                Maße übernehmen …
+              </Button>
+            }
+          >
+            Maße fehlen. Viele Hersteller (z. B. TI) veröffentlichen die Gehäusezeichnung als eigenes PDF – dieses
+            analysieren und die Maße hier übernehmen.
+          </Callout>
+        )}
         <div className="mb-1 flex items-center gap-2">
           <h4 className="micro-label">Maße</h4>
-          <span className="text-2xs text-fg-subtle">{pkg.dimensions.length} aus der Zeichnung</span>
+          <span className="min-w-0 truncate text-2xs text-fg-subtle">
+            {pkg.dimensions.length} aus {pkg.origin ? `„${pkg.origin.file}“ (${pkg.origin.package})` : 'der Zeichnung'}
+          </span>
         </div>
         {pkg.dimensions.length ? (
           <table className="w-full border-separate border-spacing-0 text-xs">
@@ -319,6 +466,27 @@ function PackageBlock({ code }: { code: string }) {
         )}
       </div>
 
+      {/* Anschlussanordnung (QFN/QFP, die nicht gleichmäßig verteilt sind) */}
+      {quad &&
+        (showLayout ? (
+          <LayoutBlock
+            layout={pkg.layout ?? EMPTY_LAYOUT}
+            full={FULL_LAYOUT_FAMILIES.has(pkg.family ?? '')}
+            needed={layoutNeeded}
+            pitch={pkg.dimensions.find((d) => d.symbol === 'e')}
+            onChange={setLayout}
+          />
+        ) : (
+          <div className="flex items-center gap-2 border-t border-line px-3 py-2 text-xs">
+            <LayoutGrid aria-hidden className="size-3.5 text-fg-subtle" />
+            <span className="text-fg-subtle">Anschlussanordnung:</span>
+            <span className="text-fg-muted">gleichmäßig verteilt</span>
+            <Button size="xs" variant="ghost" className="ml-auto" onClick={() => setLayoutOpen(true)}>
+              Anpassen …
+            </Button>
+          </div>
+        ))}
+
       {/* Herstellerempfehlung */}
       <div className="border-t border-line px-3 pb-3 pt-2.5">
         <div className="mb-1.5 flex items-center gap-2">
@@ -328,7 +496,9 @@ function PackageBlock({ code }: { code: string }) {
               {lpComplete ? 'vollständig' : 'unvollständig'}
             </Badge>
           ) : null}
-          <span className="ml-auto">{lp?.present && <SourceChip pages={lp.pages} what="Empfohlene Lötflächen" />}</span>
+          <span className="ml-auto">
+            {lp?.present && !pkg.origin && <SourceChip pages={lp.pages} what="Empfohlene Lötflächen" />}
+          </span>
         </div>
         {lp?.present ? (
           <dl className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-0.5 text-xs @[30rem]:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)]">
@@ -336,10 +506,19 @@ function PackageBlock({ code }: { code: string }) {
             <LpNumber label="Padlänge" value={lp.pad_length} onCommit={(v) => patchPkg('Padlänge', (p) => void (p.land_pattern.pad_length = v))} />
             <LpNumber label="Raster" value={lp.pitch} onCommit={(v) => patchPkg('Raster der Lötflächen', (p) => void (p.land_pattern.pitch = v))} />
             <LpNumber
-              label="Reihenabstand"
+              label={quad ? 'Reihenabstand links/rechts' : 'Reihenabstand'}
               value={lp.row_spacing}
               onCommit={(v) => patchPkg('Reihenabstand', (p) => void (p.land_pattern.row_spacing = v))}
             />
+            {quad && (
+              <LpNumber
+                label="Reihenabstand oben/unten"
+                value={lp.row_spacing_y}
+                placeholder="wie links/rechts"
+                hint="Bei rechteckigem Körper nötig (gleicher Bezug wie links/rechts)"
+                onCommit={(v) => patchPkg('Reihenabstand oben/unten', (p) => void (p.land_pattern.row_spacing_y = v))}
+              />
+            )}
             <dt className="text-fg-subtle">Bezug</dt>
             <dd className="min-w-0 @[30rem]:col-span-3">
               <Select
@@ -387,26 +566,205 @@ function PackageBlock({ code }: { code: string }) {
   )
 }
 
-function LpNumber({ label, value, onCommit }: { label: string; value: number | null; onCommit: (v: number | null) => void }) {
+function LpNumber({
+  label,
+  value,
+  onCommit,
+  placeholder = '–',
+  hint,
+}: {
+  label: string
+  value: number | null
+  onCommit: (v: number | null) => void
+  placeholder?: string
+  hint?: string
+}) {
   return (
     <>
-      <dt className="text-fg-subtle">{label}</dt>
+      <dt className="text-fg-subtle" title={hint}>
+        {label}
+      </dt>
       <dd className="flex min-w-0 items-center gap-1">
-        <NumberCell aria-label={`${label} in mm`} value={value} onCommit={onCommit} placeholder="–" className="max-w-20 text-right" />
+        <NumberCell
+          aria-label={`${label} in mm`}
+          value={value}
+          onCommit={onCommit}
+          placeholder={placeholder}
+          title={hint}
+          className={cn('text-right', placeholder.length > 3 ? 'max-w-28' : 'max-w-20')}
+        />
         <span className="text-2xs text-fg-subtle">mm</span>
       </dd>
     </>
   )
 }
 
+/**
+ * Anschlussanordnung eines QFN/QFP, die die Maße nicht beschreiben – etwa TI RGY: Pin 1 und 19 oben, 10 und 11 unten im
+ * Abstand 1,5 mm, rechts eine Position frei. Positionen zählen gegen den Uhrzeigersinn ab Pin 1, als wären alle bestückt.
+ */
+function LayoutBlock({
+  layout,
+  full,
+  needed,
+  pitch,
+  onChange,
+}: {
+  layout: TerminalLayout
+  /** QFN: auch Raster oben/unten, Lage von Pin 1, fehlende Anschlüsse */
+  full: boolean
+  /** Der Footprint scheitert an der Verteilung der Anschlüsse */
+  needed: boolean
+  pitch: DimValue | undefined
+  onChange: (what: string, patch: Partial<TerminalLayout>) => void
+}) {
+  const count = (v: number | null) => (v === null || !Number.isFinite(v) || v < 1 ? null : Math.round(v))
+  const pitchText = pitch ? formatNumber(pitch.nom ?? pitch.max ?? pitch.min ?? 0) : null
+  return (
+    <div className="border-t border-line px-3 pb-3 pt-2.5">
+      <div className="mb-1.5 flex items-center gap-2">
+        <h4 className="micro-label">Anschlussanordnung</h4>
+        <span className="min-w-0 truncate text-2xs text-fg-subtle">{layoutSummary(layout)}</span>
+      </div>
+      {needed && isDefaultLayout(layout) && (
+        <p className="mb-2 flex items-start gap-1.5 text-2xs leading-4 text-warning-text">
+          <TriangleAlert aria-hidden className="mt-0.5 size-3 shrink-0" />
+          Die Anschlüsse lassen sich nicht gleichmäßig auf vier Seiten verteilen – bitte die Anordnung aus der Zeichnung
+          eintragen.
+        </p>
+      )}
+      <dl className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-0.5 text-xs @[30rem]:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)]">
+        <dt className="text-fg-subtle">Oben/unten je Seite</dt>
+        <dd className="flex min-w-0 items-center gap-1">
+          <NumberCell
+            aria-label="Anschlüsse oben und unten je Seite"
+            digits={0}
+            value={layout.pins_x}
+            placeholder="gleichmäßig"
+            onCommit={(v) => onChange('Anschlüsse oben/unten', { pins_x: count(v) })}
+            className="max-w-28 text-right"
+          />
+        </dd>
+        <dt className="text-fg-subtle">Links/rechts je Seite</dt>
+        <dd className="flex min-w-0 items-center gap-1">
+          <NumberCell
+            aria-label="Anschlüsse links und rechts je Seite"
+            digits={0}
+            value={layout.pins_y}
+            placeholder="gleichmäßig"
+            onCommit={(v) => onChange('Anschlüsse links/rechts', { pins_y: count(v) })}
+            className="max-w-28 text-right"
+          />
+        </dd>
+        {full && (
+          <>
+            <dt className="text-fg-subtle">Raster oben/unten</dt>
+            <dd className="flex min-w-0 items-center gap-1">
+              <NumberCell
+                aria-label="Raster der Anschlüsse oben und unten in mm"
+                value={layout.pitch_x}
+                placeholder={pitchText ? `wie e (${pitchText})` : 'wie e'}
+                onCommit={(v) => onChange('Raster oben/unten', { pitch_x: v !== null && v > 0 ? v : null })}
+                className="max-w-28 text-right"
+              />
+              <span className="text-2xs text-fg-subtle">mm</span>
+            </dd>
+            <dt className="text-fg-subtle">Pin 1</dt>
+            <dd className="min-w-0">
+              <Select
+                size="sm"
+                aria-label="Lage von Pin 1"
+                value={layout.pin1}
+                onValueChange={(v) => onChange('Lage von Pin 1', { pin1: v as TerminalLayout['pin1'] })}
+                options={PIN1_OPTIONS}
+                className="h-7 border-transparent bg-transparent px-1.5 text-xs shadow-none hover:border-line-strong"
+              />
+            </dd>
+            <dt className="text-fg-subtle">Fehlende Anschlüsse</dt>
+            <dd className="min-w-0 @[30rem]:col-span-3">
+              <CellInput
+                aria-label="Fehlende Anschlüsse (Positionen)"
+                value={layout.missing.join(', ')}
+                placeholder="keine – z. B. „14“"
+                onCommit={(v) => onChange('Fehlende Anschlüsse', { missing: parsePositions(v) })}
+                className="mono max-w-56"
+              />
+            </dd>
+          </>
+        )}
+      </dl>
+      {full && (
+        <p className="mt-1.5 text-2xs leading-4 text-fg-subtle">
+          Positionen zählen ab Pin 1 gegen den Uhrzeigersinn, als wären alle bestückt; die Pins werden über die übrigen
+          Positionen durchnummeriert.
+        </p>
+      )}
+    </div>
+  )
+}
+
+/** Herkunft eines übernommenen Gehäuses: Zeichnung ansehen, andere Zeichnung wählen, Übernahme aufheben. */
+function OriginMenu({
+  origin,
+  busy,
+  onShow,
+  onReplace,
+  onUnmerge,
+}: {
+  origin: PackageOrigin
+  busy: boolean
+  onShow: () => void
+  onReplace: () => void
+  onUnmerge: () => void
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          disabled={busy}
+          className={cn(
+            'inline-flex h-5 max-w-56 shrink items-center gap-1 rounded-md border border-accent/30 bg-accent-soft/50 px-1.5 text-2xs font-medium text-accent-text',
+            'outline-none transition-colors hover:border-accent/60 focus-ring disabled:opacity-60',
+          )}
+        >
+          <Combine aria-hidden className="size-3 shrink-0" />
+          <span className="truncate">aus {origin.file}</span>
+          <ChevronDown aria-hidden className="size-3 shrink-0" />
+          <span className="sr-only"> – Maße übernommen aus {origin.label || origin.package}, Aktionen</span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-64">
+        <DropdownMenuItem icon={<Eye />} description={origin.label || origin.package} onSelect={onShow}>
+          Zeichnung ansehen
+        </DropdownMenuItem>
+        <DropdownMenuItem icon={<Combine />} description="Maße aus einem anderen Datenblatt übernehmen" onSelect={onReplace}>
+          Andere Zeichnung wählen …
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem icon={<Undo2 />} description="Wieder die Angaben dieses Datenblatts" onSelect={onUnmerge}>
+          Übernahme aufheben …
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 /** Gehäuse der gewählten Bestellnummern: Footprint-Entscheidung (IPC/Hersteller/vorhanden), Maße, Lötflächen. */
 export function PackagesSection() {
-  const { extraction, device, codes } = useReview()
+  const { extraction, device, codes, packageOnly } = useReview()
   const issues = sectionIssues(extraction.issues, 'gehaeuse', device, codes)
   const others = extraction.packages.filter((p) => !codes.includes(p.code))
   return (
     <Section id="gehaeuse" title="Gehäuse" icon={<Box />} count={codes.length} issues={issues}>
       <div className="flex flex-col gap-3">
+        {packageOnly && (
+          <Callout tone="info" icon={<FileStack />} title="Gehäusezeichnung ohne Bauteil">
+            Hier entsteht nur der Footprint („Footprint speichern“, in die PcbLib). Für das vollständige Bauteil die Maße
+            mit „Einem Bauteil geben …“ in das Datenblatt des Bauteils übernehmen – oder dort unter „Gehäuse“ mit „Maße
+            übernehmen …“.
+          </Callout>
+        )}
         {codes.map((code) => (
           <PackageBlock key={code} code={code} />
         ))}

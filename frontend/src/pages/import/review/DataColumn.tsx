@@ -39,16 +39,18 @@ const NAV: NavItem[] = [
   { id: 'gehaeuse', label: 'Gehäuse' },
   { id: 'hinweise', label: 'Hinweise' },
 ]
+/** Gehäusezeichnung ohne Bauteil: nur Gehäuse und Hinweise */
+const PACKAGE_NAV: NavItem[] = NAV.filter((n) => n.id === 'gehaeuse' || n.id === 'hinweise')
 
 /** Spalte 2: extrahierte Daten in Abschnitten (klebende Navigation, Sprünge aus Fundstellen und Prüfliste). */
 export function DataColumn({ state, pdfCollapsed }: { state: Readiness; pdfCollapsed: boolean }) {
-  const { ds, edit, extractionOut, device, proposal } = useReview()
+  const { ds, edit, extractionOut, device, packageOnly, proposal } = useReview()
   const focus = useReviewUi((s) => s.focusSection)
   const previewCollapsed = useReviewUi((s) => s.previewCollapsed)
   const refusal = useReviewUi((s) => s.refusal)
   const reduce = useReducedMotion()
   const scrollRef = useRef<HTMLDivElement>(null)
-  const [active, setActive] = useState<DataSection>('identitaet')
+  const [active, setActive] = useState<DataSection>(packageOnly ? 'gehaeuse' : 'identitaet')
   // „Prüfen“ in der Navigation: offene Probleme/Punkte, eine Pinbelegungs-Entscheidung oder eine abgelehnte Übernahme
   const needsCheck =
     state.openBlockers.length > 0 ||
@@ -85,7 +87,8 @@ export function DataColumn({ state, pdfCollapsed }: { state: Readiness; pdfColla
   // Strg+Z: letzte Korrektur zurücknehmen (in Eingabefeldern gilt das native Rückgängig)
   useHotkey('mod+z', () => edit.undo(), { enabled: edit.canUndo, allowInInputs: false })
 
-  const items: NavItem[] = needsCheck ? [{ id: 'pruefen', label: 'Prüfen', check: true }, ...NAV] : NAV
+  const nav = packageOnly ? PACKAGE_NAV : NAV
+  const items: NavItem[] = needsCheck ? [{ id: 'pruefen', label: 'Prüfen', check: true }, ...nav] : nav
 
   return (
     <div className="@container flex h-full min-h-0 flex-col bg-bg">
@@ -143,11 +146,15 @@ export function DataColumn({ state, pdfCollapsed }: { state: Readiness; pdfColla
       </div>
       <div ref={scrollRef} className="relative min-h-0 flex-1 overflow-y-auto">
         <ChecklistSection state={state} />
-        <IdentitySection />
-        {/* je Bauteil neu aufbauen (Auswahl der Pintabelle u. Ä. gehört zum Bauteil) */}
-        <VariantsSection key={`v-${device.base_part}`} />
-        <ParametersSection />
-        <PinsSection key={`p-${device.base_part}`} />
+        {!packageOnly && (
+          <>
+            <IdentitySection />
+            {/* je Bauteil neu aufbauen (Auswahl der Pintabelle u. Ä. gehört zum Bauteil) */}
+            <VariantsSection key={`v-${device.base_part}`} />
+            <ParametersSection />
+            <PinsSection key={`p-${device.base_part}`} />
+          </>
+        )}
         <PackagesSection />
         <NotesSection />
         <div aria-hidden className="h-24" />

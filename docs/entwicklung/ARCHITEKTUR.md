@@ -655,6 +655,14 @@ effective_style(style=None) -> FootprintStyle
   des Hausstils. `with_name_record(spec)` hält `generator.name` beim Speichern richtig (auch für Specs, die der
   Client umbenannt hat, und für ältere Specs ohne `names` – dann über eine erneute Berechnung, `generated_names`).
 * Herstellerempfehlung (`land_pattern`) übersteuert die IPC-Berechnung, wo die Familie das unterstützt.
+  `row_spacing_y_mm` = eigener Reihenabstand der oberen/unteren Reihe (QFN/QFP); ein **rechteckiger** QFN (D ≠ E) mit
+  Herstellerempfehlung ohne ihn wird abgelehnt (`ParamError`) – ein Abstand passt nie zu beiden Reihen.
+* **Unregelmäßige QFN/DFN** (`nolead`, z. B. TI RGY0019B, VQFN-19 3,5×4,5): `pins_x`/`pins_y` = Positionen je Seite
+  (fehlende mitgezählt), `e_x` = Raster der oberen/unteren Reihe (Standard `e`), `pin1` = `left` (oben auf der
+  linken Seite, JEDEC) | `top` (linkes Ende der oberen Seite), `missing` = Positionen ohne Anschluss („14“, „5, 6“;
+  gezählt ab Pin 1 gegen den Uhrzeigersinn, als wären alle bestückt; die Pins werden über die übrigen Positionen
+  durchnummeriert, DFN/SON nur `missing`). Nicht angegeben, bleiben die Parameter außerhalb von `generator.params` –
+  vorhandene Footprints behalten Namen und Geometrie. `base.quad`/`dual_row` setzen das um (`missing_positions`).
 * `generate` liefert nie einen Footprint mit Fehlern der Plausibilitätsprüfung (überlappende Pads,
   Bestückungsdruck auf Kupfer, Courtyard …); `preview` zeigt sie an.
 * Noch keine Familie für Quarze und Chip-Sicherungen: die Beispiele nutzen das IPC-Chip-Land ihrer Gehäuse mit
@@ -1185,7 +1193,7 @@ Claude-Client ist für Tests austauschbar (`set_client_factory`) und im Wiederga
 (`replay.py`, §11). Pakete laden pypdf/pypdfium2/Anthropic-SDK erst bei Bedarf. Module: `store` (PDFs, Records,
 Renders, gesicherte Ergebnisse), `pdf`, `pages` (Seitenauswahl), `llm` (einziger SDK-Zugang), `replay`, `costs`,
 `schema`/`prompts`, `extract` (Analyse-Job), `normalize`/`merge`/`evaluate`, `proposal` (Vorschlag/Übernahme),
-`estimate` (Kostenschätzung), `find` (Datenblatt suchen), `search_costs` (Kosten der Suchen), `labels` (Modellnamen,
+`combine` (Gehäuse aus einem anderen Datenblatt), `estimate` (Kostenschätzung), `find` (Datenblatt suchen), `search_costs` (Kosten der Suchen), `labels` (Modellnamen,
 Gründlichkeit, Beträge). Seitenbilder und Textebenen liegen im lokalen App-Cache (`store.cache_root`:
 `%LOCALAPPDATA%\PartForge\Cache\datasheets\<id>`, höchstens 512 MB; mit `PARTFORGE_HOME` dort unter
 `cache\datasheets`) – nie im servergespeicherten Profil; der Cache älterer Versionen unter
@@ -1242,6 +1250,38 @@ Gründlichkeit, Beträge). Seitenbilder und Textebenen liegen im lokalen App-Cac
   anderen Problemen `CommitRefused` mit `code = "invalid"`. Schritte `detail.step` =
   `check|footprints|symbols|parts|save`, Ergebnis + `fingerprint` und `message` („Angelegt: 3 Bauteile, 1 Symbol,
   2 Footprints“).
+* **Nur Symbole / nur Footprints** („Einzeln speichern“): `ProposalChoices.scope` = `part` (Standard) | `symbols` |
+  `footprints` – zählt wie `accept_issues` nicht zum Fingerabdruck (ein geprüfter Vorschlag gilt für jeden Umfang).
+  Die Übernahme schreibt dann nur diese in ihre SchLib/PcbLib, legt keine Bauteile an und braucht nur diesen Umfang:
+  `PartProposal.ready_symbols`/`ready_footprints` = alle Symbole bzw. Footprints gültig, mindestens einer zu schreiben
+  (sonst `CommitRefused` „Nichts zu speichern …“), kein unbestätigter Blocker dieses Umfangs.
+  `BlockerTarget.scopes` sagt je Blocker, was er sperrt: immer `part`; Pintabellen-Prüfungen (`IDENTITY_ISSUES`) auch
+  `symbols`, Zeichnungsprüfungen (`GEOMETRY_ISSUES`) auch `footprints`, `pin_count` und unbekannte Fehler beides, Pins
+  ohne Pad nur `part`. Schritte `check|symbols|save` bzw. `check|footprints|save`, `detail.scope`; Ergebnis mit
+  `scope`, `libraries` (geschriebene Dateien) und `message` „Gespeichert: 1 Symbol“; `CommitInfo.scope`. Ein Datenblatt
+  ist „übernommen“ erst nach einer Übernahme mit Bauteilen (eine Gehäusezeichnung: nach dem Speichern ihrer
+  Footprints); `DatasheetOut.saved_symbols`/`saved_footprints` nennen die einzeln gespeicherten.
+* **Gehäusezeichnung ohne Bauteil** (z. B. TIs eigenes PDF „RGY0019B“): Ohne Bauteil, aber mit Zeichnung
+  (`PackageData.has_geometry`: ein Maß oder eine Herstellerempfehlung) meldet die Prüfung nur `package_only` (info) –
+  nie `no_device` (Fehler mit Nachkontrolle; dabei hatte Claude ein Platzhalter-Bauteil erfunden). Die
+  Identitätsanweisung verlangt dafür eine leere Bauteilliste. Der Vorschlag hat `package_only`, `device = ""` und je
+  gezeichnetem Gehäuse einen Footprint; „Bauteil anlegen“ lehnt ab, „Footprint speichern“ (`scope = footprints`) geht.
+  `DatasheetOut.package_only` kennzeichnet sie in der Liste.
+* **Gehäuse aus anderem Datenblatt** (`combine.py`; `GET …/{id}/package-sources?package=` → `PackageSource[]`,
+  `GET …/{id}/package-targets?package=` → `PackageTarget[]`, `POST …/{id}/merge-package {package, source_id,
+  source_package}` → `MergeOut` = `ExtractionOut` + `notes`, `POST …/{id}/unmerge-package {package}`): übernimmt
+  Familie, Anschlusszahl, Montage, Outline, Exposed Pad (Flag und Nummer), Zeichnungsseiten, Maße, Herstellerempfehlung
+  und Anschlussanordnung in ein Gehäuse des Bauteil-Datenblatts; Code und Name bleiben (Varianten und Pintabellen
+  verweisen darauf). `PackageData.origin` (`PackageOrigin`: Datenblatt, Gehäuse, Dateiname, Titel, Zeitpunkt,
+  `replaced` = das Gehäuse vor der ersten Übernahme als `PackageBase` – keine rekursiven Schemas) – seine Seiten sind
+  Seiten des **anderen** PDFs (die Oberfläche zeigt sie dort, nicht in der PDF-Spalte). Gespeichert wie eine Korrektur
+  (`store_edited_extraction` unter `meta_lock` des Ziels, `edited`); eine neue Analyse ersetzt sie. Ein übernommenes
+  Gehäuse ist nie selbst Quelle. Kandidaten nach Passung (gleiche Anschlusszahl, Code-Präfix `RGY` → `RGY0019B`,
+  Name, Familie, Exposed Pad, Hersteller, Gehäusezeichnung bzw. fehlende Maße) mit deutschen `matches`/`problems`.
+* **Anschlussanordnung** (`PackageData.layout` = `TerminalLayout {pins_x, pins_y, pitch_x, pin1, missing}`, in der
+  Prüfansicht eingetragen): `proposal._family_params` gibt sie als `pins_x`/`pins_y`/`e_x`/`pin1`/`missing` an den
+  Generator (§6), soweit die Familie sie kennt. `LandPatternData.row_spacing_y` = Reihenabstand oben/unten der
+  Herstellerempfehlung (`row_spacing_y_mm`).
 * **Fortschritt** (`job.detail` der Jobs `datasheet`): `step` (stabile Kennungen `download` (URL-Import), `read`,
   `select_pages`, `identity`, `geometry`, `check`, `save`), `step_label` (deutsch), `steps` (Schritte dieses Jobs),
   `datasheet_id` (beim URL-Import, sobald das PDF gespeichert ist), `pages_total`, `pages_selected`, `pages_active`

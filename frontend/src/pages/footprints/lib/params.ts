@@ -355,6 +355,7 @@ export function splitLabel(spec: FootprintParamSpec): { symbol: string | null; t
 const ENUM_LABELS: Record<string, Record<string, string>> = {
   rounding: { kicad: 'KiCad', ipc: 'IPC' },
   cathode_pad: { '1': 'Pad 1', '2': 'Pad 2' },
+  pin1: { left: 'Linke Seite · oben (JEDEC)', top: 'Obere Seite · links (z. B. TI RGY)' },
   lead_style: { gullwing: 'Gull-Wing', flat: 'Flach' },
   pad_shape: { round: 'Rund', oval: 'Oval' },
   ipc_table: { '7351B': 'IPC-7351B', '7352': 'IPC-7352' },

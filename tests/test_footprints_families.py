@@ -286,6 +286,63 @@ def test_qfn_without_exposed_pad_and_rectangular_qfn():
     assert len(left) == 6
 
 
+#: TI RGY0019B (VQFN-19 3.5×4.5, qfnd819): pin 1/19 on the top side 1.5 mm apart, 2–9 left, 10/11 bottom, 12–18 right
+#: with the position between 13 and 14 empty, exposed pad 20.
+RGY0019B = {"variant": "QFN", "pins": 19, "pins_x": 2, "pins_y": 8, "e": 0.5, "e_x": 1.5, "pin1": "top", "missing": "14",
+            "E": [3.4, 3.6], "D": [4.4, 4.6], "L": [0.3, 0.5], "b": [0.2, 0.3], "A": [0.8, 1.0], "A1": [0.0, 0.05],
+            "E2": {"min": 1.6, "nom": 1.7, "max": 1.8}, "D2": {"min": 2.2, "nom": 2.3, "max": 2.4}, "ep_name": "20"}
+
+
+def test_irregular_qfn_with_pin_1_on_the_top_side_and_a_missing_position():
+    spec = generate(FootprintRequest(family="nolead", params=RGY0019B))
+    pads = {p.designator: p for p in spec.pads}
+    assert list(pads) == [str(n) for n in range(1, 21)]
+    assert pads["20"].thermal and (pads["20"].width, pads["20"].height) == (1.7, 2.3)
+    top, bottom = [pads["1"], pads["19"]], [pads["10"], pads["11"]]
+    assert [p.x for p in top] == [-0.75, 0.75] and [p.x for p in bottom] == [-0.75, 0.75]
+    assert all(p.y > 2 for p in top) and all(p.y < -2 for p in bottom)
+    assert all(p.height > p.width for p in top + bottom)  # the end pads point along Y
+    left = [pads[str(n)] for n in range(2, 10)]
+    assert all(p.x < -1.5 for p in left) and [p.y for p in left] == [1.75, 1.25, 0.75, 0.25, -0.25, -0.75, -1.25, -1.75]
+    right = [pads[str(n)] for n in range(12, 19)]  # bottom -> top, position -0.75 stays empty
+    assert all(p.x > 1.5 for p in right) and [p.y for p in right] == [-1.75, -1.25, -0.25, 0.25, 0.75, 1.25, 1.75]
+    assert spec.ipc_name == "QFN50P350X450X100-20N" and spec.name != spec.ipc_name  # not a standard package: tagged
+    assert not validate_footprint(spec)
+    dots = [a for a in spec.arcs if a.layer == "top_silk" and a.end - a.start >= 359]
+    assert len(dots) == 1 and dots[0].cx < 0 and dots[0].cy > 0
+
+
+def test_irregular_qfn_parameters_change_the_name_only_when_given():
+    plain = {k: v for k, v in RGY0019B.items() if k not in ("e_x", "pin1", "missing")}
+    plain.update(pins=20, pins_x=2, pins_y=8)
+    regular = generate(FootprintRequest(family="nolead", params=plain))
+    assert len(regular.pads) == 21 and not {"e_x", "pin1", "missing"} & set(regular.generator["params"])
+    irregular = generate(FootprintRequest(family="nolead", params=RGY0019B))
+    assert {"e_x", "pin1", "missing"} <= set(irregular.generator["params"]) and irregular.name != regular.name
+
+
+def test_dfn_with_a_missing_position_numbers_the_remaining_pins():
+    spec = generate(FootprintRequest(family="nolead", params={"preset": "SON-8-3x3-P0.65", "pins": 7, "missing": "6"}))
+    signal = [p for p in spec.pads if not p.thermal]
+    assert [p.designator for p in signal] == ["1", "2", "3", "4", "5", "6", "7"]
+    right = [p for p in signal if p.x > 0]  # positions 5 (bottom) … 8 (top), position 6 empty
+    assert [p.designator for p in right] == ["5", "6", "7"] and right[0].y < 0 < right[1].y < right[2].y
+    assert next(p for p in spec.pads if p.thermal).designator == "8"
+
+
+def test_manufacturer_land_pattern_of_a_rectangular_qfn_needs_both_row_spacings():
+    land = {"pad_width_mm": 0.25, "pad_length_mm": 0.6, "row_spacing_mm": 3.3, "thermal_pad_mm": [1.7, 2.3]}
+    with pytest.raises(ValueError, match="oben/unten fehlt der eigene Reihenabstand"):
+        generate(FootprintRequest(family="nolead", params=RGY0019B, land_pattern=land))
+    spec = generate(FootprintRequest(family="nolead", params=RGY0019B, land_pattern={**land, "row_spacing_y_mm": 4.3}))
+    pads = {p.designator: p for p in spec.pads}
+    assert (pads["1"].y, pads["10"].y) == (2.15, -2.15) and (pads["2"].x, pads["12"].x) == (-1.65, 1.65)
+    assert (pads["1"].width, pads["1"].height) == (0.25, 0.6) and (pads["2"].width, pads["2"].height) == (0.6, 0.25)
+    square = generate(FootprintRequest(family="nolead", params={"preset": "QFN-16-3x3-P0.5"}, land_pattern={
+        "pad_width_mm": 0.25, "pad_length_mm": 0.7, "row_spacing_mm": 2.9}))
+    assert len(square.pads) == 17  # a square body: one spacing fits all four rows
+
+
 def test_dpak_tab_has_paste_windows_and_three_lead_variant():
     spec = generate(FootprintRequest(family="dpak", params={"preset": "DPAK-2"}))
     assert [p.designator for p in spec.pads] == ["1", "3", "2"]
@@ -328,6 +385,11 @@ def test_bga_row_names_skip_letters():
     ("gullwing", {"pins": 3.5}, "ganze Zahl"),
     ("qfp", {"pins": 50}, "durch 4"),
     ("qfp", {"pins": 48, "pins_x": 10, "pins_y": 10}, "passen nicht"),
+    ("nolead", {"pins": 19, "pins_x": 2, "pins_y": 8}, "passen nicht zu 19 Anschlüssen insgesamt"),
+    ("nolead", {"pins": 19, "pins_x": 3, "pins_y": 8, "missing": "14"}, "19 Anschlüssen und 1 fehlenden"),
+    ("nolead", {"pins": 19, "pins_x": 2, "pins_y": 8, "missing": "21"}, "Position 21 gibt es nicht"),
+    ("nolead", {"pins": 15, "missing": "A1"}, "keine Positionsnummer"),
+    ("nolead", {"variant": "DFN", "pins": 7}, "gerade"),
     ("bga", {"rows": 30, "cols": 30, "e": 1.0, "E": 10}, "Kugelraster"),
     ("bga", {"missing": "Z99"}, "gibt es"),
     ("axial", {"pitch": 5.0}, "zu klein"),

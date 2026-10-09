@@ -37,6 +37,15 @@ symbols/footprints through ``partforge.altium.sync`` and inserts the parts with
 it and waits until it stopped, and if that library is no longer open the commit stops (``LibraryChanged``) before
 writing anything. Progress: ``detail.step`` = check, footprints, symbols, parts, save; the job ends with
 "Angelegt: 3 Bauteile, 1 Symbol, 2 Footprints".
+
+**Only the symbols or only the footprints** (``ProposalChoices.scope`` = ``symbols`` | ``footprints``, not part of the
+fingerprint – the reviewed proposal serves every scope): the commit writes just these into their SchLib/PcbLib, creates
+no parts and needs only that scope to be valid (``PartProposal.ready_symbols`` / ``ready_footprints``: every symbol
+resp. footprint valid, at least one to write, no unconfirmed blocker of that scope – ``BlockerTarget.scopes``: pin-table
+problems block the symbols, drawing problems the footprints, a pin count that contradicts the package both, pins
+without pads only the whole part). It ends with "Gespeichert: 1 Symbol". A datasheet without device but with package
+drawings (``PartProposal.package_only``, e.g. a separate package-outline document) gets a proposal with one footprint
+per drawn package and nothing else.
 """
 from __future__ import annotations
 
@@ -44,7 +53,7 @@ import hashlib
 import json
 import logging
 import re
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from typing import Any, Literal
 
 from ..db import categories as db_categories
@@ -58,8 +67,10 @@ from ..workspace import Workspace, current, current_or_none
 from . import store
 from .errors import CommitRefused, DatasheetError, NoExtraction
 from .models import (
+    COMMIT_SCOPES,
     BlockerTarget,
     CommitInfo,
+    CommitScope,
     CostSummary,
     DeviceData,
     ExtractionData,
@@ -77,11 +88,11 @@ from .models import (
     VariantData,
     VariantProposal,
 )
-from .normalize import clean_pin_name
+from .normalize import GEOMETRY_ISSUES, IDENTITY_ISSUES, clean_pin_name
 
 log = logging.getLogger(__name__)
 
-__all__ = ["COMMIT_STEPS", "build_proposal", "commit_outcome", "commit_proposal", "datasheet_link",
+__all__ = ["COMMIT_STEPS", "SCOPE_STEPS", "build_proposal", "commit_outcome", "commit_proposal", "datasheet_link",
            "pin_pad_warnings", "pinout_diff", "proposal_fingerprint", "readable_pin_name"]
 
 _LIFECYCLE = {
@@ -99,6 +110,12 @@ COMMIT_STEPS: dict[str, str] = {
     "symbols": "Symbole anlegen",
     "parts": "Bauteile speichern",
     "save": "Datenblatt verknüpfen",
+}
+#: Steps of a commit per scope (``detail.steps``).
+SCOPE_STEPS: dict[str, tuple[str, ...]] = {
+    "part": tuple(COMMIT_STEPS),
+    "symbols": ("check", "symbols", "save"),
+    "footprints": ("check", "footprints", "save"),
 }
 
 
@@ -173,6 +190,8 @@ def _family_params(family: str, pkg: PackageData) -> dict[str, Any]:
         params["pins"] = str(pkg.pin_count) if specs["pins"].kind == "enum" else pkg.pin_count
     if family == "nolead" and pkg.exposed_pad and pkg.exposed_pad_number and "ep_name" in specs:
         params["ep_name"] = pkg.exposed_pad_number
+    if pkg.layout is not None:  # terminal arrangement entered in the review (irregular QFN/QFP)
+        params.update({k: v for k, v in pkg.layout.generator_params().items() if k in specs})
     return params
 
 
@@ -737,6 +756,65 @@ def _relevant_issue(issue: Issue, device: DeviceData, codes: Sequence[str]) -> b
     return issue.package is None or issue.package in codes
 
 
+def _issue_scopes(issue: Issue) -> list[CommitScope]:
+    """The commits an error-level issue blocks: pin-table problems the symbols, drawing problems the footprints, a pin
+    count that contradicts the package (one of them is wrong) and unknown checks everything."""
+    if issue.code in GEOMETRY_ISSUES:
+        return ["part", "footprints"]
+    if issue.code in IDENTITY_ISSUES and issue.code != "pin_count":
+        return ["part", "symbols"]
+    return ["part", "symbols", "footprints"]
+
+
+def _set_blockers(proposal: PartProposal, targets: Sequence[BlockerTarget]) -> None:
+    """``blockers`` (unique texts, first occurrence) and one target per blocker (the scopes of equal texts joined)."""
+    first: dict[str, BlockerTarget] = {}
+    for target in targets:
+        known = first.get(target.blocker)
+        if known is None:
+            first[target.blocker] = target.model_copy(deep=True)
+        else:
+            known.scopes = [s for s in COMMIT_SCOPES if s in {*known.scopes, *target.scopes}]
+    proposal.blockers = list(first)
+    proposal.blocker_targets = list(first.values())
+
+
+def _package_only_proposal(rec: Any, meta: Any, data: ExtractionData, choices: ProposalChoices, *,
+                           svg: bool) -> PartProposal:
+    """Proposal of a datasheet without device (a package drawing): one footprint per drawn package, nothing else."""
+    from ..config import load_settings
+
+    proposal = PartProposal(datasheet_id=rec.id, device="", package_only=True, manufacturer=data.manufacturer,
+                            issues=list(data.issues), cost=CostSummary(usd=meta.cost_usd, runs=len(meta.runs)))
+    proposal.cost.budget_usd = load_settings().ai.max_cost_per_import_usd
+    drawn = [p for p in data.packages if p.has_geometry()]
+    undrawn = [p.label for p in data.packages if not p.has_geometry()]
+    if undrawn and drawn:
+        proposal.warnings.append(f"Ohne Maße, kein Footprint: {', '.join(undrawn)}.")
+    packages = drawn or list(data.packages)
+    codes = [p.code for p in packages]
+    errors = [i for i in data.issues if i.severity == "error" and (i.package is None or i.package in codes)]
+    _set_blockers(proposal, [BlockerTarget(blocker=i.message, package=i.package, scopes=_issue_scopes(i))
+                             for i in errors])
+    for pkg in packages:
+        footprint, _linked = _footprint(pkg, choices.packages.get(pkg.code) or PackageChoice(), svg,
+                                        choices.overwrite_existing)
+        proposal.footprints.append(footprint)
+    if not packages:
+        proposal.warnings.append("Das Datenblatt beschreibt weder ein Bauteil noch ein Gehäuse.")
+    return _finish(proposal, choices)
+
+
+def _finish(proposal: PartProposal, choices: ProposalChoices) -> PartProposal:
+    """Open blockers, readiness per scope and the fingerprint (the last step of every proposal)."""
+    proposal.unconfirmed_blockers = [b for b in proposal.blockers if not choices.accepts(b)]
+    proposal.ready = _ready(proposal, choices)
+    proposal.ready_symbols = _scope_ready(proposal, choices, "symbols")
+    proposal.ready_footprints = _scope_ready(proposal, choices, "footprints")
+    proposal.fingerprint = proposal_fingerprint(proposal, choices)
+    return proposal
+
+
 def build_proposal(datasheet_id: str, choices: ProposalChoices | None = None, *, ws: Workspace | None = None,
                    svg: bool = True) -> PartProposal:
     """Dry run: what "Bauteil anlegen" would create (see module docstring)."""
@@ -747,6 +825,8 @@ def build_proposal(datasheet_id: str, choices: ProposalChoices | None = None, *,
     data = meta.extraction
     if data is None:
         raise NoExtraction(datasheet_id)
+    if not data.devices:
+        return _package_only_proposal(rec, meta, data, choices, svg=svg)
     device = data.device(choices.device)
     if device is None:
         raise DatasheetError(f"Das Bauteil „{choices.device}“ ist in diesem Datenblatt nicht enthalten.")
@@ -774,8 +854,8 @@ def build_proposal(datasheet_id: str, choices: ProposalChoices | None = None, *,
     if not codes:
         codes = [t.package for t in device.pin_tables][:1]
     blocking_issues = [i for i in data.issues if i.severity == "error" and _relevant_issue(i, device, codes)]
-    blockers: list[str] = [i.message for i in blocking_issues]
-    targets: list[BlockerTarget] = [BlockerTarget(blocker=i.message, package=i.package) for i in blocking_issues]
+    targets: list[BlockerTarget] = [BlockerTarget(blocker=i.message, package=i.package, scopes=_issue_scopes(i))
+                                    for i in blocking_issues]
 
     # footprints per package
     footprints: dict[str, FootprintProposal] = {}
@@ -850,15 +930,10 @@ def build_proposal(datasheet_id: str, choices: ProposalChoices | None = None, *,
         blocking, hints = _pin_pad_problems(sym_spec, fp_spec, nc_pins)
         for message in [*(text for text, _pins, _pads in blocking), *hints]:
             pkg_footprint.warnings.append(f"{pkg_footprint.package_label}: {message}")
-        for message, pins_, pads_ in blocking:
+        for message, pins_, pads_ in blocking:  # the pairing only: symbols and footprints alone are not affected
             text = f"{pkg_footprint.package_label}: {message}"
-            blockers.append(text)
             targets.append(BlockerTarget(blocker=text, package=code, pins=pins_, pads=pads_))
-    proposal.blockers = list(dict.fromkeys(blockers))
-    first_target: dict[str, BlockerTarget] = {}
-    for target in targets:
-        first_target.setdefault(target.blocker, target)
-    proposal.blocker_targets = [first_target[b] for b in proposal.blockers]
+    _set_blockers(proposal, targets)
 
     # rows
     link = datasheet_link(rec, meta, ws, choices.link)
@@ -902,14 +977,11 @@ def build_proposal(datasheet_id: str, choices: ProposalChoices | None = None, *,
             item.warnings.append("Kein Symbol.")
         proposal.variants.append(item)
     proposal.warnings = warnings
-    proposal.unconfirmed_blockers = [b for b in proposal.blockers if not choices.accepts(b)]
-    proposal.ready = _ready(proposal, choices)
-    proposal.fingerprint = proposal_fingerprint(proposal, choices)
-    return proposal
+    return _finish(proposal, choices)
 
 
 def _ready(proposal: PartProposal, choices: ProposalChoices) -> bool:
-    if not proposal.category or not proposal.variants:
+    if proposal.package_only or not proposal.category or not proposal.variants:
         return False
     if any(not s.valid for s in proposal.symbols) or any(not f.valid for f in proposal.footprints):
         return False
@@ -925,6 +997,26 @@ def _ready(proposal: PartProposal, choices: ProposalChoices) -> bool:
     return True
 
 
+def _scope_items(proposal: PartProposal, scope: CommitScope) -> list[SymbolProposal] | list[FootprintProposal]:
+    return proposal.symbols if scope == "symbols" else proposal.footprints
+
+
+def _scope_unconfirmed(proposal: PartProposal, scope: CommitScope) -> list[str]:
+    """Unconfirmed blockers that stop a commit of ``scope``."""
+    open_ = set(proposal.unconfirmed_blockers)
+    return [t.blocker for t in proposal.blocker_targets if t.blocker in open_ and scope in t.scopes]
+
+
+def _scope_ready(proposal: PartProposal, choices: ProposalChoices, scope: CommitScope) -> bool:
+    """"Nur Symbol/Footprint speichern": every item of the scope valid, at least one to write, its blockers confirmed."""
+    items = _scope_items(proposal, scope)
+    if not items or any(not item.valid for item in items):
+        return False
+    if not any(_will_write(item, choices.overwrite_existing) for item in items):
+        return False
+    return not _scope_unconfirmed(proposal, scope)
+
+
 # --------------------------------------------------------------------------- fingerprint
 
 
@@ -935,7 +1027,7 @@ def _spec_hash(spec: SymbolSpec | FootprintSpec | None) -> str | None:
 
 
 def _choices_key(choices: ProposalChoices) -> dict[str, Any]:
-    data = choices.model_dump(mode="json", exclude={"accept_issues", "expected_fingerprint"})
+    data = choices.model_dump(mode="json", exclude={"accept_issues", "expected_fingerprint", "scope"})
     if isinstance(data.get("variants"), list):
         data["variants"] = sorted({str(v).strip().casefold() for v in data["variants"]})
     if isinstance(data.get("allow_pin_changes"), list):
@@ -944,14 +1036,15 @@ def _choices_key(choices: ProposalChoices) -> dict[str, Any]:
 
 
 def proposal_fingerprint(proposal: PartProposal, choices: ProposalChoices) -> str:
-    """Stable hash (16 hex characters) of what "Bauteil anlegen" would do: the choices (without ``accept_issues`` and
-    ``expected_fingerprint``), the blockers and the plan – symbols and footprints (name, write decision, pin-out
-    change, geometry), the rows (part number, status, symbol, footprint, values, errors) and the datasheet link.
+    """Stable hash (16 hex characters) of what "Bauteil anlegen" would do: the choices (without ``accept_issues``,
+    ``expected_fingerprint`` and ``scope``), the blockers and the plan – symbols and footprints (name, write decision,
+    pin-out change, geometry), the rows (part number, status, symbol, footprint, values, errors) and the datasheet link.
     SVG previews do not count."""
     overwrite = choices.overwrite_existing
     plan = {
         "choices": _choices_key(choices),
         "device": proposal.device,
+        "package_only": proposal.package_only,
         "category": proposal.category,
         "blockers": list(proposal.blockers),
         "symbols": [{"name": s.name, "valid": s.valid, "exists": s.exists, "status": s.status,
@@ -972,9 +1065,33 @@ def proposal_fingerprint(proposal: PartProposal, choices: ProposalChoices) -> st
 # --------------------------------------------------------------------------- commit
 
 
+def _scope_blocking(proposal: PartProposal, choices: ProposalChoices, scope: CommitScope) -> list[str]:
+    """Problems that stop "Nur Symbol/Footprint speichern" apart from the blockers (none, invalid, nothing to write)."""
+    items = _scope_items(proposal, scope)
+    noun = ("Symbol", "Symbole") if scope == "symbols" else ("Footprint", "Footprints")
+    if not items:
+        return [f"Der Vorschlag enthält kein {noun[0]}."]
+    problems: list[str] = []
+    for item in items:
+        if item.valid:
+            continue
+        if isinstance(item, SymbolProposal):
+            problems.extend(item.warnings or [f"Symbol für {', '.join(item.packages) or 'das Bauteil'} ist ungültig."])
+        else:
+            problems.extend(item.warnings or [f"Footprint für {item.package_label} ist ungültig."])
+    if not problems and not any(_will_write(item, choices.overwrite_existing) for item in items):
+        names = ", ".join(f"„{item.name}“" for item in items if item.name)
+        problems.append(f"Nichts zu speichern – {noun[1] if len(items) > 1 else noun[0]} {names} "
+                        f"{'sind' if len(items) > 1 else 'ist'} bereits in der Bibliothek.")
+    return problems
+
+
 def _blocking(proposal: PartProposal, choices: ProposalChoices) -> list[str]:
     """Problems that stop the commit apart from the blockers (no category, invalid symbols/footprints, no variants)."""
     problems: list[str] = []
+    if proposal.package_only:
+        return [("Das Datenblatt beschreibt nur Gehäuse und kein Bauteil – bitte die Footprints speichern oder das "
+                 "Gehäuse in das Datenblatt des Bauteils übernehmen.")]
     if not proposal.category:
         problems.append("Keine Kategorie gewählt.")
     for s in proposal.symbols:
@@ -994,10 +1111,17 @@ def _confirm_text(blockers: Sequence[str]) -> str:
 
 
 def commit_outcome(result: Mapping[str, Any]) -> str:
-    """"Angelegt: 3 Bauteile, 1 Symbol, 2 Footprints" (+ updated/skipped/errors) – the outcome sentence of a commit."""
+    """"Angelegt: 3 Bauteile, 1 Symbol, 2 Footprints" (+ updated/skipped/errors) – the outcome sentence of a commit;
+    "Gespeichert: 1 Symbol" for a commit of only the symbols (footprints)."""
     created, updated = len(result.get("created") or []), len(result.get("updated") or [])
     skipped, errors = len(result.get("skipped") or []), len(result.get("errors") or {})
     symbols, footprints = len(result.get("symbols") or []), len(result.get("footprints") or [])
+    scope = result.get("scope") or "part"
+    if scope != "part":
+        noun = ("Symbol", "Symbole") if scope == "symbols" else ("Footprint", "Footprints")
+        written = symbols if scope == "symbols" else footprints
+        head = f"Gespeichert: {plural(written, *noun)}" if written else f"Kein {noun[0]} gespeichert"
+        return head + (f" ({plural(errors, 'Fehler', 'Fehler')})" if errors else "")
     if created:
         head = f"Angelegt: {plural(created, 'Bauteil', 'Bauteile')}"
     elif updated:
@@ -1020,7 +1144,8 @@ def commit_outcome(result: Mapping[str, Any]) -> str:
 
 def commit_proposal(ctx: JobContext | None, datasheet_id: str, choices: ProposalChoices | None = None, *,
                     ws: Workspace | None = None, author: str | None = None) -> dict[str, Any]:
-    """Job: create the symbols/footprints that are missing and insert (or update) the parts.
+    """Job: create the symbols/footprints that are missing and insert (or update) the parts – with
+    ``choices.scope`` = ``symbols`` | ``footprints`` only the symbols or only the footprints, no parts.
 
     Holds the library ``ws`` (default: the open one) for the whole run – :func:`partforge.jobs.library_hold`
     raises ``LibraryChanged`` (a ``JobCancelled``) if it is no longer open."""
@@ -1045,8 +1170,9 @@ def _commit(ctx: JobContext | None, datasheet_id: str, choices: ProposalChoices,
         if current_or_none() is not ws:
             raise DatasheetError("Die Bibliothek wurde gewechselt – bitte den Vorschlag neu erstellen.")
 
+    scope: CommitScope = choices.scope
     if ctx is not None:
-        ctx.detail(datasheet_id=datasheet_id, steps=list(COMMIT_STEPS))
+        ctx.detail(datasheet_id=datasheet_id, steps=list(SCOPE_STEPS[scope]), scope=scope)
     step(0.02, "check", "Vorschlag wird erstellt …")
     proposal = build_proposal(datasheet_id, choices, ws=ws, svg=False)
     if ctx is not None:
@@ -1058,21 +1184,30 @@ def _commit(ctx: JobContext | None, datasheet_id: str, choices: ProposalChoices,
             "Der Vorschlag hat sich seit der Prüfung geändert (z. B. durch inzwischen angelegte Bauteile, Symbole oder "
             "Footprints oder eine geänderte Analyse) – bitte den Vorschlag neu laden und erneut prüfen. Es wurde nichts "
             "geschrieben.", code="proposal_changed")
-    problems = _blocking(proposal, choices)
-    unconfirmed = list(proposal.unconfirmed_blockers)
+    if scope == "part":
+        problems = _blocking(proposal, choices)
+        unconfirmed = list(proposal.unconfirmed_blockers)
+        what = "Das Bauteil kann so nicht angelegt werden"
+    else:
+        problems = _scope_blocking(proposal, choices, scope)
+        unconfirmed = _scope_unconfirmed(proposal, scope)
+        what = f"{'Die Symbole können' if scope == 'symbols' else 'Die Footprints können'} so nicht gespeichert werden"
     if unconfirmed and ctx is not None:
         ctx.detail(code="unconfirmed_blockers", unconfirmed_blockers=unconfirmed)
     if problems or unconfirmed:
         parts = problems[:4] + ([_confirm_text(unconfirmed)] if unconfirmed else [])
-        raise CommitRefused("Das Bauteil kann so nicht angelegt werden: " + " ".join(parts) + " Es wurde nichts "
-                            "geschrieben.", code="unconfirmed_blockers" if unconfirmed and not problems else "invalid",
+        raise CommitRefused(f"{what}: " + " ".join(parts) + " Es wurde nichts geschrieben.",
+                            code="unconfirmed_blockers" if unconfirmed and not problems else "invalid",
                             items=unconfirmed)
     same_library()
     table = proposal.category or ""
-    warnings: list[str] = [f"Bestätigt: {b}" for b in proposal.blockers]
+    confirmed = proposal.blockers if scope == "part" else [t.blocker for t in proposal.blocker_targets
+                                                           if scope in t.scopes]
+    warnings: list[str] = [f"Bestätigt: {b}" for b in confirmed]
     failed: dict[str, str] = {}  # "symbol:<name>" / "footprint:<name>" (casefold) -> German reason
 
-    fp_specs = [f.spec for f in proposal.footprints if f.spec is not None and _will_write(f, choices.overwrite_existing)]
+    fp_specs = [f.spec for f in proposal.footprints if f.spec is not None and _will_write(f, choices.overwrite_existing)
+                and scope in ("part", "footprints")]
     written_fps: list[str] = []
     if fp_specs:
         step(0.1, "footprints", f"{len(fp_specs)} Footprint(s) werden angelegt …")
@@ -1083,7 +1218,8 @@ def _commit(ctx: JobContext | None, datasheet_id: str, choices: ProposalChoices,
                 warnings.append(f"Footprint {fp_record.name}: {reason}")
             else:
                 written_fps.append(fp_record.name)
-    to_write = [s for s in proposal.symbols if s.spec is not None and _will_write(s, choices.overwrite_existing)]
+    to_write = [s for s in proposal.symbols if s.spec is not None and _will_write(s, choices.overwrite_existing)
+                and scope in ("part", "symbols")]
     written_syms: list[str] = []
     if to_write:
         step(0.45, "symbols", f"{len(to_write)} Symbol(e) werden angelegt …")
@@ -1103,6 +1239,9 @@ def _commit(ctx: JobContext | None, datasheet_id: str, choices: ProposalChoices,
             else:
                 written_syms.append(sym_record.name)
     same_library()
+    if scope != "part":
+        return _scope_done(ctx, datasheet_id, proposal, scope, table=table, symbols=written_syms,
+                           footprints=written_fps, failed=failed, warnings=warnings, step=step)
 
     step(0.8, "parts", f"{len(proposal.variants)} Bauteil(e) werden in „{table}“ gespeichert …")
     rows: list[dict[str, str]] = []
@@ -1136,6 +1275,7 @@ def _commit(ctx: JobContext | None, datasheet_id: str, choices: ProposalChoices,
 
     store.update_meta(datasheet_id, link)
     out: dict[str, Any] = {
+        "scope": "part",
         "table": table,
         "created": result.created,
         "updated": result.updated,
@@ -1156,3 +1296,52 @@ def _commit(ctx: JobContext | None, datasheet_id: str, choices: ProposalChoices,
             ctx.log(f"{pn}: {message}", "warn")
         ctx.progress(1.0, out["message"])
     return out
+
+
+def _scope_done(ctx: JobContext | None, datasheet_id: str, proposal: PartProposal, scope: CommitScope, *, table: str,
+                symbols: list[str], footprints: list[str], failed: Mapping[str, str], warnings: list[str],
+                step: Callable[[float, str, str], None]) -> dict[str, Any]:
+    """End of a commit of only the symbols (footprints): record it with the datasheet (no parts, no part numbers)."""
+    step(0.95, "save", "Datenblatt wird verknüpft …")
+    errors = {key.split(":", 1)[1]: reason for key, reason in failed.items()}  # name (casefold) -> reason
+    info = CommitInfo(ts=store.now_iso(), table=table, scope=scope, symbols=symbols, footprints=footprints,
+                      errors=dict(errors), warnings=list(warnings))
+
+    def record(_rec: Any, meta: Any) -> None:
+        meta.committed.append(info)
+
+    store.update_meta(datasheet_id, record)
+    written = symbols if scope == "symbols" else footprints
+    items = _scope_items(proposal, scope)
+    libraries = sorted({lib for lib in (_library_of(scope, name) for name in written) if lib})
+    out: dict[str, Any] = {
+        "scope": scope,
+        "table": table,
+        "created": [],
+        "updated": [],
+        "skipped": [],
+        "unchanged": [],
+        "errors": errors,
+        "symbols": symbols,
+        "footprints": footprints,
+        "libraries": libraries,
+        "warnings": warnings,
+        "fingerprint": proposal.fingerprint,
+        # already in the library and not written again (a proposal with several symbols/footprints)
+        "reused": [item.name for item in items if item.name and item.name not in written
+                   and item.name.casefold() not in errors],
+    }
+    out["message"] = commit_outcome(out)
+    if ctx is not None:
+        if libraries:
+            ctx.log(f"In {', '.join(libraries)}", "info")
+        for name, message in list(errors.items())[:10]:
+            ctx.log(f"{name}: {message}", "warn")
+        ctx.progress(1.0, out["message"])
+    return out
+
+
+def _library_of(scope: CommitScope, name: str) -> str | None:
+    """Library file (relative) a just written symbol/footprint is registered in."""
+    rec = registry.get_symbol(name) if scope == "symbols" else registry.get_footprint(name)
+    return rec.library if rec is not None and rec.library else None

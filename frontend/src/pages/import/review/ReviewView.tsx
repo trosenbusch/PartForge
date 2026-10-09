@@ -9,6 +9,8 @@ import {
   useExtraction,
   useProposal,
   type DatasheetDetail,
+  type DeviceData,
+  type PackageData,
 } from '@/api/datasheets'
 import { useCategories } from '@/api/library'
 import { useRegisterCommands } from '@/app/commands'
@@ -56,6 +58,22 @@ function effectiveChoices(c: ChoiceDraft, devices: readonly { base_part: string 
   return known ? c : { ...c, device: null, variants: null }
 }
 
+/** Zeichnung mit Maßen oder Herstellerempfehlung (wie `PackageData.has_geometry` im Backend) */
+function hasGeometry(p: PackageData): boolean {
+  return p.land_pattern.present || p.dimensions.some((d) => d.unit === 'mm' && (d.nom ?? d.min ?? d.max) !== null)
+}
+
+/** Gehäusezeichnung ohne Bauteil: die Abschnitte arbeiten mit einem leeren Bauteil (keine Pins, Varianten, Werte) */
+const NO_DEVICE: DeviceData = {
+  base_part: '',
+  description: '',
+  category: null,
+  category_raw: '',
+  parameters: [],
+  variants: [],
+  pin_tables: [],
+}
+
 /** Prüfansicht (drei Spalten): PDF-Seiten · extrahierte Daten · Live-Vorschau, darunter die Übernahmeleiste. */
 export function ReviewView({ ds }: { ds: DatasheetDetail }) {
   const navigate = useNavigate()
@@ -78,7 +96,9 @@ export function ReviewView({ ds }: { ds: DatasheetDetail }) {
   const proposalChoices = useMemo(() => toProposalChoices(choices), [choices])
   const debounced = useDebounced(proposalChoices, 250)
   const hasDevices = Boolean(extraction?.devices.length)
-  const proposalQ = useProposal(ds.id, debounced, { enabled: Boolean(extraction) && hasDevices })
+  // Gehäusezeichnung (z. B. TIs eigenes PDF zu RGY0019B): kein Bauteil, aber Maße – nur Footprints
+  const packageOnly = Boolean(extraction && !hasDevices && extraction.packages.some(hasGeometry))
+  const proposalQ = useProposal(ds.id, debounced, { enabled: Boolean(extraction) && (hasDevices || packageOnly) })
 
   // Spaltenaufteilung: PDF-Spalte im schmalen Fenster eingeklappt (bis der Benutzer selbst wählt)
   const [workspaceRef, workspaceSize] = useElementSize<HTMLDivElement>()
@@ -95,7 +115,7 @@ export function ReviewView({ ds }: { ds: DatasheetDetail }) {
   const categories = useMemo(() => categoriesQ.data ?? [], [categoriesQ.data])
   const deviceName = choices.device ?? proposal?.device ?? extraction?.devices[0]?.base_part
   const deviceIndex = Math.max(0, extraction?.devices.findIndex((d) => d.base_part === deviceName) ?? 0)
-  const device = extraction?.devices[deviceIndex]
+  const device = extraction?.devices[deviceIndex] ?? (packageOnly ? NO_DEVICE : undefined)
   const categoryTable = choices.category ?? proposal?.category ?? device?.category ?? null
   const category = categories.find((c) => c.table === categoryTable)
   const codes = useMemo(() => proposal?.footprints.map((f) => f.package) ?? [], [proposal])
@@ -142,6 +162,7 @@ export function ReviewView({ ds }: { ds: DatasheetDetail }) {
 
   const title = device?.base_part || (ds.has_extraction && ds.title) || ds.original_name
   const subtitle = [
+    packageOnly ? 'Gehäusezeichnung' : null,
     extraction?.manufacturer || ds.manufacturer,
     ds.original_name,
     plural(ds.page_count, 'Seite', 'Seiten'),
@@ -307,6 +328,7 @@ export function ReviewView({ ds }: { ds: DatasheetDetail }) {
     extraction,
     device,
     deviceIndex,
+    packageOnly,
     proposal,
     proposalFetching: proposalQ.isFetching,
     proposalError: proposalQ.error,

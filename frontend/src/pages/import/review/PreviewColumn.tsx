@@ -25,10 +25,12 @@ const SYMBOL_MODES: { value: SymbolChoice['mode']; label: string }[] = [
 
 /** Spalte 3: Live-Vorschau des Vorschlags – Symbol (mit Teilen), Footprint je Gehäuse (IPC ↔ Hersteller), 3D. */
 export function PreviewColumn() {
-  const { proposal, proposalFetching, proposalError, category, choices, setChoices } = useReview()
+  const { proposal, proposalFetching, proposalError, category, choices, setChoices, packageOnly } = useReview()
   const previewPackage = useReviewUi((s) => s.previewPackage)
   const setPreviewPackage = useReviewUi((s) => s.setPreviewPackage)
-  const tab = useReviewUi((s) => s.previewTab)
+  const chosenTab = useReviewUi((s) => s.previewTab)
+  // Gehäusezeichnung: es gibt kein Symbol – die Vorschau zeigt den Footprint
+  const tab = packageOnly && chosenTab === 'symbol' ? 'footprint' : chosenTab
   const setTab = useReviewUi((s) => s.setPreviewTab)
   const highlight = useReviewUi((s) => s.highlight)
 
@@ -145,32 +147,34 @@ export function PreviewColumn() {
 
       {/* Symbol und Footprint des Gehäuses (Zeilen mit Auswahl – deshalb keine Definitionsliste) */}
       <div className="shrink-0 divide-y divide-line border-t border-line text-xs">
-        <div className="flex min-w-0 items-center gap-2 px-3 py-2">
-          <span className="flex shrink-0 items-center gap-1.5 text-fg-subtle">
-            <SymbolIcon aria-hidden className="size-3.5" />
-            <span className="sr-only @[24rem]:not-sr-only">Symbol</span>
-          </span>
-          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="mono min-w-0 truncate font-medium text-fg">{sym?.name ?? '–'}</span>
-            {sym && <ItemBadge valid={sym.valid} exists={sym.exists} writes={willWrite(sym, choices.overwriteExisting)} changes={sym.pin_changes.length > 0} />}
-            {sym && (
-              <span className="hidden truncate text-2xs text-fg-subtle @[26rem]:inline">
-                {SOURCE_LABEL[sym.source] ?? sym.source}
-                {sym.part_count > 1 ? ` · ${sym.part_count} Teile` : ''} · {formatNumber(sym.pin_count)} Pins
-              </span>
-            )}
-            {sym && sym.warnings.length > 0 && <WarnTip items={sym.warnings} />}
+        {!packageOnly && (
+          <div className="flex min-w-0 items-center gap-2 px-3 py-2">
+            <span className="flex shrink-0 items-center gap-1.5 text-fg-subtle">
+              <SymbolIcon aria-hidden className="size-3.5" />
+              <span className="sr-only @[24rem]:not-sr-only">Symbol</span>
+            </span>
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="mono min-w-0 truncate font-medium text-fg">{sym?.name ?? '–'}</span>
+              {sym && <ItemBadge valid={sym.valid} exists={sym.exists} writes={willWrite(sym, choices.overwriteExisting)} changes={sym.pin_changes.length > 0} />}
+              {sym && (
+                <span className="hidden truncate text-2xs text-fg-subtle @[26rem]:inline">
+                  {SOURCE_LABEL[sym.source] ?? sym.source}
+                  {sym.part_count > 1 ? ` · ${sym.part_count} Teile` : ''} · {formatNumber(sym.pin_count)} Pins
+                </span>
+              )}
+              {sym && sym.warnings.length > 0 && <WarnTip items={sym.warnings} />}
+            </div>
+            <Select
+              size="sm"
+              aria-label="Symbol wählen"
+              value={symChoice.mode}
+              onValueChange={(mode) => setSymbol({ mode, existing: mode === 'existing' ? symChoice.existing ?? null : null })}
+              options={SYMBOL_MODES}
+              className="h-7 w-auto shrink-0 gap-1 border-transparent bg-transparent px-1.5 text-2xs shadow-none hover:border-line-strong"
+            />
           </div>
-          <Select
-            size="sm"
-            aria-label="Symbol wählen"
-            value={symChoice.mode}
-            onValueChange={(mode) => setSymbol({ mode, existing: mode === 'existing' ? symChoice.existing ?? null : null })}
-            options={SYMBOL_MODES}
-            className="h-7 w-auto shrink-0 gap-1 border-transparent bg-transparent px-1.5 text-2xs shadow-none hover:border-line-strong"
-          />
-        </div>
-        {symChoice.mode === 'existing' && (
+        )}
+        {!packageOnly && symChoice.mode === 'existing' && (
           <div className="px-3 py-2">
             <Combobox
               size="sm"

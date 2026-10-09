@@ -3,6 +3,11 @@
 KiCad rule: the heel side keeps 0.2 mm to the exposed pad (G >= EP + 0.4). The EP gets windowpane
 paste apertures (~65 % coverage, KiCad algorithm). The EP designator follows the house style
 (``n+1`` or ``EP``) unless ``ep_name`` is given.
+
+Irregular packages (e.g. TI RGY0019B, VQFN-19 3.5×4.5): ``pins_x``/``pins_y`` give the positions per side, ``e_x`` the
+pitch of the top/bottom rows when it differs from ``e``, ``pin1 = "top"`` puts pin 1 at the left end of the top side
+and ``missing`` lists positions without terminal (counted from pin 1 as if every position had one) – the pins are
+numbered consecutively over the remaining positions.
 """
 from __future__ import annotations
 
@@ -22,11 +27,13 @@ from .base import (
     GenContext,
     check_row_fits_body,
     describe,
+    dot_above,
     dot_corner,
     dot_left,
     dual_row,
     ep_size,
     ic_silk,
+    missing_positions,
     p_enum,
     p_float,
     p_int,
@@ -78,9 +85,18 @@ PARAMS = [
            help="QFN: Anschlüsse auf 4 Seiten; DFN/SON: auf 2 Seiten (links/rechts)."),
     p_int("pins", "Anzahl Anschlüsse", default=16, minimum=4, maximum=300, help="Ohne Exposed Pad."),
     p_int("pins_x", "Anschlüsse oben/unten je Seite", minimum=1, maximum=100,
-          help="Nur QFN mit ungleicher Verteilung; leer = gleichmäßig."),
+          help="Nur QFN mit ungleicher Verteilung; leer = gleichmäßig. Fehlende Anschlüsse zählen mit."),
     p_int("pins_y", "Anschlüsse links/rechts je Seite", minimum=1, maximum=100),
     p_float("e", "Raster e", default=0.5, minimum=0.3, maximum=1.27, group="Anschlüsse"),
+    p_float("e_x", "Raster oben/unten", minimum=0.3, maximum=10.0, group="Anschlüsse",
+            help="Nur QFN: Abstand der Anschlüsse auf der oberen und unteren Seite, wenn er vom Raster e abweicht "
+                 "(z. B. TI RGY: 1,5 mm). Leer = e."),
+    p_enum("pin1", "Lage von Pin 1", ["left", "top"], group="Anschlüsse",
+           help="Nur QFN: left = oben auf der linken Seite (JEDEC, Standard); top = am linken Ende der oberen Seite "
+                "(z. B. TI RGY). Gezählt wird gegen den Uhrzeigersinn."),
+    p_text("missing", "Fehlende Anschlüsse", group="Anschlüsse",
+           help="Positionen ohne Anschluss, gezählt ab Pin 1 gegen den Uhrzeigersinn wie bei voller Bestückung; "
+                "kommagetrennt, z. B. „14“ oder „5, 6“. Die Pins werden über die übrigen Positionen durchnummeriert."),
     p_tol("E", "Körper X (E)", default={"min": 2.95, "max": 3.05}),
     p_tol("D", "Körper Y (D)", help="Leer = wie X."),
     p_tol("L", "Anschlusslänge L", group="Anschlüsse", default={"min": 0.30, "max": 0.50}),
@@ -130,23 +146,39 @@ def build(ctx: GenContext) -> FootprintSpec:
     table = "qfn" if variant == "QFN" else "son"
     package = f"{variant}-{pins}"
     b = ctx.builder()
+    missing = missing_positions(ctx)
+    first = "left"
     if variant == "QFN":
-        nx, ny = side_counts(ctx, pins)
+        nx, ny = side_counts(ctx, pins, omitted=len(missing))
+        missing_positions(ctx, 2 * (nx + ny))  # every listed position exists
+        e_x = p.float_opt("e_x") or e
+        first = p.enum("pin1") if p.given("pin1") else "left"
+        ov = ctx.override
+        if ov is not None and ov.row_spacing_y is None and abs(nom(D) - nom(E)) > 0.05:
+            # one row spacing cannot fit both pad rows of a rectangular body – never place the other rows silently
+            raise ParamError(f"Herstellerempfehlung: für die Anschlüsse oben/unten fehlt der eigene Reihenabstand – "
+                             f"bei einem rechteckigen Körper ({fmt_mm(nom(E))} × {fmt_mm(nom(D))} mm) ist er anders "
+                             "als links/rechts. Bitte ergänzen oder IPC-7351B verwenden.", params=())
         check_row_fits_body(ctx, pitch=e, positions=ny, lead_width=b_, body=D, package=package)
-        check_row_fits_body(ctx, pitch=e, positions=nx, lead_width=b_, body=E, package=package, body_symbol="E")
+        check_row_fits_body(ctx, pitch=e_x, positions=nx, lead_width=b_, body=E, package=package, body_symbol="E")
         land_x = ctx.ipc_land(E, L, b_, table, axis="x", label="Anschlüsse links/rechts")
         ctx.finalize_land(land_x, pitch=e, ep=ep_w)
         land_y = ctx.ipc_land(D, L, b_, table, axis="y", label="Anschlüsse oben/unten")
-        ctx.finalize_land(land_y, pitch=e, ep=ep_l)
-        pads = quad(b, land_x, land_y, nx, ny, e)
+        ctx.finalize_land(land_y, pitch=e_x, ep=ep_l)
+        pads = quad(b, land_x, land_y, nx, ny, e, pitch_x=e_x, first=first,  # type: ignore[arg-type]
+                    omit=missing)
     else:
-        if pins % 2:
-            raise ParamError("DFN/SON: die Anzahl der Anschlüsse muss gerade sein (zwei Reihen).",
-                             params=("pins",))
-        check_row_fits_body(ctx, pitch=e, positions=pins // 2, lead_width=b_, body=D, package=package)
+        if p.given("e_x") or p.given("pin1"):
+            ctx.warn("Raster oben/unten und Lage von Pin 1 gelten nur für QFN – bei DFN/SON ignoriert.")
+        positions = pins + len(missing)
+        if positions % 2:
+            raise ParamError("DFN/SON: die Anzahl der Anschlüsse muss gerade sein (zwei Reihen)" +
+                             (" – fehlende Anschlüsse mitgezählt." if missing else "."), params=("pins",))
+        missing_positions(ctx, positions)
+        check_row_fits_body(ctx, pitch=e, positions=positions // 2, lead_width=b_, body=D, package=package)
         land_x = ctx.ipc_land(E, L, b_, table, axis="x", label="Anschlüsse")
         ctx.finalize_land(land_x, pitch=e, ep=ep_w)
-        pads = dual_row(b, land_x, pins // 2, e)
+        pads = dual_row(b, land_x, positions // 2, e, omit=missing)
     if has_ep:
         des = p.text("ep_name") or ctx.ep_designator(pins)
         ep = b.smd_pad(des, 0.0, 0.0, ep_w, ep_l, shape="rect", thermal=True)
@@ -155,7 +187,8 @@ def build(ctx: GenContext) -> FootprintSpec:
 
     en, dn, h, ln, bn = nom(E), nom(D), A.max, nom(L), nom(b_)
     body = b.body(rect_centered(0, 0, en, dn))
-    ic_silk(b, body, [dot_corner(b, body), dot_left(b, pads[0])], push=(-0.7071, 0.7071),
+    pin1_mark = dot_above(b, pads[0]) if first == "top" else dot_left(b, pads[0])
+    ic_silk(b, body, [dot_corner(b, body), pin1_mark], push=(-0.7071, 0.7071),
             rows="quad" if variant == "QFN" else "lr")
     b.assembly_rect(body, chamfer=b.pin1_chamfer(body))
 
