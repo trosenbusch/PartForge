@@ -1,0 +1,35 @@
+{
+ "properties": {
+  "component_a": {
+   "description": "Name of the first component",
+   "type": "string"
+  },
+  "component_b": {
+   "description": "Name of the second component",
+   "type": "string"
+  },
+  "filepath_a": {
+   "description": "Path to the first library file (.PcbLib or .SchLib)",
+   "type": "string"
+  },
+  "filepath_b": {
+   "description": "Path to the second library file (can be same as filepath_a)",
+   "type": "string"
+  },
+  "include_geometry": {
+   "description": "Include detailed geometry comparisons for primitives (default: true)",
+   "type": "boolean"
+  },
+  "tolerance": {
+   "description": "Tolerance for floating-point comparisons in mm (default: 0.001)",
+   "type": "number"
+  }
+ },
+ "required": [
+  "filepath_a",
+  "component_a",
+  "filepath_b",
+  "component_b"
+ ],
+ "type": "object"
+}

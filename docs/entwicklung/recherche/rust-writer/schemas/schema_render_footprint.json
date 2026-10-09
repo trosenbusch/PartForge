@@ -1,0 +1,29 @@
+{
+ "properties": {
+  "component_name": {
+   "description": "Name of the footprint to render",
+   "type": "string"
+  },
+  "filepath": {
+   "description": "Path to the Altium PcbLib file",
+   "type": "string"
+  },
+  "max_height": {
+   "description": "Maximum height in characters (default: 40)",
+   "type": "integer"
+  },
+  "max_width": {
+   "description": "Maximum width in characters (default: 80)",
+   "type": "integer"
+  },
+  "scale": {
+   "description": "Characters per mm (default: 2.0). Higher = more detail",
+   "type": "number"
+  }
+ },
+ "required": [
+  "filepath",
+  "component_name"
+ ],
+ "type": "object"
+}

@@ -1,0 +1,24 @@
+{
+ "properties": {
+  "component_name": {
+   "description": "Optional: fetch only this specific symbol by name",
+   "type": "string"
+  },
+  "filepath": {
+   "description": "Path to the .SchLib file",
+   "type": "string"
+  },
+  "limit": {
+   "description": "Optional: maximum number of symbols to return (default: all)",
+   "type": "integer"
+  },
+  "offset": {
+   "description": "Optional: skip first N symbols (default: 0)",
+   "type": "integer"
+  }
+ },
+ "required": [
+  "filepath"
+ ],
+ "type": "object"
+}

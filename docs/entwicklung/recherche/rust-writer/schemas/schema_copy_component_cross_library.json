@@ -1,0 +1,38 @@
+{
+ "properties": {
+  "component_name": {
+   "description": "Name of the component to copy from the source library",
+   "type": "string"
+  },
+  "description": {
+   "description": "Optional new description for the component (defaults to original description)",
+   "type": "string"
+  },
+  "ignore_missing_models": {
+   "description": "If true, copy the component even if referenced embedded 3D models are missing (PcbLib only). The component body references will be removed. Defaults to false.",
+   "type": "boolean"
+  },
+  "new_name": {
+   "description": "Optional new name for the component in the target library (defaults to original name)",
+   "type": "string"
+  },
+  "preserve_external_paths": {
+   "description": "If true, preserve external 3D model paths (model_3d field) instead of removing them. The path may need manual adjustment in the target location. Defaults to false.",
+   "type": "boolean"
+  },
+  "source_filepath": {
+   "description": "Path to the source library file (.PcbLib or .SchLib)",
+   "type": "string"
+  },
+  "target_filepath": {
+   "description": "Path to the target library file (must be same type as source)",
+   "type": "string"
+  }
+ },
+ "required": [
+  "source_filepath",
+  "target_filepath",
+  "component_name"
+ ],
+ "type": "object"
+}

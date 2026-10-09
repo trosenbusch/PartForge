@@ -1,0 +1,16 @@
+{
+ "properties": {
+  "backup_path": {
+   "description": "Optional: specific backup file to restore from. If not provided, uses most recent backup.",
+   "type": "string"
+  },
+  "filepath": {
+   "description": "Path to the library file to restore",
+   "type": "string"
+  }
+ },
+ "required": [
+  "filepath"
+ ],
+ "type": "object"
+}

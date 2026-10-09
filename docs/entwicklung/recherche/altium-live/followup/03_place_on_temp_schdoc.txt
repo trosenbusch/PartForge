@@ -1,0 +1,56 @@
+{ FOLLOW-UP 03 (UNVERIFIED). Place one DbLib component on a temporary free SchDoc in
+  altium-live, read its parameters back, close WITHOUT saving the placement.
+  Verified building blocks: CreateNewFreeDocumentFromDocumentKind(kind, True) + SetFileName +
+  DoFileSave('') + Client.CloseDocument (for SCHLIB/PCBLIB), LoadComponentFromDatabaseLibrary.
+  New/unverified: kind 'SCH', RegisterSchObjectInContainer of a DB-loaded component,
+  GetState_DatabaseLibraryKeys. }
+S1 := 'C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\PF_Test_abs.DbLib';
+S2 := 'C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\PF_Place_Test.SchDoc';
+IntMan := IntegratedLibraryManager;
+IntMan.InstallLibrary(S1);
+Obj1 := CreateNewFreeDocumentFromDocumentKind('SCH', True);
+If Obj1 = Nil Then Begin SandboxLog('doc nil'); IntMan.UninstallLibrary(S1); Exit; End;
+SandboxLog('new doc ' + Obj1.FileName);
+S3 := Obj1.SetFileName(S2);
+B1 := Obj1.DoFileSave('');
+SandboxLog('saved empty sheet=' + IntToStr(B1));
+Obj2 := SchServer.GetSchDocumentByPath(S2);
+If Obj2 = Nil Then Obj2 := SchServer.GetCurrentSchDocument;
+SandboxLog('sheet=' + Obj2.DocumentName + ' ObjectID=' + IntToStr(Obj2.ObjectID));
+If Pos('PF_Place_Test', Obj2.DocumentName) = 0 Then Begin SandboxLog('ABORT wrong sheet'); IntMan.UninstallLibrary(S1); Exit; End;
+Obj3 := SchServer.LoadComponentFromDatabaseLibrary(S1, 'Resistors', 'RES-0002');
+If Obj3 = Nil Then Begin SandboxLog('load nil'); IntMan.UninstallLibrary(S1); Exit; End;
+SchServer.ProcessControl.PreProcess(Obj2, '');
+Obj3.Location := Point(MilsToCoord(2000), MilsToCoord(2000));
+Obj3.Designator.Text := 'R1';
+Obj2.RegisterSchObjectInContainer(Obj3);
+SchServer.RobotManager.SendMessage(Obj2.I_ObjectAddress, c_BroadCast, SCHM_PrimitiveRegistration, Obj3.I_ObjectAddress);
+SchServer.ProcessControl.PostProcess(Obj2, '');
+Obj2.GraphicallyInvalidate;
+SandboxLog('placed');
+Obj4 := Obj2.SchIterator_Create;
+Obj4.AddFilter_ObjectSet(MkSet(eSchComponent));
+Obj3 := Obj4.FirstSchObject;
+While Obj3 <> Nil Do
+Begin
+    SandboxLog('ON SHEET ' + Obj3.Designator.Text + ' LibRef=' + Obj3.LibReference + ' Src=' + Obj3.SourceLibraryName + ' Table=' + Obj3.DatabaseTableName + ' Item=' + Obj3.DesignItemId + ' keys=' + Obj3.GetState_DatabaseLibraryKeys('|'));
+    Obj5 := Obj3.SchIterator_Create;
+    Obj5.AddFilter_ObjectSet(MkSet(eParameter));
+    Obj1 := Obj5.FirstSchObject;
+    While Obj1 <> Nil Do
+    Begin
+        S3 := Obj1.Text;
+        SandboxLog('   P ' + Obj1.Name + '=' + S3 + ' len=' + IntToStr(Length(S3)));
+        Obj1 := Obj5.NextSchObject;
+    End;
+    Obj3.SchIterator_Destroy(Obj5);
+    Obj3 := Obj4.NextSchObject;
+End;
+Obj2.SchIterator_Destroy(Obj4);
+Obj1 := Client.GetDocumentByPath(S2);
+SandboxLog('closing, modified=' + BoolToStr(Obj1.Modified, True));
+Obj1.Modified := False;
+Client.CloseDocument(Obj1);
+SandboxLog('closed=' + BoolToStr(Not Client.IsDocumentOpen(S2), True));
+IntMan.UninstallLibrary(S1);
+ResultText := 'done';

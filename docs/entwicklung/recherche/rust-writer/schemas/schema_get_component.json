@@ -1,0 +1,17 @@
+{
+ "properties": {
+  "component_name": {
+   "description": "Exact name of the component to retrieve",
+   "type": "string"
+  },
+  "filepath": {
+   "description": "Path to the Altium library file (.PcbLib or .SchLib)",
+   "type": "string"
+  }
+ },
+ "required": [
+  "filepath",
+  "component_name"
+ ],
+ "type": "object"
+}

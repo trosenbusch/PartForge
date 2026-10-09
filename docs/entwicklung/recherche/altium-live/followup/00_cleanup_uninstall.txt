@@ -1,0 +1,18 @@
+{ FOLLOW-UP 00 (UNVERIFIED as a whole; every call in it was VERIFIED individually).
+  Run FIRST after the user pressed Ctrl+F3 in Altium.
+  Body for mcp__altium__run_altium_script. Uninstalls every library this research
+  run installed (anything under ...\scratchpad\altium-live\). }
+IntMan := IntegratedLibraryManager;
+List1 := TStringList.Create;
+For I1 := 0 To IntMan.InstalledLibraryCount - 1 Do
+    If Pos('\scratchpad\altium-live\', IntMan.InstalledLibraryPath(I1)) > 0 Then
+        List1.Add(IntMan.InstalledLibraryPath(I1));
+SandboxLog('to uninstall: ' + IntToStr(List1.Count));
+For I1 := 0 To List1.Count - 1 Do
+Begin
+    SandboxLog('uninstall ' + List1[I1]);
+    IntMan.UninstallLibrary(List1[I1]);
+End;
+SandboxLog('installed now=' + IntToStr(IntMan.InstalledLibraryCount));
+ResultText := 'uninstalled ' + IntToStr(List1.Count);
+List1.Free;

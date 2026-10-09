@@ -1,0 +1,25 @@
+{
+ "properties": {
+  "component_names": {
+   "description": "Names of components to delete",
+   "items": {
+    "type": "string"
+   },
+   "type": "array"
+  },
+  "dry_run": {
+   "default": false,
+   "description": "If true, show what would be deleted without actually modifying the file",
+   "type": "boolean"
+  },
+  "filepath": {
+   "description": "Path to the .PcbLib or .SchLib file",
+   "type": "string"
+  }
+ },
+ "required": [
+  "filepath",
+  "component_names"
+ ],
+ "type": "object"
+}

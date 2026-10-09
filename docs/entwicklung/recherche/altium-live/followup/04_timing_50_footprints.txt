@@ -1,0 +1,73 @@
+{ FOLLOW-UP 04 (UNVERIFIED as a whole; every API call in it was VERIFIED in this run).
+  Creates 50 simple footprints (2 round-rect pads, 4 courtyard tracks on Mech15,
+  1 extruded 3D body on Mech13) in a new free PcbLib, saves it, closes it, logs ticks. }
+S1 := 'C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\libs\PF_Timing50.PcbLib';
+I3 := GetTickCount;
+Obj1 := CreateNewFreeDocumentFromDocumentKind('PCBLIB', True);
+SandboxLog('doc ms=' + IntToStr(GetTickCount - I3) + ' name=' + Obj1.FileName);
+Obj2 := PCBServer.GetCurrentPCBLibrary;
+If (Obj2 = Nil) Or (Obj2.Board.FileName <> Obj1.FileName) Then Begin SandboxLog('ABORT wrong lib'); Exit; End;
+I3 := GetTickCount;
+PCBServer.PreProcess;
+For I1 := 1 To 50 Do
+Begin
+    Obj3 := PCBServer.CreatePCBLibComp;
+    Obj3.Name := 'PF_T' + IntToStr(I1);
+    Obj2.RegisterComponent(Obj3);
+    For I2 := 0 To 1 Do
+    Begin
+        Obj4 := PCBServer.PCBObjectFactory(ePadObject, eNoDimension, eCreate_Default);
+        Obj4.Name := IntToStr(I2 + 1);
+        Obj4.Mode := ePadMode_Simple;
+        Obj4.x := MMsToCoord(-0.8 + 1.6 * I2);
+        Obj4.y := 0;
+        Obj4.Layer := eTopLayer;
+        Obj4.HoleSize := 0;
+        Obj4.TopXSize := MMsToCoord(0.95);
+        Obj4.TopYSize := MMsToCoord(1.0);
+        Obj4.TopShape := eRoundRectShape;
+        Obj4.StackCRPctOnLayer[eTopLayer] := 25;
+        Obj3.AddPCBObject(Obj4);
+        PCBServer.SendMessageToRobots(Obj3.I_ObjectAddress, c_Broadcast, PCBM_BoardRegisteration, Obj4.I_ObjectAddress);
+    End;
+    For I2 := 0 To 3 Do
+    Begin
+        Obj4 := PCBServer.PCBObjectFactory(eTrackObject, eNoDimension, eCreate_Default);
+        If I2 = 0 Then Begin Obj4.x1 := MMsToCoord(-1.5); Obj4.y1 := MMsToCoord(-0.75); Obj4.x2 := MMsToCoord(1.5); Obj4.y2 := MMsToCoord(-0.75); End;
+        If I2 = 1 Then Begin Obj4.x1 := MMsToCoord(1.5); Obj4.y1 := MMsToCoord(-0.75); Obj4.x2 := MMsToCoord(1.5); Obj4.y2 := MMsToCoord(0.75); End;
+        If I2 = 2 Then Begin Obj4.x1 := MMsToCoord(1.5); Obj4.y1 := MMsToCoord(0.75); Obj4.x2 := MMsToCoord(-1.5); Obj4.y2 := MMsToCoord(0.75); End;
+        If I2 = 3 Then Begin Obj4.x1 := MMsToCoord(-1.5); Obj4.y1 := MMsToCoord(0.75); Obj4.x2 := MMsToCoord(-1.5); Obj4.y2 := MMsToCoord(-0.75); End;
+        Obj4.Width := MMsToCoord(0.05);
+        Obj4.Layer := ILayer.MechanicalLayer(15);
+        Obj3.AddPCBObject(Obj4);
+        PCBServer.SendMessageToRobots(Obj3.I_ObjectAddress, c_Broadcast, PCBM_BoardRegisteration, Obj4.I_ObjectAddress);
+    End;
+    Obj4 := PCBServer.PCBObjectFactory(eComponentBodyObject, eNoDimension, eCreate_Default);
+    Obj5 := PCBServer.PCBContourFactory;
+    Obj5.AddPoint(MMsToCoord(-0.8), MMsToCoord(-0.4));
+    Obj5.AddPoint(MMsToCoord(0.8), MMsToCoord(-0.4));
+    Obj5.AddPoint(MMsToCoord(0.8), MMsToCoord(0.4));
+    Obj5.AddPoint(MMsToCoord(-0.8), MMsToCoord(0.4));
+    Obj4.SetOutlineContour(Obj5);
+    Obj4.Layer := ILayer.MechanicalLayer(13);
+    Obj4.BodyProjection := eBoardSide_Top;
+    Obj4.BodyColor3D := $00303030;
+    Obj4.BodyOpacity3D := 1.0;
+    Obj4.Model := Obj4.ModelFactory_CreateExtruded(0, MMsToCoord(0.55), $00303030);
+    Obj3.AddPCBObject(Obj4);
+    PCBServer.SendMessageToRobots(Obj3.I_ObjectAddress, c_Broadcast, PCBM_BoardRegisteration, Obj4.I_ObjectAddress);
+    PCBServer.SendMessageToRobots(Obj2.Board.I_ObjectAddress, c_Broadcast, PCBM_BoardRegisteration, Obj3.I_ObjectAddress);
+    If (I1 = 1) Or ((I1 Mod 10) = 0) Then SandboxLog('fp ' + IntToStr(I1) + ' cumulative ms=' + IntToStr(GetTickCount - I3));
+End;
+PCBServer.PostProcess;
+SandboxLog('50 footprints ms=' + IntToStr(GetTickCount - I3));
+Obj5 := Obj2.GetComponentByName('PCBComponent_1');
+If Obj5 <> Nil Then Begin Obj2.CurrentComponent := Obj2.GetComponentByName('PF_T1'); Obj2.RemoveComponent(Obj5); End;
+S2 := Obj1.SetFileName(S1);
+I3 := GetTickCount;
+B1 := Obj1.DoFileSave('');
+SandboxLog('save ms=' + IntToStr(GetTickCount - I3) + ' result=' + IntToStr(B1));
+I3 := GetTickCount;
+Client.CloseDocument(Obj1);
+SandboxLog('close ms=' + IntToStr(GetTickCount - I3));
+ResultText := 'done';

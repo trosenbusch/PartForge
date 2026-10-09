@@ -1,0 +1,9 @@
+{ FOLLOW-UP 05a (UNVERIFIED). Run ONCE through mcp__altium__run_altium_script so that
+  Sandbox.pas contains this ping body; then run 05b latency_harness.py, which re-launches
+  the unchanged sandbox project directly via X2.EXE (same command line as altium-mcp) and
+  measures launch -> ping-file latency with 10 ms polling. }
+List1 := TStringList.Create;
+List1.Add(FormatDateTime('hh:nn:ss.zzz', Now));
+List1.SaveToFile('C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\followup\ping.txt');
+List1.Free;
+ResultText := 'ping';

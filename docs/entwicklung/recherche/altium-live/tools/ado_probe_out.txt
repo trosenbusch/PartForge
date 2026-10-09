@@ -1,0 +1,89 @@
+ConnectionString: Provider=MSDASQL.1;Persist Security Info=False;Extended Properties="DRIVER=SQLite3 ODBC Driver;Database=C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\partforge_test.db;NoCreat=1;"
+Provider: MSDASQL.1  Version: 10.0
+SCHEMA TABLE: Resistors  TYPE=TABLE
+SCHEMA TABLE: Capacitors  TYPE=TABLE
+SCHEMA TABLE: Inductors  TYPE=TABLE
+SCHEMA TABLE: Resistors_0603  TYPE=VIEW
+SCHEMA TABLE: AllPassives  TYPE=VIEW
+== Resistors  rows=7
+   FIELD Part Number  ADOType=203  DefinedSize=65536
+   FIELD Library Ref  ADOType=203  DefinedSize=65536
+   FIELD Library Path  ADOType=203  DefinedSize=65536
+   FIELD Footprint Ref  ADOType=203  DefinedSize=65536
+   FIELD Footprint Path  ADOType=203  DefinedSize=65536
+   FIELD Value  ADOType=203  DefinedSize=65536
+   FIELD Description  ADOType=203  DefinedSize=65536
+   FIELD Comment  ADOType=203  DefinedSize=65536
+   FIELD Manufacturer  ADOType=203  DefinedSize=65536
+   FIELD Manufacturer Part Number  ADOType=203  DefinedSize=65536
+   FIELD Tolerance  ADOType=203  DefinedSize=65536
+   FIELD Power  ADOType=203  DefinedSize=65536
+   FIELD Package  ADOType=203  DefinedSize=65536
+   FIELD Datasheet  ADOType=203  DefinedSize=65536
+   ROW RES-0001 | Value=10 kΩ [U+0031 U+0030 U+0020 U+006B U+03A9] | DescLen=52 | Desc=Chip resistor 10 kΩ ±1 % 0.1 W 0603 (relative paths)
+   ROW RES-0002 | Value=4.7 MΩ [U+0034 U+002E U+0037 U+0020 U+004D U+03A9] | DescLen=74 | Desc=Thin film 4.7 MΩ ±0.1 % 25 ppm/K, −55 °C … +155 °C (absolute
+   ROW RES-0003 | Value=100 mΩ [U+0031 U+0030 U+0030 U+0020 U+006D U+03A9] | DescLen=41 | Desc=Shunt 100 mΩ µ-test (bare filename paths)
+== Capacitors  rows=3
+   FIELD Part Number  ADOType=202  DefinedSize=255
+   FIELD Library Ref  ADOType=202  DefinedSize=255
+   FIELD Library Path  ADOType=202  DefinedSize=255
+   FIELD Footprint Ref  ADOType=202  DefinedSize=255
+   FIELD Footprint Path  ADOType=202  DefinedSize=255
+   FIELD Value  ADOType=202  DefinedSize=255
+   FIELD Description  ADOType=202  DefinedSize=255
+   FIELD Comment  ADOType=202  DefinedSize=255
+   FIELD Manufacturer  ADOType=202  DefinedSize=255
+   FIELD Manufacturer Part Number  ADOType=202  DefinedSize=255
+   FIELD Tolerance  ADOType=202  DefinedSize=255
+   FIELD Power  ADOType=202  DefinedSize=255
+   FIELD Package  ADOType=202  DefinedSize=255
+   FIELD Datasheet  ADOType=202  DefinedSize=255
+   ROW CAP-0001 | Value=100 nF [U+0031 U+0030 U+0030 U+0020 U+006E U+0046] | DescLen=31 | Desc=MLCC 100 nF ±10 % 50 V X7R 0603
+   ROW CAP-0002 | Value=4.7 µF [U+0034 U+002E U+0037 U+0020 U+00B5 U+0046] | DescLen=43 | Desc=MLCC 4.7 µF ±20 % 10 V X5R, −55 °C … +85 °C
+   ROW CAP-0003 | Value=1 µF [U+0031 U+0020 U+00B5 U+0046] | DescLen=284 | Desc=LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+== Inductors  rows=2
+   FIELD Part Number  ADOType=202  DefinedSize=64
+   FIELD Library Ref  ADOType=202  DefinedSize=255
+   FIELD Library Path  ADOType=202  DefinedSize=255
+   FIELD Footprint Ref  ADOType=202  DefinedSize=255
+   FIELD Footprint Path  ADOType=202  DefinedSize=255
+   FIELD Value  ADOType=202  DefinedSize=255
+   FIELD Description  ADOType=202  DefinedSize=255
+   FIELD Inductance_uH  ADOType=5  DefinedSize=8
+   FIELD Current_mA  ADOType=3  DefinedSize=4
+   FIELD Isat_A  ADOType=5  DefinedSize=8
+   FIELD Untyped  ADOType=202  DefinedSize=255
+   ROW IND-0001 | Value=4.7 µH [U+0034 U+002E U+0037 U+0020 U+00B5 U+0048] | DescLen=18 | Desc=Typed columns test
+   ROW IND-0002 | Value=10 µH [U+0031 U+0030 U+0020 U+00B5 U+0048] | DescLen=20 | Desc=Typed columns test 2
+== Resistors_0603  rows=6
+   FIELD Part Number  ADOType=203  DefinedSize=65536
+   FIELD Library Ref  ADOType=203  DefinedSize=65536
+   FIELD Library Path  ADOType=203  DefinedSize=65536
+   FIELD Footprint Ref  ADOType=203  DefinedSize=65536
+   FIELD Footprint Path  ADOType=203  DefinedSize=65536
+   FIELD Value  ADOType=203  DefinedSize=65536
+   FIELD Description  ADOType=203  DefinedSize=65536
+   FIELD Comment  ADOType=203  DefinedSize=65536
+   FIELD Manufacturer  ADOType=203  DefinedSize=65536
+   FIELD Manufacturer Part Number  ADOType=203  DefinedSize=65536
+   FIELD Tolerance  ADOType=203  DefinedSize=65536
+   FIELD Power  ADOType=203  DefinedSize=65536
+   FIELD Package  ADOType=203  DefinedSize=65536
+   FIELD Datasheet  ADOType=203  DefinedSize=65536
+   ROW RES-0001 | Value=10 kΩ [U+0031 U+0030 U+0020 U+006B U+03A9] | DescLen=52 | Desc=Chip resistor 10 kΩ ±1 % 0.1 W 0603 (relative paths)
+   ROW RES-0002 | Value=4.7 MΩ [U+0034 U+002E U+0037 U+0020 U+004D U+03A9] | DescLen=74 | Desc=Thin film 4.7 MΩ ±0.1 % 25 ppm/K, −55 °C … +155 °C (absolute
+   ROW RES-0003 | Value=100 mΩ [U+0031 U+0030 U+0030 U+0020 U+006D U+03A9] | DescLen=41 | Desc=Shunt 100 mΩ µ-test (bare filename paths)
+== AllPassives  rows=10
+   FIELD Part Number  ADOType=202  DefinedSize=255
+   FIELD Library Ref  ADOType=202  DefinedSize=255
+   FIELD Library Path  ADOType=202  DefinedSize=255
+   FIELD Footprint Ref  ADOType=202  DefinedSize=255
+   FIELD Footprint Path  ADOType=202  DefinedSize=255
+   FIELD Value  ADOType=202  DefinedSize=255
+   FIELD Description  ADOType=202  DefinedSize=255
+   FIELD Short Text  ADOType=202  DefinedSize=255
+   FIELD Kind  ADOType=202  DefinedSize=255
+   ROW RES-0001 | Value=10 kΩ [U+0031 U+0030 U+0020 U+006B U+03A9] | DescLen=52 | Desc=Chip resistor 10 kΩ ±1 % 0.1 W 0603 (relative paths)
+   ROW RES-0002 | Value=4.7 MΩ [U+0034 U+002E U+0037 U+0020 U+004D U+03A9] | DescLen=74 | Desc=Thin film 4.7 MΩ ±0.1 % 25 ppm/K, −55 °C … +155 °C (absolute
+   ROW RES-0003 | Value=100 mΩ [U+0031 U+0030 U+0030 U+0020 U+006D U+03A9] | DescLen=41 | Desc=Shunt 100 mΩ µ-test (bare filename paths)
+WHERE Value='10 kOhm(U+03A9)' -> rows=1

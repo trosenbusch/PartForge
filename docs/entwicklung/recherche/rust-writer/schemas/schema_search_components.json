@@ -1,0 +1,28 @@
+{
+ "properties": {
+  "filepaths": {
+   "description": "Array of library file paths to search (.PcbLib or .SchLib)",
+   "items": {
+    "type": "string"
+   },
+   "type": "array"
+  },
+  "pattern": {
+   "description": "Search pattern to match component names",
+   "type": "string"
+  },
+  "pattern_type": {
+   "description": "Pattern type: 'glob' (wildcards like * and ?) or 'regex' (regular expressions). Default: 'glob'",
+   "enum": [
+    "glob",
+    "regex"
+   ],
+   "type": "string"
+  }
+ },
+ "required": [
+  "filepaths",
+  "pattern"
+ ],
+ "type": "object"
+}

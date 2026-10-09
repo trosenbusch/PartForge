@@ -1,0 +1,24 @@
+{
+ "properties": {
+  "filepath": {
+   "description": "Path to the library file",
+   "type": "string"
+  },
+  "include_metadata": {
+   "description": "If true, return objects with metadata (part_count, pin_count, etc.) instead of just names. Default: false",
+   "type": "boolean"
+  },
+  "limit": {
+   "description": "Maximum number of components to return (optional, default: all)",
+   "type": "integer"
+  },
+  "offset": {
+   "description": "Number of components to skip (optional, default: 0)",
+   "type": "integer"
+  }
+ },
+ "required": [
+  "filepath"
+ ],
+ "type": "object"
+}

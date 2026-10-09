@@ -1,0 +1,30 @@
+{
+ "properties": {
+  "component_name": {
+   "description": "Name of the component to update (must exist in library)",
+   "type": "string"
+  },
+  "dry_run": {
+   "default": false,
+   "description": "If true, show what would be updated without actually modifying the file",
+   "type": "boolean"
+  },
+  "filepath": {
+   "description": "Path to the .PcbLib or .SchLib file",
+   "type": "string"
+  },
+  "footprint": {
+   "description": "For PcbLib: footprint data (same format as write_pcblib)",
+   "type": "object"
+  },
+  "symbol": {
+   "description": "For SchLib: symbol data (same format as write_schlib)",
+   "type": "object"
+  }
+ },
+ "required": [
+  "filepath",
+  "component_name"
+ ],
+ "type": "object"
+}

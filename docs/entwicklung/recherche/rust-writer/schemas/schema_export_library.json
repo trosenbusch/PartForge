@@ -1,0 +1,25 @@
+{
+ "properties": {
+  "compact": {
+   "description": "For PcbLib JSON export: if true (default), omit per-layer pad data when stack_mode is Simple",
+   "type": "boolean"
+  },
+  "filepath": {
+   "description": "Path to the .PcbLib or .SchLib file",
+   "type": "string"
+  },
+  "format": {
+   "description": "Export format: 'json' for full data, 'csv' for summary table",
+   "enum": [
+    "json",
+    "csv"
+   ],
+   "type": "string"
+  }
+ },
+ "required": [
+  "filepath",
+  "format"
+ ],
+ "type": "object"
+}

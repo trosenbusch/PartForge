@@ -1,0 +1,77 @@
+{ FOLLOW-UP 01 (UNVERIFIED script; built only from calls VERIFIED in this run, except
+  IntMan.GetDatabaseModelFullLibPath and the Ord(S2[I3]) code-point dump, which are new).
+  Body for mcp__altium__run_altium_script. Resolves every test record of PF_Test_abs.DbLib.
+  The run that wedged used Ord(Obj3.Text[I3]) - indexing a PROPERTY of an interface variable.
+  Here the text is first copied into the String variable S2 and S2[I3] is indexed (the
+  pattern altium-mcp's pcb_utils.pas uses on String variables).
+  Table indexes are alphabetical (VERIFIED): 0 AllPassives, 1 Capacitors, 2 Inductors,
+  3 Resistors, 4 Resistors_0603.  Entry format: tableIndex|key|raw [Footprint Path] value. }
+S1 := 'C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\PF_Test_abs.DbLib';
+IntMan := IntegratedLibraryManager;
+IntMan.InstallLibrary(S1);
+DbDoc := IntMan.GetAvailableDBLibDocAtPath(S1);
+If DbDoc = Nil Then Begin SandboxLog('dbdoc nil'); IntMan.UninstallLibrary(S1); Exit; End;
+List1 := TStringList.Create;
+List1.Add('3|RES-0001|libs\PF_Test.PcbLib');
+List1.Add('3|RES-0002|C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\libs\PF_Test.PcbLib');
+List1.Add('3|RES-0003|PF_Test.PcbLib');
+List1.Add('3|RES-0004|');
+List1.Add('3|RES-0005|libs/PF_Test.PcbLib');
+List1.Add('3|RES-0006|libs\PF_Test.PcbLib');
+List1.Add('3|RES-0007|libs\PF_Test.PcbLib');
+List1.Add('1|CAP-0001|libs\PF_Test.PcbLib');
+List1.Add('1|CAP-0002|libs\PF_Test.PcbLib');
+List1.Add('1|CAP-0003|libs\PF_Test.PcbLib');
+List1.Add('2|IND-0001|libs\PF_Test.PcbLib');
+List1.Add('4|RES-0002|C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\libs\PF_Test.PcbLib');
+List1.Add('0|CAP-0002|libs\PF_Test.PcbLib');
+For I2 := 0 To List1.Count - 1 Do
+Begin
+    S2 := List1[I2];
+    I1 := StrToInt(Copy(S2, 1, Pos('|', S2) - 1));
+    S2 := Copy(S2, Pos('|', S2) + 1, 1000);
+    S3 := Copy(S2, 1, Pos('|', S2) - 1);
+    S2 := Copy(S2, Pos('|', S2) + 1, 1000);
+    SandboxLog('=== ' + DbDoc.GetTableNameAt(I1) + ' / ' + S3 + ' t=' + FormatDateTime('hh:nn:ss.zzz', Now));
+    SandboxLog('SchLibPath(raw)=' + DbDoc.GetSchLibPathForComponent(I1, S3));
+    SandboxLog('SchLibPath(resolved)=' + IntMan.GetSchLibPathForDBComponent(S1, DbDoc.GetTableNameAt(I1), S3));
+    SandboxLog('SchLibRef=' + IntMan.GetSchLibRefForDBComponent(S1, DbDoc.GetTableNameAt(I1), S3));
+    SandboxLog('Params=' + IntMan.GetParametersForDBComponent(S1, DbDoc.GetTableNameAt(I1), S3));
+    Obj1 := SchServer.LoadComponentFromDatabaseLibrary(S1, DbDoc.GetTableNameAt(I1), S3);
+    If Obj1 = Nil Then SandboxLog('LOAD -> NIL')
+    Else
+    Begin
+        SandboxLog('COMP LibRef=' + Obj1.LibReference + ' pins=' + IntToStr(Obj1.GetAllPinCount) + ' DbTable=' + Obj1.DatabaseTableName + ' DesignItemId=' + Obj1.DesignItemId);
+        Obj2 := Obj1.SchIterator_Create;
+        Obj2.AddFilter_ObjectSet(MkSet(eImplementation));
+        Obj3 := Obj2.FirstSchObject;
+        While Obj3 <> Nil Do
+        Begin
+            SandboxLog('  IMPL ' + Obj3.ModelName + ' type=' + Obj3.ModelType + ' links=' + IntToStr(Obj3.DatafileLinkCount) + ' current=' + BoolToStr(Obj3.IsCurrent, True) + ' dbModel=' + BoolToStr(Obj3.DatabaseModel, True));
+            SandboxLog('  FP resolved=' + IntMan.GetDatabaseModelFullLibPath(S1, S2, Obj3.ModelName, 'PCBLIB'));
+            Obj3 := Obj2.NextSchObject;
+        End;
+        Obj1.SchIterator_Destroy(Obj2);
+        Obj2 := Obj1.SchIterator_Create;
+        Obj2.AddFilter_ObjectSet(MkSet(eParameter));
+        Obj3 := Obj2.FirstSchObject;
+        While Obj3 <> Nil Do
+        Begin
+            S2 := Obj3.Text;
+            SandboxLog('  PARAM ' + Obj3.Name + ' len=' + IntToStr(Length(S2)) + ' hidden=' + BoolToStr(Obj3.IsHidden, True) + ' text=' + S2);
+            If (Obj3.Name = 'Value') Or (Obj3.Name = 'Tolerance') Then
+            Begin
+                ResultText := '';
+                For I3 := 1 To Length(S2) Do
+                    ResultText := ResultText + IntToStr(Ord(S2[I3])) + ' ';
+                SandboxLog('  CODEPOINTS ' + Obj3.Name + ': ' + ResultText);
+            End;
+            Obj3 := Obj2.NextSchObject;
+        End;
+        Obj1.SchIterator_Destroy(Obj2);
+    End;
+End;
+IntMan.UninstallLibrary(S1);
+SandboxLog('uninstalled');
+List1.Free;
+ResultText := 'done';

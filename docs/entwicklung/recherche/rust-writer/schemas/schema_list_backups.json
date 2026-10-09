@@ -1,0 +1,12 @@
+{
+ "properties": {
+  "filepath": {
+   "description": "Path to the library file (.PcbLib or .SchLib)",
+   "type": "string"
+  }
+ },
+ "required": [
+  "filepath"
+ ],
+ "type": "object"
+}

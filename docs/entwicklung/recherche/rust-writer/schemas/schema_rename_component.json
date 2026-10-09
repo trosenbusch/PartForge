@@ -1,0 +1,26 @@
+{
+ "properties": {
+  "dry_run": {
+   "description": "If true, validate the operation without modifying the file. Default: false",
+   "type": "boolean"
+  },
+  "filepath": {
+   "description": "Path to the Altium library file (.PcbLib or .SchLib)",
+   "type": "string"
+  },
+  "new_name": {
+   "description": "New name for the component",
+   "type": "string"
+  },
+  "old_name": {
+   "description": "Current name of the component to rename",
+   "type": "string"
+  }
+ },
+ "required": [
+  "filepath",
+  "old_name",
+  "new_name"
+ ],
+ "type": "object"
+}

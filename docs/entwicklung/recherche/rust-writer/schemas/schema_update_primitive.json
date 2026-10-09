@@ -1,0 +1,102 @@
+{
+ "properties": {
+  "component_name": {
+   "description": "Name of the footprint containing the primitive",
+   "type": "string"
+  },
+  "dry_run": {
+   "description": "If true, show what would change without saving (default: false)",
+   "type": "boolean"
+  },
+  "filepath": {
+   "description": "Path to the .PcbLib file",
+   "type": "string"
+  },
+  "index": {
+   "description": "Zero-based index of the primitive within its type array",
+   "type": "integer"
+  },
+  "primitive_type": {
+   "description": "Type of primitive to update. Addressed by `index` into that primitive list. Pads are not here \u2014 they have a designator, so use update_pad.",
+   "enum": [
+    "track",
+    "arc",
+    "region",
+    "text",
+    "fill",
+    "via"
+   ],
+   "type": "string"
+  },
+  "updates": {
+   "description": "Properties to update (only specified properties are changed). Valid properties depend on primitive_type.",
+   "properties": {
+    "end_angle": {
+     "description": "End angle in degrees (arc)",
+     "type": "number"
+    },
+    "height": {
+     "description": "Height (text, fill)",
+     "type": "number"
+    },
+    "layer": {
+     "description": "Layer name",
+     "type": "string"
+    },
+    "radius": {
+     "description": "Radius (arc)",
+     "type": "number"
+    },
+    "rotation": {
+     "description": "Rotation angle",
+     "type": "number"
+    },
+    "start_angle": {
+     "description": "Start angle in degrees (arc)",
+     "type": "number"
+    },
+    "text": {
+     "description": "Text content (text primitive)",
+     "type": "string"
+    },
+    "width": {
+     "description": "Line width (track, arc) or width (fill)",
+     "type": "number"
+    },
+    "x": {
+     "description": "X position (text, fill)",
+     "type": "number"
+    },
+    "x1": {
+     "description": "Start X (track) or centre X (arc)",
+     "type": "number"
+    },
+    "x2": {
+     "description": "End X (track)",
+     "type": "number"
+    },
+    "y": {
+     "description": "Y position (text, fill)",
+     "type": "number"
+    },
+    "y1": {
+     "description": "Start Y (track) or centre Y (arc)",
+     "type": "number"
+    },
+    "y2": {
+     "description": "End Y (track)",
+     "type": "number"
+    }
+   },
+   "type": "object"
+  }
+ },
+ "required": [
+  "filepath",
+  "component_name",
+  "primitive_type",
+  "index",
+  "updates"
+ ],
+ "type": "object"
+}

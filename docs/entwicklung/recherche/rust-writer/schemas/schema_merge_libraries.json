@@ -1,0 +1,34 @@
+{
+ "properties": {
+  "dry_run": {
+   "default": false,
+   "description": "If true, show what would be merged without actually modifying any files",
+   "type": "boolean"
+  },
+  "on_duplicate": {
+   "description": "How to handle duplicate component names: 'skip' (ignore duplicates), 'error' (fail on duplicates), 'rename' (auto-rename with suffix). Default: 'error'",
+   "enum": [
+    "skip",
+    "error",
+    "rename"
+   ],
+   "type": "string"
+  },
+  "source_filepaths": {
+   "description": "Array of paths to source library files (.PcbLib or .SchLib)",
+   "items": {
+    "type": "string"
+   },
+   "type": "array"
+  },
+  "target_filepath": {
+   "description": "Path to the target library file (will be created or appended to)",
+   "type": "string"
+  }
+ },
+ "required": [
+  "source_filepaths",
+  "target_filepath"
+ ],
+ "type": "object"
+}

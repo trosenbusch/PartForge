@@ -1,0 +1,26 @@
+{
+ "properties": {
+  "dry_run": {
+   "description": "If true, show what would be renamed without making changes (default: false)",
+   "type": "boolean"
+  },
+  "filepath": {
+   "description": "Path to the library file (.PcbLib or .SchLib)",
+   "type": "string"
+  },
+  "pattern": {
+   "description": "Regex pattern to match component names (e.g., '^RESC(.*)$')",
+   "type": "string"
+  },
+  "replacement": {
+   "description": "Replacement string with optional capture groups (e.g., 'RES_$1')",
+   "type": "string"
+  }
+ },
+ "required": [
+  "filepath",
+  "pattern",
+  "replacement"
+ ],
+ "type": "object"
+}

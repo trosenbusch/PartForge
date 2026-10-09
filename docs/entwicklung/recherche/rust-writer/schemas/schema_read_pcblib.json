@@ -1,0 +1,28 @@
+{
+ "properties": {
+  "compact": {
+   "description": "If true (default), omit per-layer pad data when stack_mode is Simple. Set to false for full output.",
+   "type": "boolean"
+  },
+  "component_name": {
+   "description": "Optional: fetch only this specific footprint by name",
+   "type": "string"
+  },
+  "filepath": {
+   "description": "Path to the .PcbLib file",
+   "type": "string"
+  },
+  "limit": {
+   "description": "Optional: maximum number of footprints to return (default: all)",
+   "type": "integer"
+  },
+  "offset": {
+   "description": "Optional: skip first N footprints (default: 0)",
+   "type": "integer"
+  }
+ },
+ "required": [
+  "filepath"
+ ],
+ "type": "object"
+}

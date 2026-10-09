@@ -1,0 +1,21 @@
+{
+ "properties": {
+  "append": {
+   "description": "If true, append to existing library instead of overwriting. Default: false",
+   "type": "boolean"
+  },
+  "json_data": {
+   "description": "JSON data containing components to import. Should have 'file_type' (PcbLib/SchLib) and 'footprints' or 'symbols' array.",
+   "type": "object"
+  },
+  "output_path": {
+   "description": "Path where the new library file will be created (.PcbLib or .SchLib)",
+   "type": "string"
+  }
+ },
+ "required": [
+  "output_path",
+  "json_data"
+ ],
+ "type": "object"
+}

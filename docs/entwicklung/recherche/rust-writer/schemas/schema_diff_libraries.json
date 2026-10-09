@@ -1,0 +1,17 @@
+{
+ "properties": {
+  "filepath_a": {
+   "description": "Path to the first (base/old) library file",
+   "type": "string"
+  },
+  "filepath_b": {
+   "description": "Path to the second (new/changed) library file",
+   "type": "string"
+  }
+ },
+ "required": [
+  "filepath_a",
+  "filepath_b"
+ ],
+ "type": "object"
+}

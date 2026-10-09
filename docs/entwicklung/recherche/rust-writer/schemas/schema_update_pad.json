@@ -1,0 +1,69 @@
+{
+ "properties": {
+  "component_name": {
+   "description": "Name of the footprint containing the pad",
+   "type": "string"
+  },
+  "designator": {
+   "description": "Pad designator (e.g., '1', '2', 'A1')",
+   "type": "string"
+  },
+  "dry_run": {
+   "description": "If true, show what would change without saving (default: false)",
+   "type": "boolean"
+  },
+  "filepath": {
+   "description": "Path to the .PcbLib file",
+   "type": "string"
+  },
+  "updates": {
+   "description": "Properties to update (only specified properties are changed)",
+   "properties": {
+    "height": {
+     "description": "New height in mm",
+     "type": "number"
+    },
+    "hole_size": {
+     "description": "New hole diameter for through-hole pads",
+     "type": "number"
+    },
+    "rotation": {
+     "description": "New rotation in degrees",
+     "type": "number"
+    },
+    "shape": {
+     "description": "New pad shape. Same vocabulary as write_pcblib: rectangle, rounded_rectangle, round/circle, oval, octagonal. Matching is case-insensitive and ignores '_'/'-'.",
+     "enum": [
+      "rectangle",
+      "rounded_rectangle",
+      "round",
+      "circle",
+      "oval",
+      "octagonal"
+     ],
+     "type": "string"
+    },
+    "width": {
+     "description": "New width in mm",
+     "type": "number"
+    },
+    "x": {
+     "description": "New X position in mm",
+     "type": "number"
+    },
+    "y": {
+     "description": "New Y position in mm",
+     "type": "number"
+    }
+   },
+   "type": "object"
+  }
+ },
+ "required": [
+  "filepath",
+  "component_name",
+  "designator",
+  "updates"
+ ],
+ "type": "object"
+}

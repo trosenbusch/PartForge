@@ -1,0 +1,55 @@
+{ FOLLOW-UP 06 (UNVERIFIED, EXPERIMENTAL - run LAST, it may wedge the executor).
+  Tries to create SchLib/PcbLib files WITHOUT opening editor documents, using API members
+  listed in the skill's type-library dump: SchServer.CreateSchLibrary, ISch_Lib.SaveToFile,
+  PCBServer.CreatePCBLibrary, IPCB_Library.LibraryLoaderSaver_Create / SaveToFile.
+  If it works, PartForge's bridge would not steal the user's editor focus. }
+S1 := 'C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\libs\PF_Headless.SchLib';
+S2 := 'C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\libs\PF_Headless.PcbLib';
+SandboxLog('sch: CreateSchLibrary');
+Obj1 := SchServer.CreateSchLibrary;
+If Obj1 = Nil Then SandboxLog('CreateSchLibrary NIL')
+Else
+Begin
+    Obj2 := SchServer.SchObjectFactory(eSchComponent, eCreate_Default);
+    Obj2.CurrentPartID := 1;
+    Obj2.DisplayMode := 0;
+    Obj2.LibReference := 'PF_HEADLESS';
+    Obj2.Designator.Text := 'U?';
+    Obj3 := SchServer.SchObjectFactory(ePin, eCreate_Default);
+    Obj3.Designator := '1';
+    Obj3.Name := 'A';
+    Obj3.Orientation := eRotate180;
+    Obj3.Location := Point(0, 0);
+    Obj3.PinLength := MilsToCoord(200);
+    Obj3.OwnerPartId := 1;
+    Obj3.OwnerPartDisplayMode := 0;
+    Obj2.AddSchObject(Obj3);
+    Obj1.AddSchComponent(Obj2);
+    SandboxLog('sch: SaveToFile');
+    Obj1.SaveToFile(S1);
+    SandboxLog('sch: exists=' + BoolToStr(FileExists(S1), True));
+End;
+SandboxLog('pcb: CreatePCBLibrary');
+Obj1 := PCBServer.CreatePCBLibrary;
+If Obj1 = Nil Then SandboxLog('CreatePCBLibrary NIL')
+Else
+Begin
+    Obj3 := PCBServer.CreatePCBLibComp;
+    Obj3.Name := 'PF_HEADLESS';
+    Obj1.RegisterComponent(Obj3);
+    Obj4 := PCBServer.PCBObjectFactory(ePadObject, eNoDimension, eCreate_Default);
+    Obj4.Name := '1';
+    Obj4.Mode := ePadMode_Simple;
+    Obj4.Layer := eTopLayer;
+    Obj4.HoleSize := 0;
+    Obj4.TopXSize := MMsToCoord(1.0);
+    Obj4.TopYSize := MMsToCoord(1.0);
+    Obj4.TopShape := eRectangular;
+    Obj3.AddPCBObject(Obj4);
+    SandboxLog('pcb: LibraryLoaderSaver_Create');
+    Obj5 := Obj1.LibraryLoaderSaver_Create;
+    B1 := Obj5.SaveToFile(Obj1, S2);
+    SandboxLog('pcb: SaveToFile=' + IntToStr(B1) + ' exists=' + BoolToStr(FileExists(S2), True));
+    Obj1.LibraryLoaderSaver_Destroy(Obj5);
+End;
+ResultText := 'done';

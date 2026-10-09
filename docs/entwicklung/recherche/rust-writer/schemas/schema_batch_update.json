@@ -1,0 +1,70 @@
+{
+ "properties": {
+  "dry_run": {
+   "default": false,
+   "description": "If true, show what would be updated without actually modifying the file",
+   "type": "boolean"
+  },
+  "filepath": {
+   "description": "Path to the Altium library file (.PcbLib or .SchLib)",
+   "type": "string"
+  },
+  "operation": {
+   "description": "The batch operation to perform. PcbLib: update_track_width, rename_layer. SchLib: update_parameters.",
+   "enum": [
+    "update_track_width",
+    "rename_layer",
+    "update_parameters"
+   ],
+   "type": "string"
+  },
+  "parameters": {
+   "description": "Operation-specific parameters",
+   "properties": {
+    "add_if_missing": {
+     "description": "For update_parameters: add parameter if not present (default: false)",
+     "type": "boolean"
+    },
+    "from_layer": {
+     "description": "For rename_layer: source layer (e.g., Mechanical 1, Top Assembly)",
+     "type": "string"
+    },
+    "from_width": {
+     "description": "For update_track_width: the track width to match (in mm)",
+     "type": "number"
+    },
+    "param_name": {
+     "description": "For update_parameters: parameter name to update (e.g., 'Value')",
+     "type": "string"
+    },
+    "param_value": {
+     "description": "For update_parameters: new value for the parameter",
+     "type": "string"
+    },
+    "symbol_filter": {
+     "description": "For update_parameters: regex pattern to filter symbol names (optional)",
+     "type": "string"
+    },
+    "to_layer": {
+     "description": "For rename_layer: target layer (e.g., Mechanical 2, Top Courtyard)",
+     "type": "string"
+    },
+    "to_width": {
+     "description": "For update_track_width: the new track width (in mm)",
+     "type": "number"
+    },
+    "tolerance": {
+     "description": "For update_track_width: matching tolerance (default: 0.001 mm)",
+     "type": "number"
+    }
+   },
+   "type": "object"
+  }
+ },
+ "required": [
+  "filepath",
+  "operation",
+  "parameters"
+ ],
+ "type": "object"
+}

@@ -1,0 +1,1517 @@
+{
+ "properties": {
+  "append": {
+   "description": "If true, append to existing file; if false, create new file",
+   "type": "boolean"
+  },
+  "filepath": {
+   "description": "Path to the .SchLib file to create/modify",
+   "type": "string"
+  },
+  "symbols": {
+   "description": "Array of symbol definitions",
+   "items": {
+    "properties": {
+     "arcs": {
+      "description": "Arc/circle definitions",
+      "items": {
+       "properties": {
+        "color": {
+         "description": "Line BGR colour. Default: 0x000080",
+         "type": "integer"
+        },
+        "dimmed": {
+         "description": "Whether the shape is dimmed. Default: false",
+         "type": "boolean"
+        },
+        "disabled": {
+         "description": "Whether the shape is disabled. Default: false",
+         "type": "boolean"
+        },
+        "end_angle": {
+         "description": "End angle in degrees. Default: 360 (full circle)",
+         "type": "number"
+        },
+        "fill_color": {
+         "description": "Fill BGR colour (maps to AreaColor). Default: 0 (no fill)",
+         "type": "integer"
+        },
+        "graphically_locked": {
+         "description": "Whether the shape is graphically locked. Default: false",
+         "type": "boolean"
+        },
+        "is_not_accessible": {
+         "description": "Whether the arc is marked not-accessible (Altium tags every arc; default true)",
+         "type": "boolean"
+        },
+        "line_width": {
+         "description": "Line width. Default: 1",
+         "type": "integer"
+        },
+        "owner_part_display_mode": {
+         "description": "Display mode this shape belongs to (0=Normal, 1=first alternate/de-Morgan, ...). Default: 0",
+         "type": "integer"
+        },
+        "owner_part_id": {
+         "description": "Part number (1-based). Default: 1",
+         "type": "integer"
+        },
+        "radius": {
+         "description": "Radius in schematic units",
+         "type": "number"
+        },
+        "start_angle": {
+         "description": "Start angle in degrees (0 = right, CCW). Default: 0",
+         "type": "number"
+        },
+        "unique_id": {
+         "description": "8-char Altium unique ID; preserved on read-modify-write, auto-generated if omitted",
+         "type": "string"
+        },
+        "x": {
+         "description": "Centre X coordinate",
+         "type": "number"
+        },
+        "y": {
+         "description": "Centre Y coordinate",
+         "type": "number"
+        }
+       },
+       "required": [
+        "x",
+        "y",
+        "radius"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "beziers": {
+      "description": "Cubic Bezier curve definitions (four control points)",
+      "items": {
+       "properties": {
+        "color": {
+         "description": "Curve BGR colour. Default: 0x000080 (128, dark red)",
+         "type": "integer"
+        },
+        "graphically_locked": {
+         "description": "Whether the shape is graphically locked. Default: false",
+         "type": "boolean"
+        },
+        "is_not_accessible": {
+         "description": "Whether the curve is marked not-accessible (Altium tags every shape; default true)",
+         "type": "boolean"
+        },
+        "line_width": {
+         "description": "Curve width. Default: 1",
+         "type": "integer"
+        },
+        "owner_part_id": {
+         "description": "Part number (1-based). Default: 1",
+         "type": "integer"
+        },
+        "unique_id": {
+         "description": "8-char Altium unique ID; preserved on read-modify-write, auto-generated if omitted",
+         "type": "string"
+        },
+        "x1": {
+         "description": "First control point X",
+         "type": "number"
+        },
+        "x2": {
+         "description": "Second control point X",
+         "type": "number"
+        },
+        "x3": {
+         "description": "Third control point X",
+         "type": "number"
+        },
+        "x4": {
+         "description": "Fourth control point X",
+         "type": "number"
+        },
+        "y1": {
+         "description": "First control point Y",
+         "type": "number"
+        },
+        "y2": {
+         "description": "Second control point Y",
+         "type": "number"
+        },
+        "y3": {
+         "description": "Third control point Y",
+         "type": "number"
+        },
+        "y4": {
+         "description": "Fourth control point Y",
+         "type": "number"
+        }
+       },
+       "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2",
+        "x3",
+        "y3",
+        "x4",
+        "y4"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "component_type": {
+      "description": "Optional component category (e.g. 'resistor', 'capacitor', 'inductor', 'diode', 'transistor', 'connector', 'crystal', 'ic') used to derive the IEEE designator letter when 'designator_prefix' is not given. Unknown values default to 'U'.",
+      "type": "string"
+     },
+     "current_part_id": {
+      "description": "Currently selected part (1-based). Default: 1",
+      "type": "integer"
+     },
+     "description": {
+      "type": "string"
+     },
+     "designator_prefix": {
+      "description": "Reference-designator class letter, e.g. 'R' for resistors, 'U' for ICs. Written as '<prefix>?'. If omitted, falls back to 'component_type' (IEEE 315 / ASME Y14.44 mapping), then to 'U'.",
+      "type": "string"
+     },
+     "designator_unique_id": {
+      "description": "8-char unique ID of the designator record; preserved on read-modify-write, auto-generated if omitted",
+      "type": "string"
+     },
+     "designator_x": {
+      "description": "X position of the designator text. Default: -5 (Altium's from-scratch placement)",
+      "type": "number"
+     },
+     "designator_y": {
+      "description": "Y position of the designator text. Default: 5 (Altium's from-scratch placement)",
+      "type": "number"
+     },
+     "display_mode_count": {
+      "description": "Number of display modes (1 = normal only, 2+ = alternate/de-Morgan views). Default: 1",
+      "type": "integer"
+     },
+     "ellipses": {
+      "description": "Ellipse definitions",
+      "items": {
+       "properties": {
+        "dimmed": {
+         "description": "Whether the shape is dimmed. Default: false",
+         "type": "boolean"
+        },
+        "disabled": {
+         "description": "Whether the shape is disabled. Default: false",
+         "type": "boolean"
+        },
+        "fill_color": {
+         "description": "Fill BGR colour. Default: 0xB0FFFF (Altium light yellow)",
+         "type": "integer"
+        },
+        "filled": {
+         "description": "Whether filled. Default: true",
+         "type": "boolean"
+        },
+        "graphically_locked": {
+         "description": "Whether the shape is graphically locked. Default: false",
+         "type": "boolean"
+        },
+        "is_not_accessible": {
+         "description": "Whether the ellipse is marked not-accessible (Altium tags every ellipse; default true)",
+         "type": "boolean"
+        },
+        "line_color": {
+         "description": "Border BGR colour. Default: 0x000080",
+         "type": "integer"
+        },
+        "line_width": {
+         "description": "Border width. Default: 1",
+         "type": "integer"
+        },
+        "owner_part_display_mode": {
+         "description": "Display mode this shape belongs to (0=Normal, 1=first alternate/de-Morgan, ...). Default: 0",
+         "type": "integer"
+        },
+        "owner_part_id": {
+         "description": "Part number (1-based). Default: 1",
+         "type": "integer"
+        },
+        "radius_x": {
+         "description": "Horizontal radius",
+         "type": "number"
+        },
+        "radius_y": {
+         "description": "Vertical radius",
+         "type": "number"
+        },
+        "transparent": {
+         "description": "Whether the fill is transparent. Default: false",
+         "type": "boolean"
+        },
+        "unique_id": {
+         "description": "8-char Altium unique ID; preserved on read-modify-write, auto-generated if omitted",
+         "type": "string"
+        },
+        "x": {
+         "description": "Centre X coordinate",
+         "type": "number"
+        },
+        "y": {
+         "description": "Centre Y coordinate",
+         "type": "number"
+        }
+       },
+       "required": [
+        "x",
+        "y",
+        "radius_x",
+        "radius_y"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "elliptical_arcs": {
+      "description": "Elliptical arc definitions (arc with independent X/Y radii)",
+      "items": {
+       "properties": {
+        "color": {
+         "description": "Arc BGR colour. Default: 0x000080 (128, dark red)",
+         "type": "integer"
+        },
+        "end_angle": {
+         "description": "End angle in degrees. Default: 360",
+         "type": "number"
+        },
+        "fill_color": {
+         "description": "Fill BGR colour (AreaColor). Default: 0",
+         "type": "integer"
+        },
+        "line_width": {
+         "description": "Arc width. Default: 1",
+         "type": "integer"
+        },
+        "owner_part_id": {
+         "description": "Part number (1-based). Default: 1",
+         "type": "integer"
+        },
+        "radius": {
+         "description": "Primary (X) radius in schematic units",
+         "type": "number"
+        },
+        "secondary_radius": {
+         "description": "Secondary (Y) radius in schematic units",
+         "type": "number"
+        },
+        "start_angle": {
+         "description": "Start angle in degrees (0 = right, CCW). Default: 0",
+         "type": "number"
+        },
+        "unique_id": {
+         "description": "8-char Altium unique ID; preserved on read-modify-write, auto-generated if omitted",
+         "type": "string"
+        },
+        "x": {
+         "description": "Centre X coordinate",
+         "type": "number"
+        },
+        "y": {
+         "description": "Centre Y coordinate",
+         "type": "number"
+        }
+       },
+       "required": [
+        "x",
+        "y",
+        "radius",
+        "secondary_radius"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "footprints": {
+      "description": "Footprint model references (links to PCB footprints)",
+      "items": {
+       "properties": {
+        "description": {
+         "description": "Model description",
+         "type": "string"
+        },
+        "library_path": {
+         "description": "Optional absolute path to the .PcbLib containing the footprint, written as ModelDatafile0 so Altium resolves/previews the model. Omit to link by name only (requires the library to be installed/in the project).",
+         "type": "string"
+        },
+        "name": {
+         "description": "Footprint name (entity in the PcbLib)",
+         "type": "string"
+        }
+       },
+       "required": [
+        "name"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "images": {
+      "description": "Embedded/linked raster image definitions (RECORD=30). The record metadata round-trips; embedded image bytes are authored via image_data (base64) and stored in the library /Storage stream.",
+      "items": {
+       "properties": {
+        "dimmed": {
+         "description": "Whether the shape is dimmed. Default: false",
+         "type": "boolean"
+        },
+        "disabled": {
+         "description": "Whether the shape is disabled. Default: false",
+         "type": "boolean"
+        },
+        "embed_image": {
+         "description": "Whether the image bytes are embedded (vs a link to file_name). Default: false",
+         "type": "boolean"
+        },
+        "file_name": {
+         "description": "Image file name / embedded key (Altium stores the full source file path for embedded images)",
+         "type": "string"
+        },
+        "fill_color": {
+         "description": "Fill BGR colour (AreaColor). Default: 0",
+         "type": "integer"
+        },
+        "filled": {
+         "description": "Whether the box is filled (IsSolid). Default: false",
+         "type": "boolean"
+        },
+        "graphically_locked": {
+         "description": "Whether the shape is graphically locked. Default: false",
+         "type": "boolean"
+        },
+        "image_data": {
+         "description": "Base64-encoded raw image bytes; stored in the library /Storage stream when embed_image is true",
+         "type": "string"
+        },
+        "is_not_accessible": {
+         "description": "Whether the image is marked not-accessible (Altium tags every shape; default true)",
+         "type": "boolean"
+        },
+        "keep_aspect": {
+         "description": "Whether the image keeps its aspect ratio. Default: false",
+         "type": "boolean"
+        },
+        "line_color": {
+         "description": "Border BGR colour. Default: 0",
+         "type": "integer"
+        },
+        "line_style": {
+         "description": "Border style: 0=Solid, 1=Dashed, 2=Dotted. Default: 0",
+         "type": "integer"
+        },
+        "line_width": {
+         "description": "Border width. Default: 1",
+         "type": "integer"
+        },
+        "owner_part_display_mode": {
+         "description": "Display mode this shape belongs to (0=Normal, 1=first alternate/de-Morgan, ...). Default: 0",
+         "type": "integer"
+        },
+        "owner_part_id": {
+         "description": "Part number (1-based). Default: 1",
+         "type": "integer"
+        },
+        "show_border": {
+         "description": "Whether the border is shown. Default: false",
+         "type": "boolean"
+        },
+        "transparent": {
+         "description": "Whether the fill is transparent. Default: false",
+         "type": "boolean"
+        },
+        "unique_id": {
+         "description": "8-char Altium unique ID; preserved on read-modify-write, auto-generated if omitted",
+         "type": "string"
+        },
+        "x1": {
+         "description": "First corner X (Location.X)",
+         "type": "number"
+        },
+        "x2": {
+         "description": "Second corner X (Corner.X)",
+         "type": "number"
+        },
+        "y1": {
+         "description": "First corner Y (Location.Y)",
+         "type": "number"
+        },
+        "y2": {
+         "description": "Second corner Y (Corner.Y)",
+         "type": "number"
+        }
+       },
+       "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "labels": {
+      "description": "Text label definitions (RECORD=4). For RECORD=3 annotations use 'text'.",
+      "items": {
+       "properties": {
+        "color": {
+         "description": "BGR colour. Default: 0x000080",
+         "type": "integer"
+        },
+        "dimmed": {
+         "description": "Whether the shape is dimmed. Default: false",
+         "type": "boolean"
+        },
+        "disabled": {
+         "description": "Whether the shape is disabled. Default: false",
+         "type": "boolean"
+        },
+        "font_id": {
+         "description": "Font ID. Default: 1",
+         "type": "integer"
+        },
+        "graphically_locked": {
+         "description": "Whether the shape is graphically locked. Default: false",
+         "type": "boolean"
+        },
+        "is_hidden": {
+         "description": "Hidden. Default: false",
+         "type": "boolean"
+        },
+        "is_mirrored": {
+         "description": "Mirrored. Default: false",
+         "type": "boolean"
+        },
+        "justification": {
+         "description": "Alignment. Default: bottom_left",
+         "enum": [
+          "bottom_left",
+          "bottom_center",
+          "bottom_right",
+          "middle_left",
+          "middle_center",
+          "middle_right",
+          "top_left",
+          "top_center",
+          "top_right"
+         ],
+         "type": "string"
+        },
+        "owner_part_display_mode": {
+         "description": "Display mode this shape belongs to (0=Normal, 1=first alternate/de-Morgan, ...). Default: 0",
+         "type": "integer"
+        },
+        "owner_part_id": {
+         "description": "Part number (1-based). Default: 1",
+         "type": "integer"
+        },
+        "rotation": {
+         "description": "Rotation in degrees. Default: 0",
+         "type": "number"
+        },
+        "text": {
+         "description": "Text content",
+         "type": "string"
+        },
+        "unique_id": {
+         "description": "8-char Altium unique ID; preserved on read-modify-write, auto-generated if omitted",
+         "type": "string"
+        },
+        "x": {
+         "description": "X position",
+         "type": "number"
+        },
+        "y": {
+         "description": "Y position",
+         "type": "number"
+        }
+       },
+       "required": [
+        "x",
+        "y",
+        "text"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "lines": {
+      "description": "Line definitions",
+      "items": {
+       "properties": {
+        "color": {
+         "description": "Line BGR colour. Default: 0x000080",
+         "type": "integer"
+        },
+        "dimmed": {
+         "description": "Whether the shape is dimmed. Default: false",
+         "type": "boolean"
+        },
+        "disabled": {
+         "description": "Whether the shape is disabled. Default: false",
+         "type": "boolean"
+        },
+        "graphically_locked": {
+         "description": "Whether the shape is graphically locked. Default: false",
+         "type": "boolean"
+        },
+        "is_not_accessible": {
+         "description": "Whether the line is marked not-accessible (Altium tags every line; default true)",
+         "type": "boolean"
+        },
+        "line_style": {
+         "description": "Line style: 0=Solid, 1=Dashed, 2=Dotted. Default: 0",
+         "type": "integer"
+        },
+        "line_width": {
+         "description": "Line width. Default: 1",
+         "type": "integer"
+        },
+        "owner_part_display_mode": {
+         "description": "Display mode this shape belongs to (0=Normal, 1=first alternate/de-Morgan, ...). Default: 0",
+         "type": "integer"
+        },
+        "owner_part_id": {
+         "description": "Part number (1-based). Default: 1",
+         "type": "integer"
+        },
+        "unique_id": {
+         "description": "8-char Altium unique ID; preserved on read-modify-write, auto-generated if omitted",
+         "type": "string"
+        },
+        "x1": {
+         "description": "Start X coordinate",
+         "type": "number"
+        },
+        "x2": {
+         "description": "End X coordinate",
+         "type": "number"
+        },
+        "y1": {
+         "description": "Start Y coordinate",
+         "type": "number"
+        },
+        "y2": {
+         "description": "End Y coordinate",
+         "type": "number"
+        }
+       },
+       "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "name": {
+      "type": "string"
+     },
+     "parameters": {
+      "description": "Symbol parameters (e.g., Value, Part Number)",
+      "items": {
+       "properties": {
+        "auto_position": {
+         "description": "Whether Altium auto-positions the parameter label relative to the component. Stored inverted on the wire (NotAutoPosition=T) and only when turned off. Default: true",
+         "type": "boolean"
+        },
+        "color": {
+         "description": "BGR colour. Default: 0x800000 (dark blue)",
+         "type": "integer"
+        },
+        "description": {
+         "description": "Parameter description text. Default: empty",
+         "type": "string"
+        },
+        "dimmed": {
+         "description": "Whether the shape is dimmed. Default: false",
+         "type": "boolean"
+        },
+        "disabled": {
+         "description": "Whether the shape is disabled. Default: false",
+         "type": "boolean"
+        },
+        "font_id": {
+         "description": "Font ID. Default: 1",
+         "type": "integer"
+        },
+        "graphically_locked": {
+         "description": "Whether the shape is graphically locked. Default: false",
+         "type": "boolean"
+        },
+        "hidden": {
+         "description": "Whether hidden. Default: false",
+         "type": "boolean"
+        },
+        "hide_name": {
+         "description": "Whether the parameter name is hidden (only the value shown). Default: false",
+         "type": "boolean"
+        },
+        "is_configurable": {
+         "description": "Whether the parameter is variant-configurable. Default: false",
+         "type": "boolean"
+        },
+        "is_mirrored": {
+         "description": "Whether the parameter text is mirrored. Default: false",
+         "type": "boolean"
+        },
+        "is_rule": {
+         "description": "Whether the parameter carries a PCB design-rule directive. Default: false",
+         "type": "boolean"
+        },
+        "is_system_parameter": {
+         "description": "Whether this is a system parameter rather than a user one. Default: false",
+         "type": "boolean"
+        },
+        "justification": {
+         "description": "Text anchor id 0-8 (0=bottom-left, 4=middle-centre, 8=top-right). Default: 0",
+         "type": "integer"
+        },
+        "name": {
+         "description": "Parameter name (e.g., 'Value')",
+         "type": "string"
+        },
+        "orientation": {
+         "description": "Text orientation (0/1/2/3 = 0/90/180/270 degrees). Default: 0",
+         "type": "integer"
+        },
+        "owner_part_display_mode": {
+         "description": "Display mode this shape belongs to (0=Normal, 1=first alternate/de-Morgan, ...). Default: 0",
+         "type": "integer"
+        },
+        "owner_part_id": {
+         "description": "Part number (1-based). Default: 1",
+         "type": "integer"
+        },
+        "param_type": {
+         "description": "Parameter type (0=String, 1=Boolean, 2=Integer, 3=Float). Default: 0",
+         "type": "integer"
+        },
+        "read_only_state": {
+         "description": "Read-only state (0=editable, 1=read-only). Default: 0",
+         "type": "integer"
+        },
+        "show_name": {
+         "description": "Whether the parameter name is shown alongside the value. Default: false",
+         "type": "boolean"
+        },
+        "text_horz_anchor": {
+         "description": "Horizontal text-box anchor, distinct from justification. Default: 0",
+         "type": "integer"
+        },
+        "text_vert_anchor": {
+         "description": "Vertical text-box anchor. Default: 0",
+         "type": "integer"
+        },
+        "unique_id": {
+         "description": "8-char Altium unique ID. Default: auto-generated",
+         "type": "string"
+        },
+        "value": {
+         "description": "Parameter value (e.g., '10k'). Default: '*'",
+         "type": "string"
+        },
+        "x": {
+         "description": "X position. Default: 0",
+         "type": "number"
+        },
+        "y": {
+         "description": "Y position. Default: 0",
+         "type": "number"
+        }
+       },
+       "required": [
+        "name"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "part_count": {
+      "description": "Number of parts for multi-part symbols (e.g., 2 for dual op-amp). Default: 1",
+      "type": "integer"
+     },
+     "part_id_locked": {
+      "description": "Whether the part selection is locked. Default: false",
+      "type": "boolean"
+     },
+     "pies": {
+      "description": "Pie (filled circular sector / wedge) definitions",
+      "items": {
+       "properties": {
+        "dimmed": {
+         "description": "Whether the shape is dimmed. Default: false",
+         "type": "boolean"
+        },
+        "disabled": {
+         "description": "Whether the shape is disabled. Default: false",
+         "type": "boolean"
+        },
+        "end_angle": {
+         "description": "End angle in degrees. Default: 360",
+         "type": "number"
+        },
+        "fill_color": {
+         "description": "Fill BGR colour (maps to AreaColor). Default: 0",
+         "type": "integer"
+        },
+        "filled": {
+         "description": "Whether the pie is filled (IsSolid). Default: true",
+         "type": "boolean"
+        },
+        "graphically_locked": {
+         "description": "Whether the shape is graphically locked. Default: false",
+         "type": "boolean"
+        },
+        "is_not_accessible": {
+         "description": "Whether the pie is marked not-accessible (Altium tags every shape; default true)",
+         "type": "boolean"
+        },
+        "line_color": {
+         "description": "Border BGR colour. Default: 0",
+         "type": "integer"
+        },
+        "line_width": {
+         "description": "Border width. Default: 1",
+         "type": "integer"
+        },
+        "owner_part_display_mode": {
+         "description": "Display mode this shape belongs to (0=Normal, 1=first alternate/de-Morgan, ...). Default: 0",
+         "type": "integer"
+        },
+        "owner_part_id": {
+         "description": "Part number (1-based). Default: 1",
+         "type": "integer"
+        },
+        "radius": {
+         "description": "Radius in schematic units",
+         "type": "number"
+        },
+        "start_angle": {
+         "description": "Start angle in degrees (0 = right, CCW). Default: 0",
+         "type": "number"
+        },
+        "transparent": {
+         "description": "Whether the fill is transparent. Default: false",
+         "type": "boolean"
+        },
+        "unique_id": {
+         "description": "8-char Altium unique ID; preserved on read-modify-write, auto-generated if omitted",
+         "type": "string"
+        },
+        "x": {
+         "description": "Centre X coordinate",
+         "type": "number"
+        },
+        "y": {
+         "description": "Centre Y coordinate",
+         "type": "number"
+        }
+       },
+       "required": [
+        "x",
+        "y",
+        "radius"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "pins": {
+      "items": {
+       "properties": {
+        "colour": {
+         "description": "Pin colour (BGR integer). Default: 0",
+         "type": "integer"
+        },
+        "default_value": {
+         "description": "Pin default value. Default: empty",
+         "type": "string"
+        },
+        "description": {
+         "description": "Pin description. Default: empty",
+         "type": "string"
+        },
+        "designator": {
+         "type": "string"
+        },
+        "electrical_type": {
+         "description": "Pin electrical type. 'tristate' is accepted as an alias for 'hi_z'. Default: passive",
+         "enum": [
+          "input",
+          "output",
+          "bidirectional",
+          "passive",
+          "power",
+          "open_collector",
+          "open_emitter",
+          "hi_z",
+          "tristate"
+         ],
+         "type": "string"
+        },
+        "frac": {
+         "description": "Fractional pin coordinates for off-grid pins, in 1/100000 schematic-unit steps. Non-zero writes a PinFrac auxiliary stream; omit for on-grid pins.",
+         "properties": {
+          "length": {
+           "type": "integer"
+          },
+          "x": {
+           "type": "integer"
+          },
+          "y": {
+           "type": "integer"
+          }
+         },
+         "type": "object"
+        },
+        "graphically_locked": {
+         "description": "Whether the pin is graphically locked. Default: false",
+         "type": "boolean"
+        },
+        "hidden": {
+         "description": "Whether the pin is hidden. Default: false",
+         "type": "boolean"
+        },
+        "length": {
+         "description": "Pin length in schematic units (10 = 1 grid). Drawn from (x,y) outward in the 'orientation' direction.",
+         "type": "number"
+        },
+        "name": {
+         "type": "string"
+        },
+        "orientation": {
+         "description": "Direction the pin POINTS, away from the body \u2014 NOT which side it sits on. A pin on the LEFT side uses 'left' (tip at x-length); a RIGHT-side pin uses 'right' (tip at x+length); 'up'/'down' for top/bottom pins. Put each pin's (x,y) on the matching body-rectangle edge so it attaches flush, e.g. left pin {x:-50,y:20,length:30,orientation:'left'} with rectangle x1=-50, and the matching right pin {x:50,y:20,length:30,orientation:'right'} with x2=50. For TOP/BOTTOM pins, (x,y) sits on the body's top/bottom edge and the pin points outward (away from the body centre): a top-side pin uses 'up' (tip at y+length, above the body), a bottom-side pin uses 'down' (tip at y-length, below) \u2014 e.g. a vertical 2-pin part with the body near y=0: top pin {x:0,y:10,length:30,orientation:'up'} (tip at y=40), bottom pin {x:0,y:-10,length:30,orientation:'down'} (tip at y=-40).",
+         "enum": [
+          "left",
+          "right",
+          "up",
+          "down"
+         ],
+         "type": "string"
+        },
+        "owner_part_display_mode": {
+         "description": "Pin's alternate-view (display-mode) index in the binary pin record. Default: 0",
+         "type": "integer"
+        },
+        "owner_part_id": {
+         "description": "Part number this pin belongs to (1-based). Default: 1",
+         "type": "integer"
+        },
+        "part_and_sequence": {
+         "description": "Pin part-and-sequence swap id. Default: '|&|'",
+         "type": "string"
+        },
+        "show_designator": {
+         "description": "Whether to show the pin designator. Default: true",
+         "type": "boolean"
+        },
+        "show_name": {
+         "description": "Whether to show the pin name. Default: true",
+         "type": "boolean"
+        },
+        "swap_id_group": {
+         "description": "Pin swap-id group, for pin-swap. Default: empty",
+         "type": "string"
+        },
+        "symbol_inner_edge": {
+         "description": "Decoration on the INNER edge (nearest the body), e.g. 'dot' (inversion bubble), 'clock'. Default: none",
+         "type": "string"
+        },
+        "symbol_inside": {
+         "description": "Decoration drawn inside the pin line, e.g. 'postponed_output', 'open_collector'. Default: none",
+         "type": "string"
+        },
+        "symbol_line_width": {
+         "description": "Pin symbol line-width index. Non-zero writes a PinSymbolLineWidth auxiliary stream; 0 (default) writes none.",
+         "type": "integer"
+        },
+        "symbol_outer_edge": {
+         "description": "Decoration on the OUTER edge (furthest from the body), e.g. 'dot', 'clock'. Default: none",
+         "type": "string"
+        },
+        "symbol_outside": {
+         "description": "Decoration drawn outside the pin line, e.g. 'right_left_signal_flow', 'analog_signal_in'. Default: none",
+         "type": "string"
+        },
+        "x": {
+         "description": "Pin's body-attach (INNER) end, in whole schematic units (10 units = 1 grid square). This is the end that touches the symbol body, NOT the connection tip. The pin is drawn from (x,y) extending 'length' units in the 'orientation' direction; the connection tip is at the far end. Pins are integer-positioned; for an off-grid pin supply the sub-unit remainder via 'frac' (a fractional value here is truncated).",
+         "type": "integer"
+        },
+        "y": {
+         "description": "Y of the pin's body-attach (inner) end, in whole schematic units. See 'x' (use 'frac' for off-grid).",
+         "type": "integer"
+        }
+       },
+       "required": [
+        "designator",
+        "name",
+        "x",
+        "y",
+        "length",
+        "orientation"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "polygons": {
+      "description": "Filled polygon definitions (>= 3 vertices)",
+      "items": {
+       "properties": {
+        "dimmed": {
+         "description": "Whether the shape is dimmed. Default: false",
+         "type": "boolean"
+        },
+        "disabled": {
+         "description": "Whether the shape is disabled. Default: false",
+         "type": "boolean"
+        },
+        "fill_color": {
+         "description": "Fill BGR colour. Default: 0xB0FFFF (Altium light yellow)",
+         "type": "integer"
+        },
+        "filled": {
+         "description": "Whether filled. Default: true",
+         "type": "boolean"
+        },
+        "graphically_locked": {
+         "description": "Whether the shape is graphically locked. Default: false",
+         "type": "boolean"
+        },
+        "is_not_accessible": {
+         "description": "Whether the polygon is marked not-accessible (Altium tags every polygon; default true)",
+         "type": "boolean"
+        },
+        "line_color": {
+         "description": "Border BGR colour. Default: 0x000080",
+         "type": "integer"
+        },
+        "line_style": {
+         "description": "Border style: 0=Solid, 1=Dashed, 2=Dotted. Default: 0",
+         "type": "integer"
+        },
+        "line_width": {
+         "description": "Border width. Default: 1",
+         "type": "integer"
+        },
+        "owner_part_display_mode": {
+         "description": "Display mode this shape belongs to (0=Normal, 1=first alternate/de-Morgan, ...). Default: 0",
+         "type": "integer"
+        },
+        "owner_part_id": {
+         "description": "Part number (1-based). Default: 1",
+         "type": "integer"
+        },
+        "points": {
+         "description": "Vertices (>= 3) as objects with x/y in schematic units",
+         "items": {
+          "properties": {
+           "x": {
+            "type": "number"
+           },
+           "y": {
+            "type": "number"
+           }
+          },
+          "required": [
+           "x",
+           "y"
+          ],
+          "type": "object"
+         },
+         "type": "array"
+        },
+        "transparent": {
+         "description": "Whether the fill is transparent (vs opaque). Default: false",
+         "type": "boolean"
+        },
+        "unique_id": {
+         "description": "8-char Altium unique ID; preserved on read-modify-write, auto-generated if omitted",
+         "type": "string"
+        }
+       },
+       "required": [
+        "points"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "polylines": {
+      "description": "Polyline definitions (>= 2 connected points). Optional endpoint shapes turn a polyline into an arrow.",
+      "items": {
+       "properties": {
+        "color": {
+         "description": "Line BGR colour. Default: 0x000080",
+         "type": "integer"
+        },
+        "dimmed": {
+         "description": "Whether the shape is dimmed. Default: false",
+         "type": "boolean"
+        },
+        "disabled": {
+         "description": "Whether the shape is disabled. Default: false",
+         "type": "boolean"
+        },
+        "end_line_shape": {
+         "description": "End endpoint (arrowhead) shape id. Default: 0 (none)",
+         "type": "integer"
+        },
+        "graphically_locked": {
+         "description": "Whether the shape is graphically locked. Default: false",
+         "type": "boolean"
+        },
+        "is_not_accessible": {
+         "description": "Whether the polyline is marked not-accessible (Altium tags every polyline; default true)",
+         "type": "boolean"
+        },
+        "line_shape_size": {
+         "description": "Size of the endpoint shapes. Default: 0",
+         "type": "integer"
+        },
+        "line_style": {
+         "description": "Line style: 0=Solid, 1=Dashed, 2=Dotted. Default: 0",
+         "type": "integer"
+        },
+        "line_width": {
+         "description": "Line width. Default: 1",
+         "type": "integer"
+        },
+        "owner_part_display_mode": {
+         "description": "Display mode this shape belongs to (0=Normal, 1=first alternate/de-Morgan, ...). Default: 0",
+         "type": "integer"
+        },
+        "owner_part_id": {
+         "description": "Part number (1-based). Default: 1",
+         "type": "integer"
+        },
+        "points": {
+         "description": "Points (>= 2) as objects with x/y in schematic units. 'vertices' is accepted as an alias.",
+         "items": {
+          "properties": {
+           "x": {
+            "type": "number"
+           },
+           "y": {
+            "type": "number"
+           }
+          },
+          "required": [
+           "x",
+           "y"
+          ],
+          "type": "object"
+         },
+         "type": "array"
+        },
+        "start_line_shape": {
+         "description": "Start endpoint (arrowhead) shape id. Default: 0 (none)",
+         "type": "integer"
+        },
+        "transparent": {
+         "description": "Whether the polyline is transparent. Default: false",
+         "type": "boolean"
+        },
+        "unique_id": {
+         "description": "8-char Altium unique ID; preserved on read-modify-write, auto-generated if omitted",
+         "type": "string"
+        }
+       },
+       "required": [
+        "points"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "rectangles": {
+      "description": "Rectangle definitions",
+      "items": {
+       "properties": {
+        "dimmed": {
+         "description": "Whether the shape is dimmed. Default: false",
+         "type": "boolean"
+        },
+        "disabled": {
+         "description": "Whether the shape is disabled. Default: false",
+         "type": "boolean"
+        },
+        "fill_color": {
+         "description": "Fill BGR colour. Default: 0xB0FFFF (Altium light yellow)",
+         "type": "integer"
+        },
+        "filled": {
+         "description": "Whether filled. Default: true",
+         "type": "boolean"
+        },
+        "graphically_locked": {
+         "description": "Whether the shape is graphically locked. Default: false",
+         "type": "boolean"
+        },
+        "line_color": {
+         "description": "Border BGR colour. Default: 0x000080",
+         "type": "integer"
+        },
+        "line_style": {
+         "description": "Border line style: 0=Solid, 1=Dashed, 2=Dotted. Default: 0",
+         "type": "integer"
+        },
+        "line_width": {
+         "description": "Border width. Default: 1",
+         "type": "integer"
+        },
+        "owner_part_display_mode": {
+         "description": "Display mode this shape belongs to (0=Normal, 1=first alternate/de-Morgan, ...). Default: 0",
+         "type": "integer"
+        },
+        "owner_part_id": {
+         "description": "Part number (1-based). Default: 1",
+         "type": "integer"
+        },
+        "transparent": {
+         "description": "Whether the fill is transparent. Default: false",
+         "type": "boolean"
+        },
+        "unique_id": {
+         "description": "8-char Altium unique ID; preserved on read-modify-write, auto-generated if omitted",
+         "type": "string"
+        },
+        "x1": {
+         "description": "Left X coordinate",
+         "type": "number"
+        },
+        "x2": {
+         "description": "Right X coordinate",
+         "type": "number"
+        },
+        "y1": {
+         "description": "Bottom Y coordinate",
+         "type": "number"
+        },
+        "y2": {
+         "description": "Top Y coordinate",
+         "type": "number"
+        }
+       },
+       "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "round_rects": {
+      "description": "Rounded-rectangle definitions",
+      "items": {
+       "properties": {
+        "corner_x_radius": {
+         "description": "Horizontal corner radius. Default: 0",
+         "type": "number"
+        },
+        "corner_y_radius": {
+         "description": "Vertical corner radius. Default: 0",
+         "type": "number"
+        },
+        "dimmed": {
+         "description": "Whether the shape is dimmed. Default: false",
+         "type": "boolean"
+        },
+        "disabled": {
+         "description": "Whether the shape is disabled. Default: false",
+         "type": "boolean"
+        },
+        "fill_color": {
+         "description": "Fill BGR colour. Default: 0xB0FFFF (Altium light yellow)",
+         "type": "integer"
+        },
+        "filled": {
+         "description": "Whether filled. Default: true",
+         "type": "boolean"
+        },
+        "graphically_locked": {
+         "description": "Whether the shape is graphically locked. Default: false",
+         "type": "boolean"
+        },
+        "line_color": {
+         "description": "Border BGR colour. Default: 0x000080",
+         "type": "integer"
+        },
+        "line_style": {
+         "description": "Border line style: 0=Solid, 1=Dashed, 2=Dotted. Default: 0",
+         "type": "integer"
+        },
+        "line_width": {
+         "description": "Border width. Default: 1",
+         "type": "integer"
+        },
+        "owner_part_display_mode": {
+         "description": "Display mode this shape belongs to (0=Normal, 1=first alternate/de-Morgan, ...). Default: 0",
+         "type": "integer"
+        },
+        "owner_part_id": {
+         "description": "Part number (1-based). Default: 1",
+         "type": "integer"
+        },
+        "transparent": {
+         "description": "Whether the fill is transparent. Default: false",
+         "type": "boolean"
+        },
+        "unique_id": {
+         "description": "8-char Altium unique ID; preserved on read-modify-write, auto-generated if omitted",
+         "type": "string"
+        },
+        "x1": {
+         "description": "Left X coordinate",
+         "type": "number"
+        },
+        "x2": {
+         "description": "Right X coordinate",
+         "type": "number"
+        },
+        "y1": {
+         "description": "Bottom Y coordinate",
+         "type": "number"
+        },
+        "y2": {
+         "description": "Top Y coordinate",
+         "type": "number"
+        }
+       },
+       "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2",
+        "corner_x_radius",
+        "corner_y_radius"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "source_library_name": {
+      "description": "Source library name recorded in the symbol header. Default: '*'",
+      "type": "string"
+     },
+     "target_file_name": {
+      "description": "Target file name recorded in the symbol header. Default: '*'",
+      "type": "string"
+     },
+     "text": {
+      "description": "Text/label annotations",
+      "items": {
+       "properties": {
+        "color": {
+         "description": "BGR colour. Default: 0x000080",
+         "type": "integer"
+        },
+        "font_id": {
+         "description": "Font ID. Default: 1",
+         "type": "integer"
+        },
+        "is_hidden": {
+         "description": "Hidden. Default: false",
+         "type": "boolean"
+        },
+        "is_mirrored": {
+         "description": "Mirrored. Default: false",
+         "type": "boolean"
+        },
+        "justification": {
+         "description": "Alignment. Default: bottom_left",
+         "enum": [
+          "bottom_left",
+          "bottom_center",
+          "bottom_right",
+          "middle_left",
+          "middle_center",
+          "middle_right",
+          "top_left",
+          "top_center",
+          "top_right"
+         ],
+         "type": "string"
+        },
+        "owner_part_id": {
+         "description": "Part number (1-based). Default: 1",
+         "type": "integer"
+        },
+        "rotation": {
+         "description": "Rotation in degrees. Default: 0",
+         "type": "number"
+        },
+        "text": {
+         "description": "Text content",
+         "type": "string"
+        },
+        "unique_id": {
+         "description": "8-char Altium unique ID; preserved on read-modify-write, auto-generated if omitted",
+         "type": "string"
+        },
+        "x": {
+         "description": "X position",
+         "type": "number"
+        },
+        "y": {
+         "description": "Y position",
+         "type": "number"
+        }
+       },
+       "required": [
+        "x",
+        "y",
+        "text"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "text_frames": {
+      "description": "Text frame definitions (RECORD=28): a bordered multi-line text box, distinct from labels/text (frame rectangle, word-wrap, alignment, clip-to-rect).",
+      "items": {
+       "properties": {
+        "alignment": {
+         "description": "Text alignment: 0=left, 1=centre, 2=right. Default: 1 (centre)",
+         "type": "integer"
+        },
+        "area_color": {
+         "description": "Fill BGR colour (AreaColor). Default: 16777215 (white)",
+         "type": "integer"
+        },
+        "clip_to_rect": {
+         "description": "Whether the text is clipped to the frame rectangle. Default: true",
+         "type": "boolean"
+        },
+        "color": {
+         "description": "Border BGR colour. Default: 0",
+         "type": "integer"
+        },
+        "dimmed": {
+         "description": "Whether the shape is dimmed. Default: false",
+         "type": "boolean"
+        },
+        "disabled": {
+         "description": "Whether the shape is disabled. Default: false",
+         "type": "boolean"
+        },
+        "font_id": {
+         "description": "Font ID (1-based index into library fonts). Default: 1",
+         "type": "integer"
+        },
+        "graphically_locked": {
+         "description": "Whether the shape is graphically locked. Default: false",
+         "type": "boolean"
+        },
+        "is_not_accessible": {
+         "description": "Whether the frame is marked not-accessible (Altium tags every shape; default true)",
+         "type": "boolean"
+        },
+        "is_solid": {
+         "description": "Whether the frame is filled (IsSolid). Default: false",
+         "type": "boolean"
+        },
+        "line_style": {
+         "description": "Border style: 0=Solid, 1=Dashed, 2=Dotted. Default: 0",
+         "type": "integer"
+        },
+        "line_width": {
+         "description": "Border width. Default: 0",
+         "type": "integer"
+        },
+        "orientation": {
+         "description": "Text orientation: 0/1/2/3 = 0/90/180/270 degrees. Default: 0",
+         "type": "integer"
+        },
+        "owner_part_display_mode": {
+         "description": "Display mode this shape belongs to (0=Normal, 1=first alternate/de-Morgan, ...). Default: 0",
+         "type": "integer"
+        },
+        "owner_part_id": {
+         "description": "Part number (1-based). Default: 1",
+         "type": "integer"
+        },
+        "show_border": {
+         "description": "Whether the border is shown. Default: true",
+         "type": "boolean"
+        },
+        "text": {
+         "description": "Text content of the frame",
+         "type": "string"
+        },
+        "text_color": {
+         "description": "Text BGR colour. Default: 0",
+         "type": "integer"
+        },
+        "text_margin": {
+         "description": "Margin between the frame border and the text, in schematic units. Default: 0.00005 (Altium's from-scratch default)",
+         "type": "number"
+        },
+        "transparent": {
+         "description": "Whether the fill is transparent. Default: false",
+         "type": "boolean"
+        },
+        "unique_id": {
+         "description": "8-char Altium unique ID; preserved on read-modify-write, auto-generated if omitted",
+         "type": "string"
+        },
+        "word_wrap": {
+         "description": "Whether the text word-wraps inside the frame. Default: true",
+         "type": "boolean"
+        },
+        "x1": {
+         "description": "First corner X (Location.X)",
+         "type": "number"
+        },
+        "x2": {
+         "description": "Second corner X (Corner.X)",
+         "type": "number"
+        },
+        "y1": {
+         "description": "First corner Y (Location.Y)",
+         "type": "number"
+        },
+        "y2": {
+         "description": "Second corner Y (Corner.Y)",
+         "type": "number"
+        }
+       },
+       "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2",
+        "text"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     }
+    },
+    "required": [
+     "name",
+     "pins"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  }
+ },
+ "required": [
+  "filepath",
+  "symbols"
+ ],
+ "type": "object"
+}

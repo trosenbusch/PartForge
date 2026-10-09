@@ -1,0 +1,61 @@
+{
+ "properties": {
+  "component_name": {
+   "description": "Name of the symbol to manage parameters for",
+   "type": "string"
+  },
+  "filepath": {
+   "description": "Path to the Altium SchLib file",
+   "type": "string"
+  },
+  "hidden": {
+   "description": "Whether the parameter is hidden (optional for set, add)",
+   "type": "boolean"
+  },
+  "operation": {
+   "description": "Operation to perform: list (all parameters), get (single parameter), set (update value), add (new parameter), delete (remove parameter)",
+   "enum": [
+    "list",
+    "get",
+    "set",
+    "add",
+    "delete"
+   ],
+   "type": "string"
+  },
+  "param_type": {
+   "description": "Parameter type (0=String, 1=Boolean, 2=Integer, 3=Float) (optional for set, add). Default: 0",
+   "type": "integer"
+  },
+  "parameter_name": {
+   "description": "Name of the parameter (required for get, set, add, delete)",
+   "type": "string"
+  },
+  "read_only_state": {
+   "description": "Read-only state (0=editable, 1=read-only) (optional for set, add). Default: 0",
+   "type": "integer"
+  },
+  "unique_id": {
+   "description": "8-char Altium unique ID (optional for set, add). Default: auto-generated",
+   "type": "string"
+  },
+  "value": {
+   "description": "Parameter value (required for set, add)",
+   "type": "string"
+  },
+  "x": {
+   "description": "X position in schematic units (optional for add)",
+   "type": "integer"
+  },
+  "y": {
+   "description": "Y position in schematic units (optional for add)",
+   "type": "integer"
+  }
+ },
+ "required": [
+  "filepath",
+  "component_name",
+  "operation"
+ ],
+ "type": "object"
+}

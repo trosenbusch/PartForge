@@ -1,0 +1,1103 @@
+{
+ "properties": {
+  "append": {
+   "description": "If true, append to existing file; if false, create new file",
+   "type": "boolean"
+  },
+  "auto_3d_body": {
+   "description": "If true, footprints with pads but no STEP model and no component body get a placeholder extruded 3D body (1.0 mm tall, flagged assumed_height). Default false: nothing is added unless you ask, since many footprints (fiducials, test points, mounting holes) legitimately have no body. Prefer supplying real heights via component_bodies.",
+   "type": "boolean"
+  },
+  "filepath": {
+   "description": "Path to the .PcbLib file to create/modify",
+   "type": "string"
+  },
+  "footprints": {
+   "description": "Array of footprint definitions",
+   "items": {
+    "properties": {
+     "arcs": {
+      "description": "Arc definitions",
+      "items": {
+       "properties": {
+        "component_index": {
+         "description": "Component index into the board component list (common header; -1 = free primitive). Normally omitted; preserved on a read-modify-write. Default: -1",
+         "type": "integer"
+        },
+        "end_angle": {
+         "description": "End angle in degrees",
+         "type": "number"
+        },
+        "flags": {
+         "description": "Primitive flags (optional). Accepts the name string read_pcblib emits (e.g. \"LOCKED\" or \"LOCKED | KEEPOUT\") or a raw bitmask integer (1=locked, 2=polygon, 4=keepout, 8=tenting-top, 16=tenting-bottom, 32=testpoint-top, 64=testpoint-bottom). Default: none",
+         "type": [
+          "string",
+          "integer"
+         ]
+        },
+        "keepout_restrictions": {
+         "description": "Keepout restriction bitmask (optional; defaults to 0)",
+         "type": "integer"
+        },
+        "layer": {
+         "description": "Layer name: Top Overlay, Top Assembly, Mechanical 1, etc.",
+         "type": "string"
+        },
+        "net_index": {
+         "description": "Net index into the board net list (common header, 0-65534; 65535 = no net). Normally omitted for library footprints; preserved on a read-modify-write. Default: 65535",
+         "type": "integer"
+        },
+        "polygon_index": {
+         "description": "Polygon index (common header; 65535 = none). Normally omitted; preserved on a read-modify-write. Default: 65535",
+         "type": "integer"
+        },
+        "radius": {
+         "type": "number"
+        },
+        "solder_mask_expansion": {
+         "description": "Solder mask expansion override in mm (optional; omit to use the rule default)",
+         "type": "number"
+        },
+        "start_angle": {
+         "description": "Start angle in degrees",
+         "type": "number"
+        },
+        "unique_id": {
+         "description": "8-char Altium unique ID; preserved on read-modify-write, auto-generated if omitted",
+         "type": "string"
+        },
+        "width": {
+         "description": "Line width in mm",
+         "type": "number"
+        },
+        "x": {
+         "description": "Centre X",
+         "type": "number"
+        },
+        "y": {
+         "description": "Centre Y",
+         "type": "number"
+        }
+       },
+       "required": [
+        "x",
+        "y",
+        "radius",
+        "start_angle",
+        "end_angle",
+        "width",
+        "layer"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "component_bodies": {
+      "description": "Generic extruded 3D bodies (no STEP file). Each is an extruded shape defined by an outline + heights, useful for giving parts a 3D height when no STEP model is available.",
+      "items": {
+       "properties": {
+        "additional_parameters": {
+         "description": "Unmodelled body parameter keys captured verbatim on read \u2014 anything the block carries that this tool has no typed field for (e.g. keys a newer Altium version writes). Each entry is a [key, value] string pair. Round-tripped so a read-modify-write does not drop keys the tool does not model. Normally omitted; supply only the pairs read_pcblib returned.",
+         "items": {
+          "items": {
+           "type": "string"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "type": "array"
+         },
+         "type": "array"
+        },
+        "body_color_3d": {
+         "description": "3D body colour as decimal RGB (Altium BODYCOLOR3D). Default: 8421504 (0x808080, grey)",
+         "type": "integer"
+        },
+        "body_opacity_3d": {
+         "description": "3D body opacity, 0.0-1.0 (Altium BODYOPACITY3D). Default: 1.0",
+         "type": "number"
+        },
+        "body_projection": {
+         "description": "Altium BODYPROJECTION (board side). Default: 0",
+         "type": "integer"
+        },
+        "cavity_height": {
+         "description": "Cavity depth in mm for a body embedded into a board cavity. Default: 0",
+         "type": "number"
+        },
+        "component_index": {
+         "description": "Component index into the board component list (common header; -1 = free primitive). Normally omitted; preserved on a read-modify-write. Default: -1",
+         "type": "integer"
+        },
+        "embedded": {
+         "description": "Whether the model is embedded in the library (Altium MODEL.EMBED). Default: false",
+         "type": "boolean"
+        },
+        "is_shape_based": {
+         "description": "Altium ISSHAPEBASED (shape-based vs. model-based body). Default: false",
+         "type": "boolean"
+        },
+        "kind": {
+         "description": "Altium KIND (0=extruded, etc.). Default: 0",
+         "type": "integer"
+        },
+        "layer": {
+         "description": "Body layer: 'Top 3D Body' (default) or 'Bottom 3D Body'",
+         "type": "string"
+        },
+        "model_2d_rotation": {
+         "description": "2D placement rotation in degrees (Altium MODEL.2D.ROTATION). Default: 0",
+         "type": "number"
+        },
+        "model_2d_x": {
+         "description": "Model offset from the body origin in the 2D plane, X in mm (Altium MODEL.2D.X). Default: 0",
+         "type": "number"
+        },
+        "model_2d_y": {
+         "description": "Model offset in the 2D plane, Y in mm (Altium MODEL.2D.Y). Default: 0",
+         "type": "number"
+        },
+        "model_checksum": {
+         "description": "Altium MODEL.CHECKSUM; normally omitted (defaults to 0). Preserved verbatim on a read-modify-write round-trip.",
+         "type": "integer"
+        },
+        "model_id": {
+         "description": "Model GUID referencing an embedded model (Altium MODELID). Default: \"\" (none)",
+         "type": "string"
+        },
+        "model_name": {
+         "description": "Model filename or external path (Altium MODEL.NAME). Default: \"\" (none)",
+         "type": "string"
+        },
+        "name": {
+         "description": "Altium NAME. Default: \" \" (a single space, as template-default bodies emit).",
+         "type": "string"
+        },
+        "net_index": {
+         "description": "Net index into the board net list (common header, 0-65534; 65535 = no net). Normally omitted for library footprints; preserved on a read-modify-write. Default: 65535",
+         "type": "integer"
+        },
+        "outline": {
+         "description": "Optional 2D outline polygon as {x,y} vertices in mm. If omitted, a bounding box is auto-generated from the footprint pads.",
+         "items": {
+          "properties": {
+           "x": {
+            "type": "number"
+           },
+           "y": {
+            "type": "number"
+           }
+          },
+          "required": [
+           "x",
+           "y"
+          ],
+          "type": "object"
+         },
+         "type": "array"
+        },
+        "overall_height": {
+         "description": "Total body height above the board, in mm (top of extrusion)",
+         "type": "number"
+        },
+        "polygon_index": {
+         "description": "Polygon index (common header; 65535 = none). Normally omitted; preserved on a read-modify-write. Default: 65535",
+         "type": "integer"
+        },
+        "rotation_x": {
+         "type": "number"
+        },
+        "rotation_y": {
+         "type": "number"
+        },
+        "rotation_z": {
+         "type": "number"
+        },
+        "standoff_height": {
+         "description": "Standoff from the board to the bottom of the body, in mm. Default: 0",
+         "type": "number"
+        },
+        "sub_poly_index": {
+         "description": "Altium SUBPOLYINDEX; -1 when not a polygon sub-shape. Default: -1",
+         "type": "integer"
+        },
+        "union_index": {
+         "description": "Altium UNIONINDEX for grouped primitives. Default: 0",
+         "type": "integer"
+        },
+        "unique_id": {
+         "description": "8-char Altium unique ID; preserved on read-modify-write, auto-generated if omitted",
+         "type": "string"
+        },
+        "z_offset": {
+         "description": "Z offset in mm. Default: 0",
+         "type": "number"
+        }
+       },
+       "required": [
+        "overall_height"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "description": {
+      "description": "Footprint description",
+      "type": "string"
+     },
+     "fills": {
+      "description": "Filled rectangle definitions (solid copper/keepout fill defined by two opposite corners).",
+      "items": {
+       "properties": {
+        "component_index": {
+         "description": "Component index into the board component list (common header; -1 = free primitive). Normally omitted; preserved on a read-modify-write. Default: -1",
+         "type": "integer"
+        },
+        "flags": {
+         "description": "Primitive flags (optional). Accepts the name string read_pcblib emits (e.g. \"LOCKED\" or \"LOCKED | KEEPOUT\") or a raw bitmask integer (1=locked, 2=polygon, 4=keepout, 8=tenting-top, 16=tenting-bottom, 32=testpoint-top, 64=testpoint-bottom). Default: none",
+         "type": [
+          "string",
+          "integer"
+         ]
+        },
+        "keepout_restrictions": {
+         "description": "Keepout restriction bitmask (optional; defaults to 0)",
+         "type": "integer"
+        },
+        "layer": {
+         "description": "Layer name (default Top Layer): Top Layer, Bottom Layer, Top Overlay, Mechanical 1, etc.",
+         "type": "string"
+        },
+        "net_index": {
+         "description": "Net index into the board net list (common header, 0-65534; 65535 = no net). Normally omitted for library footprints; preserved on a read-modify-write. Default: 65535",
+         "type": "integer"
+        },
+        "polygon_index": {
+         "description": "Polygon index (common header; 65535 = none). Normally omitted; preserved on a read-modify-write. Default: 65535",
+         "type": "integer"
+        },
+        "rotation": {
+         "description": "Rotation in degrees. Default: 0",
+         "type": "number"
+        },
+        "solder_mask_expansion": {
+         "description": "Solder mask expansion override in mm (optional; omit to use the rule default)",
+         "type": "number"
+        },
+        "unique_id": {
+         "description": "8-char Altium unique ID; preserved on read-modify-write, auto-generated if omitted",
+         "type": "string"
+        },
+        "x1": {
+         "description": "First corner X in mm",
+         "type": "number"
+        },
+        "x2": {
+         "description": "Second corner X in mm",
+         "type": "number"
+        },
+        "y1": {
+         "description": "First corner Y in mm",
+         "type": "number"
+        },
+        "y2": {
+         "description": "Second corner Y in mm",
+         "type": "number"
+        }
+       },
+       "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "model_3d": {
+      "description": "Alternative spelling of the same 3D-model reference, matching read_pcblib's output shape so a read result replays into write_pcblib unchanged. Ignored when 'step_model' is also given; null is accepted and ignored.",
+      "properties": {
+       "filepath": {
+        "description": "Path to a .step file (embedded at save when it exists on disk) or a bare model name (kept as a reference)",
+        "type": "string"
+       },
+       "rotation": {
+        "description": "Z rotation in degrees",
+        "type": "number"
+       },
+       "x_offset": {
+        "type": "number"
+       },
+       "y_offset": {
+        "type": "number"
+       },
+       "z_offset": {
+        "type": "number"
+       }
+      },
+      "type": [
+       "object",
+       "null"
+      ]
+     },
+     "name": {
+      "description": "Footprint name (e.g., 'RESC1608X55N')",
+      "type": "string"
+     },
+     "pads": {
+      "description": "Pad definitions",
+      "items": {
+       "properties": {
+        "component_index": {
+         "description": "Component index into the board component list (common header; -1 = free primitive). Normally omitted; preserved on a read-modify-write. Default: -1",
+         "type": "integer"
+        },
+        "corner_radius_percent": {
+         "description": "Rounded-rectangle corner radius as a percentage of the shorter side (0-100). Default: 0",
+         "type": "integer"
+        },
+        "designator": {
+         "type": "string"
+        },
+        "flags": {
+         "description": "Primitive flags (optional). Accepts the name string read_pcblib emits (e.g. \"LOCKED\" or \"LOCKED | KEEPOUT\") or a raw bitmask integer (1=locked, 2=polygon, 4=keepout, 8=tenting-top, 16=tenting-bottom, 32=testpoint-top, 64=testpoint-bottom). Default: none",
+         "type": [
+          "string",
+          "integer"
+         ]
+        },
+        "height": {
+         "description": "Pad height in mm",
+         "type": "number"
+        },
+        "hole_negative_tolerance": {
+         "description": "Negative drill tolerance in mm (optional; omit to leave unset)",
+         "type": "number"
+        },
+        "hole_positive_tolerance": {
+         "description": "Positive drill tolerance in mm (optional; omit to leave unset)",
+         "type": "number"
+        },
+        "hole_rotation": {
+         "description": "Hole rotation in degrees (rotates a slot hole). Default: 0",
+         "type": "number"
+        },
+        "hole_shape": {
+         "description": "Drill hole shape. Default: round. Use slot for oblong holes (set hole_slot_length)",
+         "enum": [
+          "round",
+          "square",
+          "slot"
+         ],
+         "type": "string"
+        },
+        "hole_size": {
+         "description": "Hole diameter for through-hole pads (mm)",
+         "type": "number"
+        },
+        "hole_slot_length": {
+         "description": "Slot length in mm for a slot hole (hole_shape=slot). Default: 0",
+         "type": "number"
+        },
+        "identity_guid": {
+         "description": "Per-pad identity GUID (braced string, e.g. \"{A5172B29-...}\"); preserved verbatim on read-modify-write, freshly generated if omitted",
+         "type": "string"
+        },
+        "identity_guid_b": {
+         "description": "Pad-stack/footprint-scoped identity GUID (braced string); preserved verbatim on read-modify-write, freshly generated if omitted",
+         "type": "string"
+        },
+        "is_plated": {
+         "description": "Whether the hole is plated. Altium stores this for every pad (SMD included). Default: true",
+         "type": "boolean"
+        },
+        "jumper_id": {
+         "description": "Jumper group id. Pads sharing a non-zero id are linked as a jumper / 0-ohm net. Default: 0",
+         "type": "integer"
+        },
+        "layer": {
+         "description": "Layer name: Top Layer, Bottom Layer, Multi-Layer (default for SMD)",
+         "type": "string"
+        },
+        "net_index": {
+         "description": "Net index into the board net list (common header, 0-65534; 65535 = no net). Normally omitted for library footprints; preserved on a read-modify-write. Default: 65535",
+         "type": "integer"
+        },
+        "paste_mask_expansion": {
+         "description": "Paste (stencil) mask expansion in mm (optional; omit to use the rule default)",
+         "type": "number"
+        },
+        "paste_mask_expansion_mode": {
+         "description": "Paste mask expansion mode. 'none' (the default) leaves the cached value stale so Altium takes the expansion from the design rule; 'from_rule' tells Altium the stored value is a rule result to honour as-is; 'manual' uses the stored value as hand-specified.",
+         "enum": [
+          "none",
+          "from_rule",
+          "manual"
+         ],
+         "type": "string"
+        },
+        "per_layer_corner_radii": {
+         "description": "Per-layer corner radius as a percentage (0-100), for rounded-rectangle layers.",
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        "per_layer_offsets": {
+         "description": "Per-layer pad offsets in mm from the pad centre.",
+         "items": {
+          "properties": {
+           "x": {
+            "type": "number"
+           },
+           "y": {
+            "type": "number"
+           }
+          },
+          "required": [
+           "x",
+           "y"
+          ],
+          "type": "object"
+         },
+         "type": "array"
+        },
+        "per_layer_shapes": {
+         "description": "Per-layer pad shapes, same ordering and count as per_layer_sizes.",
+         "items": {
+          "enum": [
+           "round",
+           "rectangular",
+           "octagonal",
+           "rounded_rectangle"
+          ],
+          "type": "string"
+         },
+         "type": "array"
+        },
+        "per_layer_sizes": {
+         "description": "Per-layer pad sizes in mm, used when stack_mode is not \"simple\". Entry count must match the stack mode (3 or 32).",
+         "items": {
+          "properties": {
+           "height": {
+            "type": "number"
+           },
+           "width": {
+            "type": "number"
+           }
+          },
+          "required": [
+           "width",
+           "height"
+          ],
+          "type": "object"
+         },
+         "type": "array"
+        },
+        "polygon_index": {
+         "description": "Polygon index (common header; 65535 = none). Normally omitted; preserved on a read-modify-write. Default: 65535",
+         "type": "integer"
+        },
+        "power_plane_clearance": {
+         "description": "Power-plane (anti-pad) clearance to the plane in mm. Default: 0.508 (20 mil)",
+         "type": "number"
+        },
+        "power_plane_connect_style": {
+         "description": "How the pad connects to an internal power plane. Default: relief (thermal spokes)",
+         "enum": [
+          "relief",
+          "direct",
+          "no_connect"
+         ],
+         "type": "string"
+        },
+        "power_plane_relief_expansion": {
+         "description": "Power-plane relief expansion in mm. Default: 0.508 (20 mil)",
+         "type": "number"
+        },
+        "relief_air_gap": {
+         "description": "Thermal-relief air-gap width in mm. Default: 0.254 (10 mil)",
+         "type": "number"
+        },
+        "relief_conductor_width": {
+         "description": "Thermal-relief spoke (conductor) width in mm. Default: 0.254 (10 mil)",
+         "type": "number"
+        },
+        "relief_entries": {
+         "description": "Number of thermal-relief spokes. Default: 4",
+         "type": "integer"
+        },
+        "rotation": {
+         "description": "Pad rotation in degrees. Default: 0",
+         "type": "number"
+        },
+        "shape": {
+         "description": "Pad shape. Omitting this field yields rounded_rectangle, which suits chip/QFN lands but is WRONG for BGA/CSP: circular NSMD BGA lands must set \"round\" explicitly. rectangle is conventional for pin 1; round/circle are equivalent and used for both BGA lands and through-hole pads; also oval, octagonal. Matching is case-insensitive and ignores '_'/'-'.",
+         "enum": [
+          "rectangle",
+          "rounded_rectangle",
+          "round",
+          "circle",
+          "oval",
+          "octagonal"
+         ],
+         "type": "string"
+        },
+        "solder_mask_expansion": {
+         "description": "Solder mask expansion in mm (optional; omit to use the rule default)",
+         "type": "number"
+        },
+        "solder_mask_expansion_from_hole_edge": {
+         "description": "Measure solder-mask expansion from the HOLE edge instead of the pad edge. Only meaningful on a pad with a hole. Default: false",
+         "type": "boolean"
+        },
+        "solder_mask_expansion_mode": {
+         "description": "Solder mask expansion mode. 'none' (the default) leaves the cached value stale so Altium takes the expansion from the design rule; 'from_rule' tells Altium the stored value is a rule result to honour as-is; 'manual' uses the stored value as hand-specified.",
+         "enum": [
+          "none",
+          "from_rule",
+          "manual"
+         ],
+         "type": "string"
+        },
+        "stack_mode": {
+         "description": "Per-layer pad stack. \"simple\" (default) uses one size and shape on every layer; \"top_middle_bottom\" takes 3 per-layer entries [top, mid, bottom]; \"full_stack\" takes 32 (index 0 = Top, 1 = Bottom, 2-31 = Mid layers).",
+         "enum": [
+          "simple",
+          "top_middle_bottom",
+          "full_stack"
+         ],
+         "type": "string"
+        },
+        "unique_id": {
+         "description": "8-char Altium unique ID; preserved on read-modify-write, auto-generated if omitted",
+         "type": "string"
+        },
+        "width": {
+         "description": "Pad width in mm",
+         "type": "number"
+        },
+        "x": {
+         "description": "X position in mm",
+         "type": "number"
+        },
+        "y": {
+         "description": "Y position in mm",
+         "type": "number"
+        }
+       },
+       "required": [
+        "designator",
+        "x",
+        "y",
+        "width",
+        "height"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "regions": {
+      "description": "Filled region definitions (courtyard, copper pour, cutout, etc.)",
+      "items": {
+       "properties": {
+        "additional_parameters": {
+         "description": "Unmodelled region parameter keys captured verbatim on read (e.g. board-region keys like LAYER, KEEPOUT, ISBOARDCUTOUT). Each entry is a [key, value] string pair. Round-tripped so a read-modify-write does not drop keys the tool does not model. Normally omitted; supply only the pairs read_pcblib returned.",
+         "items": {
+          "items": {
+           "type": "string"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "type": "array"
+         },
+         "type": "array"
+        },
+        "arc_resolution": {
+         "description": "Altium ARCRESOLUTION (arc-to-line tolerance, optional). Normally omitted; preserved on a read-modify-write. Default: 0",
+         "type": "number"
+        },
+        "cavity_height": {
+         "description": "Cavity height in mm for embedded components (optional). Default: 0",
+         "type": "number"
+        },
+        "component_index": {
+         "description": "Component index into the board component list (common header; -1 = free primitive). Normally omitted; preserved on a read-modify-write. Default: -1",
+         "type": "integer"
+        },
+        "flags": {
+         "description": "Primitive flags (optional). Accepts the name string read_pcblib emits (e.g. \"LOCKED\" or \"LOCKED | KEEPOUT\") or a raw bitmask integer (1=locked, 2=polygon, 4=keepout, 8=tenting-top, 16=tenting-bottom, 32=testpoint-top, 64=testpoint-bottom). Default: none",
+         "type": [
+          "string",
+          "integer"
+         ]
+        },
+        "holes": {
+         "description": "Interior hole/cutout contours (optional). Each hole is an array of {x,y} vertices subtracted from the outline.",
+         "items": {
+          "items": {
+           "properties": {
+            "x": {
+             "type": "number"
+            },
+            "y": {
+             "type": "number"
+            }
+           },
+           "type": "object"
+          },
+          "type": "array"
+         },
+         "type": "array"
+        },
+        "is_shape_based": {
+         "description": "Altium ISSHAPEBASED. Preserved on a read-modify-write. Default: false",
+         "type": "boolean"
+        },
+        "kind": {
+         "description": "Region kind (optional). \"copper\" (default) for a copper pour/fill, \"cutout\" for a board/polygon cutout, or a raw Altium KIND integer. Default: copper",
+         "type": [
+          "string",
+          "integer"
+         ]
+        },
+        "layer": {
+         "description": "Layer name: Top Courtyard, Top Assembly, Mechanical 1, etc.",
+         "type": "string"
+        },
+        "name": {
+         "description": "Region name (the NAME parameter, optional). Default: empty",
+         "type": "string"
+        },
+        "net_index": {
+         "description": "Net index into the board net list (optional). 65535 = no net. Default: 65535",
+         "type": "integer"
+        },
+        "polygon_index": {
+         "description": "Polygon index (common header; 65535 = none). Normally omitted; preserved on a read-modify-write. Default: 65535",
+         "type": "integer"
+        },
+        "sub_poly_index": {
+         "description": "Altium SUBPOLYINDEX; -1 when not a polygon sub-shape. Preserved on a read-modify-write. Default: -1",
+         "type": "integer"
+        },
+        "union_index": {
+         "description": "Altium UNIONINDEX for grouped primitives. Preserved on a read-modify-write. Default: 0",
+         "type": "integer"
+        },
+        "unique_id": {
+         "description": "Unique ID (optional, 8-char alphanumeric). Default: none",
+         "type": "string"
+        },
+        "vertices": {
+         "items": {
+          "properties": {
+           "x": {
+            "type": "number"
+           },
+           "y": {
+            "type": "number"
+           }
+          },
+          "type": "object"
+         },
+         "type": "array"
+        }
+       },
+       "required": [
+        "vertices",
+        "layer"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "step_model": {
+      "description": "Optional STEP 3D model attachment",
+      "properties": {
+       "embed": {
+        "description": "If true (default), embed the STEP file. If false, create external reference only (file doesn't need to exist)",
+        "type": "boolean"
+       },
+       "filepath": {
+        "description": "Path to .step file (for embedding) or model name (for external reference)",
+        "type": "string"
+       },
+       "rotation": {
+        "description": "Z rotation in degrees",
+        "type": "number"
+       },
+       "x_offset": {
+        "type": "number"
+       },
+       "y_offset": {
+        "type": "number"
+       },
+       "z_offset": {
+        "type": "number"
+       }
+      },
+      "required": [
+       "filepath"
+      ],
+      "type": "object"
+     },
+     "text": {
+      "description": "Text/string definitions",
+      "items": {
+       "properties": {
+        "bold": {
+         "description": "Bold font style (TrueType). Default: false",
+         "type": "boolean"
+        },
+        "component_index": {
+         "description": "Component index into the board component list (common header; -1 = free primitive). Normally omitted; preserved on a read-modify-write. Default: -1",
+         "type": "integer"
+        },
+        "flags": {
+         "description": "Primitive flags (optional). Accepts the name string read_pcblib emits (e.g. \"LOCKED\" or \"LOCKED | KEEPOUT\") or a raw bitmask integer (1=locked, 2=polygon, 4=keepout, 8=tenting-top, 16=tenting-bottom, 32=testpoint-top, 64=testpoint-bottom). Default: none",
+         "type": [
+          "string",
+          "integer"
+         ]
+        },
+        "font_name": {
+         "description": "TrueType font name (only meaningful when kind is \"true_type\"). Default: Arial",
+         "type": "string"
+        },
+        "height": {
+         "description": "Text height in mm",
+         "type": "number"
+        },
+        "inverted_border": {
+         "description": "Border margin around inverted text in mm (only meaningful when is_inverted). Default: none",
+         "type": "number"
+        },
+        "inverted_rect_height": {
+         "description": "Inverted-rectangle height in mm (only meaningful when use_inverted_rectangle). Default: none",
+         "type": "number"
+        },
+        "inverted_rect_text_offset": {
+         "description": "Text offset within the inverted rectangle in mm (only meaningful when use_inverted_rectangle). Default: none",
+         "type": "number"
+        },
+        "inverted_rect_width": {
+         "description": "Inverted-rectangle width in mm (only meaningful when use_inverted_rectangle). Default: none",
+         "type": "number"
+        },
+        "is_comment": {
+         "description": "Mark this text as the component's Comment field (Altium IsComment). Preserved on read-modify-write. Default: false",
+         "type": "boolean"
+        },
+        "is_designator": {
+         "description": "Mark this text as the component's Designator field (Altium IsDesignator). Preserved on read-modify-write. Default: false",
+         "type": "boolean"
+        },
+        "is_inverted": {
+         "description": "Draw the text inverted (knockout): a filled bar with the glyphs punched out. Default: false",
+         "type": "boolean"
+        },
+        "italic": {
+         "description": "Italic font style (TrueType). Default: false",
+         "type": "boolean"
+        },
+        "justification": {
+         "description": "Text anchor / justification within its frame. Default: bottom_left",
+         "enum": [
+          "bottom_left",
+          "bottom_center",
+          "bottom_right",
+          "middle_left",
+          "middle_center",
+          "middle_right",
+          "top_left",
+          "top_center",
+          "top_right"
+         ],
+         "type": "string"
+        },
+        "kind": {
+         "description": "Text rendering kind. \"stroke\" (default) uses a vector stroke font (most common for silkscreen); \"true_type\" renders with the TrueType font named by font_name; \"bar_code\" is a barcode. Default: stroke",
+         "enum": [
+          "stroke",
+          "true_type",
+          "bar_code"
+         ],
+         "type": "string"
+        },
+        "layer": {
+         "description": "Layer name: Top Overlay, Top Assembly, Mechanical 1, etc.",
+         "type": "string"
+        },
+        "mirror": {
+         "description": "Mirror the text (bottom-side silkscreen). Default: false",
+         "type": "boolean"
+        },
+        "net_index": {
+         "description": "Net index into the board net list (common header, 0-65534; 65535 = no net). Normally omitted for library footprints; preserved on a read-modify-write. Default: 65535",
+         "type": "integer"
+        },
+        "polygon_index": {
+         "description": "Polygon index (common header; 65535 = none). Normally omitted; preserved on a read-modify-write. Default: 65535",
+         "type": "integer"
+        },
+        "rotation": {
+         "description": "Rotation in degrees",
+         "type": "number"
+        },
+        "stroke_font": {
+         "description": "Stroke font selection (only meaningful when kind is \"stroke\"). Default: default (Altium's built-in stroke font)",
+         "enum": [
+          "default",
+          "sans_serif",
+          "serif"
+         ],
+         "type": "string"
+        },
+        "stroke_width": {
+         "description": "Stroke line width in mm (optional; defaults to Altium's ~4 mil)",
+         "type": "number"
+        },
+        "text": {
+         "type": "string"
+        },
+        "unique_id": {
+         "description": "8-char Altium unique ID; preserved on read-modify-write, auto-generated if omitted",
+         "type": "string"
+        },
+        "use_inverted_rectangle": {
+         "description": "Use an explicit framed rectangle (inverted_rect_width / inverted_rect_height) for the inverted text box instead of auto-sizing to the glyphs. Default: false",
+         "type": "boolean"
+        },
+        "x": {
+         "type": "number"
+        },
+        "y": {
+         "type": "number"
+        }
+       },
+       "required": [
+        "x",
+        "y",
+        "text",
+        "height",
+        "layer"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "tracks": {
+      "description": "Track/line definitions for silkscreen, assembly, etc.",
+      "items": {
+       "properties": {
+        "component_index": {
+         "description": "Component index into the board component list (common header; -1 = free primitive). Normally omitted; preserved on a read-modify-write. Default: -1",
+         "type": "integer"
+        },
+        "flags": {
+         "description": "Primitive flags (optional). Accepts the name string read_pcblib emits (e.g. \"LOCKED\" or \"LOCKED | KEEPOUT\") or a raw bitmask integer (1=locked, 2=polygon, 4=keepout, 8=tenting-top, 16=tenting-bottom, 32=testpoint-top, 64=testpoint-bottom). Default: none",
+         "type": [
+          "string",
+          "integer"
+         ]
+        },
+        "keepout_restrictions": {
+         "description": "Keepout restriction bitmask (optional; defaults to 0)",
+         "type": "integer"
+        },
+        "layer": {
+         "description": "Layer name: Top Overlay, Top Assembly, Top Courtyard, Mechanical 1, etc.",
+         "type": "string"
+        },
+        "net_index": {
+         "description": "Net index into the board net list (common header, 0-65534; 65535 = no net). Normally omitted for library footprints; preserved on a read-modify-write. Default: 65535",
+         "type": "integer"
+        },
+        "polygon_index": {
+         "description": "Polygon index (common header; 65535 = none). Normally omitted; preserved on a read-modify-write. Default: 65535",
+         "type": "integer"
+        },
+        "solder_mask_expansion": {
+         "description": "Solder mask expansion override in mm (optional; omit to use the rule default)",
+         "type": "number"
+        },
+        "unique_id": {
+         "description": "8-char Altium unique ID; preserved on read-modify-write, auto-generated if omitted",
+         "type": "string"
+        },
+        "width": {
+         "description": "Line width in mm",
+         "type": "number"
+        },
+        "x1": {
+         "type": "number"
+        },
+        "x2": {
+         "type": "number"
+        },
+        "y1": {
+         "type": "number"
+        },
+        "y2": {
+         "type": "number"
+        }
+       },
+       "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2",
+        "width",
+        "layer"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "vias": {
+      "description": "Via definitions (vertical interconnects between copper layers, with a drill hole and annular ring).",
+      "items": {
+       "properties": {
+        "component_index": {
+         "description": "Component index into the board component list (common header; -1 = free primitive). Normally omitted; preserved on a read-modify-write. Default: -1",
+         "type": "integer"
+        },
+        "diameter": {
+         "description": "Annular ring outer diameter in mm",
+         "type": "number"
+        },
+        "drill_layer_pair_type": {
+         "description": "Drill-pair classification. \"through\" (default) spans the whole board; the others mark a via's place in a blind/buried drill-pair sequence.",
+         "enum": [
+          "through",
+          "blind_buried_start",
+          "mid",
+          "end"
+         ],
+         "type": "string"
+        },
+        "flags": {
+         "description": "Primitive flags (optional). Accepts the name string read_pcblib emits (e.g. \"TENTING_TOP\" or \"LOCKED | KEEPOUT\") or a raw bitmask integer (1=locked, 2=polygon, 4=keepout, 8=tenting-top, 16=tenting-bottom, 32=testpoint-top, 64=testpoint-bottom). Tenting covers the via with solder mask. Default: none",
+         "type": [
+          "string",
+          "integer"
+         ]
+        },
+        "from_layer": {
+         "description": "Starting layer (default Top Layer): Top Layer, Bottom Layer, Mid-Layer 1, etc.",
+         "type": "string"
+        },
+        "hole_negative_tolerance": {
+         "description": "Negative drill tolerance in mm (optional; omit to leave unset)",
+         "type": "number"
+        },
+        "hole_positive_tolerance": {
+         "description": "Positive drill tolerance in mm (optional; omit to leave unset)",
+         "type": "number"
+        },
+        "hole_size": {
+         "description": "Drill hole diameter in mm (must be smaller than diameter)",
+         "type": "number"
+        },
+        "net_index": {
+         "description": "Net index into the board net list (0-65534; 65535 = no net). Default: 65535",
+         "type": "integer"
+        },
+        "paste_mask_expansion": {
+         "description": "Paste-mask expansion in mm. Default: 0",
+         "type": "number"
+        },
+        "polygon_index": {
+         "description": "Polygon index (common header; 65535 = none). Normally omitted; preserved on a read-modify-write. Default: 65535",
+         "type": "integer"
+        },
+        "power_plane_clearance": {
+         "description": "Power-plane (anti-pad) clearance in mm. Default: 0.508 (20 mil)",
+         "type": "number"
+        },
+        "power_plane_connect_style": {
+         "description": "How the via connects to an internal power plane. Default: relief (thermal spokes)",
+         "enum": [
+          "relief",
+          "direct",
+          "no_connect"
+         ],
+         "type": "string"
+        },
+        "power_plane_relief_expansion": {
+         "description": "Power-plane relief expansion in mm. Default: 0.508 (20 mil)",
+         "type": "number"
+        },
+        "solder_mask_expansion": {
+         "description": "Solder mask expansion in mm (negative = tented). Default: 0",
+         "type": "number"
+        },
+        "solder_mask_expansion_from_hole_edge": {
+         "description": "Measure solder-mask expansion from the HOLE edge instead of the pad edge. Default: false",
+         "type": "boolean"
+        },
+        "solder_mask_expansion_mode": {
+         "description": "Solder mask expansion mode. 'none' (the default) leaves the cached value stale so Altium takes the expansion from the design rule; 'from_rule' tells Altium the stored value is a rule result to honour as-is; 'manual' uses the stored value as hand-specified.",
+         "enum": [
+          "none",
+          "from_rule",
+          "manual"
+         ],
+         "type": "string"
+        },
+        "thermal_relief_conductors": {
+         "description": "Number of thermal relief conductors. Default: 4",
+         "type": "integer"
+        },
+        "thermal_relief_gap": {
+         "description": "Thermal relief air-gap width in mm. Default: 0.254 (10 mil)",
+         "type": "number"
+        },
+        "thermal_relief_width": {
+         "description": "Thermal relief conductor width in mm. Default: 0.254 (10 mil)",
+         "type": "number"
+        },
+        "to_layer": {
+         "description": "Ending layer (default Bottom Layer): Top Layer, Bottom Layer, Mid-Layer 1, etc.",
+         "type": "string"
+        },
+        "unique_id": {
+         "description": "8-char Altium unique ID; preserved on read-modify-write, auto-generated if omitted",
+         "type": "string"
+        },
+        "x": {
+         "description": "X position in mm",
+         "type": "number"
+        },
+        "y": {
+         "description": "Y position in mm",
+         "type": "number"
+        }
+       },
+       "required": [
+        "x",
+        "y",
+        "diameter",
+        "hole_size"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     }
+    },
+    "required": [
+     "name",
+     "pads"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  }
+ },
+ "required": [
+  "filepath",
+  "footprints"
+ ],
+ "type": "object"
+}

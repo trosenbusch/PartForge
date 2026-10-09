@@ -1,0 +1,20 @@
+{
+ "properties": {
+  "documents": {
+   "description": "Member document paths (.SchLib / .PcbLib). Each is referenced relative to the .LibPkg location; same-folder files become bare names.",
+   "items": {
+    "type": "string"
+   },
+   "type": "array"
+  },
+  "filepath": {
+   "description": "Path to the .LibPkg file to create",
+   "type": "string"
+  }
+ },
+ "required": [
+  "filepath",
+  "documents"
+ ],
+ "type": "object"
+}

@@ -1,0 +1,33 @@
+{
+ "properties": {
+  "component_name": {
+   "description": "Name of the symbol to render",
+   "type": "string"
+  },
+  "filepath": {
+   "description": "Path to the Altium SchLib file",
+   "type": "string"
+  },
+  "max_height": {
+   "description": "Maximum height in characters (default: 40)",
+   "type": "integer"
+  },
+  "max_width": {
+   "description": "Maximum width in characters (default: 80)",
+   "type": "integer"
+  },
+  "part_id": {
+   "description": "Part ID for multi-part symbols (default: 1, shows all parts if 0)",
+   "type": "integer"
+  },
+  "scale": {
+   "description": "Characters per 10 schematic units (default: 1.0). Higher = more detail",
+   "type": "number"
+  }
+ },
+ "required": [
+  "filepath",
+  "component_name"
+ ],
+ "type": "object"
+}

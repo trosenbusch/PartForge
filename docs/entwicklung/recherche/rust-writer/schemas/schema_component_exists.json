@@ -1,0 +1,20 @@
+{
+ "properties": {
+  "component_names": {
+   "description": "List of component names to check",
+   "items": {
+    "type": "string"
+   },
+   "type": "array"
+  },
+  "filepath": {
+   "description": "Path to the Altium library file (.PcbLib or .SchLib)",
+   "type": "string"
+  }
+ },
+ "required": [
+  "filepath",
+  "component_names"
+ ],
+ "type": "object"
+}

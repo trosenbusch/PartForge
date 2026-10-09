@@ -1,0 +1,21 @@
+{ FOLLOW-UP 02 (UNVERIFIED). Relative database path in the connection string:
+  PF_Test_rel.DbLib has Database=partforge_test.db + DatabasePathRelative=1 + NoCreat=1.
+  Altium's CWD is C:\Program Files\Altium\AD22 (VERIFIED), so the ODBC driver most likely
+  resolves the bare file name there and fails (NoCreat=1 prevents creating an empty DB).
+  Expectation: tablecount=0 (or an error dialog that run_altium_script dismisses). }
+S1 := 'C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\PF_Test_rel.DbLib';
+IntMan := IntegratedLibraryManager;
+IntMan.InstallLibrary(S1);
+SandboxLog('installed');
+DbDoc := IntMan.GetAvailableDBLibDocAtPath(S1);
+If DbDoc = Nil Then SandboxLog('dbdoc nil')
+Else
+Begin
+    SandboxLog('conn=' + DbDoc.GetConnectionString);
+    SandboxLog('tablecount=' + IntToStr(DbDoc.GetTableCount));
+    If DbDoc.GetTableCount > 0 Then
+        SandboxLog('Params RES-0001=' + IntMan.GetParametersForDBComponent(S1, 'Resistors', 'RES-0001'));
+End;
+IntMan.UninstallLibrary(S1);
+SandboxLog('uninstalled; cwd=' + GetCurrentDir);
+ResultText := 'done';

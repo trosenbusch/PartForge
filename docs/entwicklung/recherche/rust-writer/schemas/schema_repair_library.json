@@ -1,0 +1,16 @@
+{
+ "properties": {
+  "dry_run": {
+   "description": "If true, report what would be fixed without making changes (default: false)",
+   "type": "boolean"
+  },
+  "filepath": {
+   "description": "Path to the library file (.PcbLib)",
+   "type": "string"
+  }
+ },
+ "required": [
+  "filepath"
+ ],
+ "type": "object"
+}

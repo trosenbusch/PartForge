@@ -1,0 +1,20 @@
+{
+ "properties": {
+  "component_order": {
+   "description": "Component names in desired order",
+   "items": {
+    "type": "string"
+   },
+   "type": "array"
+  },
+  "filepath": {
+   "description": "Path to the .PcbLib or .SchLib file",
+   "type": "string"
+  }
+ },
+ "required": [
+  "filepath",
+  "component_order"
+ ],
+ "type": "object"
+}

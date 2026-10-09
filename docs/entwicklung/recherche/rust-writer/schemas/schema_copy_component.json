@@ -1,0 +1,30 @@
+{
+ "properties": {
+  "description": {
+   "description": "Optional description for the new component (defaults to source description)",
+   "type": "string"
+  },
+  "dry_run": {
+   "description": "If true, validate the operation without modifying the file. Default: false",
+   "type": "boolean"
+  },
+  "filepath": {
+   "description": "Path to the Altium library file (.PcbLib or .SchLib)",
+   "type": "string"
+  },
+  "source_name": {
+   "description": "Name of the component to copy",
+   "type": "string"
+  },
+  "target_name": {
+   "description": "Name for the new copied component",
+   "type": "string"
+  }
+ },
+ "required": [
+  "filepath",
+  "source_name",
+  "target_name"
+ ],
+ "type": "object"
+}

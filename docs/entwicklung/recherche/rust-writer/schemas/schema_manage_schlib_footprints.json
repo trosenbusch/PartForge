@@ -1,0 +1,39 @@
+{
+ "properties": {
+  "component_name": {
+   "description": "Name of the symbol to manage footprints for",
+   "type": "string"
+  },
+  "description": {
+   "description": "Footprint description (optional for add)",
+   "type": "string"
+  },
+  "filepath": {
+   "description": "Path to the Altium SchLib file",
+   "type": "string"
+  },
+  "footprint_name": {
+   "description": "Footprint name (required for add, remove)",
+   "type": "string"
+  },
+  "library_path": {
+   "description": "Optional (add): absolute path to the .PcbLib containing the footprint, written as ModelDatafile0 so Altium can resolve and preview the model. Omit to link by name only (requires the library to be installed/in the project, else 'footprint not found').",
+   "type": "string"
+  },
+  "operation": {
+   "description": "Operation to perform: list (all footprints), add (new footprint link), remove (delete footprint link)",
+   "enum": [
+    "list",
+    "add",
+    "remove"
+   ],
+   "type": "string"
+  }
+ },
+ "required": [
+  "filepath",
+  "component_name",
+  "operation"
+ ],
+ "type": "object"
+}
