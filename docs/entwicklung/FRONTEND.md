@@ -7,6 +7,13 @@ Die Auswahl steht unter *Settings → General → Language* bzw. *Einstellungen 
 wird nach dem Speichern für den Windows-Benutzer übernommen. Benutzerinhalte und technische Bezeichner bleiben
 unverändert. UI-Texte werden mit `useI18n()` / `t()` aus `src/lib/i18n.ts` übersetzt; deutsche Quelltexte sind
 Schlüssel in den englischen Katalogen unter `src/i18n/catalogs/`. Zahlen und Daten verwenden die aktive Locale.
+Alle Kataloge teilen einen Namensraum und dürfen einer Quelle keine zwei Übersetzungen geben (Test
+„catalog consistency“); hängt die englische Fassung vom Einsatz ab („von“ = *of*/*by*/*from*), steht sie in
+`src/i18n/contexts.ts` und wird mit `tc(kontext, quelle)` abgerufen. Nur `geometry` und `parts-metadata` haben eigene
+Übersetzer (`@/components/preview/i18n`, `metadataLabel`) und gelten anderswo nachrangig. Zahl + Substantiv immer über
+`plural()`/`pluralNoun()` (englisch klein: „3 parts“), nie aus Satzfragmenten zusammensetzen. Eingabefelder zeigen
+Zahlen ohne Tausendertrenner (`formatInputNumber`); `parseDecimal` liest ein einzelnes Trennzeichen als Dezimalzeichen
+und weist mehrdeutige Eingaben („1,250“ im Englischen) zurück, statt zu raten.
 
 ## 1. Stack (installierte Versionen – APIs gegen `node_modules/*/dist/*.d.ts` prüfen!)
 

@@ -42,7 +42,7 @@ import { PageActions, PageBody, PageTitle } from '@/app/page'
 import { Button, confirm, Skeleton, Spinner, Stepper, type StepDef } from '@/components/ui'
 import { useElementSize } from '@/components/preview'
 import { cn } from '@/lib/cn'
-import { formatNumber } from '@/lib/format'
+import { formatNumber, pluralNoun } from '@/lib/format'
 import { useHotkey } from '@/lib/hotkeys'
 import { useBauteile } from '@/pages/bauteile/model/store'
 import type { FilterCondition } from '@/pages/bauteile/model/fields'
@@ -614,7 +614,7 @@ export default function SerienPage() {
     return (
       <span className="flex shrink-0 items-center gap-1.5">
         <span>
-          <span className="mono font-semibold text-fg">{formatNumber(n)}</span> {n === 1 ? tr("Bauteil") : tr("Bauteile")}
+          <span className="mono font-semibold text-fg">{formatNumber(n)}</span> {pluralNoun(n, tr("Bauteil"), tr("Bauteile"))}
         </span>
         {step === 2 &&
           (previewError ? (

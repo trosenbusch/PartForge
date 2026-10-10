@@ -48,16 +48,53 @@ export function formatDecimal(value: number, maxDigits = 2): string {
   return f.format(value)
 }
 
+const inputFormats = new Map<string, Intl.NumberFormat>()
+
 /**
- * Zahleneingaben lesen: „2,5“, „2.5“, „1.234,5“, „-0,1“ → Zahl; ungültig → null.
- * Englisch erlaubt zusätzlich gruppierte Zahlen wie „1,234.5“; technische Punkt-Dezimalwerte bleiben gültig.
+ * Text eines Eingabefelds: wie {@link formatDecimal}, aber ohne Tausendertrenner, damit {@link parseDecimal}
+ * den angezeigten Wert unverändert zurückliest (deutsch „1.250“ wäre sonst 1,25).
+ */
+export function formatInputNumber(value: number, maxDigits = 2): string {
+  if (!Number.isFinite(value)) return ''
+  const key = `${getLocale()}:${maxDigits}`
+  let f = inputFormats.get(key)
+  if (!f) {
+    f = new Intl.NumberFormat(getLocale(), { maximumFractionDigits: maxDigits, useGrouping: false })
+    inputFormats.set(key, f)
+  }
+  return f.format(value)
+}
+
+/** Ganzzahlteil ohne Trenner oder in Dreiergruppen: „1234“, „1.234“, „-12,345,678“ */
+function isGroupedInteger(text: string, separator: string): boolean {
+  return new RegExp(`^[-+]?(\\d+|\\d{1,3}(\\${separator}\\d{3})+)$`).test(text)
+}
+
+/**
+ * Zahleneingaben lesen: „2,5“, „2.5“, „-0,1“, „0,125“ → Zahl; ungültig → null. Ein einzelnes Trennzeichen ist in
+ * beiden Sprachen das Dezimalzeichen (technische Eingaben). Tausendertrenner gelten nur bei eindeutiger
+ * Schreibweise: beide Zeichen („1.234,5“, „1,234.5“ – das letzte ist das Dezimalzeichen) oder mehrere Gruppen
+ * („1.234.567“). Englisch ist „1,250“ mehrdeutig (1250 oder 1,25) und deshalb ungültig statt geraten.
  */
 export function parseDecimal(text: string): number | null {
   let t = text.trim().replace(/\s+/g, '').replace(/[−–]/g, '-')
   if (!t) return null
-  if (t.includes(',')) {
-    if (getLocale() === 'en-US' && /^[-+]?\d{1,3}(,\d{3})+(\.\d+)?$/.test(t)) t = t.replace(/,/g, '')
-    else t = t.replace(/\./g, '').replace(',', '.')
+  const comma = t.lastIndexOf(',')
+  const dot = t.lastIndexOf('.')
+  if (comma >= 0 && dot >= 0) {
+    const [group, decimal] = comma > dot ? ['.', ','] : [',', '.']
+    const parts = t.split(decimal)
+    if (parts.length !== 2 || !isGroupedInteger(parts[0], group)) return null
+    t = `${parts[0].split(group).join('')}.${parts[1]}`
+  } else if (comma >= 0 || dot >= 0) {
+    const separator = comma >= 0 ? ',' : '.'
+    if (t.indexOf(separator) !== t.lastIndexOf(separator)) {
+      if (!isGroupedInteger(t, separator)) return null
+      t = t.split(separator).join('')
+    } else if (separator === ',') {
+      if (getLocale() === 'en-US' && /^[-+]?[1-9]\d{0,2},\d{3}$/.test(t)) return null
+      t = t.replace(',', '.')
+    }
   }
   if (!/^[-+]?(\d+\.?\d*|\.\d+)(e[-+]?\d+)?$/i.test(t)) return null
   const n = Number(t)
@@ -197,14 +234,34 @@ export function pluralLabel(count: number, one: string, many: string): string {
     Fehler: ['Error', 'Errors'], Error: ['Error', 'Errors'],
     Gehäuse: ['Package', 'Packages'], Package: ['Package', 'Packages'],
     Parameter: ['Parameter', 'Parameters'], Parameters: ['Parameter', 'Parameters'],
+    Treffer: ['Match', 'Matches'], Matches: ['Match', 'Matches'],
   }
   const forms = getLocale() === 'en-US' && one === many ? invariant[one] : undefined
   return forms ? forms[count === 1 ? 0 : 1] : label
 }
 
+/** Proper names stay capitalized after a number. */
+const PROPER_NOUNS = new Set(['Altium', 'Claude', 'PartForge'])
+
+/**
+ * English common nouns are lowercase after a number („3 parts“), although the catalogs capitalize them for
+ * labels. Abbreviations, names like „PcbLib“ and proper names keep their spelling.
+ */
+function countNoun(label: string): string {
+  const first = /^[^\s-]+/.exec(label)?.[0] ?? ''
+  return getLocale() === 'en-US' && /^[A-Z][a-z]+$/.test(first) && !PROPER_NOUNS.has(first)
+    ? label[0].toLowerCase() + label.slice(1)
+    : label
+}
+
+/** The noun after a count that is rendered separately: „<b>3</b> parts“. */
+export function pluralNoun(count: number, one: string, many: string): string {
+  return countNoun(pluralLabel(count, one, many))
+}
+
 /** A localized count and noun, preserving the source language's plural forms. */
 export function plural(count: number, one: string, many: string): string {
-  return `${formatNumber(count)} ${pluralLabel(count, one, many)}`
+  return `${formatNumber(count)} ${pluralNoun(count, one, many)}`
 }
 
 /** Bytes → „1,2 MB“ */

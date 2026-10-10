@@ -637,8 +637,9 @@ function footprintLabel(footprints: ScopeReadiness): string {
 function commitLabel(state: Readiness): string {
   const count = state.writeCount
   if (!count) return t("Bauteile anlegen")
-  const verb = state.updateCount === count ? t("aktualisieren") : state.updateCount ? t("übernehmen") : t("anlegen")
-  return `${plural(count, t("Bauteil"), t("Bauteile"))} ${verb}`
+  const parts = { "0": plural(count, t("Bauteil"), t("Bauteile")) }
+  if (state.updateCount === count) return t("{0} aktualisieren", parts)
+  return state.updateCount ? t("{0} übernehmen", parts) : t("{0} anlegen", parts)
 }
 
 function Summary({ label, value, detail, warn }: { label: string; value: string; detail?: string; warn?: boolean }) {

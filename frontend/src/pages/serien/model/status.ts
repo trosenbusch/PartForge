@@ -1,4 +1,5 @@
 import { getLocale, t as tr } from '@/lib/i18n'
+import { pluralNoun } from '@/lib/format'
 /** Status der Vorschauzeilen (series.py `RowStatus`) – Beschriftung, Ton und Erklärung. */
 import type { RowStatus } from '@/api/series'
 
@@ -106,6 +107,6 @@ export function serverParts(counts: Partial<Record<string, number>>): number {
 export function countLabel(status: RowStatus, n: number): string {
   if (status === 'new') return tr("neu")
   if (status === 'exists') return tr("vorhanden")
-  if (status === 'conflict') return n === 1 ? tr("Konflikt") : tr("Konflikte")
+  if (status === 'conflict') return pluralNoun(n, tr("Konflikt"), tr("Konflikte"))
   return tr("ungültig")
 }

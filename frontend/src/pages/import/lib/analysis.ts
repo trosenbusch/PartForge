@@ -354,9 +354,9 @@ function stepDetail(key: StepKey, ctx: {
       if (!r) return undefined
       if (r.afterVision) return r.errors || r.warnings ? translate("Nach der Kontrolle: {0} Fehler, {1} Warnungen", { "0": String(r.errors), "1": String(r.warnings) }) : translate("Kontrolle bestanden")
       const parts = [
-        r.errors ? translate("{0} Fehler", { "0": String(r.errors) }) : '',
-        r.warnings ? `${r.warnings} ${r.warnings === 1 ? translate("Warnung") : translate("Warnungen")}` : '',
-        r.infos ? `${r.infos} ${r.infos === 1 ? translate("Hinweis") : translate("Hinweise")}` : '',
+        r.errors ? plural(r.errors, 'Fehler', 'Fehler') : '',
+        r.warnings ? plural(r.warnings, translate("Warnung"), translate("Warnungen")) : '',
+        r.infos ? plural(r.infos, translate("Hinweis"), translate("Hinweise")) : '',
       ].filter(Boolean)
       return parts.length ? parts.join(' · ') : translate("Keine Auffälligkeiten")
     }

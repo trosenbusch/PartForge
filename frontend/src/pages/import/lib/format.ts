@@ -1,4 +1,4 @@
-import { getLocale, t } from '@/lib/i18n'
+import { getLocale, t, tc } from '@/lib/i18n'
 import type { CostEstimate, DatasheetStatus, IssueSeverity } from '@/api/datasheets'
 import type { BadgeProps } from '@/components/ui'
 import { formatNumber } from '@/lib/format'
@@ -176,7 +176,7 @@ export const PAGE_TOPIC: Record<string, string> = {
   get land_pattern() { return t("Lötflächen") },
   get drawing() { return t("Zeichnung") },
   get reel() { return t("Verpackung") },
-  get toc() { return t("Inhalt") },
+  get toc() { return tc('pageRole', 'Inhalt') },
 }
 
 export function pageTopics(categories: readonly string[]): string[] {

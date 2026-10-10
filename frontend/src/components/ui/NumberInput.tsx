@@ -1,7 +1,7 @@
 import { useI18n } from '@/lib/i18n'
 import { useState, type KeyboardEvent, type ReactNode } from 'react'
 import { cn } from '@/lib/cn'
-import { formatDecimal, parseDecimal } from '@/lib/format'
+import { formatInputNumber, parseDecimal } from '@/lib/format'
 import { formatEngineering, parseEngineering } from '@/lib/units'
 import { useFieldContext } from './fieldContext'
 import { controlShell } from './variants'
@@ -67,7 +67,7 @@ export function NumberInput({
   const field = useFieldContext()
   // technisch: „4,7k“ statt „4.700“ (Präfix direkt am Wert, Einheit steht rechts im Feld)
   const display = (v: number | null) =>
-    v === null ? '' : engineering ? formatEngineering(v, '', Math.max(3, decimals)).replace('\u00a0', '') : formatDecimal(v, decimals)
+    v === null ? '' : engineering ? formatEngineering(v, '', Math.max(3, decimals)).replace('\u00a0', '') : formatInputNumber(v, decimals)
   const [text, setText] = useState(() => display(value))
   const [editing, setEditing] = useState(false)
   const [lastValue, setLastValue] = useState(value)

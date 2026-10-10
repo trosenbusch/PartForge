@@ -20,7 +20,7 @@ import { useSettings, type JobLogEntry } from '@/api/system'
 import { ALTIUM_PATH, altiumActionState } from '@/app/navigation'
 import { Button, Callout, CountUp, ProgressRing, Spinner } from '@/components/ui'
 import { cn } from '@/lib/cn'
-import { baseName, formatDuration, formatNumber, formatNumbersInText, plural } from '@/lib/format'
+import { baseName, formatDuration, formatNumber, formatNumbersInText, plural, pluralNoun } from '@/lib/format'
 import { AltiumNextStep } from '@/pages/altium/AltiumNextStep'
 import { altiumAfterWrite, writerLabel, type AfterWriteNotice } from '@/pages/altium/model'
 import { SETTINGS_PLACE } from '@/pages/altium/settingsPlaces'
@@ -566,7 +566,7 @@ export function SuccessView({
             {firstPartWarning && (
               <Detail icon={<span className="size-1.5 rounded-full bg-warning" />}>
                 {partWarnings.length >= 100 ? tr("Mindestens 100") : formatNumber(partWarnings.length)}{' '}
-                {partWarnings.length === 1 ? tr("Bauteil hat") : tr("Bauteile haben")} {tr("Hinweise der Feldprüfung (gespeichert wurde trotzdem), z. B.")} <span className="mono text-fg">{firstPartWarning[0]}</span>: {localizeMessage(firstPartWarning[1][0])}
+                {pluralNoun(partWarnings.length, tr("Bauteil hat"), tr("Bauteile haben"))} {tr("Hinweise der Feldprüfung (gespeichert wurde trotzdem), z. B.")} <span className="mono text-fg">{firstPartWarning[0]}</span>: {localizeMessage(firstPartWarning[1][0])}
               </Detail>
             )}
             {errors.length > 0 && (

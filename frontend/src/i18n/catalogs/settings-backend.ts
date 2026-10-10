@@ -82,7 +82,7 @@ const messages: Record<string, string> = {
   "Ungültige Angaben – {0}": "Invalid input – {0}",
   "Vorlage „{0}“ nicht gefunden.": "Template “{0}” not found.",
   "Hausstil prüfen": "Check house style",
-  "Stapelbearbeitung rückgängig machen": "Undo batch operation",
+  "Stapelbearbeitung rückgängig machen": "Undo batch editing",
   "{0} ist fehlgeschlagen: {1}. Bitte prüfen, ob Altium oder ein anderes Programm die Tabelle sperrt.": "{0} failed: {1}. Check whether Altium or another program is locking the table.",
   "Der Tabellenname darf nicht leer sein.": "The table name cannot be empty.",
   "Ungültiger Tabellenname „{0}“: erlaubt sind Buchstaben A–Z (ohne Umlaute), Ziffern, Leerzeichen, „-“ und „_“; der Name muss mit einem Buchstaben beginnen und darf höchstens 64 Zeichen lang sein.": "Invalid table name “{0}”: use letters A–Z (without accented characters), digits, spaces, “-” and “_”; the name must start with a letter and be no longer than 64 characters.",

@@ -387,7 +387,7 @@ export function useAltiumActions() {
       )
       const { error, warning, info } = report.counts
       const counts = [
-        error && tr("{0} Fehler", { "0": String(formatNumber(error)) }),
+        error && plural(error, 'Fehler', 'Fehler'),
         warning && plural(warning, tr("Warnung"), tr("Warnungen")),
         info && plural(info, tr("Hinweis"), tr("Hinweise")),
       ].filter(Boolean)

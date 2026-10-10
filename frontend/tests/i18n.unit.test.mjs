@@ -139,4 +139,86 @@ describe('locale-sensitive formatting', () => {
     assert.equal(format.parseDecimal('1.234,5'), 1234.5)
     assert.equal(format.plainNumber(1234.5), '1234.5')
   })
+
+  test('a single separator is a decimal sign; ambiguous English grouping is rejected, never guessed', () => {
+    for (const language of ['en', 'de']) {
+      i18n.setLanguage(language)
+      for (const [text, value] of [['0,125', 0.125], ['-0,050', -0.05], ['2,54', 2.54], ['1.27', 1.27], ['1,2345', 1.2345],
+        ['1.234,5', 1234.5], ['1,234.5', 1234.5], ['1.234.567', 1234567], ['1,234,567', 1234567], ['−0,5', -0.5]]) {
+        assert.equal(format.parseDecimal(text), value, `${language}: ${text}`)
+      }
+      for (const text of ['12.34,5', '1,2,3', '1.234,5.6', '1,23.4']) assert.equal(format.parseDecimal(text), null, `${language}: ${text}`)
+    }
+    i18n.setLanguage('en')
+    assert.equal(format.parseDecimal('1,250'), null)
+    assert.equal(format.parseDecimal('12,500'), null)
+    i18n.setLanguage('de')
+    assert.equal(format.parseDecimal('1,250'), 1.25)
+  })
+
+  test('input fields read their own display back unchanged', () => {
+    for (const language of ['en', 'de']) {
+      i18n.setLanguage(language)
+      for (const value of [1250, 1250.5, 0.125, -0.05, 4096, 1234567.25]) {
+        assert.equal(format.parseDecimal(format.formatInputNumber(value, 3)), value, `${language}: ${value}`)
+      }
+    }
+    i18n.setLanguage('de')
+    assert.equal(format.formatInputNumber(1250.5), '1250,5')
+  })
+
+  test('English nouns after a count are lowercase, names and abbreviations keep their spelling', () => {
+    assert.equal(format.plural(3, 'Bauteil', 'Bauteile'), '3 parts')
+    assert.equal(format.plural(1, 'Fehler', 'Fehler'), '1 error')
+    assert.equal(format.plural(2, 'Fehler', 'Fehler'), '2 errors')
+    assert.equal(format.plural(1, 'Treffer', 'Treffer'), '1 match')
+    assert.equal(format.plural(2, 'PcbLib', 'PcbLibs'), '2 PcbLibs')
+    assert.equal(format.plural(2, 'PDF', 'PDFs'), '2 PDFs')
+    assert.equal(format.pluralNoun(2, 'Altium-Bibliothek', 'Altium-Bibliotheken').startsWith('Altium'), true)
+    i18n.setLanguage('de')
+    assert.equal(format.plural(3, 'Bauteil', 'Bauteile'), '3 Bauteile')
+    assert.equal(format.plural(1, 'Fehler', 'Fehler'), '1 Fehler')
+  })
+})
+
+describe('catalog consistency', () => {
+  test('general catalogs never give one source two English wordings', async () => {
+    const { readdirSync } = await import('node:fs')
+    const dir = fileURLToPath(new URL('../src/i18n/catalogs/', import.meta.url))
+    const seen = new Map()
+    const conflicts = []
+    for (const file of readdirSync(dir).filter((name) => name.endsWith('.ts')).sort()) {
+      if (i18n.CONTEXT_CATALOGS.has(file.slice(0, -3))) continue
+      const catalog = (await server.ssrLoadModule(`/src/i18n/catalogs/${file}`)).default
+      for (const [source, english] of Object.entries(catalog)) {
+        const earlier = seen.get(source)
+        if (earlier && earlier.english !== english) conflicts.push(`${JSON.stringify(source)}: ${earlier.file} ${JSON.stringify(earlier.english)} ≠ ${file} ${JSON.stringify(english)}`)
+        else if (!earlier) seen.set(source, { file, english })
+      }
+    }
+    assert.deepEqual(conflicts, [], 'use tc(context, source) for a wording that depends on the use')
+  })
+
+  test('domain catalogs keep their terms to their own translators', async () => {
+    const preview = await server.ssrLoadModule('/src/components/preview/i18n.ts')
+    assert.equal(i18n.t('Herkunft'), 'Source')
+    assert.equal(preview.t('Herkunft'), 'Origin')
+    assert.equal(i18n.t('Versorgung'), 'Power')
+    assert.equal(i18n.metadataLabel('Versorgung'), 'Supply Voltage')
+  })
+
+  test('context translations override only where requested', async () => {
+    const contexts = (await server.ssrLoadModule('/src/i18n/contexts.ts')).default
+    assert.equal(i18n.tc('author', 'von'), 'by')
+    assert.equal(i18n.tc('range', 'von'), 'from')
+    assert.equal(i18n.t('von'), 'of')
+    assert.equal(i18n.tc('author', 'Speichern'), 'Save')
+    for (const [context, messages] of Object.entries(contexts)) {
+      for (const source of Object.keys(messages)) {
+        assert.ok(Object.hasOwn(i18n.englishMessages, source), `${context}: „${source}“ has no default wording`)
+      }
+    }
+    i18n.setLanguage('de')
+    assert.equal(i18n.tc('author', 'von'), 'von')
+  })
 })

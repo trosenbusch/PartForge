@@ -203,7 +203,7 @@ function Summary({
             {stats.affected === 1 ? tr("weicht") : tr("weichen")} {tr(" vom Hausstil ab")}</>
         ) : (
           <>
-            {tr("Alle Bauteile im Hausstil – ")}{plural(stats.headerLibraries, tr("Lagen-Kopf weicht"), tr("Lagen-Köpfe weichen"))} {' '}{tr("ab")}</>
+            {tr("Alle Bauteile im Hausstil – ")}{plural(stats.headerLibraries, tr("Lagen-Kopf weicht ab"), tr("Lagen-Köpfe weichen ab"))}</>
         )}
       </h2>
       <p className="mt-0.5 text-xs text-fg-subtle">{meta}</p>
@@ -229,7 +229,7 @@ function Summary({
         <li className="flex items-center gap-1.5">
           <span aria-hidden className="size-2 rounded-full bg-accent" />
           <span className="mono font-medium text-fg">{formatNumber(stats.affected)}</span>{' '}
-          {stats.affected === 1 ? tr("weicht") : tr("weichen")} {' '}{tr("ab")}</li>
+          {stats.affected === 1 ? tr("weicht ab") : tr("weichen ab")}</li>
         {stats.problemComponents > 0 && (
           <li className="flex items-center gap-1.5">
             <TriangleAlert aria-hidden className="size-3.5 text-warning-text" />

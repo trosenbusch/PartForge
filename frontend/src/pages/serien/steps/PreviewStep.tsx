@@ -14,7 +14,7 @@ import type { RowStatus, SeriesPreview, SeriesTemplate } from '@/api/series'
 import { useElementSize } from '@/components/preview'
 import { Button, Callout, EmptyState, Input, SegmentedControl, Skeleton } from '@/components/ui'
 import { cn } from '@/lib/cn'
-import { formatNumber, plural } from '@/lib/format'
+import { formatNumber, plural, pluralNoun } from '@/lib/format'
 import { StepHeading } from '../components/StepHeading'
 import type { Density } from '../model/settings'
 import { exampleValue } from '../model/template'
@@ -439,7 +439,7 @@ function SkippedNote({ total, bySize: sizes, reason }: { total: number; bySize: 
       <div className="min-w-0 flex-1">
         <p className="text-ui text-fg">
           <span className="mono font-semibold">{formatNumber(total)}</span>{' '}
-          {total === 1 ? tr("Wert der Reihe ist") : tr("Werte der Reihe sind")} {tr("ausgelassen")}<span className="text-fg-muted"> – {midSentence(localizeMessage(reason ?? tr("laut Datenblatt mit dieser Auswahl nicht lieferbar")))}.</span>
+          {pluralNoun(total, tr("Wert der Reihe ist"), tr("Werte der Reihe sind"))} {tr("ausgelassen")}<span className="text-fg-muted"> – {midSentence(localizeMessage(reason ?? tr("laut Datenblatt mit dieser Auswahl nicht lieferbar")))}.</span>
         </p>
         <p className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-xs text-fg-muted">
           {sizes.map(([size, n]) => (

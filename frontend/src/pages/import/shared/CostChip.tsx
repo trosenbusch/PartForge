@@ -5,7 +5,7 @@ import type { RunInfo } from '@/api/datasheets'
 import { modelDisplayName } from '@/app/shell/useSystemStatus'
 import { Popover, PopoverContent, PopoverTrigger, ProgressBar } from '@/components/ui'
 import { cn } from '@/lib/cn'
-import { formatDuration, formatNumber } from '@/lib/format'
+import { formatDuration, formatNumber, plural, pluralNoun } from '@/lib/format'
 import { formatUsd, pagesText } from '../lib/format'
 
 const RUN_LABEL: Record<RunInfo['kind'], string> = {
@@ -48,7 +48,7 @@ export function CostChip({ costUsd, runs = [], budgetUsd, className, label = t("
           <span className="sr-only">{label}{t(": Kosten ")}</span>
           <span className="mono font-semibold text-fg">{formatUsd(costUsd)}</span>
           <span className="sr-only">
-            {failed > 0 ? t(" – {0} bezahlte {1} nicht verwertbar", { "0": String(failed), "1": String(failed === 1 ? t("Anfrage") : t("Anfragen")) }) : ''} {t(" – Einzelheiten anzeigen")}</span>
+            {failed > 0 ? t(" – {0} bezahlte {1} nicht verwertbar", { "0": String(failed), "1": pluralNoun(failed, t("Anfrage"), t("Anfragen")) }) : ''} {t(" – Einzelheiten anzeigen")}</span>
           {failed > 0 && <TriangleAlert aria-hidden className="size-3.5 text-warning-text" />}
         </button>
       </PopoverTrigger>
@@ -59,7 +59,7 @@ export function CostChip({ costUsd, runs = [], budgetUsd, className, label = t("
             <div className="mono mt-0.5 text-h3 font-semibold text-fg">{formatUsd(costUsd, { precise: true })}</div>
           </div>
           <div className="text-right text-xs text-fg-muted">
-            {formatNumber(runs.length)} {runs.length === 1 ? t("Anfrage") : t("Anfragen")}
+            {plural(runs.length, t("Anfrage"), t("Anfragen"))}
             {budgetUsd ? <div className="text-fg-subtle">{t("Limit je Import ")}{formatUsd(budgetUsd)}</div> : null}
           </div>
         </div>

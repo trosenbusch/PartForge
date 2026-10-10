@@ -4,6 +4,9 @@
 
 ### Neu
 
+- **Englisch und Deutsch** (*Einstellungen › Allgemein › Profil und Darstellung › Sprache*): Oberfläche,
+  Desktop-Dialoge, Meldungen und Zahlenformate in der gewählten Sprache. Standard ist Englisch – auch bestehende
+  Installationen zeigen nach dem Update Englisch, bis „Deutsch“ gewählt und gespeichert ist.
 - **STEP-Modelle in der 3D-Vorschau**: die Vorschau zeigt die STEP-Modelle eines Footprints mit ihrer
   Altium-Platzierung, auch eingebettete Modelle importierter Bibliotheken, die beim Import nicht abgelegt wurden;
   jedes Modell lässt sich herunterladen.

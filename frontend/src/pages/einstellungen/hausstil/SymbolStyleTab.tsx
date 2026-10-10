@@ -1,4 +1,4 @@
-import { t as translate, useI18n } from '@/lib/i18n'
+import { t as translate, tc, useI18n } from '@/lib/i18n'
 /**
  * Hausstil der Schaltplansymbole: Farben, Raster und Pinlängen, Linien und Schrift, Widerstandsform – mit
  * Live-Vorschau (Widerstand, Diode, IC) in der Altium-Ansicht.
@@ -21,11 +21,11 @@ const HEX = /^#[0-9A-Fa-f]{6}$/
 const FONTS = ['Times New Roman', 'Arial', 'Calibri', 'Consolas', 'Courier New', 'Segoe UI', 'Tahoma', 'Verdana']
 
 const PENDING_LABEL: Partial<Record<keyof SymbolStyle, string>> = {
-  grid: 'Raster',
-  discrete_pin_length: 'Pinlänge diskret',
-  font: 'Schriftart',
-  font_size: 'Schriftgröße',
-  resistor_style: 'Widerstandsform',
+  get grid() { return tc('grid', 'Raster') },
+  get discrete_pin_length() { return translate('Pinlänge diskret') },
+  get font() { return translate('Schriftart') },
+  get font_size() { return translate('Schriftgröße') },
+  get resistor_style() { return translate('Widerstandsform') },
 }
 
 export function SymbolStyleTab({
@@ -74,7 +74,7 @@ export function SymbolStyleTab({
 
         <StyleGroup title={translate("Raster und Pins")} description={translate("Längen in mil (100 mil = 2,54 mm)")}>
           <StyleRow
-            label={translate("Raster")}
+            label={tc('grid', 'Raster')}
             help={translate("Pins und Körperkanten liegen auf diesem Raster – 100 mil ist Altium-Standard.")}
             pending={pending('grid')}
             isDefault={draft.grid === d.grid}
@@ -82,7 +82,7 @@ export function SymbolStyleTab({
             onReset={() => onChange({ grid: d.grid })}
           >
             <SegmentedControl<string>
-              aria-label={translate("Raster")}
+              aria-label={tc('grid', 'Raster')}
               size="sm"
               value={String(draft.grid)}
               onValueChange={(v) => onChange({ grid: Number(v) })}
@@ -187,7 +187,7 @@ export function SymbolStyleTab({
 
         <StyleGroup title={translate("Formen")}>
           <StyleRow
-            label={translate("Widerstand")}
+            label={tc('component', 'Widerstand')}
             help={translate("IEC: Rechteck (Europa) · ANSI: Zickzack (USA). Gilt auch für Potis und Trimmer.")}
             pending={pending('resistor_style')}
             isDefault={draft.resistor_style === d.resistor_style}
@@ -342,7 +342,7 @@ function SymbolStylePreview({
         <span className="text-2xs text-fg-subtle">{translate("Altium-Ansicht")}</span>
       </div>
       <div className="grid grid-cols-2 gap-px bg-line" style={style}>
-        <SymbolTile title={translate("Widerstand")} req={{ kind: 'resistor' }} saved={saved} draft={draft} labels={false} />
+        <SymbolTile title={tc('component', 'Widerstand')} req={{ kind: 'resistor' }} saved={saved} draft={draft} labels={false} />
         <SymbolTile title="Diode" req={{ kind: 'diode' }} saved={saved} draft={draft} labels={false} />
         <SymbolTile title="IC" req={{ ...IC_REQUEST, name: translate(IC_REQUEST.name ?? "") }} saved={saved} draft={draft} ic comment="24LC256" designator="U1" className="col-span-2 h-64" />
       </div>
@@ -353,7 +353,7 @@ function SymbolStylePreview({
             {translate("Exakt nach dem Speichern:")}{' '}
             {pendingKeys.map((k, i) => (
               <Badge key={k} className={cn('h-4 px-1.5', i > 0 && 'ml-1')}>
-                {translate(PENDING_LABEL[k] ?? k)}
+                {PENDING_LABEL[k] ?? translate(k)}
               </Badge>
             ))}
           </span>

@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import type { ExtractionIssue } from '@/api/datasheets'
 import { Badge } from '@/components/ui'
 import { cn } from '@/lib/cn'
-import { formatNumber } from '@/lib/format'
+import { formatNumber, plural } from '@/lib/format'
 import { TipButton } from '../../shared/TipButton'
 import type { DataSection } from '../../store'
 import { severityCounts } from '../issues'
@@ -56,17 +56,17 @@ export function ConfidenceBadge({ issues, className }: { issues: readonly Extrac
     c.error > 0 ? (
       <Badge variant="danger" className={className}>
         <CircleAlert />
-        {formatNumber(c.error)} {c.error === 1 ? t("Fehler") : t("Fehler")}
+        {plural(c.error, 'Fehler', 'Fehler')}
       </Badge>
     ) : c.warning > 0 ? (
       <Badge variant="warning" className={className}>
         <TriangleAlert />
-        {formatNumber(c.warning)} {c.warning === 1 ? t("Warnung") : t("Warnungen")}
+        {plural(c.warning, t("Warnung"), t("Warnungen"))}
       </Badge>
     ) : c.info > 0 ? (
       <Badge variant="info" className={className}>
         <Info />
-        {formatNumber(c.info)} {c.info === 1 ? t("Hinweis") : t("Hinweise")}
+        {plural(c.info, t("Hinweis"), t("Hinweise"))}
       </Badge>
     ) : (
       <Badge variant="success" className={className}>

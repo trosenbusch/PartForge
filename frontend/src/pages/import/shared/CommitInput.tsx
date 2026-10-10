@@ -2,7 +2,7 @@ import { useI18n } from '@/lib/i18n'
 import { useEffect, useRef, useState, type InputHTMLAttributes, type KeyboardEvent, type Ref } from 'react'
 import { Input, type InputProps } from '@/components/ui'
 import { cn } from '@/lib/cn'
-import { formatDecimal, parseDecimal } from '@/lib/format'
+import { formatInputNumber, parseDecimal } from '@/lib/format'
 import { clearActiveFlush, setActiveFlush } from './activeInput'
 
 /**
@@ -137,7 +137,7 @@ export interface NumberCellProps extends Omit<CellInputProps, 'value' | 'onCommi
 /** Zahl in einer Tabellenzelle (deutsche Eingabe „0,95“, leer = keine Angabe). */
 export function NumberCell({ value, onCommit, digits = 3, ...props }: NumberCellProps) {
   useI18n()
-  const text = value === null || value === undefined ? '' : formatDecimal(value, digits)
+  const text = value === null || value === undefined ? '' : formatInputNumber(value, digits)
   return (
     <CellInput
       {...props}

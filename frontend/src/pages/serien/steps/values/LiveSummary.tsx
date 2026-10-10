@@ -15,7 +15,7 @@ import { errorMessage } from '@/api/client'
 import type { SeriesPreview } from '@/api/series'
 import { Button, Callout, CountUp, Skeleton, Spinner } from '@/components/ui'
 import { cn } from '@/lib/cn'
-import { formatNumber, plural } from '@/lib/format'
+import { formatNumber, plural, pluralNoun } from '@/lib/format'
 import { MpnAnatomy } from '../../components/MpnAnatomy'
 import type { MpnSegment } from '../../model/anatomy'
 import type { Estimate } from '../../model/estimate'
@@ -91,7 +91,7 @@ export function LiveSummary({
   const failed = Boolean(error)
   const counted = !tooMany && e.total > 0
 
-  const partsWord = total === 1 ? tr("Bauteil") : tr("Bauteile")
+  const partsWord = pluralNoun(total, tr("Bauteil"), tr("Bauteile"))
   const announcement = useSettledAnnouncement(
     failed || checking
       ? null
@@ -144,19 +144,19 @@ export function LiveSummary({
             {serverTotal !== null && serverTotal !== e.total && <span className="text-2xs text-fg-subtle">{tr("laut Prüfung")}</span>}
           </div>
           <p className="mt-1 flex flex-wrap items-baseline gap-x-1.5 text-ui text-fg-muted">
-            <Num>{formatNumber(e.sizes)}</Num> {e.sizes === 1 ? tr("Bauform") : tr("Bauformen")}
+            <Num>{formatNumber(e.sizes)}</Num> {pluralNoun(e.sizes, tr("Bauform"), tr("Bauformen"))}
             <span aria-hidden className="text-fg-subtle">
               ×
             </span>
             <span className="sr-only">{tr("mal")}</span>
-            <Num>{formatNumber(e.values)}</Num> {e.values === 1 ? tr("Wert") : tr("Werte")}
+            <Num>{formatNumber(e.values)}</Num> {pluralNoun(e.values, tr("Wert"), tr("Werte"))}
             {e.jumpers > 0 && (
               <>
                 <span aria-hidden className="text-fg-subtle">
                   +
                 </span>
                 <span className="sr-only">plus</span>
-                <Num>{formatNumber(e.jumpers)}</Num> {e.jumpers === 1 ? tr("Brücke") : tr("Brücken")}
+                <Num>{formatNumber(e.jumpers)}</Num> {pluralNoun(e.jumpers, tr("Brücke"), tr("Brücken"))}
               </>
             )}
           </p>

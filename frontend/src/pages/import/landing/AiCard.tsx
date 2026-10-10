@@ -1,5 +1,5 @@
 import { localizeMessage } from '@/lib/i18n'
-import { t, useI18n } from '@/lib/i18n'
+import { t, tc, useI18n } from '@/lib/i18n'
 import { Activity, ArrowRight, CircleCheck, Hammer, KeyRound, ListChecks, Power, ScanText, Settings2, Sparkles, TriangleAlert } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
@@ -156,7 +156,7 @@ export function AiCard({
           <dd className="text-right text-fg" title={status?.use_fallbacks ? t("Bei Überlastung antwortet ein Ausweichmodell") : undefined}>
             {status ? effortLabel(status.effort) : '–'}
           </dd>
-          <dt className="text-fg-subtle">{t("Schlüssel")}</dt>
+          <dt className="text-fg-subtle">{tc('apiKey', 'Schlüssel')}</dt>
           <dd
             className="truncate text-right text-fg"
             title={replay ? t("Aufgezeichnete Antworten statt der Claude-API (PARTFORGE_AI_REPLAY_DIR) – nichts kostet") : undefined}

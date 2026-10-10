@@ -1,5 +1,5 @@
 import { useI18n, localizeMessage } from '@/lib/i18n'
-import { t as tr } from '@/lib/i18n'
+import { t as tr, tc } from '@/lib/i18n'
 import { ChevronDown, ChevronUp, ClipboardCopy, Download, FileCode2, FolderOpen, Search, X } from 'lucide-react'
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
@@ -77,7 +77,7 @@ export function DblibPreviewDialog({ open, onOpenChange }: { open: boolean; onOp
   const copy = () =>
     void navigator.clipboard
       ?.writeText(text)
-      .then(() => toast.success(tr("DbLib-Text kopiert"), { description: `${plural(lines.length, tr("Zeile"), tr("Zeilen"))}${masked ? tr(" · Kennwort maskiert") : ''}` }))
+      .then(() => toast.success(tr("DbLib-Text kopiert"), { description: `${plural(lines.length, tc('text', 'Zeile'), tc('text', 'Zeilen'))}${masked ? tr(" · Kennwort maskiert") : ''}` }))
       .catch(() => toast.error(tr("Kopieren nicht möglich")))
 
   /**

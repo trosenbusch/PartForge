@@ -8,7 +8,7 @@ import { PanelLeftClose, PanelLeftOpen, PanelRight, Search, Upload, X } from 'lu
 import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react'
 import { Button, IconButton, Kbd, Spinner, Tooltip } from '@/components/ui'
 import { cn } from '@/lib/cn'
-import { formatNumber } from '@/lib/format'
+import { formatNumber, pluralNoun } from '@/lib/format'
 
 /** Wartezeit nach der letzten Taste, bevor die Tabelle sucht (Suche über große Kategorien kostet Zeit) */
 const SEARCH_DEBOUNCE_MS = 350
@@ -174,7 +174,7 @@ export function PartsToolbar({
         ) : (
           <>
             <span className="mono font-medium text-fg">{formatNumber(total)}</span>
-            <span>{total === 1 ? t("Bauteil") : t("Bauteile")}</span>
+            <span>{pluralNoun(total, t("Bauteil"), t("Bauteile"))}</span>
           </>
         )}
       </span>

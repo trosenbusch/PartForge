@@ -1,4 +1,4 @@
-import { t as tr, localizeMessage, getLocale } from '@/lib/i18n'
+import { t as tr, tc, localizeMessage, getLocale } from '@/lib/i18n'
 import {
   DEFAULT_RULES,
   RULE_LABELS,
@@ -298,7 +298,7 @@ export const SYMBOL_RULES: RuleDef<SymbolFlag>[] = [
     get label() { return RULE_LABELS.fonts },
     help: (s) =>
       s
-        ? tr("Bezeichner, Kommentar und Parameter in {0}{1}{2}, Pins in der {3}", { "0": String(s.symbol.font), "1": String(NBSP), "2": String(formatDecimal(s.symbol.font_size)), "3": String(s.symbol.pin_font === 'system' ? tr("Systemschrift") : tr("Hausschrift")) })
+        ? tr("Bezeichner, Kommentar und Parameter in {0}{1}{2}, Pins in der {3}", { "0": String(s.symbol.font), "1": String(NBSP), "2": String(formatDecimal(s.symbol.font_size)), "3": String(s.symbol.pin_font === 'system' ? tc('inline', 'Systemschrift') : tc('inline', 'Hausschrift')) })
         : tr("Hausschrift für Bezeichner, Kommentar, Parameter und Pins"),
   },
   {
@@ -352,7 +352,7 @@ export const FOOTPRINT_RULES: RuleDef<FootprintFlag>[] = [
     get label() { return RULE_LABELS.texts },
     help: (s) =>
       s
-        ? tr(".Designator und .Comment in {0}, {1} hoch (kleiner bei winzigen Bauteilen)", { "0": String(s.footprint.text_font === 'truetype' ? s.footprint.text_font_name || 'Arial' : tr("Strichschrift")), "1": String(mm(s.footprint.text_height)) })
+        ? tr(".Designator und .Comment in {0}, {1} hoch (kleiner bei winzigen Bauteilen)", { "0": String(s.footprint.text_font === 'truetype' ? s.footprint.text_font_name || 'Arial' : tc('inline', 'Strichschrift')), "1": String(mm(s.footprint.text_height)) })
         : tr(".Designator und .Comment in Schrift und Höhe des Hausstils"),
   },
   {

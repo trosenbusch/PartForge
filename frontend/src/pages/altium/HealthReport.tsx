@@ -41,7 +41,7 @@ import {
 } from '@/api/libraries'
 import { Badge, Button, Callout, Card, EmptyState, IconButton, Input, SegmentedControl, Skeleton } from '@/components/ui'
 import { cn } from '@/lib/cn'
-import { baseName, formatNumber, formatRelativeTime, plural } from '@/lib/format'
+import { baseName, formatNumber, formatRelativeTime, plural, pluralNoun } from '@/lib/format'
 import type { ActionKey } from './model'
 import { partPath } from './paths'
 import type { AltiumActions } from './useAltiumActions'
@@ -489,7 +489,7 @@ function GroupRow({
               <span className="text-ui font-medium text-fg">{group.info.label}</span>
               <span className="mono text-xs text-fg-muted">
                 {formatNumber(group.total)}
-                <span className="sr-only"> {group.total === 1 ? tr("Befund") : tr("Befunde")}</span>
+                <span className="sr-only"> {pluralNoun(group.total, tr("Befund"), tr("Befunde"))}</span>
               </span>
               {parts.count > 0 && showParts(group, parts.count) && (
                 <span className="text-xs text-fg-subtle">

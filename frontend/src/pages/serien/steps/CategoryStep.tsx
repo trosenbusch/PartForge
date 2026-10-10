@@ -11,7 +11,7 @@ import { useCategories } from '@/api/library'
 import { useSeriesTemplates, type DecodedMpn, type SeriesTemplateSummary } from '@/api/series'
 import { Button, Callout, Card, Skeleton } from '@/components/ui'
 import { cn } from '@/lib/cn'
-import { formatNumber, plural } from '@/lib/format'
+import { formatNumber, plural, pluralNoun } from '@/lib/format'
 import { CategoryGlyph } from '../components/CategoryGlyph'
 import { StepHeading } from '../components/StepHeading'
 import { useRadioCards } from '../components/useRadioCards'
@@ -197,7 +197,7 @@ export function CategoryStep({ onPick, onResume, onApplyDecoded, onDecodedChange
                     <span aria-hidden className="mt-auto flex flex-col gap-0.5 pt-1.5 text-xs text-fg-subtle">
                       <span>
                         <span className="mono font-semibold text-fg">{counts ? formatNumber(card.templates.length) : '–'}</span>{' '}
-                        {counts && card.templates.length === 1 ? tr("Hersteller-Serie") : tr("Hersteller-Serien")}
+                        {pluralNoun(counts ? card.templates.length : 0, tr("Hersteller-Serie"), tr("Hersteller-Serien"))}
                       </span>
                       {card.parts !== null && (
                         <span>

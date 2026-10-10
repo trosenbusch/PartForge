@@ -1,15 +1,31 @@
 import { useMemo, useSyncExternalStore } from 'react'
 import { readPref, writePref } from './prefs'
 import partMetadata from '../i18n/catalogs/parts-metadata'
+import contextMessages, { type TranslationContext } from '../i18n/contexts'
 
 export type Language = 'en' | 'de'
 export type TranslationParams = Record<string, string | number>
+export type { TranslationContext }
 export const LANGUAGES = [{ value: 'en', label: 'English' }, { value: 'de', label: 'Deutsch' }] as const
+
+/**
+ * Catalogs with their own translator (`@/components/preview/i18n`, {@link metadataLabel}). Their domain
+ * terms (Sicherung = fuse, Seite = pin side) must not replace general wording, so they rank lowest.
+ * All other catalogs share one namespace and must agree; a source that needs another English
+ * wording somewhere uses {@link tc}.
+ */
+export const CONTEXT_CATALOGS: ReadonlySet<string> = new Set(['geometry', 'parts-metadata'])
 
 // Source messages are German; catalogs supply English. Keeping interpolation in the
 // translator ensures names, paths and other user data are never translated.
 const modules = import.meta.glob<{ default: Record<string, string> }>('../i18n/catalogs/*.ts', { eager: true })
-export const englishMessages: Readonly<Record<string, string>> = Object.assign(Object.create(null), ...Object.values(modules).map((m) => m.default))
+const isContextCatalog = (path: string) => CONTEXT_CATALOGS.has(path.replace(/^.*\/|\.ts$/g, ''))
+export const englishMessages: Readonly<Record<string, string>> = Object.assign(
+  Object.create(null),
+  ...Object.entries(modules)
+    .sort(([a], [b]) => Number(isContextCatalog(b)) - Number(isContextCatalog(a)))
+    .map(([, m]) => m.default),
+)
 
 export function normalizeLanguage(value: unknown): Language {
   return value === 'de' ? 'de' : 'en'
@@ -37,9 +53,20 @@ export function setLanguage(next: Language): void {
   for (const listener of listeners) listener()
 }
 
-export function translate(source: string, selected: Language, params?: TranslationParams): string {
-  const message = selected === 'de' ? source : (englishMessages[source] ?? source)
+function interpolate(message: string, params?: TranslationParams): string {
   return params ? message.replace(/\{(\w+)\}/g, (match, name: string) => Object.hasOwn(params, name) ? String(params[name]) : match) : message
+}
+
+export function translate(source: string, selected: Language, params?: TranslationParams): string {
+  return interpolate(selected === 'de' ? source : (englishMessages[source] ?? source), params)
+}
+
+/** {@link translate} for a source whose English depends on its use (see `i18n/contexts.ts`). */
+export function translateContext(context: TranslationContext, source: string, selected: Language, params?: TranslationParams): string {
+  const messages: Readonly<Record<string, string>> = contextMessages[context]
+  return selected === 'en' && Object.hasOwn(messages, source)
+    ? interpolate(messages[source], params)
+    : translate(source, selected, params)
 }
 
 /** Context-specific built-in category, field and option labels. Stored values stay unchanged. */
@@ -52,6 +79,11 @@ export function metadataLabel(source: string, fallback: typeof t = t): string {
 /** For event handlers and non-React helpers; translate at display time. */
 export function t(source: string, params?: TranslationParams): string {
   return translate(source, language, params)
+}
+
+/** Like gettext's msgctxt: `tc('author', 'von')` is "by", while `t('von')` stays "of". */
+export function tc(context: TranslationContext, source: string, params?: TranslationParams): string {
+  return translateContext(context, source, language, params)
 }
 
 // Older jobs and backend diagnostics contain rendered German messages. Localize
@@ -100,5 +132,6 @@ export function useI18n() {
     language: selected,
     locale: selected === 'de' ? 'de-DE' : 'en-US',
     t: (source: string, params?: TranslationParams) => translate(source, selected, params),
+    tc: (context: TranslationContext, source: string, params?: TranslationParams) => translateContext(context, source, selected, params),
   }), [selected])
 }

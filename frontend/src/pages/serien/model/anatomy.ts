@@ -1,4 +1,4 @@
-import { t as tr } from '@/lib/i18n'
+import { t as tr, tc } from '@/lib/i18n'
 /**
  * Aufbau einer Teilenummer: „CRCW0603 10K0 F K EA“ → Segmente mit Bedeutung (Baugröße, Wert, Toleranz …).
  * Die Karten bekommen die Segmente vom Backend (`TemplateSummary.example.segments`); hier entstehen sie für gelesene
@@ -31,7 +31,7 @@ const SHORT: Record<string, string> = {
 
 /** Kurzform einer Variablenbezeichnung */
 export function shortLabel(name: string, label: string): string {
-  if (SHORT[name]) return tr(SHORT[name])
+  if (SHORT[name]) return tc('mpn', SHORT[name])
   return label.length > 7 ? `${label.slice(0, 5)}.` : label
 }
 

@@ -17,6 +17,7 @@ import {
   Spinner,
   type SelectOption,
 } from '@/components/ui'
+import { pluralNoun } from '@/lib/format'
 import { estimateText, formatUsd, pagesText, parsePageInput } from '../lib/format'
 import { useDebounced } from './useDebounced'
 
@@ -70,7 +71,7 @@ export function ReanalyzeDialog({
 /** „1, 2, 99–120“ → was wegfällt: „99–120 (das PDF hat 26 Seiten)“, „„a“ (keine Seitenzahl)“ – oder `null` */
 function droppedText(outOfRange: number[], invalid: string[], pageCount: number): string | null {
   const parts: string[] = []
-  if (outOfRange.length) parts.push(t("{0} (das PDF hat {1} {2})", { "0": String(pagesText(outOfRange)), "1": String(pageCount), "2": String(pageCount === 1 ? t("Seite") : t("Seiten")) }))
+  if (outOfRange.length) parts.push(t("{0} (das PDF hat {1} {2})", { "0": String(pagesText(outOfRange)), "1": String(pageCount), "2": pluralNoun(pageCount, t("Seite"), t("Seiten")) }))
   if (invalid.length) parts.push(`„${invalid.slice(0, 3).join('“, „')}“ (${invalid.length === 1 ? t("keine Seitenzahl") : t("keine Seitenzahlen")})`)
   return parts.length ? parts.join(t(' und ')) : null
 }

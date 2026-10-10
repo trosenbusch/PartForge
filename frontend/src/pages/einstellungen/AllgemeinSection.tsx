@@ -1,4 +1,4 @@
-import { localizeMessage, t, translate, useI18n, type TranslationParams } from '@/lib/i18n'
+import { localizeMessage, t, tc, translate, useI18n, type TranslationParams } from '@/lib/i18n'
 /**
  * Allgemein: Profil und Darstellung, KI-Funktionen (inkl. Verbindungstest) und Altium Designer (inkl. Status).
  * App-Einstellungen gelten für diesen Windows-Benutzer (settings.json) – unabhängig von der Bibliothek.
@@ -1310,7 +1310,7 @@ function ApiKeyDialog({
             description={t("Der Schlüssel wird mit Windows (DPAPI) verschlüsselt gespeichert, nur für Ihren Benutzer lesbar und nie wieder angezeigt.")}
           />
           <DialogBody className="flex flex-col gap-4">
-            <Field label={t("Schlüssel")} required error={formatHint ?? (saveKey.error ? errorMessage(saveKey.error) : undefined)}>
+            <Field label={tc('apiKey', 'Schlüssel')} required error={formatHint ?? (saveKey.error ? errorMessage(saveKey.error) : undefined)}>
               <Input
                 type="password"
                 mono

@@ -42,7 +42,7 @@ export function TemplateStep({
   revealId,
   onRevealed,
 }: TemplateStepProps) {
-  const { t: tr } = useI18n()
+  const { t: tr, tc } = useI18n()
   const templates = useSeriesTemplates(category)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
@@ -105,7 +105,7 @@ export function TemplateStep({
                   onValueChange={setFilter}
                   options={[
                     { value: 'all', label: tr("Alle") },
-                    { value: 'verified', label: tr("Geprüft") },
+                    { value: 'verified', label: tc('verification', 'Geprüft') },
                     { value: 'custom', label: tr("Eigene") },
                   ]}
                 />

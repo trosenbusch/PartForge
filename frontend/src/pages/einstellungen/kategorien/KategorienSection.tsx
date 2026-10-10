@@ -13,7 +13,7 @@ import { useCategories } from '@/api/library'
 import { useFieldKinds, useUpdateCategory, type CategoryDef, type FieldKindInfo } from '@/api/settings'
 import { useWorkspace } from '@/api/system'
 import { Badge, Button, Card, EmptyState, Select, Skeleton, Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui'
-import { formatNumber } from '@/lib/format'
+import { formatNumber, plural } from '@/lib/format'
 import { NoWorkspace } from '../components'
 import { useDraft } from '../draft'
 import { UnsavedChanges } from '../UnsavedChanges'
@@ -248,10 +248,10 @@ function CategoryEditor({
                 {translate("Präfix")}{' '}<span className="mono text-fg">{draft.prefix || '–'}</span>
               </span>
               <span aria-hidden className="text-fg-subtle">·</span>
-              <span>{parts === 0 ? translate("ohne Bauteile") : `${formatNumber(parts)} ${parts === 1 ? translate("Bauteil") : translate("Bauteile")}`}</span>
+              <span>{parts === 0 ? translate("ohne Bauteile") : plural(parts, translate("Bauteil"), translate("Bauteile"))}</span>
               <span aria-hidden className="text-fg-subtle">·</span>
               <span>
-                {formatNumber(ownFields)} {' '}{translate("eigene")}{' '}{ownFields === 1 ? translate("Feld") : translate("Felder")}
+                {translate(ownFields === 1 ? "{0} eigenes Feld" : "{0} eigene Felder", { "0": formatNumber(ownFields) })}
               </span>
               <span className="flex gap-1.5">
                 {category.builtin ? <Badge variant="outline">{translate("aus Vorlage")}</Badge> : <Badge variant="outline">{translate("eigene")}</Badge>}

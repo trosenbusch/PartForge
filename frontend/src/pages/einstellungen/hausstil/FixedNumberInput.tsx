@@ -17,7 +17,7 @@ function formatFixed(value: number, decimals: number): string {
   const key = `${getLocale()}:${decimals}`
   let f = formats.get(key)
   if (!f) {
-    f = new Intl.NumberFormat(getLocale(), { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
+    f = new Intl.NumberFormat(getLocale(), { minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping: false })
     formats.set(key, f)
   }
   return f.format(value)

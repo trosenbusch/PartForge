@@ -121,7 +121,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 
 /** Komponenten-Galerie (intern): alle Bausteine des UI-Kits in beiden Themes prüfen. */
 export default function UiKitPage() {
-  const { t: tr } = useI18n()
+  const { t: tr, tc } = useI18n()
   const [segment, setSegment] = useState<'grid' | 'list' | 'cards'>('grid')
   const [density, setDensity] = useState<'L' | 'N' | 'M'>('N')
   const [model, setModel] = useState('claude-opus-5-5')
@@ -334,7 +334,7 @@ export default function UiKitPage() {
                   onValueChange={setSegment}
                   aria-label={tr("Ansicht")}
                   options={[
-                    { value: 'grid', label: tr("Raster") },
+                    { value: 'grid', label: tc('grid', 'Raster') },
                     { value: 'list', label: tr("Liste") },
                     { value: 'cards', label: tr("Karten") },
                   ]}

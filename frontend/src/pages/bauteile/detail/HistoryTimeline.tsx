@@ -1,4 +1,4 @@
-import { metadataLabel, t, useI18n } from '@/lib/i18n'
+import { metadataLabel, t, tc, useI18n } from '@/lib/i18n'
 /**
  * Änderungsverlauf eines Bauteils (`GET /api/parts/{table}/{pn}/history`, neueste zuerst): wer, wann, welche
  * Felder von → nach. Anlegen/Import mit vielen Feldern ist eingeklappt.
@@ -167,7 +167,7 @@ function Entry({ entry, fields, last }: { entry: PartHistoryEntry; fields: Map<s
       <div className="min-w-0 flex-1 pt-1">
         <div className="flex flex-wrap items-baseline gap-x-1.5 text-ui">
           <span className="font-medium text-fg">{metadataLabel(meta.label, t)}</span>
-          {entry.author && <span className="text-fg-muted">{t("von")} {entry.author}</span>}
+          {entry.author && <span className="text-fg-muted">{tc('author', 'von')} {entry.author}</span>}
           <Tooltip content={formatDateTime(entry.ts)}>
             <time dateTime={entry.ts} className="ml-auto shrink-0 cursor-default text-2xs text-fg-subtle">
               {formatRelativeTime(entry.ts)}

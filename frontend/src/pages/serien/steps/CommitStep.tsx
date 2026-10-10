@@ -39,7 +39,7 @@ import type {
 import { useCancelJob } from '@/api/system'
 import { Button, Callout, Kbd, ProgressRing, SegmentedControl, Skeleton, Tooltip } from '@/components/ui'
 import { cn } from '@/lib/cn'
-import { formatNumber, formatNumbersInText, formatPercent, plural } from '@/lib/format'
+import { formatNumber, formatNumbersInText, formatPercent, plural, pluralNoun } from '@/lib/format'
 import { focusWhenReady } from '../components/focus'
 import { StepHeading } from '../components/StepHeading'
 import { nameReasonTopic } from '../model/footprint'
@@ -421,7 +421,7 @@ export function CommitStep({
                   <div className="flex flex-col gap-2.5 @[40rem]:flex-row @[40rem]:items-center @[40rem]:justify-between">
                     <span>
                       <span className="mono font-semibold">{formatNumber(existing)}</span>{' '}
-                      {existing === 1 ? tr("Bauteil ist") : tr("Bauteile sind")} {tr("schon vorhanden")}</span>
+                      {pluralNoun(existing, tr("Bauteil ist"), tr("Bauteile sind"))} {tr("schon vorhanden")}</span>
                     <SegmentedControl<CommitMode>
                       size="sm"
                       aria-label={tr("Vorhandene Bauteile")}

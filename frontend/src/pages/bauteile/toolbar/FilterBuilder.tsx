@@ -1,4 +1,4 @@
-import { metadataLabel, t, useI18n, getLocale } from '@/lib/i18n'
+import { metadataLabel, t, tc, useI18n, getLocale } from '@/lib/i18n'
 /**
  * Filter-Baukasten: Bedingungen je Spalte mit Operatoren passend zur Feldart – Messwerte vergleichen Werte mit
  * Einheiten im Backend („> 1k“, „zwischen 10 n … 1 µ“), Datumsfelder deutsch („09.10.2026“, „heute“, Schnellwahl
@@ -257,7 +257,7 @@ function ConditionRow({
           <DateValues condition={c} field={field} onChange={onChange} />
         ) : c.op === 'between' ? (
           <div className="flex items-center gap-2">
-            <ValueInput field={field} value={c.value ?? ''} onChange={(value) => onChange({ value })} label={t("von")} className="flex-1" />
+            <ValueInput field={field} value={c.value ?? ''} onChange={(value) => onChange({ value })} label={tc('range', 'von')} className="flex-1" />
             <span className="text-xs text-fg-subtle">{t("bis")}</span>
             <ValueInput field={field} value={c.to ?? ''} onChange={(to) => onChange({ to })} label={t("bis")} className="flex-1" />
           </div>
@@ -317,7 +317,7 @@ function DateValues({
     <div className="flex flex-col gap-2">
       {c.op === 'between' ? (
         <div className="flex items-start gap-2">
-          <DateInput field={field} value={c.value ?? ''} onChange={(value) => onChange({ value })} label={t("von")} className="flex-1" />
+          <DateInput field={field} value={c.value ?? ''} onChange={(value) => onChange({ value })} label={tc('range', 'von')} className="flex-1" />
           <span className="pt-1.5 text-xs text-fg-subtle">{t("bis")}</span>
           <DateInput field={field} value={c.to ?? ''} onChange={(to) => onChange({ to })} label={t("bis einschließlich")} className="flex-1" />
         </div>

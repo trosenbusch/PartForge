@@ -1,4 +1,4 @@
-import { t as tr } from '@/lib/i18n'
+import { t as tr, tc } from '@/lib/i18n'
 import {
   ArchiveRestore,
   Cable,
@@ -39,7 +39,7 @@ export const ACTION_META: Record<ActionKey, { label: string; short: string; icon
   installReplace: { get label() { return tr("Ersetzen und installieren") }, get short() { return tr("Ersetzen und installieren") }, icon: Replace },
   uninstall: { get label() { return tr("Aus Altium deinstallieren") }, get short() { return tr("Deinstallieren") }, icon: Unplug },
   installState: { get label() { return tr("Installationsstatus prüfen") }, get short() { return tr("Status prüfen") }, icon: SearchCheck },
-  refresh: { get label() { return tr("In Altium aktualisieren") }, get short() { return tr("Aktualisieren") }, icon: RotateCw },
+  refresh: { get label() { return tr("In Altium aktualisieren") }, get short() { return tc('refresh', 'Aktualisieren') }, icon: RotateCw },
   refreshRebuild: { get label() { return tr("Aktualisieren mit Index-Neuaufbau") }, get short() { return tr("Index neu aufbauen") }, icon: RotateCw },
   verify: { get label() { return tr("Bibliothek in Altium prüfen") }, get short() { return tr("In Altium prüfen") }, icon: ScanSearch },
   open: { get label() { return tr("DbLib in Altium öffnen") }, get short() { return tr("In Altium öffnen") }, icon: SquareArrowOutUpRight },
