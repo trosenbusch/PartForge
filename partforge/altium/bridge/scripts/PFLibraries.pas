@@ -1,7 +1,7 @@
 { PartForge Altium bridge - library management commands.
 
   ping, installed_libraries, install_library, uninstall_library, open_document,
-  document_state, refresh_document, close_own_documents, list_components,
+  document_state, document_states, refresh_document, close_own_documents, list_components,
   resolve_db_components, dblib_install_state, refresh_dblib.
   Built only from API calls verified on Altium Designer 26.10 (altium-live.md,
   altium-verify-2 kit); see PFUtils.pas for the coding rules.
@@ -134,6 +134,36 @@ begin
     end;
     PFOutKV('open', PFBoolStr(IsOpen));
     PFOutKV('modified', PFBoolStr(IsModified));
+end;
+
+{ Open/modified state of many documents in one run (house-style conversion of many libraries):
+  count + path<i> in, open<i>/modified<i> out. }
+procedure PFCmdDocumentStates(Dummy: Integer);
+var
+    I, Count : Integer;
+    Path : String;
+    Doc : IDispatch;
+    IsOpen, IsModified : Boolean;
+begin
+    Count := PFArgInt('count');
+    for I := 0 to Count - 1 do
+    begin
+        Path := PFArg('path' + IntToStr(I));
+        IsOpen := False;
+        IsModified := False;
+        if Path <> '' then
+        begin
+            IsOpen := Client.IsDocumentOpen(Path);
+            if IsOpen then
+            begin
+                Doc := Client.GetDocumentByPath(Path);
+                if Doc <> Nil then
+                    IsModified := Doc.Modified;
+            end;
+        end;
+        PFOutKV('open' + IntToStr(I), PFBoolStr(IsOpen));
+        PFOutKV('modified' + IntToStr(I), PFBoolStr(IsModified));
+    end;
 end;
 
 { Show a library rewritten outside Altium: close and reopen it, but only when it is

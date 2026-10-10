@@ -137,7 +137,7 @@ export function SymbolStyleTab({
           </StyleRow>
           <StyleRow
             label="Schriftart"
-            help="Pinnamen und Texte in Altium."
+            help="Hausschrift für Bezeichner, Kommentar, Parameter und Texte – PartForge trägt sie in die Schrifttabelle der SchLib ein."
             pending={pending('font')}
             isDefault={draft.font === d.font}
             defaultText={d.font}
@@ -164,6 +164,24 @@ export function SymbolStyleTab({
             unit="pt"
             pending={pending('font_size')}
           />
+          <StyleRow
+            label="Pinnamen und -nummern"
+            help="Hausschrift: als eigene Schrift jedes Pins (Altium „Custom Font“). Systemschrift: die Schrift des Schaltplanblatts."
+            isDefault={draft.pin_font === d.pin_font}
+            defaultText="Hausschrift"
+            onReset={() => onChange({ pin_font: d.pin_font })}
+          >
+            <SegmentedControl<SymbolStyle['pin_font']>
+              aria-label="Schrift der Pinnamen und -nummern"
+              size="sm"
+              value={draft.pin_font}
+              onValueChange={(v) => onChange({ pin_font: v })}
+              options={[
+                { value: 'house', label: 'Hausschrift' },
+                { value: 'system', label: 'Systemschrift' },
+              ]}
+            />
+          </StyleRow>
         </StyleGroup>
 
         <StyleGroup title="Formen">

@@ -725,7 +725,10 @@ def test_rust_to_footprint_reports_what_a_write_back_would_lose():
             {"layer": "Top Layer", "kind": "cutout", "vertices": [{"x": 0, "y": 0}, {"x": 1, "y": 0}, {"x": 1, "y": 1}]},
             {"layer": "Top Paste", "kind": "copper", "vertices": [{"x": 0, "y": 0}, {"x": 1, "y": 0}, {"x": 1, "y": 1}]},
         ],
-        "text": [{"x": 0, "y": 0, "text": "TT", "height": 1, "layer": "Top Overlay", "kind": "true_type"}],
+        "text": [
+            {"x": 0, "y": 0, "text": "TT", "height": 1, "layer": "Top Overlay", "kind": "true_type", "font_name": "Arial"},
+            {"x": 0, "y": 0, "text": "123", "height": 1, "layer": "Top Overlay", "kind": "bar_code"},
+        ],
         "component_bodies": [
             {"embedded": True, "model_id": "{A}", "model_name": "a.step", "overall_height": 1, "outline": [[0, 0], [1, 0], [1, 1]]},
             {"embedded": True, "model_id": "{B}", "model_name": "b.step", "overall_height": 1, "outline": [[0, 0], [1, 0], [1, 1]]},
@@ -735,9 +738,12 @@ def test_rust_to_footprint_reports_what_a_write_back_would_lose():
     spec = rust_to_footprint(data, LayerMap(), notes=notes)
     assert len(spec.regions) == 1 and spec.regions[0].layer == "top_paste"  # the cutout is not a filled area
     assert spec.step is not None and spec.step.file == "a.step"
+    # TrueType texts are part of the model (font and name kept); only barcodes are a loss
+    assert (spec.texts[0].font, spec.texts[0].font_name) == ("truetype", "Arial")
     text = "\n".join(notes)
-    for fragment in ("Pad-Stapel", "quadratische Bohrungen (1)", "Aussparungen (1)", "TrueType", "weitere 3D-Modelle (1)"):
+    for fragment in ("Pad-Stapel", "quadratische Bohrungen (1)", "Aussparungen (1)", "Barcode-Texte (1)", "weitere 3D-Modelle (1)"):
         assert fragment in text, fragment
+    assert "TrueType" not in text
 
 
 def test_step_source_identifies_embedded_and_linked_models():

@@ -57,6 +57,13 @@ Facts this module relies on (``docs/entwicklung/recherche/rust-writer.md`` and
   components to 0 -> the heights are read before each PcbLib mutation and set afterwards
   (the call's footprints from their spec, all others as they were;
   :mod:`partforge.altium.heights`, switch: ``heights.HEIGHT_PATCH_ENABLED``).
+* Every mutation re-serialises **all** components of the file: untouched components saved by Altium lose
+  Mechanical 17-32 (moved to 16), TrueType strings, embedded fonts and custom pin fonts -> the working copy is
+  snapshot before the call and the components the call did not write are set back byte for byte afterwards
+  (:mod:`partforge.altium.preserve`, :meth:`RustLibraryOps._restore_untouched`).
+* The writer keeps a single font (Times New Roman 10) and drops the font table of a file it rewrites ->
+  after every SchLib mutation the table from before the write is restored and the written symbols get the
+  house fonts of the workspace (:func:`partforge.altium.schstyle.patch_written_symbols`).
 * Designator/Comment positions: ``designator_x/designator_y`` and the position of the
   ``Comment`` parameter (written whenever ``comment_pos`` is set, value ``*`` for generic
   symbols); the designator justification cannot be stored (always bottom left). Pin
@@ -125,7 +132,7 @@ from ..workspace import (
     Workspace,
     current_or_none,
 )
-from . import heights, stackup
+from . import compound, heights, pcbrecords, preserve, schrecords, schstyle, stackup
 from . import layers as L
 from .bridge.protocol import transliterate
 from .models import ComponentInfo, WriteResult
@@ -283,6 +290,16 @@ PRIMITIVE_KEYS: Final[dict[str, str]] = {
     "text": "text",
 }
 STEP_CARRIER_PREFIX: Final = "__PFSTEP_"
+#: Key under which the read methods attach the raw records (:class:`pcbrecords.FootprintRecords`) to a read-back
+#: footprint dict – only for :func:`rust_to_footprint`, never sent to the writer.
+_RECORDS_KEY: Final = "__pf_records"
+#: Storages the reader lists as components although they are none (Altium writes them into some PcbLibs).
+PSEUDO_COMPONENTS: Final = frozenset({"extendedprimitiveinformation", "uniqueidprimitiveinformation"})
+
+
+def is_listed_component(name: str) -> bool:
+    """A name of ``list_components``/``read_*`` that is a real component (no STEP carrier, no storage)."""
+    return not name.startswith(STEP_CARRIER_PREFIX) and name.casefold() not in PSEUDO_COMPONENTS
 #: From this many updated components on, an upsert deletes and re-appends them in two
 #: calls instead of one ``update_component`` (= full library rewrite) per component.
 BATCH_UPDATE_THRESHOLD: Final = 3
@@ -1031,6 +1048,9 @@ class RustMcpClient:
 _default_lock = threading.Lock()
 _default_client: RustMcpClient | None = None
 _atexit_registered = False
+#: ``Library/Data`` of an empty PcbLib per writer executable (:meth:`RustLibraryOps.template_library_data`).
+_template_headers: dict[str, bytes] = {}
+_template_lock = threading.Lock()
 _version_cache: dict[tuple[str, int], str | None] = {}
 
 
@@ -1243,6 +1263,51 @@ def stroke_text_anchor(text: str, x: float, y: float, height: float, rotation: f
 def stroke_text_reference(text: str, x: float, y: float, height: float, rotation: float, justify: str) -> tuple[float, float]:
     """Inverse of :func:`stroke_text_anchor` (justification point from the stored location)."""
     dx, dy = _justify_offset(text, height, rotation, justify)
+    return x - dx, y - dy
+
+
+#: TrueType text: Altium's text height is the font's cell (ascent + descent; Arial 1.117 em), the stored
+#: location is the lower left corner of the drawn text (VERIFIED on Altium 26.10 files: ".Designator" in Arial
+#: 0.8 mm = box 3.585 × 0.659 mm, ".Comment" 3.213 × 0.527 mm).
+TRUETYPE_CELL_EM: Final = 1.117
+TRUETYPE_DEFAULT_FONT: Final = "Arial"
+_DESCENDERS: Final = frozenset("gjpqy(),;_[]{}|")
+
+
+def truetype_text_box(text: str, height: float, font: str | None = None) -> tuple[float, float]:
+    """Estimated extent (width, height in mm) of a single-line TrueType text as Altium draws it."""
+    from ..symbols.text import advance_em
+
+    em = height / TRUETYPE_CELL_EM
+    width = advance_em(text, font or TRUETYPE_DEFAULT_FONT) * em * 0.98
+    tall = 0.718 + (0.21 if any(ch in _DESCENDERS for ch in text) else 0.0)
+    return width, tall * em
+
+
+def _truetype_offset(box: tuple[float, float], rotation: float, justify: str) -> tuple[float, float]:
+    vertical, _, horizontal = justify.partition("_")
+    fx = {"left": 0.0, "center": 0.5, "right": 1.0}.get(horizontal, 0.0)
+    fy = {"bottom": 0.0, "middle": 0.5, "top": 1.0}.get(vertical, 0.0)
+    dx, dy = -fx * box[0], -fy * box[1]
+    angle = math.radians(rotation)
+    return dx * math.cos(angle) - dy * math.sin(angle), dx * math.sin(angle) + dy * math.cos(angle)
+
+
+def _plausible_box(stored: tuple[float, float], estimate: tuple[float, float]) -> bool:
+    """A stored text extent that agrees with the estimate within 30 % (Altium measured it)."""
+    return all(e > 0 and 0.7 <= v / e <= 1.3 for v, e in zip(stored, estimate, strict=True))
+
+
+def truetype_text_anchor(box: tuple[float, float], x: float, y: float, rotation: float, justify: str) -> tuple[float, float]:
+    """Lower left location that shows a TrueType text of extent ``box`` ``justify``-aligned at (x, y)."""
+    dx, dy = _truetype_offset(box, rotation, justify)
+    return x + dx, y + dy
+
+
+def truetype_text_reference(box: tuple[float, float], x: float, y: float, rotation: float, justify: str
+                            ) -> tuple[float, float]:
+    """Inverse of :func:`truetype_text_anchor`."""
+    dx, dy = _truetype_offset(box, rotation, justify)
     return x - dx, y - dy
 
 
@@ -2415,8 +2480,17 @@ def footprint_to_rust(
         content = latin1_text(tx.text)
         if content != tx.text and notes is not None:
             notes.append(f"Footprint {spec.name}: Text {tx.text!r} als {content!r} gespeichert (PcbLib kennt nur Latin-1).")
-        # Altium anchors stroke text bottom-left: store the compensated anchor, keep the justification
-        ax, ay = stroke_text_anchor(content, tx.x, tx.y, tx.height, tx.rotation, tx.justify)
+        entry: dict[str, Any]
+        if tx.font == "truetype":
+            font_name = (tx.font_name or TRUETYPE_DEFAULT_FONT).strip() or TRUETYPE_DEFAULT_FONT
+            issues.extend(free_text_issues(font_name, where, "Schriftart"))
+            box = truetype_text_box(content, tx.height, font_name)
+            ax, ay = truetype_text_anchor(box, tx.x, tx.y, tx.rotation, tx.justify)
+            entry = {"kind": "true_type", "font_name": font_name}
+        else:
+            # Altium anchors stroke text bottom-left: store the compensated anchor, keep the justification
+            ax, ay = stroke_text_anchor(content, tx.x, tx.y, tx.height, tx.rotation, tx.justify)
+            entry = {}
         texts.append(
             {
                 "x": _r(ax),
@@ -2427,6 +2501,7 @@ def footprint_to_rust(
                 "stroke_width": _r(tx.stroke),
                 "rotation": _r(tx.rotation, 4),
                 "justification": tx.justify,
+                **entry,
             }
         )
     bodies_src = list(spec.bodies)
@@ -2600,6 +2675,7 @@ def rust_to_footprint(
     layer_map: LayerMap | None = None,
     *,
     notes: list[str] | None = None,
+    records: pcbrecords.FootprintRecords | None = None,
 ) -> FootprintSpec:
     """Convert a ``read_pcblib``/``get_component`` footprint into a :class:`FootprintSpec`.
 
@@ -2610,9 +2686,16 @@ def rust_to_footprint(
     :class:`RustLibraryOps` read methods replace it with a resolvable path, see
     :func:`step_source`); extruded bodies become :class:`Body3D`. Everything a
     write-back would lose (vias, unmapped layers, pad stacks, cutouts, TrueType texts,
-    further 3D models, …) is reported in ``notes``.
+    further 3D models, …) is reported in ``notes``. ``records`` (:func:`pcbrecords.read_footprints`) give the
+    text extents Altium measured, so TrueType texts keep their exact reference point.
     """
     name = str(data.get("name", ""))
+    boxes: list[tuple[float, float]] = []
+    raw_texts = [t for t in data.get("text") or [] if isinstance(t, dict)]
+    if records is not None:
+        record_texts = records.of_kind("text")
+        if len(record_texts) == len(raw_texts):
+            boxes = [prim.text_box for prim in record_texts]
     skipped: dict[str, int] = {}
     losses: list[str] = []
 
@@ -2691,10 +2774,11 @@ def rust_to_footprint(
         notes.append(f"Footprint {name}: {len(data['vias'])} Durchkontaktierung(en) werden nicht übernommen.")
     texts: list[FpText] = []
     special_texts = 0
-    for tx in data.get("text") or []:
-        if not isinstance(tx, dict) or not isinstance(tx.get("text"), str):
+    for index, tx in enumerate(raw_texts):
+        if not isinstance(tx.get("text"), str):
             continue
-        if str(tx.get("kind") or "stroke") != "stroke":
+        kind = str(tx.get("kind") or "stroke")
+        if kind not in ("stroke", "true_type"):
             special_texts += 1
         content = tx["text"]
         prefer = ("designator",) if content == ".Designator" else ("comment",) if content == ".Comment" else ()
@@ -2705,7 +2789,15 @@ def rust_to_footprint(
         height = _num(tx.get("height"), 1.0)
         rotation = _num(tx.get("rotation"))
         x, y = _num(tx.get("x")), _num(tx.get("y"))
-        if tx.get("kind", "stroke") == "stroke":  # stored location is the bottom-left anchor
+        font_name: str | None = None
+        if kind == "true_type":  # stored location: lower left corner of the measured text box
+            font_name = str(tx.get("font_name") or TRUETYPE_DEFAULT_FONT)
+            box = truetype_text_box(content, height, font_name)
+            stored = boxes[index] if index < len(boxes) else (0.0, 0.0)
+            if _plausible_box(stored, box):  # measured by Altium (the Rust writer stores its own estimate)
+                box = stored
+            x, y = truetype_text_reference(box, x, y, rotation, justify)
+        elif kind == "stroke":  # stored location is the bottom-left anchor
             x, y = stroke_text_reference(content, x, y, height, rotation, justify)
         texts.append(
             FpText(
@@ -2717,10 +2809,12 @@ def rust_to_footprint(
                 stroke=_r(_num(tx.get("stroke_width"), 0.1016)),
                 rotation=_r(rotation, 4),
                 justify=justify,
+                font="truetype" if kind == "true_type" else "stroke",
+                font_name=font_name,
             )
         )
     if special_texts:
-        losses.append(f"TrueType-/Barcode-Texte ({special_texts}) werden als Strichschrift übernommen")
+        losses.append(f"Barcode-Texte ({special_texts}) werden als Strichschrift übernommen")
     bodies: list[Body3D] = []
     step: StepModel | None = None
     heights: list[float] = []
@@ -3761,6 +3855,7 @@ class RustLibraryOps:
                 try:
                     with tx:
                         work = tx.target  # every call works on the copy; the library is replaced at the end
+                        before_tree = preserve.snapshot(work)
                         existing = self._existing(client, work, names)
                         new = [p for p in payloads if p["name"] not in existing]
                         updates = [p for p in payloads if p["name"] in existing]
@@ -3782,6 +3877,7 @@ class RustLibraryOps:
                         self._verify_symbol_order(client, work, payloads, result)
                         self._verify_symbol_metadata(client, work, payloads, result)
                         self._raise_if_failed(result)
+                        self._finish_schlib(client, work, result, names, before_tree)
                 except RustValidationError:
                     raise
                 except RustWriterError as exc:
@@ -3789,6 +3885,87 @@ class RustLibraryOps:
         except LibraryLocked as exc:
             self._locked(result, names, exc)
         return self._finish(result, started)
+
+    def _restore_untouched(
+        self,
+        client: RustMcpClient,
+        work: Path,
+        before_tree: Mapping[str, bytes | None] | None,
+        written: Sequence[str],
+        kind: Literal["schlib", "pcblib"],
+        result: WriteResult,
+    ) -> None:
+        """Set every component the call did not write back to its bytes from before the call (the writer
+        re-serialises all of them, :mod:`partforge.altium.preserve`). Checked like every patch; a failure only
+        leaves the writer's version and a warning."""
+        if not before_tree or not work.is_file():
+            return
+        try:
+            after = compound.read_tree_file(work)
+            streams, skipped = preserve.restore_plan(before_tree, after, written, kind)
+        except Exception as exc:  # noqa: BLE001 - never fail a write
+            log.warning("Unberührte Bauteile in %s nicht prüfbar: %s", work, exc)
+            return
+        library = result_library(result)
+        for name in skipped:
+            result.warnings.append(
+                f"{library}: {name} wurde vom Bibliotheks-Writer neu gespeichert (sein 3D-Modell fehlt in der neuen "
+                "Fassung) – Inhalte, die der Writer nicht kennt, können dabei verloren gegangen sein."
+            )
+        if not streams:
+            return
+        try:
+            expected = self._component_names(client, work)
+
+            def verify(copy: Path) -> None:
+                if self._component_names(client, copy) != expected:
+                    raise RustWriterError("Der Rust-Reader liest die Bibliothek nach dem Wiederherstellen anders.")
+
+            compound.replace_streams(work, streams, verify=verify, tag="pfkeep", create=True)
+        except Exception as exc:  # noqa: BLE001 - COM, OS and verify errors: the writer's version stays
+            log.warning("Unberührte Bauteile in %s nicht wiederhergestellt: %s", work, exc, exc_info=True)
+            result.warnings.append(
+                f"{library}: Unveränderte Bauteile konnten nicht byte-genau erhalten werden ({exc}) – der "
+                "Bibliotheks-Writer hat sie neu gespeichert."
+            )
+            return
+        log.info("%s: %d Datenströme unberührter Bauteile wiederhergestellt", library, len(streams))
+
+    def _finish_schlib(
+        self,
+        client: RustMcpClient,
+        work: Path,
+        result: WriteResult,
+        names: Sequence[str],
+        before_tree: Mapping[str, bytes | None] | None,
+    ) -> None:
+        """After a SchLib mutation: the symbols the call did not write are set back to their bytes from before
+        (:meth:`_restore_untouched`), the font table from before the write is restored and the written symbols
+        get the house fonts (:func:`schstyle.patch_written_symbols`); a patched copy the Rust reader does not
+        list identically is rejected – neither step ever fails a write."""
+        if not work.is_file():
+            return
+        fonts_before: list[Any] | None = None
+        header = before_tree.get("FileHeader") if before_tree else None
+        if header:
+            try:
+                fonts_before = schrecords.parse_header(header).fonts()
+            except schrecords.SchRecordError:
+                fonts_before = None
+        self._restore_untouched(client, work, before_tree, names, "schlib", result)
+        try:
+            expected = self._component_names(client, work)
+
+            def verify(copy: Path) -> None:
+                if self._component_names(client, copy) != expected:
+                    raise RustWriterError("Der Rust-Reader liest die Bibliothek nach dem Setzen der Schriften anders.")
+
+            warnings = schstyle.patch_written_symbols(work, names, self.symbol_style(), before=fonts_before,
+                                                      verify=verify)
+        except Exception as exc:  # noqa: BLE001 - the fonts must never fail a library write
+            log.warning("Schriften in %s nicht gesetzt: %s", work, exc)
+            warnings = [f"{work.name}: Schriften nicht gesetzt ({exc})."]
+        result.warnings.extend(self._named(warnings, work, result))
 
     # -- footprints -----------------------------------------------------------------
     def _footprint_payloads(
@@ -4111,6 +4288,7 @@ class RustLibraryOps:
                     with tx:
                         work = tx.target  # every call works on the copy; the library is replaced at the end
                         before = self._heights_before(work, result)
+                        before_tree = preserve.snapshot(work)
                         existing = self._existing(client, work, names)
                         carriers: list[str] = []
                         if steps:
@@ -4147,6 +4325,7 @@ class RustLibraryOps:
                         listed = self._verify_footprint_metadata(client, work, payloads, result)
                         self._raise_if_failed(result)
                         listed = self._remove_leftover_carriers(client, work, listed, carriers)
+                        self._restore_untouched(client, work, before_tree, names, "pcblib", result)
                         self._finish_pcblib(client, work, result, before, spec_list, listed)
                 except RustValidationError:
                     raise
@@ -4197,6 +4376,7 @@ class RustLibraryOps:
                         # every call works on the copy: a crash never leaves a half-built library (INT-02)
                         work = tx.target
                         before = self._heights_before(work, result) if kind == "pcblib" else {}
+                        before_tree = preserve.snapshot(work) if kind == "schlib" else None
                         listed: list[str] = []
                         if kind == "schlib":
                             resp = client.call_tool(
@@ -4232,6 +4412,8 @@ class RustLibraryOps:
                         if kind == "pcblib":
                             footprints = [s for s in spec_list if isinstance(s, FootprintSpec)]
                             self._finish_pcblib(client, work, result, before, footprints, listed)
+                        else:
+                            self._finish_schlib(client, work, result, names, before_tree)
                 except RustValidationError:
                     raise
                 except RustWriterError as exc:
@@ -4265,6 +4447,7 @@ class RustLibraryOps:
                     with tx:
                         work = tx.target  # the library is replaced at the end
                         before = self._heights_before(work, result) if kind == "pcblib" else {}
+                        before_tree = preserve.snapshot(work)
                         resp = client.call_tool(
                             "delete_component", {"filepath": _posix(work), "component_names": wanted}
                         )
@@ -4283,7 +4466,10 @@ class RustLibraryOps:
                         if failures:
                             raise _VerificationFailed(failures)
                         if kind == "pcblib" and result.deleted:
+                            self._restore_untouched(client, work, before_tree, result.deleted, "pcblib", result)
                             self._finish_pcblib(client, work, result, before, [], self._component_names(client, work))
+                        elif kind == "schlib" and result.deleted:
+                            self._finish_schlib(client, work, result, [], before_tree)
                 except RustValidationError:
                     raise
                 except RustWriterError as exc:
@@ -4310,7 +4496,7 @@ class RustLibraryOps:
             if not resp.get("has_more") or not batch:
                 break
             offset += len(batch)
-        return [n for n in names if not n.startswith(STEP_CARRIER_PREFIX)]
+        return [n for n in names if is_listed_component(n)]
 
     def backup_readable(self, backup: str | os.PathLike[str], library: str | os.PathLike[str]) -> bool:
         """Whether the reader can list ``backup`` – a ``<lib>.<stamp>.bak`` copy of ``library`` (checked through a
@@ -4343,7 +4529,7 @@ class RustLibraryOps:
         meta = self._metadata(client, self._readable(lib))
         out: list[ComponentInfo] = []
         for name, item in meta.items():
-            if name.startswith(STEP_CARRIER_PREFIX):
+            if not is_listed_component(name):
                 continue
             description = item.get("description") if isinstance(item.get("description"), str) else None
             if kind == "schlib":
@@ -4384,7 +4570,38 @@ class RustLibraryOps:
                 return None
             raise
         component = resp.get("component")
-        return component if isinstance(component, dict) else None
+        if not isinstance(component, dict):
+            return None
+        if kind == "pcblib":
+            found = self._correct_layers(lib, [component])
+            records = found.get(str(component.get("name", "")).casefold())
+            if records is not None:
+                component[_RECORDS_KEY] = records
+        return component
+
+    @staticmethod
+    def _correct_layers(library: Path, components: Sequence[dict[str, Any]]
+                        ) -> dict[str, pcbrecords.FootprintRecords]:
+        """True layers of read footprints: primitives Altium saved on Mechanical 17–32 read as "Mechanical 16"
+        (:func:`pcbrecords.correct_layers`). Returns the records by casefolded name (text extents for
+        :func:`rust_to_footprint`). Best effort – without the records the reader's layers stay."""
+        if not components:
+            return {}
+        try:
+            records = pcbrecords.read_footprints(library)
+        except Exception as exc:  # noqa: BLE001 - COM errors on damaged files: keep what the reader says
+            log.debug("Primitive von %s nicht direkt lesbar: %s", library, exc)
+            return {}
+        out: dict[str, pcbrecords.FootprintRecords] = {}
+        for component in components:
+            key = str(component.get("name", "")).casefold()
+            found = records.get(key)
+            if found is not None:
+                out[key] = found[1]
+                fixed = pcbrecords.correct_layers(component, found[1])
+                if fixed:
+                    log.debug("%s: %d Primitive auf ihrer echten Lage (Mechanical 17-32) gelesen", component.get("name"), fixed)
+        return out
 
     def read_symbol(
         self, library: str | os.PathLike[str], name: str, *, notes: list[str] | None = None
@@ -4410,7 +4627,7 @@ class RustLibraryOps:
         data = self._get_component(library, name, "pcblib")
         if data is None:
             return None
-        spec = rust_to_footprint(data, self.layer_map(), notes=notes)
+        spec = rust_to_footprint(data, self.layer_map(), notes=notes, records=data.get(_RECORDS_KEY))
         if extract_step:
             self._materialize_steps(Path(os.path.abspath(os.fspath(library))), [(data, spec, notes)])
         return spec
@@ -4428,7 +4645,14 @@ class RustLibraryOps:
             if not resp.get("has_more") or not batch:
                 break
             offset += len(batch)
-        return [c for c in items if not str(c.get("name", "")).startswith(STEP_CARRIER_PREFIX)]
+        items = [c for c in items if is_listed_component(str(c.get("name", "")))]
+        if kind == "pcblib":
+            found = self._correct_layers(library, items)
+            for item in items:
+                records = found.get(str(item.get("name", "")).casefold())
+                if records is not None:
+                    item[_RECORDS_KEY] = records
+        return items
 
     def read_all_detailed(
         self, library: str | os.PathLike[str], *, extract_step: bool = True
@@ -4450,7 +4674,7 @@ class RustLibraryOps:
         triples: list[tuple[Mapping[str, Any], FootprintSpec, list[str]]] = []
         for raw in items:
             notes = []
-            triples.append((raw, rust_to_footprint(raw, layer_map, notes=notes), notes))
+            triples.append((raw, rust_to_footprint(raw, layer_map, notes=notes, records=raw.get(_RECORDS_KEY)), notes))
         if extract_step:
             self._materialize_steps(lib, triples)
         return [(spec, notes) for _, spec, notes in triples]
@@ -4592,6 +4816,29 @@ class RustLibraryOps:
                 shutil.rmtree(batch, ignore_errors=True)
             _prune_step_cache()
         return found
+
+    def template_library_data(self) -> bytes:
+        """``Library/Data`` of an empty PcbLib written by the Rust writer: a complete, modern header (every
+        mechanical layer in all representations) – the template for renewing the header of libraries saved by
+        older Altium versions (:func:`stackup.renew_library_data`). Cached per writer executable."""
+        client = self.client()
+        key = _norm(client.exe)
+        with _template_lock:
+            cached = _template_headers.get(key)
+            if cached is not None:
+                return cached
+            folder = temp_dir() / "template"
+            folder.mkdir(parents=True, exist_ok=True)
+            target = folder / f"header_{uuid.uuid4().hex[:8]}.PcbLib"
+            try:
+                client.call_tool("write_pcblib", {"filepath": _posix(target), "append": False, "footprints": []})
+                data = stackup.read_library_data(target)
+            finally:
+                for leftover in [target, *folder.glob(f"{target.name}.*")]:
+                    with contextlib.suppress(OSError):
+                        leftover.unlink()
+            _template_headers[key] = data
+            return data
 
     def validate_library(self, library: str | os.PathLike[str]) -> dict[str, Any]:
         """Raw ``validate_library`` report of the writer."""

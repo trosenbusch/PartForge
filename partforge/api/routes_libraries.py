@@ -53,7 +53,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field
 
-from ..altium import stackup, sync
+from ..altium import layersets, stackup, sync
 from ..altium.libwriter import WriterUnavailable
 from ..db import registry
 from ..db.models import FootprintRecord, SymbolRecord
@@ -281,6 +281,20 @@ class LayerStackOut(BaseModel):
     suggested_layer_map: LayerMap
     issues: list[str] = Field(default_factory=list)
     patch_enabled: bool = True
+
+
+class LayerSetParseIn(BaseModel):
+    path: str = Field(description="Altium-Lagensatz-Datei (.layerset), absolut")
+
+
+class LayerSetParseOut(BaseModel):
+    file: str
+    sets: list[layersets.LayerSetDef]
+
+
+class LayerSetBuiltinIn(BaseModel):
+    layers: LayerMap | None = Field(default=None, description="Lagenzuordnung (None = die gespeicherte)")
+    current: bool = True
 
 
 # --------------------------------------------------------------------------- helpers
@@ -1116,6 +1130,25 @@ def parse_layer_stack(body: LayerStackParseIn, ws: Workspace = Depends(require_w
     except stackup.StackupError as exc:
         raise _http(exc) from exc
     return _layer_stack_out(stack, ws, [])
+
+
+@router.post("/libraries/layer-set/parse", response_model=LayerSetParseOut)
+def parse_layer_set(body: LayerSetParseIn, ws: Workspace = Depends(require_workspace)) -> LayerSetParseOut:
+    """Read an Altium ``.layerset`` file (the user layer sets it contains) – to choose one for the settings."""
+    path = body.path.strip().strip('"')
+    if not path or not Path(path).is_absolute():
+        raise HTTPException(status_code=400, detail="Bitte den absoluten Pfad einer .layerset-Datei angeben.")
+    try:
+        return LayerSetParseOut(file=path, sets=layersets.parse_layerset_file(path))
+    except layersets.LayerSetError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/libraries/layer-set/builtin", response_model=layersets.LayerSetDef)
+def builtin_layer_set(body: LayerSetBuiltinIn, ws: Workspace = Depends(require_workspace)) -> layersets.LayerSetDef:
+    """The layer set built from a layer map (copper, paste, overlay, solder, drill, keep-out and the mechanical
+    layers PartForge draws on) – for the standard map exactly Altium's "Component Layers" of the user."""
+    return layersets.builtin_layer_set(body.layers or ws.settings.layers, current=body.current)
 
 
 @router.post("/libraries/layer-stack/apply")

@@ -275,6 +275,20 @@ class FpText(BaseModel):
     stroke: float = 0.15
     rotation: float = 0
     justify: TextJustify = "middle_center"
+    font: Literal["stroke", "truetype"] = "stroke"  # Altium stroke font or a TrueType font
+    font_name: str | None = None  # TrueType font (None = Arial); ignored for stroke text
+
+
+def compat_text_dump(data: dict) -> dict:
+    """A footprint ``model_dump`` without the default text-font fields (added in 1.1) – keeps hashes and
+    fingerprints of footprints written before identical."""
+    for text in data.get("texts") or []:
+        if isinstance(text, dict):
+            if text.get("font") == "stroke":
+                text.pop("font", None)
+            if text.get("font_name") is None:
+                text.pop("font_name", None)
+    return data
 
 
 class Body3D(BaseModel):

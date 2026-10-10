@@ -111,7 +111,9 @@ Linien `#800000`, Pins `#000080`) – so sehen Symbole aus wie später in Altium
 ## 7. App-Shell
 - **Sidebar** links (248 px, einklappbar auf 68 px, Zustand persistent): Logo + Bibliotheks-Umschalter
   (aktuelle Bibliothek, zuletzt verwendete, „Neue Bibliothek…"), Navigation:
-  Übersicht · Bauteile · Serien-Assistent · Datenblatt-Import · Symbole · Footprints · Altium · Einstellungen.
+  Übersicht · Bauteile · Serien-Assistent · Datenblatt-Import · Bibliotheksimport · Symbole · Footprints ·
+  Stapelbearbeitung · Altium · Einstellungen (Alt+1 … Alt+8 wie bisher, Alt+9 Bibliotheksimport, Alt+0
+  Stapelbearbeitung).
   Unten Statuszeile: Datenbank ●, Altium ●, KI ● (grün/gelb/rot mit Tooltip).
 - **Topbar** je Seite: Titel + Untertitel/Breadcrumb, globale Suche (öffnet Befehlspalette, `Strg+K`),
   seitenbezogene Aktionen, Theme-Umschalter.
@@ -146,8 +148,13 @@ Linien `#800000`, Pins `#000080`) – so sehen Symbole aus wie später in Altium
    installieren/öffnen", Bibliotheksdateien (synchron/ausstehend) mit „Synchronisieren", Backend-Wahl,
    Prüfbericht („Bibliothek prüfen") mit Fix-Aktionen.
 8. **Einstellungen**: Bibliothek (Pfade, Datenbank), Kategorien & Felder (Schema-Designer), Namensregeln,
-   Hausstil Symbole/Footprints (Lagen-Zuordnung), KI (Modell, Key-Datei, Budget), Altium (X2-Pfad, Backend),
-   Darstellung (Theme, Dichte).
+   Hausstil Symbole/Footprints (Lagen-Zuordnung, Lagensatz, Schriften, „Aus Beispielbibliothek …“), KI (Modell,
+   Key-Datei, Budget), Altium (X2-Pfad, Backend), Darstellung (Theme, Dichte).
+9. **Bibliotheksimport**: Quelle (Ordner/Datei) einlesen (Job), Dateien und Bauteile mit Zustand, Filter und
+   Vorschau, Optionen (Zielordner, ersetzen, 3D, angleichen), Import als Job, Ergebnis mit „Bauteile anlegen …“
+   (Tabellenimport mit vorbereiteter Tabelle) und „An Hausstil angleichen …“.
+10. **Stapelbearbeitung**: Auswahl und Regeln links, Bericht rechts (je Bibliothek Rollen der Mechanik-Lagen mit
+    Umstellen, je Bauteil die Änderungen), Prüfen → Anwenden (Bestätigung, Job) → Rückgängig.
 
 ## 9. Qualitätskriterien
 - Kein Layout-Springen, keine abgeschnittenen Texte; Mindestbreite 1120 px.

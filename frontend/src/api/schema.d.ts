@@ -1812,6 +1812,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/libraries/layer-set/parse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Parse Layer Set
+         * @description Read an Altium ``.layerset`` file (the user layer sets it contains) – to choose one for the settings.
+         */
+        post: operations["parse_layer_set_api_libraries_layer_set_parse_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/libraries/layer-set/builtin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Builtin Layer Set
+         * @description The layer set built from a layer map (copper, paste, overlay, solder, drill, keep-out and the mechanical
+         *     layers PartForge draws on) – for the standard map exactly Altium's "Component Layers" of the user.
+         */
+        post: operations["builtin_layer_set_api_libraries_layer_set_builtin_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/libraries/layer-stack/apply": {
         parameters: {
             query?: never;
@@ -2431,6 +2472,209 @@ export interface paths {
          *     (503 for :class:`AiUnavailable`, 400 when the API rejected the request).
          */
         post: operations["ai_test_api_ai_test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/library-import/scan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Scan
+         * @description Read a source as a job; ``job.result`` = :class:`ScanSummary` (the full scan: ``GET …/scans/{id}``).
+         */
+        post: operations["start_scan_api_library_import_scan_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/library-import/scans/{scan_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Scan */
+        get: operations["get_scan_api_library_import_scans__scan_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/library-import/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Import
+         * @description Import the chosen files of a scan (job ``libraries.import``; ``job.result``: ``copied``, ``unchanged``,
+         *     ``symbols``, ``footprints``, ``libraries``, ``conflicts``, ``skipped``, ``errors``, ``conversion``,
+         *     ``message``).
+         */
+        post: operations["start_import_api_library_import_run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/library-import/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Preview
+         * @description Thumbnail of a component of the source (read through the library writer).
+         */
+        get: operations["preview_api_library_import_preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/library-import/parts-table": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Parts Table
+         * @description Table of imported symbols (parameters, footprint links) as an upload of the spreadsheet import: the import
+         *     wizard continues with ``POST /import/preview/{token}`` (category, mapping) and ``/import/run``.
+         */
+        post: operations["parts_table_api_library_import_parts_table_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/housestyle/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Rules
+         * @description The rules last used in this library (else the defaults).
+         */
+        get: operations["get_rules_api_housestyle_rules_get"];
+        /** Put Rules */
+        put: operations["put_rules_api_housestyle_rules_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/housestyle/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Check
+         * @description What the conversion would change (job; ``job.result`` = ``ConformReport``).
+         */
+        post: operations["start_check_api_housestyle_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/housestyle/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Apply
+         * @description Convert the selection to the house style (job ``libraries.conform``; ``job.result``: ``components``,
+         *     ``libraries``, ``skipped``, ``errors``, ``report``, ``undo``, ``message``).
+         */
+        post: operations["start_apply_api_housestyle_apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/housestyle/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Undo */
+        get: operations["get_undo_api_housestyle_undo_get"];
+        put?: never;
+        /**
+         * Start Undo
+         * @description Undo the last conversion (job ``libraries.conform``).
+         */
+        post: operations["start_undo_api_housestyle_undo_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/housestyle/learn": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Learn
+         * @description House-style settings derived from reference libraries (proposal only – the settings page saves them).
+         */
+        post: operations["learn_api_housestyle_learn_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3123,6 +3367,39 @@ export interface components {
             };
             /** Warnings */
             warnings?: string[];
+        };
+        /** ConformIn */
+        ConformIn: {
+            selection?: components["schemas"]["ConformSelection"];
+            rules?: components["schemas"]["ConformRules"];
+        };
+        /** ConformRules */
+        ConformRules: {
+            symbols?: components["schemas"]["SymbolRules"];
+            footprints?: components["schemas"]["FootprintRules"];
+        };
+        /**
+         * ConformSelection
+         * @description Which registered components the batch edit covers.
+         */
+        ConformSelection: {
+            /** Kinds */
+            kinds?: ("symbol" | "footprint")[];
+            /**
+             * Sources
+             * @description Herkunft (None = alle außer extern)
+             */
+            sources?: ("generated" | "datasheet" | "imported" | "external")[] | null;
+            /**
+             * Libraries
+             * @description Bibliotheksdateien (relativ), None = alle
+             */
+            libraries?: string[] | null;
+            /**
+             * Names
+             * @description Einzelne Symbole/Footprints, None = alle
+             */
+            names?: string[] | null;
         };
         /** CostEstimate */
         CostEstimate: {
@@ -4520,6 +4797,60 @@ export interface components {
              */
             notes?: string[];
         };
+        /** FootprintRules */
+        FootprintRules: {
+            /**
+             * Layers
+             * @description Primitive nach Rolle auf die Lagen der Lagenzuordnung
+             * @default true
+             */
+            layers: boolean;
+            /**
+             * Widths
+             * @description Linienbreiten je Rolle (Bestückung, Courtyard, Mitte, Umriss)
+             * @default true
+             */
+            widths: boolean;
+            /**
+             * Silk Width
+             * @description Auch den Bestückungsdruck auf die Hausstil-Breite setzen
+             * @default false
+             */
+            silk_width: boolean;
+            /**
+             * Texts
+             * @description .Designator/.Comment in Hausstil-Schrift und -Höhe
+             * @default true
+             */
+            texts: boolean;
+            /**
+             * Add Texts
+             * @description Fehlende .Designator/.Comment ergänzen
+             * @default true
+             */
+            add_texts: boolean;
+            /**
+             * Add Center
+             * @description Fehlendes Bauteilmitte-Kreuz ergänzen
+             * @default true
+             */
+            add_center: boolean;
+            /**
+             * Header
+             * @description Lagen-Kopf (Lagenaufbau und Lagensatz) der Bibliothek
+             * @default true
+             */
+            header: boolean;
+            /**
+             * Roles
+             * @description Eigene Rollen je Bibliothek: {Bibliothekspfad: {'Mechanical 13': 'assembly', …}}
+             */
+            roles?: {
+                [key: string]: {
+                    [key: string]: "silkscreen" | "assembly" | "designator" | "comment" | "courtyard" | "component_center" | "component_outline" | "body3d" | "keep";
+                };
+            };
+        };
         /** FootprintSaveIn */
         FootprintSaveIn: {
             spec: components["schemas"]["FootprintSpec"];
@@ -4720,6 +5051,17 @@ export interface components {
              */
             text_height: number;
             /**
+             * Text Font
+             * @default stroke
+             * @enum {string}
+             */
+            text_font: "stroke" | "truetype";
+            /**
+             * Text Font Name
+             * @default Arial
+             */
+            text_font_name: string;
+            /**
              * Pad Corner Radius Pct
              * @default 50
              */
@@ -4781,6 +5123,14 @@ export interface components {
              * @enum {string}
              */
             justify: "bottom_left" | "bottom_center" | "bottom_right" | "middle_left" | "middle_center" | "middle_right" | "top_left" | "top_center" | "top_right";
+            /**
+             * Font
+             * @default stroke
+             * @enum {string}
+             */
+            font: "stroke" | "truetype";
+            /** Font Name */
+            font_name?: string | null;
         };
         /** FromUrlIn */
         FromUrlIn: {
@@ -5230,6 +5580,59 @@ export interface components {
                 [key: string]: string | null;
             };
         };
+        /** ImportScan */
+        ImportScan: {
+            /** Id */
+            id: string;
+            /** Source */
+            source: string;
+            /**
+             * Name
+             * @description Vorschlag für den Zielordner
+             */
+            name: string;
+            /** Created */
+            created: string;
+            /** Files */
+            files?: components["schemas"]["SourceFile"][];
+            /** Notes */
+            notes?: string[];
+            /**
+             * Symbols
+             * @default 0
+             */
+            symbols: number;
+            /**
+             * Footprints
+             * @default 0
+             */
+            footprints: number;
+            /**
+             * New
+             * @default 0
+             */
+            new: number;
+            /**
+             * Taken
+             * @default 0
+             */
+            taken: number;
+            /**
+             * Duplicates
+             * @default 0
+             */
+            duplicates: number;
+            /**
+             * Imported
+             * @default 0
+             */
+            imported: number;
+            /**
+             * Message
+             * @default
+             */
+            message: string;
+        };
         /** InstallIn */
         InstallIn: {
             /**
@@ -5446,6 +5849,107 @@ export interface components {
              */
             component_outline: string;
         };
+        /** LayerSetBuiltinIn */
+        LayerSetBuiltinIn: {
+            /** @description Lagenzuordnung (None = die gespeicherte) */
+            layers?: components["schemas"]["LayerMap"] | null;
+            /**
+             * Current
+             * @default true
+             */
+            current: boolean;
+        };
+        /**
+         * LayerSetDef
+         * @description One layer set as Altium stores it.
+         */
+        LayerSetDef: {
+            /** Name */
+            name: string;
+            /**
+             * Layers
+             * @description Altium-Lagenkürzel, z. B. TopOverlay, Mechanical9
+             */
+            layers?: string[];
+            /**
+             * Active Layer
+             * @description Aktive Lage beim Wechsel auf den Lagensatz (ACTIVELAYER.7)
+             * @default TOP
+             */
+            active_layer: string;
+            /**
+             * Current
+             * @description Beim Öffnen der Bibliothek in Altium aktiv
+             * @default true
+             */
+            current: boolean;
+            /**
+             * Locked
+             * @default false
+             */
+            locked: boolean;
+            /**
+             * Flip Board
+             * @default false
+             */
+            flip_board: boolean;
+        };
+        /** LayerSetParseIn */
+        LayerSetParseIn: {
+            /**
+             * Path
+             * @description Altium-Lagensatz-Datei (.layerset), absolut
+             */
+            path: string;
+        };
+        /** LayerSetParseOut */
+        LayerSetParseOut: {
+            /** File */
+            file: string;
+            /** Sets */
+            sets: components["schemas"]["LayerSetDef"][];
+        };
+        /**
+         * LayerSetSettings
+         * @description Own layer set (Altium *View Configuration › Layer Sets*) written into every PcbLib header.
+         *
+         *     ``mode``: ``none`` (only Altium's built-in sets), ``builtin`` (built from the LayerMap – copper, paste,
+         *     overlay, solder, drill and every mechanical layer PartForge draws on; name ``Component Layers`` unless
+         *     ``name`` is set) or ``file`` (``name``/``layers``/… read from a ``.layerset`` file; ``file`` is only the
+         *     origin, the definition is stored here so the library folder stays self-contained). ``current``: the set is
+         *     active when the library is opened in Altium. See :mod:`partforge.altium.layersets`.
+         */
+        LayerSetSettings: {
+            /**
+             * Mode
+             * @default none
+             * @enum {string}
+             */
+            mode: "none" | "builtin" | "file";
+            /** File */
+            file?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Layers */
+            layers?: string[];
+            /** Active Layer */
+            active_layer?: string | null;
+            /**
+             * Current
+             * @default true
+             */
+            current: boolean;
+            /**
+             * Locked
+             * @default false
+             */
+            locked: boolean;
+            /**
+             * Flip Board
+             * @default false
+             */
+            flip_board: boolean;
+        };
         /**
          * LayerStack
          * @description Mechanical layers ``{n: MechLayer}`` and layer pairs of an Altium layer stack.
@@ -5470,6 +5974,8 @@ export interface components {
                 number,
                 number
             ][];
+            /** @description Eigener Lagensatz, der in jeden Bibliothekskopf geschrieben wird (Einstellung) */
+            layer_set?: components["schemas"]["LayerSetDef"] | null;
         };
         /** LayerStackOut */
         LayerStackOut: {
@@ -5490,6 +5996,14 @@ export interface components {
         LayerStackParseIn: {
             /** Path */
             path: string;
+        };
+        /** LearnIn */
+        LearnIn: {
+            /**
+             * Paths
+             * @description Beispielbibliotheken (.SchLib, .PcbLib, .IntLib, .zip) oder Ordner
+             */
+            paths: string[];
         };
         /** LibraryDeleteOut */
         LibraryDeleteOut: {
@@ -5690,6 +6204,39 @@ export interface components {
              * @description Teilenummern aller Bauteile mit Fehler oder Warnung (sortiert)
              */
             affected_part_numbers?: string[];
+        };
+        /** LibraryImportOptions */
+        LibraryImportOptions: {
+            /** Scan Id */
+            scan_id: string;
+            /**
+             * Files
+             * @description Gewählte Dateien (rel), None = alle
+             */
+            files?: string[] | null;
+            /**
+             * Target
+             * @description Zielordner unter Symbols\Import bzw. Footprints\Import
+             */
+            target?: string | null;
+            /**
+             * Replace
+             * @description Geänderte, schon importierte Dateien überschreiben
+             * @default false
+             */
+            replace: boolean;
+            /**
+             * Extract 3D
+             * @description Eingebettete 3D-Modelle für die Vorschau in 3D\ ablegen
+             * @default false
+             */
+            extract_3d: boolean;
+            /**
+             * Convert
+             * @description Danach an den Hausstil angleichen (Stapelbearbeitung)
+             * @default false
+             */
+            convert: boolean;
         };
         /**
          * LibraryProblem
@@ -7014,6 +7561,19 @@ export interface components {
             /** Warnings */
             warnings?: string[];
         };
+        /** PartsTableIn */
+        PartsTableIn: {
+            /**
+             * Libraries
+             * @description Bibliotheksdateien (relativ), None = alle
+             */
+            libraries?: string[] | null;
+            /**
+             * Names
+             * @description Einzelne Symbole, None = alle der Bibliotheken
+             */
+            names?: string[] | null;
+        };
         /** PinData */
         PinData: {
             /** Number */
@@ -7493,6 +8053,14 @@ export interface components {
             sort?: components["schemas"]["SortSpec"][] | null;
             /** Columns */
             columns?: string[] | null;
+        };
+        /** ScanIn */
+        ScanIn: {
+            /**
+             * Path
+             * @description Ordner oder Bibliotheksdatei (.SchLib, .PcbLib, .IntLib, .LibPkg, .zip), absolut
+             */
+            path: string;
         };
         /**
          * SearchHit
@@ -8070,6 +8638,69 @@ export interface components {
             /** Note */
             note?: string | null;
         };
+        /** SourceComponent */
+        SourceComponent: {
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Count
+             * @description Pins bzw. Pads
+             */
+            count?: number | null;
+            /** Has 3D */
+            has_3d?: boolean | null;
+            /**
+             * State
+             * @default new
+             * @enum {string}
+             */
+            state: "new" | "imported" | "taken" | "duplicate";
+            /**
+             * Registered Library
+             * @description Wo der Name schon registriert ist
+             */
+            registered_library?: string | null;
+        };
+        /**
+         * SourceFile
+         * @description One library of a source (``rel`` relative to the source root; IntLib members: ``<IntLib>/<n>.SchLib``).
+         */
+        SourceFile: {
+            /** Rel */
+            rel: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "schlib" | "pcblib";
+            /**
+             * Path
+             * @description Datei, die gelesen/kopiert wird (bei IntLib die entpackte Kopie)
+             */
+            path: string;
+            /**
+             * Size
+             * @default 0
+             */
+            size: number;
+            /** Components */
+            components?: components["schemas"]["SourceComponent"][];
+            /** Problem */
+            problem?: string | null;
+            /**
+             * Target
+             * @description Ziel im Bibliotheksordner (relativ)
+             */
+            target?: string | null;
+            /**
+             * Exists
+             * @default no
+             * @enum {string}
+             */
+            exists: "no" | "same" | "different";
+        };
         /** StandardForRequest */
         StandardForRequest: {
             /**
@@ -8187,6 +8818,55 @@ export interface components {
                 number,
                 number
             ];
+        };
+        /** StyleFinding */
+        StyleFinding: {
+            /**
+             * Area
+             * @enum {string}
+             */
+            area: "symbol" | "footprint" | "layers";
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Current */
+            current: string;
+            /** Proposed */
+            proposed: string;
+            /** Value */
+            value: unknown;
+            /** Evidence */
+            evidence: string;
+            /** Differs */
+            differs: boolean;
+        };
+        /** StyleProposal */
+        StyleProposal: {
+            /** Sources */
+            sources?: string[];
+            /**
+             * Symbols
+             * @default 0
+             */
+            symbols: number;
+            /**
+             * Footprints
+             * @default 0
+             */
+            footprints: number;
+            /** Findings */
+            findings?: components["schemas"]["StyleFinding"][];
+            symbol: components["schemas"]["SymbolStyle"];
+            footprint: components["schemas"]["FootprintStyle"];
+            layers: components["schemas"]["LayerMap"];
+            /** Notes */
+            notes?: string[];
+            /**
+             * Message
+             * @default
+             */
+            message: string;
         };
         /** SymArc */
         SymArc: {
@@ -8743,6 +9423,40 @@ export interface components {
             /** Designator Prefix */
             designator_prefix?: string | null;
         };
+        /** SymbolRules */
+        SymbolRules: {
+            /**
+             * Fonts
+             * @description Hausschrift für Bezeichner, Kommentar, Parameter und Pins
+             * @default true
+             */
+            fonts: boolean;
+            /**
+             * Pin Length
+             * @description Pinlänge von IC-/Box-Symbolen = Hausstil
+             * @default true
+             */
+            pin_length: boolean;
+            /**
+             * Prefix
+             * @description Bezeichner-Präfixe nach prefix_map ersetzen
+             * @default true
+             */
+            prefix: boolean;
+            /**
+             * Prefix Map
+             * @description Alt -> neu, z. B. IC -> U
+             */
+            prefix_map?: {
+                [key: string]: string;
+            };
+            /**
+             * Colors
+             * @description Rahmen, Füllung und Pinfarbe von Box-Symbolen = Hausstil
+             * @default false
+             */
+            colors: boolean;
+        };
         /** SymbolSaveIn */
         SymbolSaveIn: {
             spec: components["schemas"]["SymbolSpec"];
@@ -8930,6 +9644,12 @@ export interface components {
              * @default 10
              */
             font_size: number;
+            /**
+             * Pin Font
+             * @default house
+             * @enum {string}
+             */
+            pin_font: "house" | "system";
             /**
              * Diode Pin1
              * @default cathode
@@ -9308,6 +10028,15 @@ export interface components {
             y2: number;
             /** Width */
             width: number;
+        };
+        /** UndoInfo */
+        UndoInfo: {
+            /** Created */
+            created?: string | null;
+            /** Libraries */
+            libraries?: string[];
+            /** File */
+            file: string;
         };
         /** UnmergePackageIn */
         UnmergePackageIn: {
@@ -9863,6 +10592,7 @@ export interface components {
             layers?: components["schemas"]["LayerMap"];
             /** Layer Stackup */
             layer_stackup?: string | null;
+            layer_set?: components["schemas"]["LayerSetSettings"];
             footprint?: components["schemas"]["FootprintStyle"];
             symbol?: components["schemas"]["SymbolStyle"];
         };
@@ -13563,6 +14293,72 @@ export interface operations {
             };
         };
     };
+    parse_layer_set_api_libraries_layer_set_parse_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LayerSetParseIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LayerSetParseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    builtin_layer_set_api_libraries_layer_set_builtin_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LayerSetBuiltinIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LayerSetDef"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     apply_layer_stack_api_libraries_layer_stack_apply_post: {
         parameters: {
             query?: never;
@@ -14586,6 +15382,379 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AiErrorOut"];
+                };
+            };
+        };
+    };
+    start_scan_api_library_import_scan_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScanIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_scan_api_library_import_scans__scan_id__get: {
+        parameters: {
+            query?: {
+                /** @description Anderer Zielordner (Ziele, vorhandene Dateien und Namenszustände für ihn) */
+                target?: string | null;
+            };
+            header?: never;
+            path: {
+                scan_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportScan"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_import_api_library_import_run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LibraryImportOptions"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_api_library_import_preview_get: {
+        parameters: {
+            query: {
+                scan_id: string;
+                /** @description Datei der Quelle (wie im Scan) */
+                rel: string;
+                /** @description Symbol oder Footprint */
+                name: string;
+                theme?: "altium" | "dark" | "light";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description SVG-Vorschau */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/svg+xml": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parts_table_api_library_import_parts_table_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PartsTableIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_rules_api_housestyle_rules_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConformRules"];
+                };
+            };
+        };
+    };
+    put_rules_api_housestyle_rules_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConformRules"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConformRules"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_check_api_housestyle_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConformIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_apply_api_housestyle_apply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConformIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_undo_api_housestyle_undo_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UndoInfo"] | null;
+                };
+            };
+        };
+    };
+    start_undo_api_housestyle_undo_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    learn_api_housestyle_learn_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LearnIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StyleProposal"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

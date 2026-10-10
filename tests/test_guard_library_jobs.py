@@ -15,7 +15,7 @@ import pytest
 from fastapi.testclient import TestClient
 from test_writer_samples import resistor_symbol
 
-from partforge.altium import sync
+from partforge.altium import housestyle, libimport, sync
 from partforge.api import routes_libraries, routes_series, routes_system
 from partforge.api.routes_system import WorkspaceCreateIn, WorkspaceOpenIn
 from partforge.datasheet import proposal
@@ -166,6 +166,20 @@ def start_import(client: TestClient, monkeypatch: pytest.MonkeyPatch, gate: Gate
     return str(client.post("/api/import/run", json=body).json()["job"]["id"])
 
 
+def start_library_import(client: TestClient, monkeypatch: pytest.MonkeyPatch, gate: Gate, ws: Workspace) -> str:
+    """As POST /library-import/run starts it (for a scan that exists)."""
+    scan = libimport.ImportScan(id="guardscan0001", source=r"C:\Quelle", name="Quelle", created="2026-10-09T12:00:00")
+    monkeypatch.setattr(libimport, "get_scan", lambda scan_id: scan)
+    monkeypatch.setattr(libimport, "run_import", lambda options, *, ctx=None: gate.run(ctx))
+    return str(client.post("/api/library-import/run", json={"scan_id": scan.id}).json()["job"]["id"])
+
+
+def start_conform(client: TestClient, monkeypatch: pytest.MonkeyPatch, gate: Gate, ws: Workspace) -> str:
+    """As POST /housestyle/apply starts it (Stapelbearbeitung)."""
+    monkeypatch.setattr(housestyle, "apply", lambda selection, rules, *, ctx=None: gate.run(ctx))
+    return str(client.post("/api/housestyle/apply", json={}).json()["job"]["id"])
+
+
 STARTERS: dict[str, Starter] = {
     "libraries.sync": start_sync,
     "libraries.scan": start_scan,
@@ -176,6 +190,8 @@ STARTERS: dict[str, Starter] = {
     "datasheet-commit": start_datasheet_commit,
     "libraries": start_libraries,
     "import": start_import,
+    "libraries.import": start_library_import,
+    "libraries.conform": start_conform,
 }
 
 

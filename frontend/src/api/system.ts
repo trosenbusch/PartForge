@@ -41,6 +41,8 @@ export type DbSettings = WorkspaceSettings['db']
 export type WorkspaceFolders = WorkspaceSettings['folders']
 export type LayerMap = WorkspaceSettings['layers']
 export type FootprintStyle = WorkspaceSettings['footprint']
+/** Eigener Lagensatz der PcbLibs (Altium „Layer Sets“) */
+export type LayerSetSettings = WorkspaceSettings['layer_set']
 export type SymbolStyle = WorkspaceSettings['symbol']
 export type RecentWorkspace = Filled<ResponseOf<'/api/workspace/recent', 'get'>>[number]
 export type CreateWorkspaceInput = RequestBodyOf<'/api/workspace/create', 'post'>
@@ -129,6 +131,8 @@ export const LIBRARY_JOB_KINDS: ReadonlySet<string> = new Set([
   'libraries.save',
   'libraries.delete',
   'libraries.layers',
+  'libraries.import',
+  'libraries.conform',
   'series',
   'datasheet-commit',
   'import',

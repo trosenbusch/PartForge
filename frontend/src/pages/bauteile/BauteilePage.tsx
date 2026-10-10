@@ -3,11 +3,15 @@
  * Werkzeugleiste und Detailbereich – oder „Alle Kategorien“ (Übersicht + Suche über die ganze Bibliothek).
  * „Neues Bauteil“ (Strg+N, `?neu=1`), Tabellen-Import und die Bauteil-Schnellsuche (Strg+K) hängen hier.
  * Tabellen-Seite: kein großer Seitenkopf – Titel, Trefferzahl und die eine Primäraktion stehen in der Topbar.
+ *
+ * Router-State `{ partsUpload: { token, fileName, rows, label? } }` (z. B. „Bauteile anlegen …“ des
+ * Bibliotheksimports) öffnet den Tabellen-Import mit dieser vorbereiteten Tabelle – einmal: der State wird danach
+ * gelöscht (Neuladen und Zurück öffnen ihn nicht erneut).
  */
 import { useQueryClient } from '@tanstack/react-query'
 import { FileScan, FolderTree, Microchip, Plus, Settings2, Upload } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router'
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { useRegisterCommands, useRegisterSearchProvider, useSaveHandler } from '@/app/commands'
 import { PageActions, PageBody, PageTitle } from '@/app/page'
@@ -20,10 +24,27 @@ import { formatQuantityText } from '@/components/grid/cellFormat'
 import { Button, EmptyState, IconButton } from '@/components/ui'
 import { plural } from '@/lib/format'
 import { CategoryWorkspace } from './CategoryWorkspace'
-import { ImportWizard } from './import/ImportWizard'
+import { ImportWizard, type ImportWizardUpload } from './import/ImportWizard'
 import { NewPartDialog } from './dialogs/NewPartDialog'
 import { useBauteile, useTreeVisibility } from './model/store'
 import { AllCategoriesView } from './overview/AllCategoriesView'
+
+/** Vorbereitete Tabelle aus dem Router-State (`{ partsUpload: … }`) – geprüft, sonst `null` */
+function partsUploadFromState(state: unknown): ImportWizardUpload | null {
+  if (!state || typeof state !== 'object') return null
+  const raw = (state as { partsUpload?: unknown }).partsUpload
+  if (!raw || typeof raw !== 'object') return null
+  const { token, fileName, rows, label } = raw as Record<string, unknown>
+  if (typeof token !== 'string' || !/^[A-Za-z0-9_-]{8,128}$/.test(token)) return null
+  if (typeof fileName !== 'string' || !fileName.trim()) return null
+  if (typeof rows !== 'number' || !Number.isFinite(rows) || rows < 0) return null
+  return {
+    token,
+    fileName: fileName.trim(),
+    rows: Math.round(rows),
+    label: typeof label === 'string' && label.trim() ? label.trim() : undefined,
+  }
+}
 
 export default function BauteilePage() {
   const { table: tableParam } = useParams()
@@ -42,6 +63,26 @@ export default function BauteilePage() {
   const [newOpen, setNewOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const [newPns, setNewPns] = useState<ReadonlySet<string>>(() => new Set())
+
+  // Vorbereitete Tabelle (Router-State, z. B. vom Bibliotheksimport): den Tabellen-Import damit öffnen – je Navigation
+  // einmal; danach den State löschen, damit Neuladen und Zurück ihn nicht erneut öffnen
+  const location = useLocation()
+  const incomingUpload = partsUploadFromState(location.state)
+  const [preparedUpload, setPreparedUpload] = useState<ImportWizardUpload | null>(null)
+  const [uploadFrom, setUploadFrom] = useState<string | null>(null)
+  if (incomingUpload && uploadFrom !== location.key) {
+    setUploadFrom(location.key)
+    setPreparedUpload(incomingUpload)
+    setImportOpen(true)
+  }
+  const hasIncomingUpload = incomingUpload !== null
+  useEffect(() => {
+    if (hasIncomingUpload) navigate(`${location.pathname}${location.search}`, { replace: true, state: null })
+  }, [hasIncomingUpload, location.pathname, location.search, navigate])
+  const setImportDialogOpen = (open: boolean) => {
+    setImportOpen(open)
+    if (!open) setPreparedUpload(null)
+  }
   const [globalSearch, setGlobalSearch] = useState(() => params.get('suche') ?? '')
   // /bauteile?suche=… (z. B. „In allen Kategorien suchen“ aus dem Detailbereich) übernimmt die Suche
   const searchParam = params.get('suche')
@@ -307,7 +348,13 @@ export default function BauteilePage() {
         onCreated={onCreated}
         onOpenExisting={openPart}
       />
-      <ImportWizard open={importOpen} onOpenChange={setImportOpen} defaultTable={defaultTable} onImported={onImported} />
+      <ImportWizard
+        open={importOpen}
+        onOpenChange={setImportDialogOpen}
+        defaultTable={defaultTable}
+        onImported={onImported}
+        initialUpload={preparedUpload}
+      />
     </PageBody>
   )
 }

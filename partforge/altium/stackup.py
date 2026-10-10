@@ -20,9 +20,11 @@ Two jobs:
    * legacy ``LAYER<56+n>NAME / MECHENABLED / MECHKIND`` (Mech 1-16) and
      ``LAYERV7_<n-17>NAME / MECHENABLED / MECHKIND`` (Mech 17-32),
 
-   plus the layer pairs ``MECHPAIR<i>L1/L2`` and the layer sets "&All Layers" /
+   plus the layer pairs ``MECHPAIR<i>L1/L2``, the layer sets "&All Layers" /
    "&Mechanical Layers" (every enabled mechanical layer; in "&All Layers" Mech 1-16 before and
-   Mech 17-32 after ``DrillDrawing``, as Altium writes them). :func:`patch_pcblib_layers`
+   Mech 17-32 after ``DrillDrawing``, as Altium writes them) and the workspace's own layer set
+   (``LayerStack.layer_set``, :mod:`partforge.altium.layersets`: updated by name or appended with
+   ``LAYERSETSCOUNT`` + 1, optionally the current one). :func:`patch_pcblib_layers`
    rewrites exactly those values so the library shows the workspace stack (names, enabled
    flags, kinds) – every other byte of the file stays identical. The binary
    ``Library/LayerKindMapping`` is left as the Rust writer creates it (empty; Altium then takes
@@ -54,7 +56,7 @@ from pydantic import BaseModel, Field
 
 from ..domain.text import TRANSLITERATION, clean_free_text
 from ..workspace import LayerMap, Workspace
-from . import compound
+from . import compound, layersets
 from . import layers as L
 
 log = logging.getLogger(__name__)
@@ -81,6 +83,10 @@ __all__ = [
     "read_pcblib_layers",
     "pcblib_layer_problems",
     "read_library_data",
+    "HeaderStructureError",
+    "EMPTY_KIND_MAPPING",
+    "plan_library_data",
+    "renew_library_data",
 ]
 
 #: Module-level switch for the PcbLib header patch (the Altium E2E stage turns it off if
@@ -154,6 +160,9 @@ class LayerStack(BaseModel):
     source: str = "builtin"  # "builtin" or the .stackup path
     layers: dict[int, MechLayer] = Field(default_factory=dict)
     pairs: list[tuple[int, int]] = Field(default_factory=list)
+    layer_set: layersets.LayerSetDef | None = Field(
+        default=None, description="Eigener Lagensatz, der in jeden Bibliothekskopf geschrieben wird (Einstellung)"
+    )
 
     def layer(self, number: int) -> MechLayer | None:
         return self.layers.get(number)
@@ -494,10 +503,19 @@ def _cached_parse(path: Path) -> LayerStack:
 
 
 def workspace_stack(ws: Workspace | None) -> tuple[LayerStack, list[str]]:
-    """The layer stack of a workspace (``layer_stackup`` file or the built-in standard).
+    """The layer stack of a workspace (``layer_stackup`` file or the built-in standard) with the workspace's
+    own layer set (:func:`partforge.altium.layersets.workspace_layer_set`).
 
     A configured file that cannot be read falls back to the standard with a German warning.
     """
+    stack, notes = _workspace_base_stack(ws)
+    layer_set, set_notes = layersets.workspace_layer_set(ws)
+    if layer_set is not None:
+        stack = stack.model_copy(update={"layer_set": layer_set})
+    return stack, [*notes, *set_notes]
+
+
+def _workspace_base_stack(ws: Workspace | None) -> tuple[LayerStack, list[str]]:
     if ws is None or not ws.settings.layer_stackup:
         return default_stack(), []
     path = ws.abs(ws.settings.layer_stackup)
@@ -516,6 +534,13 @@ def workspace_stack(ws: Workspace | None) -> tuple[LayerStack, list[str]]:
 
 class _Unexpected(Exception):
     """Internal: the PcbLib does not have the structure the patch expects."""
+
+
+#: Public name of the structure error (the house-style conversion then renews the header).
+HeaderStructureError = _Unexpected
+#: ``Library/LayerKindMapping/Data`` without entries (as the Rust writer writes it): the layer kinds then come
+#: from the text header (VERIFIED with the Rust files).
+EMPTY_KIND_MAPPING: Final = b"\x08\x00\x00\x001\x00.\x000\x00\x00\x00" + b"\x00" * 8
 
 
 @dataclass
@@ -734,6 +759,7 @@ def _plan_patch(header: _Header, stack: LayerStack) -> _Plan:
                 plan.insert_after.setdefault(anchor, []).append(_Segment(key + b"=" + kind))
     _plan_pairs(header, stack, plan)
     _plan_layer_sets(header, stack, plan)
+    _plan_custom_layer_set(header, stack.layer_set, plan)
     return plan
 
 
@@ -814,6 +840,83 @@ def _plan_layer_sets(header: _Header, stack: LayerStack, plan: _Plan) -> None:
             plan.replace[index] = header.segments[index].with_value(value)
 
 
+def _set_bytes(value: str) -> bytes:
+    return value.encode("cp1252", "replace")
+
+
+def _custom_set_group(header: _Header, wanted: layersets.LayerSetDef) -> int | None:
+    """Index of the header's layer set with the name of ``wanted`` (case-insensitive), else ``None``."""
+    for index, group in sorted(header.groups.get("layerset", {}).items()):
+        name = header.value(group, b"NAME")
+        if name is not None and name.decode("cp1252", "replace").casefold() == wanted.name.casefold():
+            return index
+    return None
+
+
+def _plan_custom_layer_set(header: _Header, wanted: layersets.LayerSetDef | None, plan: _Plan) -> None:
+    """The workspace's own layer set: update the set of that name or append it (``LAYERSETSCOUNT`` + 1);
+    with ``current`` it becomes the only current set."""
+    if wanted is None:
+        return
+    groups = header.groups.get("layerset", {})
+    segments = header.segments
+    values = wanted.header_values()
+    target = _custom_set_group(header, wanted)
+    if wanted.current:
+        for index, group in groups.items():
+            at = group.fields.get(b"ISCURRENT")
+            if index != target and at is not None and segments[at].value.rstrip(b"\r") != b"FALSE":
+                plan.replace[at] = segments[at].with_value(b"FALSE")
+    if target is not None:
+        group = groups[target]
+        for field, value in values.items():
+            key = field.encode("ascii")
+            raw = _set_bytes(value)
+            at = group.fields.get(key)
+            if at is None:
+                anchor = max(group.fields.values())
+                plan.insert_after.setdefault(anchor, []).append(_Segment(f"LAYERSET{target}{field}=".encode("ascii") + raw))
+            elif segments[at].value.rstrip(b"\r") != raw:
+                plan.replace[at] = segments[at].with_value(raw)
+        return
+    count_at = next((i for i, seg in enumerate(segments) if seg.key == b"LAYERSETSCOUNT"), None)
+    if count_at is None or not groups:
+        raise _Unexpected("keine Lagensätze (LAYERSETSCOUNT) im Kopf")
+    try:
+        count = int(segments[count_at].value.rstrip(b"\r"))
+    except ValueError as exc:
+        raise _Unexpected("LAYERSETSCOUNT ist keine Zahl") from exc
+    if count != len(groups) or sorted(groups) != list(range(1, count + 1)):
+        raise _Unexpected("LAYERSETSCOUNT passt nicht zu den Lagensätzen im Kopf")
+    number = count + 1
+    plan.replace[count_at] = segments[count_at].with_value(str(number).encode("ascii"))
+    anchor = max(i for group in groups.values() for i in group.fields.values())
+    plan.insert_after.setdefault(anchor, []).extend(
+        _Segment(f"LAYERSET{number}{field}=".encode("ascii") + _set_bytes(value)) for field, value in values.items()
+    )
+
+
+def _custom_set_problems(header: _Header, wanted: layersets.LayerSetDef | None) -> list[str]:
+    """What still differs from the workspace's own layer set (empty = as wanted)."""
+    if wanted is None:
+        return []
+    target = _custom_set_group(header, wanted)
+    if target is None:
+        return [f"Der Lagensatz „{wanted.name}“ fehlt im Bibliothekskopf."]
+    group = header.groups["layerset"][target]
+    for field, value in wanted.header_values().items():
+        if header.value(group, field.encode("ascii")) != _set_bytes(value):
+            return [f"Der Lagensatz „{wanted.name}“ weicht vom eingestellten ab."]
+    if wanted.current:
+        others = [
+            index for index, group in header.groups.get("layerset", {}).items()
+            if index != target and header.value(group, b"ISCURRENT") not in (None, b"FALSE")
+        ]
+        if others:
+            return [f"Der Lagensatz „{wanted.name}“ ist beim Öffnen nicht der aktive."]
+    return []
+
+
 def _expected_values(layer: MechLayer) -> tuple[bytes, bytes, bytes | None]:
     return _header_name(layer.name, layer.number), b"TRUE" if layer.enabled else b"FALSE", _kind_token(layer.kind)
 
@@ -830,6 +933,8 @@ def _check_patched(original: list[_Segment], patched: list[_Segment], stack: Lay
                 raise _Unexpected(f"Selbstprüfung: Mechanical {number} ({rep_kind}) stimmt nach dem Ändern nicht")
     if header.mechpairs and [header.segments[i].raw.rstrip(b"\r") for i in header.mechpairs] != _pair_segments(stack):
         raise _Unexpected("Selbstprüfung: Lagenpaare stimmen nach dem Ändern nicht")
+    if _custom_set_problems(header, stack.layer_set):
+        raise _Unexpected("Selbstprüfung: der Lagensatz stimmt nach dem Ändern nicht")
 
     def untouched(segments: list[_Segment]) -> list[bytes]:
         return [s.raw.rstrip(b"\r") for s in segments if s.key is None or s.key not in touched]
@@ -877,6 +982,44 @@ def _check_kind_mapping(raw: bytes | None) -> None:
         raise _Unexpected(
             "die Datei enthält eine von Altium gespeicherte Lagentyp-Tabelle (LayerKindMapping) – sie wird nicht verändert"
         )
+
+
+def plan_library_data(data: bytes, kind_mapping: bytes | None, stack: LayerStack) -> bytes | None:
+    """``Library/Data`` patched to ``stack`` (``None`` = already as wanted) – the plan of
+    :func:`patch_pcblib_layers` without file access. Raises :class:`HeaderStructureError` for an unexpected
+    header (older format, Altium's layer kind table, no layer pairs …) and :class:`StackupError`."""
+    _check_kind_mapping(kind_mapping)
+    segments, trailer = _split_library_data(data)
+    header = _Header(segments)
+    plan = _plan_patch(header, stack)
+    patched = plan.apply(segments)
+    if [seg.raw for seg in patched] == [seg.raw for seg in segments]:
+        return None
+    _check_patched(segments, patched, stack, plan.touched_keys(segments))
+    return _join_library_data(patched, trailer)
+
+
+def renew_library_data(data: bytes, template: bytes, stack: LayerStack) -> bytes:
+    """``Library/Data`` with the header text of ``template`` (a library of the Rust writer: every layer in all
+    representations) patched to ``stack``, and the component list (and ``FILENAME``) of ``data``.
+
+    For libraries whose own header cannot be patched (saved by older Altium versions, Altium's binary layer kind
+    table): the header only holds document settings – grids, units, colours, layer stack and sets – the
+    components live in their own storages. The caller sets ``Library/LayerKindMapping/Data`` to
+    :data:`EMPTY_KIND_MAPPING`."""
+    old_segments, trailer = _split_library_data(data)
+    template_segments, _ = _split_library_data(template)
+    filename = next((seg for seg in old_segments if seg.key == b"FILENAME"), None)
+    segments = [
+        _Segment(filename.raw.rstrip(b"\r") + (b"\r" if seg.raw.endswith(b"\r") else b""))
+        if seg.key == b"FILENAME" and filename is not None else seg
+        for seg in template_segments
+    ]
+    header = _Header(segments)
+    plan = _plan_patch(header, stack)
+    patched = plan.apply(segments)
+    _check_patched(segments, patched, stack, plan.touched_keys(segments))
+    return _join_library_data(patched, trailer)
 
 
 def header_patch_enabled() -> bool:
@@ -1021,4 +1164,5 @@ def _pair_and_set_problems(header: _Header, stack: LayerStack) -> list[str]:
     _plan_layer_sets(header, stack, sets)
     if sets.replace:
         problems.append("Die Lagensätze „&All Layers“/„&Mechanical Layers“ weichen vom Lagenaufbau ab.")
+    problems.extend(_custom_set_problems(header, stack.layer_set))
     return problems

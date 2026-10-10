@@ -21,6 +21,8 @@ begin
         PFCmdOpenDocument(0)
     else if Cmd = 'document_state' then
         PFCmdDocumentState(0)
+    else if Cmd = 'document_states' then
+        PFCmdDocumentStates(0)
     else if Cmd = 'refresh_document' then
         PFCmdRefreshDocument(0)
     else if Cmd = 'close_own_documents' then

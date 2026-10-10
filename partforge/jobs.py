@@ -107,6 +107,8 @@ LIBRARY_JOB_KINDS: frozenset[str] = frozenset({
     "series",  # series commit (routes_series)
     "datasheet-commit",  # datasheet commit (datasheet.proposal.commit_proposal)
     "import",  # spreadsheet import (routes_parts -> importers.spreadsheet.run_import(library=…))
+    "libraries.import",  # library import (routes_libimport -> altium.libimport.run_import)
+    "libraries.conform",  # batch edit to the house style (routes_housestyle -> altium.housestyle.apply/undo_last)
 })
 #: Job log line of a job a library switch stopped (unless the job reports it itself).
 LIBRARY_SWITCH_MESSAGE = (

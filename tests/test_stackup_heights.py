@@ -450,5 +450,6 @@ def test_unreadable_heights_before_a_write_only_warn(rust_ws: Workspace, monkeyp
     result = ops.upsert_footprints(lib, [soic8()])
     assert result.ok and any("nicht wiederhergestellt" in w for w in result.warnings), result.warnings
     monkeypatch.undo()
-    # the footprints of the call still get their heights; the unreadable old ones are reset by the writer
-    assert _heights_of(lib) == {"RESC1608X55N": 0.0, "SOIC127P600X175-8N": 1.75}
+    # the footprints of the call still get their heights; the untouched one keeps its stream byte for byte
+    # (partforge.altium.preserve sets back what the writer re-serialised) – its height is not lost any more
+    assert _heights_of(lib) == {"RESC1608X55N": pytest.approx(0.55, abs=2.54e-6), "SOIC127P600X175-8N": 1.75}

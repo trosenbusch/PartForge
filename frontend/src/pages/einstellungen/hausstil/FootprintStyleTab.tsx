@@ -6,7 +6,7 @@ import { CircleCheck, GitCompareArrows, Hourglass, TriangleAlert } from 'lucide-
 import { useState } from 'react'
 import type { FootprintStyle } from '@/api/system'
 import { FootprintCanvas } from '@/components/preview'
-import { Badge, Card, IconButton, SegmentedControl, Slider, Spinner, Switch } from '@/components/ui'
+import { Badge, Card, Combobox, IconButton, SegmentedControl, Slider, Spinner, Switch } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import type { CheckIssue, FootprintRequest } from '@/lib/geometry'
 import { DENSITY_ORDER, densityLabel } from '@/pages/footprints/lib/calc'
@@ -16,6 +16,9 @@ import { FOOTPRINT_DEFAULTS } from './defaults'
 import { NumberRow, ResetAll, StyleGroup, StyleRow } from './StyleRow'
 import { useStyledFootprintPreview } from './usePreviews'
 
+
+/** TrueType-Schriften, die auf jedem Windows-Rechner vorhanden sind (eigene Eingabe möglich) */
+const TRUETYPE_FONTS = ['Arial', 'Calibri', 'Consolas', 'Segoe UI', 'Tahoma', 'Verdana']
 
 const PENDING_LABEL: Partial<Record<keyof FootprintStyle, string>> = {
   silk_pad_clearance: 'Abstand Druck–Pad',
@@ -239,6 +242,42 @@ export function FootprintStyleTab({
             max={3}
             step={0.1}
           />
+          <StyleRow
+            label="Textschrift"
+            help="Strichschrift (Altium „Stroke“) oder TrueType – für .Designator und .Comment; Altium misst TrueType-Höhen mit Ober- und Unterlänge."
+            isDefault={draft.text_font === d.text_font}
+            defaultText="Strichschrift"
+            onReset={() => onChange({ text_font: d.text_font })}
+          >
+            <SegmentedControl<FootprintStyle['text_font']>
+              aria-label="Textschrift"
+              size="sm"
+              value={draft.text_font}
+              onValueChange={(v) => onChange({ text_font: v })}
+              options={[
+                { value: 'stroke', label: 'Strich' },
+                { value: 'truetype', label: 'TrueType' },
+              ]}
+            />
+          </StyleRow>
+          {draft.text_font === 'truetype' && (
+            <StyleRow
+              label="TrueType-Schrift"
+              help="Muss auf den Rechnern installiert sein, die die Leiterplatte öffnen."
+              isDefault={draft.text_font_name === d.text_font_name}
+              defaultText={d.text_font_name}
+              onReset={() => onChange({ text_font_name: d.text_font_name })}
+            >
+              <Combobox
+                options={TRUETYPE_FONTS.map((f) => ({ value: f, label: f }))}
+                value={draft.text_font_name}
+                onValueChange={(v) => onChange({ text_font_name: v?.trim() || d.text_font_name })}
+                allowCustom
+                searchPlaceholder="Schrift suchen oder eingeben …"
+                className="w-44"
+              />
+            </StyleRow>
+          )}
         </StyleGroup>
 
         <StyleGroup title="3D">

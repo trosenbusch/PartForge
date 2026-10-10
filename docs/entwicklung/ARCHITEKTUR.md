@@ -281,7 +281,7 @@ Rahmenverbot, die SPA-Auslieferung (`render_index`) prüft zusätzlich, woher di
   (`grouped`|`per_item`), `part_number_scheme` (`mpn`|`internal`), `internal_pn_format` (Python-Format mit
   `{prefix}`, `{table}` und **genau einem** `{counter}`; jede erzeugte Nummer muss eine gültige Teilenummer sein –
   `workspace.pn_format_problem`, geprüft beim Speichern und Öffnen), `layers` (`LayerMap`),
-  `layer_stackup`, `footprint` (`FootprintStyle`), `symbol` (`SymbolStyle`).
+  `layer_stackup`, `layer_set` (`LayerSetSettings`), `footprint` (`FootprintStyle`), `symbol` (`SymbolStyle`).
 * In der DB gespeicherte Pfade (`Library Path`, `Footprint Path`, Registry) sind **relativ zum DbLib-Ordner**
   (= Workspace-Wurzel) mit Backslash, z. B. `Symbols\PF_Passives.SchLib` (`Workspace.rel()`/`abs()`; Altium löst
   relativ zum DbLib-Ordner auf – VERIFIED).
@@ -296,11 +296,24 @@ Rahmenverbot, die SPA-Auslieferung (`render_index`) prüft zusätzlich, woher di
   `Top Overlay`. Mech 2–7 bleiben frei (der Rust-Writer deklariert sie typisiert). `layer_stackup` = optionale
   `.stackup`-Datei, deren mechanische Lagennamen/-typen in den Header jeder geschriebenen PcbLib übernommen
   werden (`altium/stackup.py`); `None` = eingebauter Standard passend zu `LayerMap`.
+* **Lagensatz** (`layer_set`, `altium/layersets.py`): eigener Altium-Lagensatz („View Configuration › Layer Sets“),
+  den der Writer in den Kopf jeder PcbLib schreibt (§8.3). `mode`: `none` (Standard – nur Altiums eingebaute Sätze),
+  `builtin` (aus der `LayerMap`: Kupfer, Paste, Lötstopp, Bestückungsdruck, Bohrlagen, Multi-Layer und jede
+  Mechanik-Lage der Zuordnung; Name „Component Layers“ oder `name`) oder `file` (Name, Lagenkürzel wie
+  `TopOverlay`/`Mechanical9`, aktive Lage und Optionen aus einer Altium-`.layerset`-Datei – die Definition steht in
+  den Einstellungen, `file` ist nur die Herkunft, der Ordner bleibt in sich geschlossen). `current`: beim Öffnen in
+  Altium aktiv (die anderen Sätze verlieren dann `ISCURRENT`). Für die Standard-`LayerMap` ist `builtin` lagengleich
+  mit dem `Component.layerset` des Benutzers (VERIFIED). Eine unbrauchbare Definition schreibt keinen Satz und
+  erscheint als Hinweis (`layersets.workspace_layer_set`). API: `POST /api/libraries/layer-set/parse {path}` →
+  `{file, sets}`, `POST /api/libraries/layer-set/builtin {layers?, current}` → `LayerSetDef` (Vorschau).
 * `FootprintStyle`: Dichte M/N/L, Namensschema `ipc`|`house`, Rundung `kicad`|`ipc`, Fertigungs-/Platzier-
-  toleranz, Linienbreiten, Pin-1-Punkt, Courtyard-Raster, Mindestabstand Kupfer, Zentrumskreuz, Texthöhe,
-  Eckenradius, Bezeichner des Exposed Pads (`next`|`EP`), 3D an/aus. `SymbolStyle`: Raster, Pinlängen,
-  Farben, Linienbreite, Schrift, `diode_pin1` (`cathode` = IPC, Standard | `anode`), `resistor_style`
-  (`iec`|`ansi`).
+  toleranz, Linienbreiten, Pin-1-Punkt, Courtyard-Raster, Mindestabstand Kupfer, Zentrumskreuz (zusätzliches
+  Kreuz im Courtyard), Texthöhe, Textschrift `text_font` (`stroke` Standard | `truetype`) mit `text_font_name`
+  (Standard Arial) für `.Designator`/`.Comment`, Eckenradius, Bezeichner des Exposed Pads (`next`|`EP`), 3D an/aus.
+  `SymbolStyle`: Raster, Pinlängen, Farben, Linienbreite, Hausschrift `font`/`font_size` (Bezeichner, Comment,
+  Parameter, freie Texte – in die Schrifttabelle der SchLib eingetragen, `altium/schstyle.py`), `pin_font`
+  (`house` Standard: Pinnamen/-nummern in der Hausschrift als Altium-„Custom Font“ jedes Pins | `system`: Schrift
+  des Schaltplanblatts), `diode_pin1` (`cathode` = IPC, Standard | `anode`), `resistor_style` (`iec`|`ansi`).
 * Bibliotheksdateien (`altium/libwriter.py`): Layout `grouped` (Standard) – Symbole je Kategorie-Gruppe
   `Symbols/PF_<Gruppe>.SchLib` (Passives, Diodes, Transistors, Analog, Power, ICs, Connectors,
   Electromechanical, Protection, Oscillators, Mechanical; ohne Kategorie nach Bezeichner-Präfix), Footprints je
@@ -605,6 +618,9 @@ SVG-/3D-Vorschau, STEP); das Frontend spiegelt ihn über OpenAPI.
   Eckenradius %, Seite (top/bottom/through), Bohrung, Langloch (`hole_length`, `hole_rotation`), Paste/Maske,
   `thermal` (EP).
 * 3D: `Body3D` = extrudiertes Prisma (Umriss + z-Bereich + Farbe); optional `StepModel` (Datei, Drehung, Versatz).
+* Texte: `FpText.font` (`stroke` | `truetype`) und `font_name` (TrueType-Schrift). Die Standardwerte zählen nicht
+  zum Fingerabdruck und zur Identität (`geometry.model.compat_text_dump`) – ältere Footprints gelten dadurch nicht
+  als geändert.
 * `check_symbol_footprint(symbol, footprint)` meldet Pins ohne Pad und Pads ohne Pin (streng).
   `pin_pad_check(symbol, footprint, *, free_pads=(), unused_ok=False) -> (problems, hints)` (Mengenform
   `pin_pad_gaps(pins, pads, thermal, …)`) ist die eine Regel von Datenblatt-Vorschlag, Symbolvorschlag und
@@ -845,6 +861,12 @@ symbol_library_path(ws, spec, category=None) -> Path; footprint_library_path(ws,
   für Mech 17–32), die Lagenpaare (`MECHPAIR`) und die Lagen-Sets „&All Layers“/„&Mechanical Layers“ (aktive
   mechanische Lagen; in „&All Layers“ Mech 1–16 vor, Mech 17–32 nach `DrillDrawing`). VERIFIED (`altium-e2e.md`
   §3.2): Altium zeigt alle 32 Lagen mit Namen und Typ und behält Paare und Sets auch beim eigenen Speichern.
+  Dazu der **eigene Lagensatz** (`LayerStack.layer_set`, §3): ein gleichnamiger Satz wird aktualisiert, sonst mit
+  `LAYERSETSCOUNT+1` angehängt (`LAYERSET<n>NAME/LAYERS/ACTIVELAYER.7/ISCURRENT/ISLOCKED/FLIPBOARD`);
+  `pcblib_layer_problems` meldet einen fehlenden oder abweichenden Satz. Köpfe, die sich nicht patchen lassen (ältere
+  oder in Altium gespeicherte PcbLibs), ersetzt `stackup.renew_library_data` durch den Kopf einer frischen, leeren
+  Rust-PcbLib (`rustwriter.template_library_data`, zwischengespeichert) mit dem Workspace-Stapel – Dateiname und
+  Rest des Streams bleiben; `LayerKindMapping` wird dabei auf die leere Form (20 Byte) gesetzt.
 * **Bauhöhe (PcbLib-HEIGHT-Patch, `heights.py`)**: Altium speichert die Footprint-Eigenschaft *Height* je Bauteil
   in `<Storage>/Parameters` (`|PATTERN=<Name>|HEIGHT=21.6535mil|…`) und im Inhaltsverzeichnis
   `Library/ComponentParamsTOC/Data` (`Name=…|Pad Count=…|Height=21.6535|…`, CRLF je Bauteil); Wert = Höhe in Altiums
@@ -860,6 +882,29 @@ symbol_library_path(ws, spec, category=None) -> Path; footprint_library_path(ws,
   unverändert und liefert nur eine deutsche Warnung – der Patch lässt nie einen Schreibvorgang scheitern;
   idempotent. Abschaltbar: `heights.HEIGHT_PATCH_ENABLED` bzw. `PARTFORGE_HEIGHT_PATCH=0`. Ältere, vor dem Patch
   geschriebene PcbLibs meldet die Dateiprüfung (`footprint_height_missing`, §8.4) samt Ein-Klick-Korrektur.
+* **Unberührte Bauteile bleiben byte-gleich** (`preserve.py`, VERIFIED 2026-10-09 mit der Referenzbibliothek des
+  Benutzers): Jede Änderung durch `altium-designer-mcp.exe` serialisiert **alle** Bauteile der Datei aus seinem
+  eigenen Modell neu – in einer von Altium gespeicherten PcbLib verlören die nicht geschriebenen Footprints
+  Mechanical 17–32 (landen auf Mechanical 16), ihre `WideStrings` (TrueType-Texte) und die eingebetteten Schriften
+  (`Library/EmbeddedFonts`), in einer SchLib die nicht geschriebenen Symbole ihre `PinTextData` (Pinschriften) und
+  die Bezeichnerschrift. `RustLibraryOps` hält darum vor jedem Aufruf den Stand der Arbeitskopie fest
+  (`preserve.snapshot`) und setzt danach jeden Stream der Bauteile, die der Aufruf **nicht** geschrieben hat, auf die
+  alten Bytes zurück (`preserve.restore_plan`) – samt der Bibliotheks-Streams, die zu ihnen gehören
+  (`Library/EmbeddedFonts`, `Library/PadViaLibrary/Data`, `Storage` einer SchLib). Ein Footprint, dessen vorher
+  eingebettetes 3D-Modell nach dem Schreiben fehlt, behält die Fassung des Writers (verknüpfte Modelle sind kein
+  Hindernis). Geschrieben wird wie beim Höhen-Patch über `compound.replace_streams` in die geprüfte Kopie.
+* **Hausschrift in SchLibs** (`schstyle.py`): Nach jedem Symbol-Schreiben setzt `patch_written_symbols` die
+  Hausschrift: die Schrifttabelle behält jeden vorhandenen Eintrag, Hausschrift und ihre unterstrichene Variante
+  (Hyperlink-Parameter) werden angehängt (`plan_font_table`); `FontID` der Texte (RECORD 4, 28, 34, 41, 209) der
+  geschriebenen Symbole zeigt darauf, Pinnamen/-nummern bekommen sie als `PinTextData` (`pin_font = "house"`). Ist
+  die Hausschrift die Systemschrift (Times New Roman 10), ändert sich nichts.
+* **TrueType-Texte**: `rust_to_footprint` liest TrueType-Texte mit Schriftname (`FpText.font`, `font_name`); der
+  Bezugspunkt kommt aus der gespeicherten Textbox, wenn sie plausibel ist (±30 % der Schätzung), sonst aus der
+  Schätzung (`truetype_text_box`: Höhe = Zelle 1,117 em, Breite nach Zeichenbreiten); `footprint_to_rust` schreibt
+  `kind: "true_type"` mit kompensiertem Anker. Barcode-Texte bleiben ein gemeldeter Verlust.
+* **Mechanical 17–32 beim Lesen** (`pcbrecords.correct_layers`): Altium speichert diese Lagen mit dem V6-Byte 72
+  („Mechanical 16“) plus V7-ID; der Rust-Reader meldet sie als Mechanical 16. Beim Lesen eines Footprints korrigiert
+  PartForge die Lagen aus den Datensätzen (je Art und Reihenfolge, nur bei gleicher Anzahl).
 * Altium sperrt geöffnete PcbLib/SchLib nicht und bemerkt externe Änderungen nicht: Die Synchronisierung schreibt
   keine in Altium geöffnete **und geänderte** Datei und lädt geöffnete, unveränderte danach neu
   (`auto_reload_libraries`).
@@ -1007,7 +1052,8 @@ component_thumbnail(spec, theme="dark") -> str        # das eine Vorschaubild (R
 * **Bibliothekssperre** (`jobs.library_hold`/`jobs.library_switch`): Die Datenbankfunktionen arbeiten immer auf der
   gerade geöffneten Bibliothek. Jeder Job, der Bauteile, Registry oder Bibliotheksdateien schreibt
   (`jobs.LIBRARY_JOB_KINDS`: `libraries` = „Bibliotheken schreiben“, `libraries.sync|scan|save|delete|layers`,
-  `series`, `datasheet-commit`, `import` = Tabellenimport), hält die Bibliothek, für die er gestartet wurde, seine
+  `libraries.import` = Bibliotheksimport (§8.7), `libraries.conform` = Stapelbearbeitung und ihr Rückgängigmachen
+  (§8.8), `series`, `datasheet-commit`, `import` = Tabellenimport), hält die Bibliothek, für die er gestartet wurde, seine
   ganze Laufzeit: `with library_hold(ctx, root) as ws`.
   Direkte Schreibzugriffe im Request (Editor speichern/löschen, externe Bibliotheken, Datenblatt hochladen,
   korrigieren, löschen) halten sie mit `ctx=None`. Halten ist geteilt (mehrere Jobs gleichzeitig; verschachtelt im
@@ -1036,7 +1082,10 @@ aus Vorlagen erzeugtes Skriptprojekt, Daten über Spec-Dateien, Start über
 `"<X2.EXE>" -RScriptingSystem:RunScript(ProjectName=…|ProcName="PartForgeBridge>Run")`, Schritt-Log und Timeout
 `script_timeout_s`. Hängt ein Skript, meldet `BridgeWedgedError` „In Altium Strg+F3 drücken“. PartForge schließt
 **niemals** Dialoge anderer Prozesse. Funktionen: Status, DbLib installieren/deinstallieren/Installationszustand,
-DbLib aktualisieren, Dokument öffnen/Zustand/neu laden, DB-Bauteil auflösen (Prüfung), SchLib/PcbLib schreiben.
+DbLib aktualisieren, Dokument öffnen/Zustand/neu laden, Zustand vieler Dokumente in einem Lauf
+(`document_states`: je Pfad geöffnet/geändert, höchstens 200 Pfade je Skriptlauf – Import und Stapelbearbeitung
+fragen damit alle Zieldateien vorab ab, `_AltiumGuard.prefetch`), DB-Bauteil auflösen (Prüfung), SchLib/PcbLib
+schreiben.
 `refresh_document` (Neuladen nach dem Schreiben) lädt nur unveränderte Dokumente neu; ein verborgen geöffnetes
 bleibt verborgen (kein neuer Editor-Tab). `resolve_db_component` installiert eine nicht installierte DbLib nur
 vorübergehend und gibt danach ihr verstecktes Dokument samt Datenbankverbindung wieder frei
@@ -1107,6 +1156,132 @@ Abschaltbar mit `PARTFORGE_ALTIUM_KEEP_FOCUS=0`.
   einem deutschen Ergebnissatz in `job.message`.
 Nur der Altium-E2E-Agent nutzt ein laufendes Altium; die Synchronisierung greift während `pytest` nicht auf
 Altium zu (außer mit `PARTFORGE_TEST_ALTIUM=1`).
+
+### 8.6 Datensätze lesen und ändern (`pcbrecords.py`, `schrecords.py`)
+
+Was der Rust-Writer nicht darstellen kann (TrueType-Texte mit Textbox, Mechanical 17–32, Schrifttabellen,
+Pinschriften) oder beim Neuschreiben verlöre, ändert PartForge **auf Datensatzebene**: Datensätze werden geteilt,
+nur die betroffenen Felder gesetzt und alles andere byte-gleich zurückgeschrieben (Hin- und Rückweg ohne Änderung
+ist byte-identisch, `tests/test_pcbrecords.py`, `test_schrecords.py`). Geschrieben wird immer über
+`compound.replace_streams` (geprüfte Kopie: jeder nicht geplante Stream byte-gleich, der Rust-Reader muss dieselben
+Bauteile listen; `create=True` legt fehlende Streams/Storages an), dann atomar ersetzt.
+
+* **PcbLib** (`<Footprint>/Data`): u32-Länge + Pascal-Name, dann Datensätze (Typbyte + Blöcke mit u32-Länge: Arc 1,
+  Pad 6, Via 1, Track 1, Text 2, Fill 1, Region 1, Body 1 Block). Koordinaten i32 in 1/10000 mil. Offsets im
+  Eigenschaftsblock (VERIFIED mit Altium 26.10): Track x1/y1/x2/y2/Breite @13/17/21/25/29, V7-ID @41; Arc
+  Mitte/Radius @13/17/21, Winkel (double) @25/33, Breite @41, V7 @52; Fill V7 @42; Text Position @13/17 (linke untere
+  Ecke der Textbox), Höhe @21, Strichschrift @25, Drehung (double) @27, Spiegeln @35, Strichbreite @36,
+  isComment/isDesignator @40/41, Schriftart @43 (0 Strich, 1 TrueType, 2 Barcode), fett/kursiv @44/45, Schriftname
+  UTF-16 @46–109, `WideStrings`-Index @115, Textbox Breite/Höhe @124/128, V7 @226; Region/Body: Eigenschaftstext
+  (u32 @18, Text @22) mit `V7_LAYER=`; Pad (Block 4): Mitte @13/17, Größe oben @21/25, Bohrung @45, Drehung @52.
+* **Lagen**: Mechanical n ≤ 16 = V6-Byte 56 + n, Mechanical 17–32 = Byte 72 + V7-ID `0x01020000 + n` (Altium); der
+  Rust-Writer schreibt 186–201 + V7. `layer_of` bevorzugt die V7-ID bzw. das `V7_LAYER`-Kürzel, `set_layer` setzt
+  alle Darstellungen, die der Datensatz hat; Pads und Vias verschiebt PartForge nie.
+* **Seitenströme** beim Einfügen (`insert_primitives`): neue Datensätze kommen hinter den letzten ihrer Art;
+  `<fp>/Header` (Anzahl), `PrimitiveGuids/Data` (24-Byte-Einträge: Art, Index, GUID; Art 85 = Bauteil) und
+  `UniqueIDPrimitiveInformation/Data` (`|PRIMITIVEINDEX=n|`) werden umnummeriert. Neue Tracks und Texte entstehen
+  aus Vorlagen eines in Altium 26.10 gespeicherten Footprints (Track 49 Byte, TrueType-Text 252 Byte) oder aus einem
+  vorhandenen Datensatz desselben Footprints.
+* **SchLib**: `FileHeader` mit Schrifttabelle (`FontIdCount`, `Size<i>`, `FontName<i>`, `Bold<i>` …;
+  `FileHeader.fonts`/`set_fonts` behalten Position und Reihenfolge der übrigen Schlüssel); `<Bauteil>/Data` =
+  Datensätze (u32: Flags << 24 | Länge; Text `|KEY=VALUE|…` + NUL; binär = Pin RECORD 2: Teil @5, Darstellungsmodus
+  @7, Beschreibung (Pascal) @12, danach Formaltyp, elektrischer Typ, Flags (Richtung Bits 0–1, 0x04 versteckt, 0x08
+  Name, 0x10 Bezeichner), Länge i16 in 10-mil-Einheiten, x/y i16, Farbe u32, Name, Bezeichner – `PinView`).
+  `PinTextData`: Kopf `|HEADER=PinTextData|Weight=n` und je Pin ein 0xD0-Datensatz (nullbasierter Pin-Index als
+  Name, zlib-Daten aus zwei Teilen – Name und Bezeichner: Flags 0x01 eigene Position, 0x02 relativ zum Bauteil, 0x0C
+  Drehung, 0x10 eigene Schrift; i32 Abstand; i16 Schrift-ID + u32 Farbe).
+
+### 8.7 Bibliotheksimport (`libimport.py`, `routes_libimport.py`)
+
+Übernimmt Symbole und Footprints vorhandener Altium-Bibliotheken in den Bibliotheksordner – **verlustfrei als ganze
+Dateien**; der Hausstil ist ein eigener, optionaler Schritt (§8.8).
+
+* **Quellen** (`scan`, Job `library-import.scan`, liest nur): ein Ordner (rekursiv, z. B. die Celestial-Bibliothek
+  mit ≈ 7 800 SchLib- und ≈ 2 150 PcbLib-Dateien), eine `.SchLib`/`.PcbLib`, eine `.IntLib` (die eingebetteten
+  Bibliotheken `SchLib/<n>.schlib` / `PCBLib/<n>.pcblib` = `0x02` + zlib der ganzen Datei – VERIFIED – werden in den
+  Import-Zwischenspeicher entpackt, `extract_intlib`), ein `.LibPkg` (seine `DocumentPath`-Einträge) oder ein
+  `.zip` (`extract_zip`: nur Bibliotheksdateien, Pfade bereinigt – kein Laufwerk, kein `..`, keine reservierten
+  Zeichen –, höchstens `ZIP_MAX_BYTES` = 1 GB entpackt und `ZIP_MAX_MEMBERS` = 50 000 Einträge; Einträge, die sich
+  nur in der Schreibweise unterscheiden, erhalten eigene Namen (`_2` …); IntLibs darin werden ebenfalls entpackt). `.DbLib` wird nur mit Hinweis gelistet (ihre Bauteildaten liegen in einer Datenbank).
+  Der Zwischenspeicher liegt im lokalen Datenordner (`import\libraries`, nach zwei Tagen aufgeräumt).
+* **Scan** (`ImportScan`, `GET /api/library-import/scans/{id}`, sechs Stunden gültig, höchstens acht): je Datei
+  `rel`, Art, Größe, `problem` (nicht lesbar), geplantes Ziel `target` und `exists` (`no` | `same` – gleiche Datei
+  schon importiert | `different` – geänderte Fassung vorhanden), je Bauteil Name, Beschreibung, Pin-/Padzahl,
+  3D-Körper und Zustand: `new`, `imported` (schon aus derselben Datei importiert), `taken` (Name woanders
+  registriert – Altium findet Symbole/Footprints nur über den Namen; `registered_library`) oder `duplicate` (Name
+  mehrfach in der Quelle). `job.result` ist die Kurzform (`ScanSummary`: Zähler, `notes`, `message`).
+* **Import** (`run_import`, `POST /api/library-import/run`, Job `libraries.import`, hält die Bibliothek):
+  `LibraryImportOptions {scan_id, files (rel, None = alle), target (Zielordner, Standard = Vorschlag des Scans,
+  `safe_folder_name`), replace, extract_3d, convert}`. Die gewählten Dateien werden **unverändert** nach
+  `Symbols\Import\<Ziel>\…` bzw. `Footprints\Import\<Ziel>\…` kopiert (relative Struktur der Quelle, ohne
+  IntLib-Segment und `..`; Namen bereinigt, Ordner über 60 und Dateinamen über 100 Zeichen gekürzt mit Kurz-Hash –
+  die Endung bleibt, zwei lange Namen landen nie in derselben Datei) und ihre Bauteile als `imported` registriert
+  (Spec zurückgelesen für Vorschau, Prüfungen, Verwendung). Ein woanders registrierter oder in der Quelle doppelter Name wird gemeldet (`conflicts`) und nicht
+  registriert (zuerst geprüft: doppelt in der Quelle, dann woanders registriert); eine Datei ohne übernehmbare Namen
+  nicht kopiert; eine geänderte, schon importierte Datei nur mit `replace` – importierte Bauteile dieser Datei, die
+  die neue Fassung nicht mehr enthält, werden dann abgemeldet (`removed`; sonst schriebe die nächste
+  Synchronisierung sie zurück). `extract_3d` legt eingebettete STEP-Modelle in `3D\` ab. `convert` gleicht danach die importierten
+  Dateien an den Hausstil an (Regeln der letzten Stapelbearbeitung, `housestyle.saved_rules`). Ergebnis `copied,
+  unchanged, symbols, footprints, libraries, conflicts, skipped, errors, removed, conversion, message`.
+* **Vorschau** `GET /api/library-import/preview?scan_id&rel&name&theme` (SVG, vor dem Import, über den Rust-Reader).
+* **Bauteile anlegen** (`parts_table`, `POST /api/library-import/parts-table {libraries?, names?}` → `{token,
+  file_name, rows}`): CSV (`;`, UTF-8 mit BOM, Formel-Schutz) der registrierten Symbole mit `Part Number` (MPN-
+  Parameter, sonst Comment, sonst Name), `Library Ref/Path`, `Footprint Ref/Path` (bis zu zwei), `Comment`,
+  `Description` und allen Parametern (ein gleichnamiger Parameter überschreibt keine feste Spalte, füllt aber eine
+  leere `Comment`/`Description`) – als Upload des Tabellenimports (§4); der Import-Assistent setzt bei der
+  Spaltenzuordnung fort (eine Kategorie je Lauf).
+
+### 8.8 Stapelbearbeitung (`conform.py`, `housestyle.py`) und Hausstil aus Beispiel (`learnstyle.py`)
+
+Gleicht registrierte Symbole und Footprints (Standard: alle importierten; nie externe) an den Hausstil an –
+verlustfrei auf Datensatzebene (§8.6): was eine Regel nicht betrifft, behält seine Bytes; Namen ändern sich nie.
+
+* **Regeln** (`ConformRules`, jede abschaltbar; `conform.py` plant rein funktional je Bauteil):
+  Symbole – `fonts` (Schrifttabelle, `FontID` der Texte, Pinschriften wie §8.3), `pin_length` (Pins von
+  Box-Symbolen – Rechteck, Pins auf seinen Kanten – erhalten `ic_pin_length`; das Ende am Körper bleibt),
+  `prefix` (Bezeichner-Präfix nach `prefix_map`, Standard `IC` → `U`), `colors` (Rahmen, Füllung, Pinfarbe von
+  Box-Symbolen; Standard aus). Footprints – `layers` (jedes Primitiv auf die Lage seiner Rolle in der `LayerMap`),
+  `widths` (Bestückung/Umriss 0,1, Courtyard 0,05, Kreuze 0,1 mm laut Stil; Bestückungsdruck nur mit
+  `silk_width`), `texts` (`.Designator`/`.Comment` in Hausschrift und -höhe, Mittelpunkt bleibt; kleine Bauteile
+  kleiner wie im Generator), `add_texts` (fehlende ergänzen), `add_center` (fehlendes Bauteilmitte-Kreuz ergänzen),
+  `header` (Lagenaufbau und Lagensatz im Kopf, §8.3 – gepatcht oder erneuert).
+* **Rollen der Quell-Lagen** je Bibliothek (`infer_layer_roles`, im Bericht mit Grund): von Hand
+  (`FootprintRules.roles[<Bibliothek>][<Lage>]`), Lagentyp im Kopf (`MECHKIND`), Lagenname, Inhalt (Mehrheit der
+  Footprints: der äußere Umriss, der die Pads umschließt, ist der Courtyard, der innere die Bestückungszeichnung),
+  sonst „unverändert“. Unabhängig von der Lage: `.Designator`/`.Comment` sind Bezeichner/Wert, 3D-Körper die
+  3D-Lage, ein Kreuz durch den Ursprung die Bauteilmitte (`center_crosses`: ein zweites Kreuz auf dem Courtyard ist
+  das Courtyard-Kreuz des Stils `center_cross`; ein einzelnes Kreuz auf dem Courtyard gilt nur dann als Bauteilmitte,
+  wenn der Hausstil kein Courtyard-Kreuz zeichnet).
+* **Prüfen** (`check`, `POST /api/housestyle/check {selection, rules}`, Job `housestyle.check`, liest nur) →
+  `ConformReport`: `checked`, `affected`, `summary` (Regel → Anzahl Bauteile; `header` → Anzahl Bibliotheken), je
+  Bibliothek `roles`, `header`
+  (Abweichungen des Kopfs), `fonts` (Schrifttabelle danach), `refusal` (würde übersprungen, z. B. in Altium geöffnet
+  und geändert), `problem`; je Bauteil mit Änderungen/Problemen `changes [{rule, message}]` (höchstens 5 000,
+  `truncated`).
+* **Anwenden** (`apply`, `POST /api/housestyle/apply`, Job `libraries.conform`, hält die Bibliothek): Altium-Zustand
+  aller Zieldateien vorab (`document_states`), je Datei unter `library_lock`: in Altium geöffnet **und** geändert →
+  übersprungen; Sicherung nach `Backups\lib`; neue Streams per `replace_streams(create=True, verify=Rust-Liste)`;
+  geöffnete, unveränderte Dateien werden in Altium neu geladen. Danach folgt die Registry: eigene Bauteile
+  (`generated`, `datasheet`) bekommen dieselbe Änderung im Spec (`symbol_spec_after`/`footprint_spec_after`, ihre
+  Generatordaten bleiben), importierte werden neu gelesen; das Manifest markiert die Bauteile als PartForges mit
+  unbekanntem Inhalt (spätere Schreibvorgänge ersetzen nur einzelne Bauteile). Die Regeln werden gemerkt
+  (`pf_meta` `housestyle.rules`, `GET/PUT /api/housestyle/rules`). Ergebnis `components, libraries, skipped,
+  errors, undo, report, message`.
+* **Rückgängig** (`undo_last`, `GET /api/housestyle/undo` → `{created, libraries, file}` | `null`,
+  `POST /api/housestyle/undo`, Job `libraries.conform`): der Undo-Datensatz
+  `Backups\lib\stapelbearbeitung_<Zeit>_<hex>.json` (`pf_meta` `housestyle.last`) nennt Sicherungen und alte
+  Registry-Einträge; wiederhergestellt werden nur Dateien, die seit der Stapelbearbeitung unverändert sind. Ein
+  abgebrochenes Anwenden (Benutzer, Bibliothekswechsel) hinterlässt den Datensatz für alles bis dahin Geschriebene
+  (der Eintrag entsteht direkt nach dem Schreiben einer Datei); ein teilweises Rückgängigmachen trägt die Registry
+  der zurückgesetzten Dateien immer nach und behält im Datensatz nur, was sich später noch zurücksetzen lässt
+  (gesperrt, in Altium geöffnet und geändert, nicht erreicht) – ist nichts mehr übrig, wird kein Rückgängig mehr
+  angeboten.
+* **Hausstil aus Beispiel** (`learnstyle.learn`, `POST /api/housestyle/learn {paths}` → `StyleProposal`, nichts wird
+  gespeichert): liest Referenzbibliotheken (`.SchLib`, `.PcbLib`, `.IntLib`, `.zip`, Ordner) mit den Datensatz-Codecs
+  und schlägt Hausschrift und -größe, Pinschrift, Pinlängen (Box-Symbole/andere), Farben, Lagen jeder Rolle,
+  Linienbreiten, Textschrift und -höhe, Pin-1-Punkt und Courtyard-Kreuz vor – je Vorschlag mit Beleg und
+  `differs`; `symbol`/`footprint`/`layers` sind vollständige, geprüfte Einstellungen. Die Einstellungsseite übernimmt
+  die gewählten Vorschläge in den Entwurf.
 
 ## 9. Serien-Assistent (`partforge/domain/mpn`)
 

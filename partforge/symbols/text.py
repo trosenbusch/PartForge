@@ -124,6 +124,11 @@ def _units(text: str, family: str) -> int:
     return total
 
 
+def advance_em(text: str, font: str = "Arial") -> float:
+    """Advance width of ``text`` in em (core-font metrics of the font's family)."""
+    return _units(text, font_family(font)) / 1000.0 if text else 0.0
+
+
 def text_width(text: str, *, font: str = "Times New Roman", size: float = 10) -> float:
     """Estimated advance width (mil) of ``text`` (overbar syntax allowed) in the given font."""
     visible = display_text(text)

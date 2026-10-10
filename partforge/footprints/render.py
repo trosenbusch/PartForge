@@ -12,7 +12,7 @@ from collections.abc import Iterable
 from typing import Literal
 from xml.sax.saxutils import escape
 
-from ..geometry.model import Arc, FootprintSpec, Pad
+from ..geometry.model import Arc, FootprintSpec, Pad, FpText
 from . import geom
 
 Theme = Literal["dark", "light", "altium"]
@@ -102,6 +102,12 @@ def _arc_svg(a: Arc, color: str) -> str:
             f'stroke="{color}" stroke-width="{_f(a.width)}" stroke-linecap="round"/>')
 
 
+def _text_font(txt: FpText) -> str:
+    """SVG font family of a footprint text (TrueType: its font, stroke: the UI font)."""
+    if txt.font == "truetype":
+        return escape(f"{txt.font_name or 'Arial'}, Arial, sans-serif", {'"': "&quot;"})
+    return "Inter, sans-serif"
+
 def render_svg(
     spec: FootprintSpec,
     *,
@@ -174,7 +180,7 @@ def render_svg(
             groups[layer].append(
                 f'<text x="{_f(txt.x)}" y="{_f(-txt.y)}" font-size="{_f(txt.height)}" '
                 f'fill="{colors.get(txt.layer, "#888")}" text-anchor="middle" dominant-baseline="central" '
-                f'font-family="Inter, sans-serif">{escape(txt.text)}</text>')
+                f'font-family="{_text_font(txt)}">{escape(txt.text)}</text>')
 
     box = spec.bbox()
     if box == (0.0, 0.0, 0.0, 0.0):

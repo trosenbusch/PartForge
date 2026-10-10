@@ -258,10 +258,12 @@ class FootprintBuilder:
         short = min(ref[2] - ref[0], ref[3] - ref[1])
         h = min(self.style.text_height, max(0.3, round_down(0.6 * short, 0.05)))
         stroke = r6(max(0.05, round_to(0.15 * h, 0.01)))
+        font = self.style.text_font
+        font_name = (self.style.text_font_name or "Arial") if font == "truetype" else None
         self.texts.append(FpText(layer="designator", x=0, y=0, text=".Designator", height=h, stroke=stroke,
-                                 justify="middle_center"))
+                                 justify="middle_center", font=font, font_name=font_name))
         self.texts.append(FpText(layer="comment", x=0, y=0, text=".Comment", height=h, stroke=stroke,
-                                 justify="middle_center"))
+                                 justify="middle_center", font=font, font_name=font_name))
         return h
 
     # ------------------------------------------------------------------ paste

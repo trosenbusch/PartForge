@@ -4,6 +4,24 @@
 
 ### Neu
 
+- **Bibliotheksimport** (neue Seite, Alt+9): Symbole und Footprints vorhandener Altium-Bibliotheken übernehmen – aus
+  einem Ordner (rekursiv), einer SchLib/PcbLib, einer integrierten Bibliothek (IntLib), einem Bibliothekspaket
+  (LibPkg) oder einem ZIP-Archiv. Vorschau je Bauteil, Zustand je Name (neu, schon importiert, Name vergeben,
+  doppelt), Zielordner unter `Symbols\Import` / `Footprints\Import`, Dateien werden unverändert kopiert. Aus den
+  importierten Symbolen entsteht auf Wunsch eine Tabelle für den Tabellenimport („Bauteile anlegen …“).
+- **Stapelbearbeitung** (neue Seite, Alt+0): importierte Symbole und Footprints an den Hausstil angleichen –
+  Schriften, Pinlänge von IC-Symbolen, Bezeichner-Präfixe, Farben, Lagen nach der Lagenzuordnung (Rollen der fremden
+  Mechanik-Lagen werden erkannt und lassen sich umstellen), Linienbreiten, `.Designator`/`.Comment` in Hausschrift,
+  fehlende Texte und Bauteilmitte, Lagen-Kopf. Erst prüfen, dann anwenden; verlustfrei auf Datensatzebene, jede Datei
+  wird gesichert, die letzte Stapelbearbeitung lässt sich rückgängig machen.
+- **Hausstil aus Beispielbibliothek** (*Einstellungen › Hausstil*): Schriften, Pinlängen, Farben, Lagen,
+  Linienbreiten und Texte aus einer Bibliothek übernehmen, die so aussieht, wie alle Bauteile aussehen sollen
+  (SchLib, PcbLib, IntLib, ZIP oder Ordner).
+- **Lagensatz** (*Einstellungen › Hausstil › Lagen*): jede Footprint-Bibliothek erhält einen eigenen Altium-Lagensatz –
+  „Component Layers“ aus der Lagenzuordnung oder ein Satz aus einer `.layerset`-Datei, auf Wunsch beim Öffnen aktiv.
+- Hausstil: TrueType-Schrift für `.Designator`/`.Comment` der Footprints; Hausschrift auch für Pinnamen und
+  -nummern der Symbole (Altium „Custom Font“), eingetragen in die Schrifttabelle der SchLib.
+
 - Datenblatt-Import: **Einzeln speichern** – nur das Symbol (SchLib) oder nur den Footprint (PcbLib) eines Vorschlags
   speichern, ohne Bauteil; etwa das Symbol eines Datenblatts, dessen Gehäusezeichnung fehlt.
 - Datenblatt-Import: **Gehäuse aus anderem Datenblatt übernehmen** – Maße, Herstellerempfehlung, Exposed-Pad-Nummer
@@ -18,6 +36,11 @@
 
 ### Geändert
 
+- Schreibt PartForge in eine Bibliothek, bleiben alle anderen Bauteile darin Byte für Byte erhalten – auch in Altium
+  gespeicherte mit TrueType-Texten, Mechanical 17–32, eingebetteten Schriften und Pinschriften (bisher setzte der
+  Bibliotheks-Writer sie auf seinen eigenen Stand zurück).
+- Footprints auf Mechanical 17–32 werden mit ihrer richtigen Lage gelesen (bisher „Mechanical 16“); TrueType-Texte
+  bleiben beim Lesen und Zurückschreiben erhalten.
 - Ein Dokument ohne Bauteil, aber mit Gehäusezeichnung ist kein Fehler mehr: keine bezahlte Nachkontrolle, und Claude
   erfindet kein Platzhalter-Bauteil.
 - Ein rechteckiger QFN mit Herstellerempfehlung ohne Reihenabstand oben/unten wird abgelehnt, statt die Stirnseiten-Pins

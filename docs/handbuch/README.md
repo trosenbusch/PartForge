@@ -76,7 +76,7 @@ zeigt die [Bedienungsanleitung](BEDIENUNG.md) ausführlich mit Bildern.
 | --- | --- |
 | Bibliotheksordner (frei gewählt) | Datenbank, DbLib-Datei (`<Name>.DbLib`), Symbole, Footprints, 3D-Modelle, Datenblätter, Backups |
 | `%APPDATA%\PartForge` | Einstellungen (`settings.json`), der verschlüsselte Claude-Schlüssel (`secret\`) und die Kosten der letzten Datenblattsuchen (`ai\search-costs.json`) |
-| `%LOCALAPPDATA%\PartForge` | Protokolle (`logs\partforge.log`), Zwischenspeicher (Seitenbilder der Datenblätter, höchstens 512 MB), WebView-Profil des Fensters, temporäre Dateien, Austauschordner für Altium |
+| `%LOCALAPPDATA%\PartForge` | Protokolle (`logs\partforge.log`), Zwischenspeicher (Seitenbilder der Datenblätter, höchstens 512 MB; entpackte IntLib-/ZIP-Bibliotheken des Bibliotheksimports, nach zwei Tagen gelöscht), WebView-Profil des Fensters, temporäre Dateien, Austauschordner für Altium |
 
 PartForge sendet nur beim Datenblatt-Import und bei „Datenblatt suchen“ Daten ins Internet (die ausgewählten
 PDF-Seiten bzw. die Suchanfrage an die Claude-API).

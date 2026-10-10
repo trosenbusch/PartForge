@@ -8,6 +8,10 @@
  * Solange der Dialog den Job zeigt, gehört er nicht in die Pille des Job-Docks (`useInlineJob`); wird er vor dem Ende
  * geschlossen, übernimmt das Dock und meldet den Abschluss mit der Schlussmeldung des Backends („Import fertig: 120 neu,
  * 2 abgelehnt“ – bei abgelehnten Zeilen als Warnung mit dem ersten Grund).
+ *
+ * Vorbereitete Tabelle (`initialUpload`, z. B. „Bauteile anlegen …“ des Bibliotheksimports: schon hochgeladen, mit
+ * Token): Schritt 1 zeigt statt der Drop-Zone die Tabelle (mit „Andere Datei wählen“); „Weiter“ liest sie für die
+ * gewählte Kategorie (`importRepreview`) und geht wie nach einem Upload zur Zuordnung.
  */
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
 import { motion } from 'motion/react'
@@ -102,19 +106,34 @@ interface DefaultRow {
   value: string
 }
 
+/** Schon hochgeladene Tabelle (Token des Tabellen-Imports), z. B. aus dem Bibliotheksimport */
+export interface ImportWizardUpload {
+  token: string
+  fileName: string
+  rows: number
+  /** Herkunft für die Anzeige, z. B. die Bibliotheksdatei („Resistors.SchLib“) */
+  label?: string
+}
+
 export interface ImportWizardProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   defaultTable: string | null
   /** Import fertig (Tabelle neu laden, ggf. Kategorie wechseln) */
   onImported: (table: string, result: ImportResult) => void
+  /** Vorbereitete Tabelle: Schritt 1 zeigt sie statt der Drop-Zone, „Weiter“ geht zur Zuordnung */
+  initialUpload?: ImportWizardUpload | null
 }
 
 let defaultCounter = 0
 
-export function ImportWizard({ open, onOpenChange, defaultTable, onImported }: ImportWizardProps) {
+export function ImportWizard({ open, onOpenChange, defaultTable, onImported, initialUpload = null }: ImportWizardProps) {
   const categories = useCategories()
   const [step, setStep] = useState<Step>(0)
+  /** vorbereitete Tabelle (statt der Drop-Zone) – `null` nach „Andere Datei wählen“ */
+  const [prepared, setPrepared] = useState<ImportWizardUpload | null>(initialUpload)
+  /** Herkunft der gelesenen Tabelle (vorbereitete Tabelle) für die Beschreibung */
+  const [previewLabel, setPreviewLabel] = useState<string | null>(null)
   const [table, setTable] = useState<string | null>(defaultTable)
   const [preview, setPreview] = useState<ImportPreview | null>(null)
   const [mapping, setMapping] = useState<MappingItem[]>([])
@@ -144,6 +163,8 @@ export function ImportWizard({ open, onOpenChange, defaultTable, onImported }: I
       setJobId(null)
       setError(null)
       setHeaderNote(null)
+      setPrepared(initialUpload)
+      setPreviewLabel(null)
     }
   }
 
@@ -180,6 +201,21 @@ export function ImportWizard({ open, onOpenChange, defaultTable, onImported }: I
       applyPreview(p)
       setHeaderRow(hr)
       setHeaderNote(hr === 'auto' ? null : `Kopfzeile in Zeile ${hr} erkannt – darüber stehen Titelzeilen.`)
+      setPreviewLabel(null)
+      setStep(1)
+    },
+    onError: (err) => setError(errorMessage(err)),
+  })
+
+  /** Vorbereitete Tabelle für die gewählte Kategorie lesen – weiter wie nach einem Upload */
+  const readPrepared = useMutation({
+    mutationFn: (upload: ImportWizardUpload) => partsApi.importRepreview(upload.token, { table, sheet: null, headerRow: 'auto' }),
+    meta: { silentError: true },
+    onSuccess: (p, upload) => {
+      applyPreview(p)
+      setHeaderRow('auto')
+      setHeaderNote(null)
+      setPreviewLabel(upload.label ?? null)
       setStep(1)
     },
     onError: (err) => setError(errorMessage(err)),
@@ -332,9 +368,11 @@ export function ImportWizard({ open, onOpenChange, defaultTable, onImported }: I
           title={title}
           description={
             step === 0
-              ? 'Spalten werden automatisch den Feldern zugeordnet – Sie prüfen vor dem Import. Vorher legt PartForge eine Sicherung an.'
+              ? prepared
+                ? 'Die Tabelle ist vorbereitet – Zielkategorie wählen, dann ordnet PartForge die Spalten zu. Vorher legt PartForge eine Sicherung an.'
+                : 'Spalten werden automatisch den Feldern zugeordnet – Sie prüfen vor dem Import. Vorher legt PartForge eine Sicherung an.'
               : preview
-                ? `${preview.file_name} · ${plural(preview.row_count, 'Zeile', 'Zeilen')}`
+                ? `${preview.file_name}${previewLabel ? ` (${previewLabel})` : ''} · ${plural(preview.row_count, 'Zeile', 'Zeilen')}`
                 : undefined
           }
         />
@@ -359,6 +397,11 @@ export function ImportWizard({ open, onOpenChange, defaultTable, onImported }: I
               onTable={setTable}
               busy={upload.isPending}
               onFile={(file) => upload.mutate(file)}
+              prepared={prepared}
+              onDropPrepared={() => {
+                setPrepared(null)
+                setError(null)
+              }}
             />
           )}
           {step === 1 && preview && category && (
@@ -429,6 +472,17 @@ export function ImportWizard({ open, onOpenChange, defaultTable, onImported }: I
                 Abbrechen
               </Button>
             )}
+            {step === 0 && prepared && (
+              <Button
+                variant="primary"
+                rightIcon={<ArrowRight />}
+                loading={readPrepared.isPending}
+                disabled={!table}
+                onClick={() => readPrepared.mutate(prepared)}
+              >
+                Weiter zur Zuordnung
+              </Button>
+            )}
             {step === 1 && (
               <Button variant="primary" rightIcon={<ArrowRight />} disabled={!canNext} onClick={() => setStep(2)}>
                 Weiter zur Prüfung
@@ -488,14 +542,68 @@ function StepFile({
   onTable,
   busy,
   onFile,
+  prepared,
+  onDropPrepared,
 }: {
   categories: CategoryDef[]
   table: string | null
   onTable: (t: string) => void
   busy: boolean
   onFile: (file: File) => void
+  /** vorbereitete Tabelle statt der Drop-Zone */
+  prepared: ImportWizardUpload | null
+  /** „Andere Datei wählen“: zurück zur Drop-Zone */
+  onDropPrepared: () => void
 }) {
   const groups = useMemo(() => categoryGroups(categories), [categories])
+  if (prepared) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="flex max-w-sm flex-col gap-1.5">
+          <label htmlFor="imp-category" className="text-ui font-medium text-fg">
+            Zielkategorie
+          </label>
+          <Select id="imp-category" value={table ?? undefined} onValueChange={onTable} groups={groups} placeholder="Kategorie wählen …" />
+          <p className="text-xs text-fg-muted">Alle Zeilen der Tabelle kommen in diese Kategorie.</p>
+        </div>
+        <section
+          aria-label="Vorbereitete Tabelle"
+          className="flex items-center gap-3 rounded-card border border-line bg-surface-2/50 px-4 py-3"
+        >
+          <span
+            aria-hidden
+            className="flex size-10 shrink-0 items-center justify-center rounded-button border border-line-strong bg-surface text-fg-muted [&_svg]:size-5"
+          >
+            <FileSpreadsheet />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-ui font-medium text-fg [overflow-wrap:anywhere]">{prepared.label ?? prepared.fileName}</p>
+            <p className="text-xs text-fg-muted">
+              {prepared.label ? `${prepared.fileName} · ` : ''}
+              {plural(prepared.rows, 'Zeile', 'Zeilen')} · vorbereitet vom Bibliotheksimport
+            </p>
+          </div>
+          <Button size="sm" variant="ghost" leftIcon={<Upload />} onClick={onDropPrepared}>
+            Andere Datei wählen
+          </Button>
+        </section>
+        <ul className="grid grid-cols-3 gap-3 text-xs text-fg-muted">
+          <li className="flex items-start gap-2">
+            <TableProperties aria-hidden className="mt-px size-3.5 shrink-0 text-fg-subtle" />
+            Je Zeile ein Symbol mit seinen Parametern – Teilenummer, Beschreibung, Kommentar.
+          </li>
+          <li className="flex items-start gap-2">
+            <Sheet aria-hidden className="mt-px size-3.5 shrink-0 text-fg-subtle" />
+            Symbol und Footprint stehen schon als Verweise darin (Library Ref, Footprint Ref).
+          </li>
+          <li className="flex items-start gap-2">
+            <CircleCheck aria-hidden className="mt-px size-3.5 shrink-0 text-fg-subtle" />
+            Im nächsten Schritt prüfen Sie die Zuordnung der Spalten.
+          </li>
+        </ul>
+      </div>
+    )
+  }
   return (
     <div className="flex flex-col gap-4">
       <div className="flex max-w-sm flex-col gap-1.5">

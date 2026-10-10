@@ -15,7 +15,9 @@ footprint heights (:mod:`.heights`). Both use :func:`replace_streams`:
 
 Any check failure raises :class:`CompoundError` (German message); COM and OS errors
 propagate unchanged. In every failure case the library stays untouched and the copy is
-removed. Only existing streams are replaced – the patches never create or delete elements.
+removed. Nothing is ever deleted; with ``create=True`` missing streams and storages are created (house
+fonts: a symbol's ``PinTextData``; :mod:`.preserve`: streams the library writer dropped from untouched
+components).
 """
 from __future__ import annotations
 
@@ -49,6 +51,7 @@ STGM_READWRITE: Final = 0x00000002
 STGM_SHARE_EXCLUSIVE: Final = 0x00000010
 STGM_SHARE_DENY_WRITE: Final = 0x00000020
 STGM_TRANSACTED: Final = 0x00010000
+STGM_CREATE: Final = 0x00001000
 STGFMT_STORAGE: Final = 0
 STGC_DEFAULT: Final = 0
 STGTY_STORAGE: Final = 1
@@ -180,8 +183,13 @@ def read_child_streams(path: str | os.PathLike[str], name: str) -> dict[str, byt
     return out
 
 
-def _write_stream(storage: Any, name: str, data: bytes) -> None:
-    stream = storage.OpenStream(name, None, STGM_READWRITE | STGM_SHARE_EXCLUSIVE, 0)
+def _write_stream(storage: Any, name: str, data: bytes, *, create: bool = False) -> None:
+    try:
+        stream = storage.OpenStream(name, None, STGM_READWRITE | STGM_SHARE_EXCLUSIVE, 0)
+    except Exception:  # noqa: BLE001 - pywintypes.com_error: the stream does not exist (yet)
+        if not create:
+            raise
+        stream = storage.CreateStream(name, STGM_READWRITE | STGM_SHARE_EXCLUSIVE | STGM_CREATE, 0, 0)
     try:
         stream.SetSize(len(data))
         stream.Seek(0, STREAM_SEEK_SET)
@@ -193,16 +201,22 @@ def _write_stream(storage: Any, name: str, data: bytes) -> None:
         del stream
 
 
-def _write_group(root: Any, folder: tuple[str, ...], items: Mapping[str, bytes]) -> None:
-    """Write the streams of one storage path and commit the child storages into their parents."""
+def _write_group(root: Any, folder: tuple[str, ...], items: Mapping[str, bytes], *, create: bool = False) -> None:
+    """Write the streams of one storage path and commit the child storages into their parents
+    (``create``: missing streams and storages are created)."""
     opened: list[Any] = []
     try:
         for part in folder:
             parent = opened[-1] if opened else root
-            opened.append(parent.OpenStorage(part, None, STGM_READWRITE | STGM_SHARE_EXCLUSIVE, None, 0))
+            try:
+                opened.append(parent.OpenStorage(part, None, STGM_READWRITE | STGM_SHARE_EXCLUSIVE, None, 0))
+            except Exception:  # noqa: BLE001 - pywintypes.com_error: the storage does not exist (yet)
+                if not create:
+                    raise
+                opened.append(parent.CreateStorage(part, STGM_READWRITE | STGM_SHARE_EXCLUSIVE | STGM_CREATE, 0, 0))
         target = opened[-1] if opened else root
         for name, data in items.items():
-            _write_stream(target, name, data)
+            _write_stream(target, name, data, create=create)
         del target
         for storage in reversed(opened):
             storage.Commit(STGC_DEFAULT)
@@ -211,11 +225,11 @@ def _write_group(root: Any, folder: tuple[str, ...], items: Mapping[str, bytes])
             opened.pop()
 
 
-def write_streams(path: str | os.PathLike[str], streams: Mapping[str, bytes]) -> None:
+def write_streams(path: str | os.PathLike[str], streams: Mapping[str, bytes], *, create: bool = False) -> None:
     """Replace existing streams of ``path`` (``"Storage/Stream": data``) in one transacted commit.
 
-    Elements are only opened, never created: a missing stream or storage raises the COM
-    error, and nothing reaches the file before the final commit of the root storage.
+    Elements are only opened, never created – except with ``create``: a missing element then is created,
+    otherwise it raises the COM error. Nothing reaches the file before the final commit of the root storage.
     """
     groups: dict[tuple[str, ...], dict[str, bytes]] = {}
     for name, data in streams.items():
@@ -226,7 +240,7 @@ def write_streams(path: str | os.PathLike[str], streams: Mapping[str, bytes]) ->
     root = open_root(path, write=True)
     try:
         for folder, items in groups.items():
-            _write_group(root, folder, items)
+            _write_group(root, folder, items, create=create)
         root.Commit(STGC_DEFAULT)
     finally:
         del root
@@ -239,12 +253,14 @@ def replace_streams(
     verify: Callable[[Path], None] | None = None,
     tag: str = "pf",
     write: Callable[[Path, Mapping[str, bytes]], None] | None = None,
+    create: bool = False,
 ) -> None:
     """Replace ``streams`` of ``library`` through a checked copy (see the module docstring).
 
-    ``write`` (default :func:`write_streams`) writes the streams into the copy. Raises
-    :class:`CompoundError` when the re-read copy differs from the plan, or whatever
-    ``verify``/COM/OS raise; the library is then unchanged and the copy is gone.
+    ``write`` (default :func:`write_streams`) writes the streams into the copy; with ``create`` a stream
+    (and its storages) may be new, e.g. a symbol's ``PinTextData``. Raises :class:`CompoundError`
+    when the re-read copy differs from the plan, or whatever ``verify``/COM/OS raise; the library is then
+    unchanged and the copy is gone.
     """
     target = Path(os.path.abspath(os.fspath(library)))
     if not streams:
@@ -254,12 +270,24 @@ def replace_streams(
         shutil.copyfile(target, temp)
         before = read_tree_file(temp)
         missing = sorted(name for name in streams if before.get(name) is None)
+        if create:
+            missing = []  # new streams (and their storages) are created; the re-read below checks the result
         if missing:
             raise CompoundError(f"Stream fehlt: {', '.join(missing[:5])}")
-        (write or write_streams)(temp, streams)
+        if write is not None:
+            write(temp, streams)
+        elif create:
+            write_streams(temp, streams, create=True)
+        else:
+            write_streams(temp, streams)
         after = read_tree_file(temp)
         expected = dict(before)
         expected.update(streams)
+        if create:  # storages created for new streams appear as "<path>/" in the re-read tree
+            for name in streams:
+                parts = name.split("/")[:-1]
+                for depth in range(1, len(parts) + 1):
+                    expected.setdefault("/".join(parts[:depth]) + "/", None)
         if after != expected:
             changed = sorted(k for k in set(expected) | set(after) if expected.get(k) != after.get(k))
             raise CompoundError(f"Kopie nach dem Schreiben nicht identisch ({', '.join(changed[:5]) or '?'})")

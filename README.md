@@ -19,7 +19,9 @@ und Footprint. Altium sieht neue Bauteile sofort – ohne Neustart.
 | **Datenblatt-Import** | PDF ablegen oder „Datenblatt suchen“ → Claude liest Hersteller, Bestellvarianten, Parameter, Pinbelegung und Gehäusemaße → Vorschlag mit Symbol, Footprint und 3D → ein Klick übernimmt alles. |
 | **Footprint-Generator** | IPC-7351B (Dichte L/N/M) für 21 Gehäusefamilien von 01005 bis BGA und THT, mit Bemaßung, Berechnungsnachweis, 3D-Körper und STEP-Export. |
 | **Symbol-Generator** | Rund 40 Standardsymbole im Hausstil plus IC-Symbole aus Pinlisten mit automatischer Pin-Anordnung und Mehrteil-Symbolen. |
-| **Altium** | DbLib automatisch aktuell halten, in Altium installieren, „In Altium aktualisieren“, alle Bauteile in Altium prüfen, Lagen nach der eigenen `.stackup`-Vorlage. |
+| **Bibliotheksimport** | Symbole und Footprints vorhandener Altium-Bibliotheken übernehmen: Ordner, SchLib/PcbLib, IntLib, LibPkg oder ZIP; Namenskonflikte werden erkannt, aus den Symbolen entsteht auf Wunsch eine Bauteiltabelle. |
+| **Stapelbearbeitung** | Importierte Symbole und Footprints in einem Arbeitsgang an den Hausstil angleichen (Schriften, Pinlängen, Präfixe, Lagen, Linienbreiten, Texte, Lagensatz) – verlustfrei, mit Sicherung und Rückgängig; Hausstil aus einer Beispielbibliothek übernehmen. |
+| **Altium** | DbLib automatisch aktuell halten, in Altium installieren, „In Altium aktualisieren“, alle Bauteile in Altium prüfen, Lagen nach der eigenen `.stackup`-Vorlage und eigener Lagensatz (`.layerset`). |
 
 ## Installation und Start
 
@@ -143,7 +145,7 @@ Was PartForge außerhalb der Bibliotheksordner ablegt:
 | Ort | Inhalt |
 | --- | --- |
 | `%APPDATA%\PartForge` (wandert mit dem Benutzerprofil) | `settings.json` (Einstellungen, zuletzt geöffnete Bibliotheken), `secret\` (verschlüsselter Claude-Schlüssel), `ai\search-costs.json` (Kosten der letzten Datenblattsuchen) |
-| `%LOCALAPPDATA%\PartForge` (nur dieser Rechner) | Protokolle (`logs\partforge.log`, in der Größe begrenzt), Zwischenspeicher (Seitenbilder der Datenblätter, höchstens 512 MB), WebView-Profil des Programmfensters, temporäre Dateien, Austauschordner der Altium-Brücke |
+| `%LOCALAPPDATA%\PartForge` (nur dieser Rechner) | Protokolle (`logs\partforge.log`, in der Größe begrenzt), Zwischenspeicher (Seitenbilder der Datenblätter, höchstens 512 MB; entpackte IntLib-/ZIP-Bibliotheken des Bibliotheksimports, nach zwei Tagen gelöscht), WebView-Profil des Programmfensters, temporäre Dateien, Austauschordner der Altium-Brücke |
 | Altium Designer | die DbLib-Datei der Bibliothek (`<Name>.DbLib`) in der Liste der installierten Bibliotheken (bis „Aus Altium deinstallieren“) |
 
 ## Deinstallieren

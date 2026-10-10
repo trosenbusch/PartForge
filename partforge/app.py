@@ -65,6 +65,8 @@ ROUTER_MODULES = [
     "libraries",
     "altium",
     "datasheets",
+    "libimport",
+    "housestyle",
 ]
 
 TOKEN_HEADER = "X-PartForge-Token"

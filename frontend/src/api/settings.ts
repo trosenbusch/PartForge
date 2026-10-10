@@ -12,7 +12,7 @@ import { altiumApi, altiumKeys, useAltiumStatus as useSharedAltiumStatus } from 
 import { trackJob } from './jobs'
 import { libraryKeys, type CategoryDef, type FieldDef } from './library'
 import { queryClient } from './queryClient'
-import { systemApi, systemKeys, type Job, type WorkspaceInfo, type WorkspaceSettings } from './system'
+import { systemApi, systemKeys, type Job, type LayerMap, type WorkspaceInfo, type WorkspaceSettings } from './system'
 import type { Filled, RequestBodyOf, ResponseOf } from './types'
 
 // --------------------------------------------------------------------------- Typen
@@ -34,6 +34,9 @@ export type RenderTemplateResult = Filled<ResponseOf<'/api/parts/{table}/render-
 export type RegenerateTextsResult = Filled<ResponseOf<'/api/parts/{table}/regenerate-texts', 'post'>>
 export type LayerStackInfo = Filled<ResponseOf<'/api/libraries/layer-stack', 'get'>>
 export type MechLayer = LayerStackInfo['stack']['layers'][string]
+/** Ein Lagensatz (Altium „Layer Set“): Name, Lagenkürzel wie `TopOverlay`/`Mechanical9`, aktive Lage, Optionen */
+export type LayerSetDef = Filled<ResponseOf<'/api/libraries/layer-set/builtin', 'post'>>
+export type LayerSetFile = Filled<ResponseOf<'/api/libraries/layer-set/parse', 'post'>>
 export type LibraryStatsInfo = Filled<ResponseOf<'/api/stats', 'get'>>
 export type LibraryFileInfo = Filled<ResponseOf<'/api/libraries/files', 'get'>>[number]
 
@@ -62,6 +65,8 @@ export const settingsKeys = {
   libraryFiles: ['libraries', 'files', 'settings'] as const,
   layerStack: ['libraries', 'layer-stack'] as const,
   layerStackFile: (path: string) => ['libraries', 'layer-stack', 'parse', path] as const,
+  layerSetFile: (path: string) => ['libraries', 'layer-set', 'parse', path] as const,
+  builtinLayerSet: (layers: LayerMap, current: boolean) => ['libraries', 'layer-set', 'builtin', layers, current] as const,
 }
 
 // --------------------------------------------------------------------------- Bibliothekseinstellungen
@@ -396,6 +401,28 @@ export function useParsedLayerStack(path: string | null) {
     queryFn: ({ signal }) => api.post<LayerStackInfo>('/api/libraries/layer-stack/parse', { path: path ?? '' }, { signal }),
     enabled: Boolean(path),
     staleTime: 30_000,
+    retry: false,
+  })
+}
+
+/** .layerset-Datei lesen: alle Lagensätze der Datei (Auswahl in den Einstellungen) */
+export function useParsedLayerSet(path: string | null) {
+  return useQuery({
+    queryKey: settingsKeys.layerSetFile(path ?? ''),
+    queryFn: ({ signal }) => api.post<LayerSetFile>('/api/libraries/layer-set/parse', { path: path ?? '' }, { signal }),
+    enabled: Boolean(path),
+    staleTime: 30_000,
+    retry: false,
+  })
+}
+
+/** Der eingebaute Lagensatz „Component Layers“ für eine Lagenzuordnung (Vorschau des Entwurfs) */
+export function useBuiltinLayerSet(layers: LayerMap | null, current: boolean) {
+  return useQuery({
+    queryKey: settingsKeys.builtinLayerSet(layers ?? ({} as LayerMap), current),
+    queryFn: ({ signal }) => api.post<LayerSetDef>('/api/libraries/layer-set/builtin', { layers, current }, { signal }),
+    enabled: Boolean(layers),
+    staleTime: 60_000,
     retry: false,
   })
 }

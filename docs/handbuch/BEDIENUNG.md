@@ -23,7 +23,8 @@ Installation, Datenablage und Deinstallation beschreibt das [Handbuch zum Progra
 
 PartForge legt Bauteile für Altium Designer an und hält sie aktuell – einzeln, als komplette Serie oder direkt aus
 einem PDF-Datenblatt. Zu jedem Bauteil gehören ein Schaltplansymbol, ein Footprint nach IPC-7351B und ein
-3D-Körper.
+3D-Körper. Vorhandene Altium-Bibliotheken übernehmen Sie mit dem **Bibliotheksimport** und gleichen sie in einem
+Arbeitsgang an Ihren Hausstil an (**Stapelbearbeitung**).
 
 So arbeiten PartForge und Altium zusammen:
 
@@ -315,9 +316,66 @@ die PcbLib, **STEP herunterladen** liefert das 3D-Modell.
 
 ![3D-Ansicht](bilder/27-footprint-3d.png)
 
-**Hausstil:** Linienbreiten, Pin-1-Markierung, Namensschema, Symbolfarben und die Zuordnung der mechanischen Lagen
-stellen Sie einmal unter *Einstellungen › Hausstil* ein (Reiter Footprints, Lagen, Symbole). Alle neuen Symbole und
-Footprints folgen ihm.
+**Hausstil:** Linienbreiten, Pin-1-Markierung, Namensschema, Symbolfarben, Schriften und die Zuordnung der
+mechanischen Lagen stellen Sie einmal unter *Einstellungen › Hausstil* ein (Reiter Footprints, Lagen, Symbole). Alle
+neuen Symbole und Footprints folgen ihm.
+
+- **Schriften:** Im Reiter *Symbole* legen Sie die Hausschrift für Bezeichner, Kommentar und Parameter fest und ob
+  Pinnamen und -nummern sie ebenfalls verwenden (*Hausschrift*) oder die Schrift des Schaltplanblatts
+  (*Systemschrift*). Im Reiter *Footprints* wählen Sie für `.Designator` und `.Comment` Strichschrift oder eine
+  TrueType-Schrift (z. B. Arial) und die Texthöhe.
+- **Lagensatz:** Im Reiter *Lagen* wählt die Karte **Lagensatz**, welchen Altium-Lagensatz („View Configuration ›
+  Layer Sets“) jede Footprint-Bibliothek erhält: *Keiner*, *Aus Zuordnung* („Component Layers“ – Kupfer, Paste,
+  Lötstopp, Bestückungsdruck, Bohrlagen und alle Mechanik-Lagen der Zuordnung) oder *Aus Datei* (Ihre `.layerset`-Datei,
+  z. B. `Component.layerset`; enthält sie mehrere Sätze, wählen Sie einen aus). Mit **Beim Öffnen aktiv** zeigt Altium
+  beim Öffnen der Bibliothek nur diese Lagen. Neue Footprint-Bibliotheken erhalten den Satz automatisch, vorhandene
+  über **Auf Bibliotheken anwenden …** oder die Stapelbearbeitung.
+- **Aus Beispielbibliothek …:** Haben Sie ein Bauteil schon so in Altium angelegt, wie alle aussehen sollen, wählen
+  Sie oben rechts **Aus Beispielbibliothek …** und geben die Bibliothek an (`.SchLib`, `.PcbLib`, `.IntLib`, ein
+  `.zip` davon oder einen Ordner). PartForge liest Schriften, Pinlängen, Farben, Linienbreiten, Texte und die
+  Lagen und zeigt, was vom Hausstil abweicht – mit Beleg. Übernehmen Sie die gewünschten Werte und speichern Sie wie
+  gewohnt (**Strg+S**). Die Beispielbibliothek bleibt unverändert.
+
+### Bibliotheken importieren
+
+Die Seite **Bibliotheksimport** übernimmt Symbole und Footprints vorhandener Altium-Bibliotheken – etwa einer
+Hersteller-Bibliothek oder einer großen Sammlung wie der Celestial-Bibliothek.
+
+1. **Quelle wählen:** einen Ordner (wird mit allen Unterordnern durchsucht), eine `.SchLib`/`.PcbLib`, eine
+   integrierte Bibliothek (`.IntLib`), ein Bibliothekspaket (`.LibPkg`) oder ein `.zip`-Archiv, dann **Einlesen**.
+   Die Quelle wird nur gelesen. Eine `.DbLib` lässt sich nicht importieren (ihre Bauteildaten liegen in einer
+   Datenbank) – wählen Sie den Ordner mit ihren SchLib/PcbLib-Dateien.
+2. **Prüfen:** PartForge zeigt jede Datei mit ihren Symbolen bzw. Footprints und eine Vorschau. Jeder Name hat einen
+   Zustand: *neu*, *schon importiert* (aus derselben Datei), *Name vergeben* (gibt es in Ihrer Bibliothek schon –
+   Altium findet Symbole und Footprints nur über den Namen, darum wird er nicht übernommen) oder *doppelt* (mehrfach
+   in der Quelle; übernommen wird der erste).
+3. **Importieren:** Dateien auswählen, den **Zielordner** festlegen (die Dateien landen in `Symbols\Import\<Ziel>` und
+   `Footprints\Import\<Ziel>`) und **Importieren**. Optional: geänderte, schon importierte Dateien ersetzen,
+   eingebettete 3D-Modelle für die Vorschau ablegen und **danach an den Hausstil angleichen** (Regeln der letzten
+   Stapelbearbeitung).
+
+Die Dateien werden unverändert kopiert – Schriften, Lagen und 3D-Modelle bleiben, wie sie sind. Mit **Bauteile
+anlegen …** erzeugt PartForge aus den importierten Symbolen eine Tabelle (Teilenummer, Symbol, Footprint, Parameter)
+und öffnet damit den Tabellenimport ([Import und Export](#import-und-export-csv-excel)): Sie wählen die Kategorie und
+ordnen die Spalten zu.
+
+### Stapelbearbeitung: an den Hausstil angleichen
+
+Die Seite **Stapelbearbeitung** passt importierte (auf Wunsch auch eigene) Symbole und Footprints in einem Arbeitsgang
+an Ihren Hausstil an.
+
+1. **Auswahl:** Symbole und/oder Footprints, Herkunft (Standard: *Importiert*) und bei Bedarf einzelne Bibliotheken.
+2. **Regeln:** Symbole – Schriften, Pinlänge von IC-Symbolen, Bezeichner-Präfix (z. B. `IC` → `U`), auf Wunsch
+   Farben. Footprints – Lagen nach der Zuordnung, Linienbreiten, Texte in Hausschrift und -höhe, fehlende Texte und
+   Bauteilmitte ergänzen, Lagen-Kopf (Lagenaufbau und Lagensatz).
+3. **Prüfen:** Der Bericht zeigt je Bauteil, was sich ändert, und je Footprint-Bibliothek, welche Rolle PartForge
+   jeder ihrer Mechanik-Lagen zuordnet (aus Lagentyp, Lagenname oder Inhalt: der äußere Umriss ist der Courtyard, der
+   innere die Bestückungszeichnung). Eine falsch erkannte Rolle stellen Sie direkt im Bericht um und prüfen erneut.
+4. **Anwenden:** Jede Datei wird vorher gesichert (`Backups\lib`). Geändert wird nur, was eine Regel betrifft –
+   alles andere bleibt Byte für Byte erhalten, Namen ändern sich nie. Bibliotheken, die in Altium geöffnet **und**
+   geändert sind, werden übersprungen; geöffnete, unveränderte lädt Altium danach neu.
+5. **Rückgängig:** Die letzte Stapelbearbeitung lässt sich zurücknehmen, solange die Dateien seither unverändert
+   sind.
 
 ## 8. Altium
 
@@ -379,6 +437,7 @@ Bauteile.
 | --- | --- |
 | Strg+K | Befehlspalette |
 | Alt+1 … Alt+8 | Übersicht, Bauteile, Serien-Assistent, Datenblatt-Import, Symbole, Footprints, Altium, Einstellungen |
+| Alt+9 / Alt+0 | Bibliotheksimport / Stapelbearbeitung |
 | Strg+N | Neues Bauteil |
 | Strg+B | Seitenleiste ein-/ausklappen |
 | Strg+F | Suche in der Bauteiltabelle (im Footprint-Generator: Gehäusefamilie suchen) |

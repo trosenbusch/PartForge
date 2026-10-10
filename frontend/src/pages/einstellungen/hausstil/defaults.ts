@@ -17,6 +17,8 @@ export const FOOTPRINT_DEFAULTS: FootprintStyle = {
   min_copper_gap: 0.15,
   center_cross: true,
   text_height: 1,
+  text_font: 'stroke',
+  text_font_name: 'Arial',
   pad_corner_radius_pct: 50,
   exposed_pad_designator: 'next',
   generate_3d: true,
@@ -33,6 +35,7 @@ export const SYMBOL_DEFAULTS: SymbolStyle = {
   line_width: 'small',
   font: 'Times New Roman',
   font_size: 10,
+  pin_font: 'house',
   diode_pin1: 'cathode',
   resistor_style: 'iec',
 }

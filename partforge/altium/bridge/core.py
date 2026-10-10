@@ -746,6 +746,26 @@ class AltiumBridge:
         resp = self.execute("document_state", {"path": safe})
         return DocumentState(path=safe, open=resp.flag("open"), modified=resp.flag("modified"))
 
+    #: Paths per ``document_states`` run (one script start for many libraries).
+    DOCUMENT_STATES_BATCH = 200
+
+    def document_states(self, paths: Sequence[Path]) -> dict[str, DocumentState]:
+        """Open/modified state of many documents (one script run per :data:`DOCUMENT_STATES_BATCH` paths);
+        keyed by ``os.path.normcase`` of the path."""
+        out: dict[str, DocumentState] = {}
+        items = [Path(p) for p in paths]
+        for start in range(0, len(items), self.DOCUMENT_STATES_BATCH):
+            chunk = items[start : start + self.DOCUMENT_STATES_BATCH]
+            safe = [altium_safe_path(p) for p in chunk]
+            args: dict[str, str] = {"count": str(len(safe))}
+            for i, path in enumerate(safe):
+                args[f"path{i}"] = path
+            resp = self.execute("document_states", args)
+            for i, (original, path) in enumerate(zip(chunk, safe, strict=True)):
+                state = DocumentState(path=path, open=resp.flag(f"open{i}"), modified=resp.flag(f"modified{i}"))
+                out[os.path.normcase(str(original))] = state
+        return out
+
     def refresh_document(self, path: Path, kind: str | None = None) -> Literal["not_open", "modified", "reloaded", "closed"]:
         """Make Altium show a library rewritten outside Altium (close + reopen if unmodified).
 

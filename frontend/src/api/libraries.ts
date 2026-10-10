@@ -857,6 +857,8 @@ export const HEALTH_JOB_KINDS: ReadonlySet<string> = new Set([
   'libraries.save',
   'libraries.delete',
   'libraries.layers',
+  'libraries.import',
+  'libraries.conform',
 ])
 
 /** Direkte Schreibzugriffe (ohne Job), nach denen der Bericht nicht mehr stimmt: Bauteile, Kategorien, externe Bibliotheken */

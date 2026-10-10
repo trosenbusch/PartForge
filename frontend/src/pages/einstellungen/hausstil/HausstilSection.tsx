@@ -1,23 +1,29 @@
 /**
- * Hausstil: Footprints (FootprintStyle), Lagen (LayerMap + .stackup) und Symbole (SymbolStyle) – ein gemeinsamer
- * Entwurf für alle drei Reiter, gespeichert über PUT /api/workspace/settings (Strg+S).
+ * Hausstil: Footprints (FootprintStyle), Lagen (LayerMap + .stackup + Lagensatz) und Symbole (SymbolStyle) – ein
+ * gemeinsamer Entwurf für alle drei Reiter, gespeichert über PUT /api/workspace/settings (Strg+S).
  * Footprint-Namen und die Dioden-Konvention stehen unter „Namensregeln“ und bleiben hier unberührt.
+ * „Aus Beispielbibliothek …“ schlägt Werte aus einer Altium-Bibliothek vor (`LearnStyleDialog`) – sie gehen in den
+ * Entwurf und werden wie jede Änderung gespeichert.
  */
-import { CircuitBoard, Layers3, Shapes } from 'lucide-react'
+import { CircuitBoard, Layers3, Pipette, Shapes } from 'lucide-react'
+import { useState } from 'react'
 import { useSearchParams, type Location } from 'react-router'
-import type { FootprintStyle, LayerMap, SymbolStyle, WorkspaceSettings } from '@/api/system'
-import { Skeleton, Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui'
+import { toast } from 'sonner'
+import type { FootprintStyle, LayerMap, LayerSetSettings, SymbolStyle, WorkspaceSettings } from '@/api/system'
+import { Button, Skeleton, Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui'
 import { NoWorkspace } from '../components'
 import { useWorkspaceDraft } from '../draft'
 import { UnsavedChanges } from '../UnsavedChanges'
 import { FootprintStyleTab } from './FootprintStyleTab'
 import { LayersTab } from './LayersTab'
+import { LearnStyleDialog, type LearnedStyle } from './LearnStyleDialog'
 import { SymbolStyleTab } from './SymbolStyleTab'
 
 interface StyleDraft {
   footprint: FootprintStyle
   layers: LayerMap
   layer_stackup: string | null
+  layer_set: LayerSetSettings
   symbol: SymbolStyle
 }
 
@@ -25,6 +31,7 @@ const selectStyle = (s: WorkspaceSettings): StyleDraft => ({
   footprint: s.footprint,
   layers: s.layers,
   layer_stackup: s.layer_stackup ?? null,
+  layer_set: s.layer_set,
   symbol: s.symbol,
 })
 
@@ -35,6 +42,7 @@ const applyStyle = (s: WorkspaceSettings, v: StyleDraft): WorkspaceSettings => (
   symbol: { ...v.symbol, diode_pin1: s.symbol.diode_pin1 },
   layers: v.layers,
   layer_stackup: v.layer_stackup?.trim() || null,
+  layer_set: { ...v.layer_set, file: v.layer_set.file?.trim() || null, name: v.layer_set.name?.trim() || null },
 })
 
 type Tab = 'footprints' | 'lagen' | 'symbole'
@@ -52,6 +60,7 @@ export default function HausstilSection() {
   const [params, setParams] = useSearchParams()
   const raw = params.get('ansicht') as Tab | null
   const tab: Tab = raw && TABS.includes(raw) ? raw : 'footprints'
+  const [learnOpen, setLearnOpen] = useState(false)
 
   if (ws.workspace.isPending) {
     return (
@@ -73,13 +82,31 @@ export default function HausstilSection() {
 
   const changed = {
     footprints: JSON.stringify(draft.footprint) !== JSON.stringify(saved.footprint),
-    lagen: JSON.stringify(draft.layers) !== JSON.stringify(saved.layers) || (draft.layer_stackup ?? '') !== (saved.layer_stackup ?? ''),
+    lagen:
+      JSON.stringify(draft.layers) !== JSON.stringify(saved.layers) ||
+      (draft.layer_stackup ?? '') !== (saved.layer_stackup ?? '') ||
+      JSON.stringify(draft.layer_set) !== JSON.stringify(saved.layer_set),
     symbole: JSON.stringify(draft.symbol) !== JSON.stringify(saved.symbol),
   }
   const s = draft.symbol
   const invalid = [s.ic_line_color, s.ic_fill_color, s.discrete_line_color, s.pin_color].some((c) => !HEX.test(c))
     ? 'Ungültige Farbe – bitte #RRGGBB eingeben.'
-    : null
+    : draft.layer_set.mode === 'file' && !draft.layer_set.layers.length
+      ? 'Lagensatz: bitte eine lesbare .layerset-Datei wählen (oder „Keiner“).'
+      : null
+
+  const applyLearned = (learned: LearnedStyle, count: number) => {
+    if (!count) return
+    ws.setDraft((d) => ({
+      ...d,
+      symbol: { ...d.symbol, ...learned.symbol },
+      footprint: { ...d.footprint, ...learned.footprint },
+      layers: { ...d.layers, ...learned.layers },
+    }))
+    toast.success(count === 1 ? '1 Einstellung übernommen' : `${count} Einstellungen übernommen`, {
+      description: 'Bitte prüfen und speichern (Strg+S).',
+    })
+  }
 
   const dot = (on: boolean) =>
     on ? <span aria-label="geändert" role="img" className="size-1.5 rounded-full bg-accent shadow-[0_0_6px_var(--pf-accent)]" /> : null
@@ -101,17 +128,22 @@ export default function HausstilSection() {
         }
         className="gap-5"
       >
-        <TabsList aria-label="Hausstil-Bereiche" className="self-start">
-          <TabsTrigger value="footprints" icon={<CircuitBoard />}>
-            Footprints {dot(changed.footprints)}
-          </TabsTrigger>
-          <TabsTrigger value="lagen" icon={<Layers3 />}>
-            Lagen {dot(changed.lagen)}
-          </TabsTrigger>
-          <TabsTrigger value="symbole" icon={<Shapes />}>
-            Symbole {dot(changed.symbole)}
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <TabsList aria-label="Hausstil-Bereiche">
+            <TabsTrigger value="footprints" icon={<CircuitBoard />}>
+              Footprints {dot(changed.footprints)}
+            </TabsTrigger>
+            <TabsTrigger value="lagen" icon={<Layers3 />}>
+              Lagen {dot(changed.lagen)}
+            </TabsTrigger>
+            <TabsTrigger value="symbole" icon={<Shapes />}>
+              Symbole {dot(changed.symbole)}
+            </TabsTrigger>
+          </TabsList>
+          <Button size="sm" variant="secondary" leftIcon={<Pipette />} onClick={() => setLearnOpen(true)}>
+            Aus Beispielbibliothek …
+          </Button>
+        </div>
         <TabsContent value="footprints">
           <FootprintStyleTab saved={saved.footprint} draft={draft.footprint} onChange={setFootprint} />
         </TabsContent>
@@ -121,15 +153,25 @@ export default function HausstilSection() {
             map={draft.layers}
             savedStackup={saved.layer_stackup}
             stackup={draft.layer_stackup}
+            savedLayerSet={saved.layer_set}
+            layerSet={draft.layer_set}
             dirty={ws.dirty}
             onMap={(layers) => ws.setDraft((d) => ({ ...d, layers }))}
             onStackup={(layer_stackup) => ws.setDraft((d) => ({ ...d, layer_stackup }))}
+            onLayerSet={(layer_set) => ws.setDraft((d) => ({ ...d, layer_set }))}
           />
         </TabsContent>
         <TabsContent value="symbole">
           <SymbolStyleTab saved={saved.symbol} draft={draft.symbol} onChange={setSymbol} />
         </TabsContent>
       </Tabs>
+
+      <LearnStyleDialog
+        open={learnOpen}
+        onOpenChange={setLearnOpen}
+        draft={{ symbol: draft.symbol, footprint: draft.footprint, layers: draft.layers }}
+        onApply={applyLearned}
+      />
 
       <UnsavedChanges
         dirty={ws.dirty}

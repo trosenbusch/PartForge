@@ -5794,6 +5794,90 @@
         }
       }
     },
+    "/api/libraries/layer-set/parse": {
+      "post": {
+        "tags": [
+          "libraries"
+        ],
+        "summary": "Parse Layer Set",
+        "description": "Read an Altium ``.layerset`` file (the user layer sets it contains) – to choose one for the settings.",
+        "operationId": "parse_layer_set_api_libraries_layer_set_parse_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LayerSetParseIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LayerSetParseOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/libraries/layer-set/builtin": {
+      "post": {
+        "tags": [
+          "libraries"
+        ],
+        "summary": "Builtin Layer Set",
+        "description": "The layer set built from a layer map (copper, paste, overlay, solder, drill, keep-out and the mechanical\nlayers PartForge draws on) – for the standard map exactly Altium's \"Component Layers\" of the user.",
+        "operationId": "builtin_layer_set_api_libraries_layer_set_builtin_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LayerSetBuiltinIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LayerSetDef"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/libraries/layer-stack/apply": {
       "post": {
         "tags": [
@@ -7270,6 +7354,516 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AiErrorOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/library-import/scan": {
+      "post": {
+        "tags": [
+          "library-import"
+        ],
+        "summary": "Start Scan",
+        "description": "Read a source as a job; ``job.result`` = :class:`ScanSummary` (the full scan: ``GET …/scans/{id}``).",
+        "operationId": "start_scan_api_library_import_scan_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Start Scan Api Library Import Scan Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/library-import/scans/{scan_id}": {
+      "get": {
+        "tags": [
+          "library-import"
+        ],
+        "summary": "Get Scan",
+        "operationId": "get_scan_api_library_import_scans__scan_id__get",
+        "parameters": [
+          {
+            "name": "scan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Scan Id"
+            }
+          },
+          {
+            "name": "target",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Anderer Zielordner (Ziele, vorhandene Dateien und Namenszustände für ihn)",
+              "title": "Target"
+            },
+            "description": "Anderer Zielordner (Ziele, vorhandene Dateien und Namenszustände für ihn)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportScan"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/library-import/run": {
+      "post": {
+        "tags": [
+          "library-import"
+        ],
+        "summary": "Start Import",
+        "description": "Import the chosen files of a scan (job ``libraries.import``; ``job.result``: ``copied``, ``unchanged``,\n``symbols``, ``footprints``, ``libraries``, ``conflicts``, ``skipped``, ``errors``, ``conversion``,\n``message``).",
+        "operationId": "start_import_api_library_import_run_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LibraryImportOptions"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Start Import Api Library Import Run Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/library-import/preview": {
+      "get": {
+        "tags": [
+          "library-import"
+        ],
+        "summary": "Preview",
+        "description": "Thumbnail of a component of the source (read through the library writer).",
+        "operationId": "preview_api_library_import_preview_get",
+        "parameters": [
+          {
+            "name": "scan_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Scan Id"
+            }
+          },
+          {
+            "name": "rel",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Datei der Quelle (wie im Scan)",
+              "title": "Rel"
+            },
+            "description": "Datei der Quelle (wie im Scan)"
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Symbol oder Footprint",
+              "title": "Name"
+            },
+            "description": "Symbol oder Footprint"
+          },
+          {
+            "name": "theme",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "altium",
+                "dark",
+                "light"
+              ],
+              "type": "string",
+              "default": "dark",
+              "title": "Theme"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SVG-Vorschau",
+            "content": {
+              "image/svg+xml": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/library-import/parts-table": {
+      "post": {
+        "tags": [
+          "library-import"
+        ],
+        "summary": "Parts Table",
+        "description": "Table of imported symbols (parameters, footprint links) as an upload of the spreadsheet import: the import\nwizard continues with ``POST /import/preview/{token}`` (category, mapping) and ``/import/run``.",
+        "operationId": "parts_table_api_library_import_parts_table_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PartsTableIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Parts Table Api Library Import Parts Table Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/housestyle/rules": {
+      "get": {
+        "tags": [
+          "housestyle"
+        ],
+        "summary": "Get Rules",
+        "description": "The rules last used in this library (else the defaults).",
+        "operationId": "get_rules_api_housestyle_rules_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConformRules"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "housestyle"
+        ],
+        "summary": "Put Rules",
+        "operationId": "put_rules_api_housestyle_rules_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConformRules"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConformRules"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/housestyle/check": {
+      "post": {
+        "tags": [
+          "housestyle"
+        ],
+        "summary": "Start Check",
+        "description": "What the conversion would change (job; ``job.result`` = ``ConformReport``).",
+        "operationId": "start_check_api_housestyle_check_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConformIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Start Check Api Housestyle Check Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/housestyle/apply": {
+      "post": {
+        "tags": [
+          "housestyle"
+        ],
+        "summary": "Start Apply",
+        "description": "Convert the selection to the house style (job ``libraries.conform``; ``job.result``: ``components``,\n``libraries``, ``skipped``, ``errors``, ``report``, ``undo``, ``message``).",
+        "operationId": "start_apply_api_housestyle_apply_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConformIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Start Apply Api Housestyle Apply Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/housestyle/undo": {
+      "get": {
+        "tags": [
+          "housestyle"
+        ],
+        "summary": "Get Undo",
+        "operationId": "get_undo_api_housestyle_undo_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/UndoInfo"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Undo Api Housestyle Undo Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "housestyle"
+        ],
+        "summary": "Start Undo",
+        "description": "Undo the last conversion (job ``libraries.conform``).",
+        "operationId": "start_undo_api_housestyle_undo_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Start Undo Api Housestyle Undo Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/housestyle/learn": {
+      "post": {
+        "tags": [
+          "housestyle"
+        ],
+        "summary": "Learn",
+        "description": "House-style settings derived from reference libraries (proposal only – the settings page saves them).",
+        "operationId": "learn_api_housestyle_learn_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LearnIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StyleProposal"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -8876,6 +9470,99 @@
           "table"
         ],
         "title": "CommitInfo"
+      },
+      "ConformIn": {
+        "properties": {
+          "selection": {
+            "$ref": "#/components/schemas/ConformSelection"
+          },
+          "rules": {
+            "$ref": "#/components/schemas/ConformRules"
+          }
+        },
+        "type": "object",
+        "title": "ConformIn"
+      },
+      "ConformRules": {
+        "properties": {
+          "symbols": {
+            "$ref": "#/components/schemas/SymbolRules"
+          },
+          "footprints": {
+            "$ref": "#/components/schemas/FootprintRules"
+          }
+        },
+        "type": "object",
+        "title": "ConformRules"
+      },
+      "ConformSelection": {
+        "properties": {
+          "kinds": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "symbol",
+                "footprint"
+              ]
+            },
+            "type": "array",
+            "title": "Kinds"
+          },
+          "sources": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "generated",
+                    "datasheet",
+                    "imported",
+                    "external"
+                  ]
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sources",
+            "description": "Herkunft (None = alle außer extern)"
+          },
+          "libraries": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Libraries",
+            "description": "Bibliotheksdateien (relativ), None = alle"
+          },
+          "names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Names",
+            "description": "Einzelne Symbole/Footprints, None = alle"
+          }
+        },
+        "type": "object",
+        "title": "ConformSelection",
+        "description": "Which registered components the batch edit covers."
       },
       "CostEstimate": {
         "properties": {
@@ -12017,6 +12704,76 @@
         ],
         "title": "FootprintRequest"
       },
+      "FootprintRules": {
+        "properties": {
+          "layers": {
+            "type": "boolean",
+            "title": "Layers",
+            "description": "Primitive nach Rolle auf die Lagen der Lagenzuordnung",
+            "default": true
+          },
+          "widths": {
+            "type": "boolean",
+            "title": "Widths",
+            "description": "Linienbreiten je Rolle (Bestückung, Courtyard, Mitte, Umriss)",
+            "default": true
+          },
+          "silk_width": {
+            "type": "boolean",
+            "title": "Silk Width",
+            "description": "Auch den Bestückungsdruck auf die Hausstil-Breite setzen",
+            "default": false
+          },
+          "texts": {
+            "type": "boolean",
+            "title": "Texts",
+            "description": ".Designator/.Comment in Hausstil-Schrift und -Höhe",
+            "default": true
+          },
+          "add_texts": {
+            "type": "boolean",
+            "title": "Add Texts",
+            "description": "Fehlende .Designator/.Comment ergänzen",
+            "default": true
+          },
+          "add_center": {
+            "type": "boolean",
+            "title": "Add Center",
+            "description": "Fehlendes Bauteilmitte-Kreuz ergänzen",
+            "default": true
+          },
+          "header": {
+            "type": "boolean",
+            "title": "Header",
+            "description": "Lagen-Kopf (Lagenaufbau und Lagensatz) der Bibliothek",
+            "default": true
+          },
+          "roles": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string",
+                "enum": [
+                  "silkscreen",
+                  "assembly",
+                  "designator",
+                  "comment",
+                  "courtyard",
+                  "component_center",
+                  "component_outline",
+                  "body3d",
+                  "keep"
+                ]
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Roles",
+            "description": "Eigene Rollen je Bibliothek: {Bibliothekspfad: {'Mechanical 13': 'assembly', …}}"
+          }
+        },
+        "type": "object",
+        "title": "FootprintRules"
+      },
       "FootprintSaveIn": {
         "properties": {
           "spec": {
@@ -12391,6 +13148,20 @@
             "title": "Text Height",
             "default": 1.0
           },
+          "text_font": {
+            "type": "string",
+            "enum": [
+              "stroke",
+              "truetype"
+            ],
+            "title": "Text Font",
+            "default": "stroke"
+          },
+          "text_font_name": {
+            "type": "string",
+            "title": "Text Font Name",
+            "default": "Arial"
+          },
           "pad_corner_radius_pct": {
             "type": "integer",
             "title": "Pad Corner Radius Pct",
@@ -12504,6 +13275,26 @@
             ],
             "title": "Justify",
             "default": "middle_center"
+          },
+          "font": {
+            "type": "string",
+            "enum": [
+              "stroke",
+              "truetype"
+            ],
+            "title": "Font",
+            "default": "stroke"
+          },
+          "font_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Font Name"
           }
         },
         "type": "object",
@@ -13503,6 +14294,84 @@
         ],
         "title": "ImportSample"
       },
+      "ImportScan": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Vorschlag für den Zielordner"
+          },
+          "created": {
+            "type": "string",
+            "title": "Created"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/SourceFile"
+            },
+            "type": "array",
+            "title": "Files"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes"
+          },
+          "symbols": {
+            "type": "integer",
+            "title": "Symbols",
+            "default": 0
+          },
+          "footprints": {
+            "type": "integer",
+            "title": "Footprints",
+            "default": 0
+          },
+          "new": {
+            "type": "integer",
+            "title": "New",
+            "default": 0
+          },
+          "taken": {
+            "type": "integer",
+            "title": "Taken",
+            "default": 0
+          },
+          "duplicates": {
+            "type": "integer",
+            "title": "Duplicates",
+            "default": 0
+          },
+          "imported": {
+            "type": "integer",
+            "title": "Imported",
+            "default": 0
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "source",
+          "name",
+          "created"
+        ],
+        "title": "ImportScan"
+      },
       "InstallIn": {
         "properties": {
           "replace_others": {
@@ -13874,6 +14743,179 @@
         "title": "LayerMap",
         "description": "Logical footprint layers -> Altium layer names (exact names as accepted by the\nlibrary writers: \"Top Overlay\", \"Mechanical 15\", ...).\n\nDefaults follow the user's current standard mechanical layer stack\n(C:\\PartForge-Examples\\Altium_Templates\\Mechanical_Stackup_Standard\\mechanical_layer.stackup,\nAltium component layer pairs with layer types): Mech9 Top Assembly, Mech11 Top Designator,\nMech13 Top 3D Body, Mech15 Top Courtyard, Mech17 Top Component Center, Mech19 Top Value,\nMech21 Top Component Outline. (The older TR_* libraries used the IPC-wizard numbering.)\nMech 2-7 must stay unused: the Rust writer declares them as typed assembly/courtyard/3D\nlayers in every PcbLib header (VERIFIED)."
       },
+      "LayerSetBuiltinIn": {
+        "properties": {
+          "layers": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LayerMap"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Lagenzuordnung (None = die gespeicherte)"
+          },
+          "current": {
+            "type": "boolean",
+            "title": "Current",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "LayerSetBuiltinIn"
+      },
+      "LayerSetDef": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "layers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Layers",
+            "description": "Altium-Lagenkürzel, z. B. TopOverlay, Mechanical9"
+          },
+          "active_layer": {
+            "type": "string",
+            "title": "Active Layer",
+            "description": "Aktive Lage beim Wechsel auf den Lagensatz (ACTIVELAYER.7)",
+            "default": "TOP"
+          },
+          "current": {
+            "type": "boolean",
+            "title": "Current",
+            "description": "Beim Öffnen der Bibliothek in Altium aktiv",
+            "default": true
+          },
+          "locked": {
+            "type": "boolean",
+            "title": "Locked",
+            "default": false
+          },
+          "flip_board": {
+            "type": "boolean",
+            "title": "Flip Board",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "LayerSetDef",
+        "description": "One layer set as Altium stores it."
+      },
+      "LayerSetParseIn": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path",
+            "description": "Altium-Lagensatz-Datei (.layerset), absolut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "title": "LayerSetParseIn"
+      },
+      "LayerSetParseOut": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "title": "File"
+          },
+          "sets": {
+            "items": {
+              "$ref": "#/components/schemas/LayerSetDef"
+            },
+            "type": "array",
+            "title": "Sets"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file",
+          "sets"
+        ],
+        "title": "LayerSetParseOut"
+      },
+      "LayerSetSettings": {
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "none",
+              "builtin",
+              "file"
+            ],
+            "title": "Mode",
+            "default": "none"
+          },
+          "file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "layers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Layers"
+          },
+          "active_layer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Layer"
+          },
+          "current": {
+            "type": "boolean",
+            "title": "Current",
+            "default": true
+          },
+          "locked": {
+            "type": "boolean",
+            "title": "Locked",
+            "default": false
+          },
+          "flip_board": {
+            "type": "boolean",
+            "title": "Flip Board",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "LayerSetSettings",
+        "description": "Own layer set (Altium *View Configuration › Layer Sets*) written into every PcbLib header.\n\n``mode``: ``none`` (only Altium's built-in sets), ``builtin`` (built from the LayerMap – copper, paste,\noverlay, solder, drill and every mechanical layer PartForge draws on; name ``Component Layers`` unless\n``name`` is set) or ``file`` (``name``/``layers``/… read from a ``.layerset`` file; ``file`` is only the\norigin, the definition is stored here so the library folder stays self-contained). ``current``: the set is\nactive when the library is opened in Altium. See :mod:`partforge.altium.layersets`."
+      },
       "LayerStack": {
         "properties": {
           "name": {
@@ -13909,6 +14951,17 @@
             },
             "type": "array",
             "title": "Pairs"
+          },
+          "layer_set": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LayerSetDef"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Eigener Lagensatz, der in jeden Bibliothekskopf geschrieben wird (Einstellung)"
           }
         },
         "type": "object",
@@ -13972,6 +15025,23 @@
           "path"
         ],
         "title": "LayerStackParseIn"
+      },
+      "LearnIn": {
+        "properties": {
+          "paths": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Paths",
+            "description": "Beispielbibliotheken (.SchLib, .PcbLib, .IntLib, .zip) oder Ordner"
+          }
+        },
+        "type": "object",
+        "required": [
+          "paths"
+        ],
+        "title": "LearnIn"
       },
       "LibraryDeleteOut": {
         "properties": {
@@ -14392,6 +15462,64 @@
           "checked_parts"
         ],
         "title": "LibraryHealthOut"
+      },
+      "LibraryImportOptions": {
+        "properties": {
+          "scan_id": {
+            "type": "string",
+            "title": "Scan Id"
+          },
+          "files": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Files",
+            "description": "Gewählte Dateien (rel), None = alle"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target",
+            "description": "Zielordner unter Symbols\\Import bzw. Footprints\\Import"
+          },
+          "replace": {
+            "type": "boolean",
+            "title": "Replace",
+            "description": "Geänderte, schon importierte Dateien überschreiben",
+            "default": false
+          },
+          "extract_3d": {
+            "type": "boolean",
+            "title": "Extract 3D",
+            "description": "Eingebettete 3D-Modelle für die Vorschau in 3D\\ ablegen",
+            "default": false
+          },
+          "convert": {
+            "type": "boolean",
+            "title": "Convert",
+            "description": "Danach an den Hausstil angleichen (Stapelbearbeitung)",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "scan_id"
+        ],
+        "title": "LibraryImportOptions"
       },
       "LibraryProblem": {
         "properties": {
@@ -17108,6 +18236,42 @@
         "type": "object",
         "title": "PartsRestoreUpdatesOut"
       },
+      "PartsTableIn": {
+        "properties": {
+          "libraries": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Libraries",
+            "description": "Bibliotheksdateien (relativ), None = alle"
+          },
+          "names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Names",
+            "description": "Einzelne Symbole, None = alle der Bibliotheken"
+          }
+        },
+        "type": "object",
+        "title": "PartsTableIn"
+      },
       "PinData": {
         "properties": {
           "number": {
@@ -18398,6 +19562,20 @@
         "type": "object",
         "title": "SavedViewPatchIn"
       },
+      "ScanIn": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path",
+            "description": "Ordner oder Bibliotheksdatei (.SchLib, .PcbLib, .IntLib, .LibPkg, .zip), absolut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "title": "ScanIn"
+      },
       "SearchHit": {
         "properties": {
           "table": {
@@ -19642,6 +20820,150 @@
         ],
         "title": "Source"
       },
+      "SourceComponent": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count",
+            "description": "Pins bzw. Pads"
+          },
+          "has_3d": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has 3D"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "new",
+              "imported",
+              "taken",
+              "duplicate"
+            ],
+            "title": "State",
+            "default": "new"
+          },
+          "registered_library": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registered Library",
+            "description": "Wo der Name schon registriert ist"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "SourceComponent"
+      },
+      "SourceFile": {
+        "properties": {
+          "rel": {
+            "type": "string",
+            "title": "Rel"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "schlib",
+              "pcblib"
+            ],
+            "title": "Kind"
+          },
+          "path": {
+            "type": "string",
+            "title": "Path",
+            "description": "Datei, die gelesen/kopiert wird (bei IntLib die entpackte Kopie)"
+          },
+          "size": {
+            "type": "integer",
+            "title": "Size",
+            "default": 0
+          },
+          "components": {
+            "items": {
+              "$ref": "#/components/schemas/SourceComponent"
+            },
+            "type": "array",
+            "title": "Components"
+          },
+          "problem": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target",
+            "description": "Ziel im Bibliotheksordner (relativ)"
+          },
+          "exists": {
+            "type": "string",
+            "enum": [
+              "no",
+              "same",
+              "different"
+            ],
+            "title": "Exists",
+            "default": "no"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rel",
+          "kind",
+          "path"
+        ],
+        "title": "SourceFile",
+        "description": "One library of a source (``rel`` relative to the source root; IntLib members: ``<IntLib>/<n>.SchLib``)."
+      },
       "StandardForRequest": {
         "properties": {
           "table": {
@@ -19889,6 +21211,114 @@
           "file"
         ],
         "title": "StepModel"
+      },
+      "StyleFinding": {
+        "properties": {
+          "area": {
+            "type": "string",
+            "enum": [
+              "symbol",
+              "footprint",
+              "layers"
+            ],
+            "title": "Area"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "current": {
+            "type": "string",
+            "title": "Current"
+          },
+          "proposed": {
+            "type": "string",
+            "title": "Proposed"
+          },
+          "value": {
+            "title": "Value"
+          },
+          "evidence": {
+            "type": "string",
+            "title": "Evidence"
+          },
+          "differs": {
+            "type": "boolean",
+            "title": "Differs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "area",
+          "key",
+          "label",
+          "current",
+          "proposed",
+          "value",
+          "evidence",
+          "differs"
+        ],
+        "title": "StyleFinding"
+      },
+      "StyleProposal": {
+        "properties": {
+          "sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "symbols": {
+            "type": "integer",
+            "title": "Symbols",
+            "default": 0
+          },
+          "footprints": {
+            "type": "integer",
+            "title": "Footprints",
+            "default": 0
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/StyleFinding"
+            },
+            "type": "array",
+            "title": "Findings"
+          },
+          "symbol": {
+            "$ref": "#/components/schemas/SymbolStyle"
+          },
+          "footprint": {
+            "$ref": "#/components/schemas/FootprintStyle"
+          },
+          "layers": {
+            "$ref": "#/components/schemas/LayerMap"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "symbol",
+          "footprint",
+          "layers"
+        ],
+        "title": "StyleProposal"
       },
       "SymArc": {
         "properties": {
@@ -21231,6 +22661,44 @@
         ],
         "title": "SymbolRequest"
       },
+      "SymbolRules": {
+        "properties": {
+          "fonts": {
+            "type": "boolean",
+            "title": "Fonts",
+            "description": "Hausschrift für Bezeichner, Kommentar, Parameter und Pins",
+            "default": true
+          },
+          "pin_length": {
+            "type": "boolean",
+            "title": "Pin Length",
+            "description": "Pinlänge von IC-/Box-Symbolen = Hausstil",
+            "default": true
+          },
+          "prefix": {
+            "type": "boolean",
+            "title": "Prefix",
+            "description": "Bezeichner-Präfixe nach prefix_map ersetzen",
+            "default": true
+          },
+          "prefix_map": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Prefix Map",
+            "description": "Alt -> neu, z. B. IC -> U"
+          },
+          "colors": {
+            "type": "boolean",
+            "title": "Colors",
+            "description": "Rahmen, Füllung und Pinfarbe von Box-Symbolen = Hausstil",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "SymbolRules"
+      },
       "SymbolSaveIn": {
         "properties": {
           "spec": {
@@ -21567,6 +23035,15 @@
             "type": "integer",
             "title": "Font Size",
             "default": 10
+          },
+          "pin_font": {
+            "type": "string",
+            "enum": [
+              "house",
+              "system"
+            ],
+            "title": "Pin Font",
+            "default": "house"
           },
           "diode_pin1": {
             "type": "string",
@@ -22409,6 +23886,37 @@
           "width"
         ],
         "title": "Track"
+      },
+      "UndoInfo": {
+        "properties": {
+          "created": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created"
+          },
+          "libraries": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Libraries"
+          },
+          "file": {
+            "type": "string",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "UndoInfo"
       },
       "UnmergePackageIn": {
         "properties": {
@@ -23432,6 +24940,9 @@
               }
             ],
             "title": "Layer Stackup"
+          },
+          "layer_set": {
+            "$ref": "#/components/schemas/LayerSetSettings"
           },
           "footprint": {
             "$ref": "#/components/schemas/FootprintStyle"

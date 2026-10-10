@@ -114,6 +114,26 @@ class LayerMap(BaseModel):
     component_outline: str = "Mechanical 21"
 
 
+class LayerSetSettings(BaseModel):
+    """Own layer set (Altium *View Configuration › Layer Sets*) written into every PcbLib header.
+
+    ``mode``: ``none`` (only Altium's built-in sets), ``builtin`` (built from the LayerMap – copper, paste,
+    overlay, solder, drill and every mechanical layer PartForge draws on; name ``Component Layers`` unless
+    ``name`` is set) or ``file`` (``name``/``layers``/… read from a ``.layerset`` file; ``file`` is only the
+    origin, the definition is stored here so the library folder stays self-contained). ``current``: the set is
+    active when the library is opened in Altium. See :mod:`partforge.altium.layersets`.
+    """
+
+    mode: Literal["none", "builtin", "file"] = "none"
+    file: str | None = None
+    name: str | None = None
+    layers: list[str] = Field(default_factory=list)
+    active_layer: str | None = None
+    current: bool = True
+    locked: bool = False
+    flip_board: bool = False
+
+
 class FootprintStyle(BaseModel):
     density: Literal["M", "N", "L"] = "N"
     naming: Literal["ipc", "house"] = "ipc"
@@ -130,6 +150,9 @@ class FootprintStyle(BaseModel):
     min_copper_gap: float = 0.15  # mm, minimum gap between lands (clamps pad size vs pitch)
     center_cross: bool = True  # 0.1 mm cross ±0.5 mm at the origin on the component_center layer
     text_height: float = 1.0  # mm (.Designator / .Comment on mechanical layers)
+    # Font of .Designator/.Comment: Altium stroke font or a TrueType font (e.g. Arial, as Altium's IPC wizard)
+    text_font: Literal["stroke", "truetype"] = "stroke"
+    text_font_name: str = "Arial"
     pad_corner_radius_pct: int = 50  # Altium corner-radius % (50 % = r of 25 % of the shorter side)
     exposed_pad_designator: Literal["next", "EP"] = "next"  # EP numbered N+1 (datasheet style) or "EP"
     generate_3d: bool = True
@@ -146,8 +169,10 @@ class SymbolStyle(BaseModel):
     discrete_line_color: str = "#0000FF"
     pin_color: str = "#000000"
     line_width: Literal["smallest", "small", "medium", "large"] = "small"
-    font: str = "Times New Roman"
+    font: str = "Times New Roman"  # house font: designator, Comment, parameters, free texts (font table of the SchLib)
     font_size: int = 10
+    # Pin names and numbers: the house font as Altium "custom font" of every pin, or the sheet's system font
+    pin_font: Literal["house", "system"] = "house"
     diode_pin1: Literal["cathode", "anode"] = "cathode"  # IPC: cathode = 1 (house libraries used anode = 1)
     resistor_style: Literal["iec", "ansi"] = "iec"
 
@@ -167,6 +192,8 @@ class WorkspaceSettings(BaseModel):
     # Optional Altium .stackup file whose mechanical layer names/types are written into the
     # header of every PcbLib PartForge writes (None = built-in standard matching LayerMap).
     layer_stackup: str | None = None
+    # Own layer set of every PcbLib PartForge writes (Altium View Configuration › Layer Sets)
+    layer_set: LayerSetSettings = Field(default_factory=LayerSetSettings)
     footprint: FootprintStyle = Field(default_factory=FootprintStyle)
     symbol: SymbolStyle = Field(default_factory=SymbolStyle)
 

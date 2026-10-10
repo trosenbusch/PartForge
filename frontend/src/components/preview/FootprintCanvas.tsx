@@ -50,6 +50,7 @@ import {
   type CanvasLayer,
   type FootprintCalc,
   type FootprintSpec,
+  type FpText,
   type Pad,
 } from '@/lib/geometry'
 import { CanvasBadge, CanvasKeyHint, CanvasTooltip, CanvasZoomControls } from './CanvasChrome'
@@ -99,6 +100,12 @@ export interface FootprintCanvasProps {
 const PAD_TEXT = '#0B0E14'
 const DIM_COLOR = '#C3CEE2'
 const HOVER_COLOR = '#FFFFFF'
+
+/** Schrift eines Footprint-Texts: TrueType mit ihrem Namen (sofern installiert), Strichschrift wie bisher serifenlos */
+function textFont(t: FpText): string {
+  const name = t.font === 'truetype' ? t.font_name?.replace(/["\\]/g, '').trim() : ''
+  return name ? `"${name}", var(--font-sans)` : 'var(--font-sans)'
+}
 
 // --------------------------------------------------------------------------- Primitive
 
@@ -388,7 +395,7 @@ const FootprintContent = memo(function FootprintContent({ spec, visible, px, sca
         fill={layerColor(layer)}
         textAnchor={horizontal === 'left' ? 'start' : horizontal === 'right' ? 'end' : 'middle'}
         dominantBaseline={vertical === 'top' ? 'hanging' : vertical === 'bottom' ? 'alphabetic' : 'central'}
-        style={{ fontFamily: 'var(--font-sans)' }}
+        style={{ fontFamily: textFont(t) }}
       >
         {t.text}
       </text>,

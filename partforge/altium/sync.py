@@ -84,7 +84,7 @@ from ..db import meta as db_meta
 from ..db import registry
 from ..db.models import FootprintRecord, HealthIssue, RecordSource, RecordStatus, SymbolRecord
 from ..domain.text import plural
-from ..geometry.model import FootprintSpec, StepModel, SymbolSpec
+from ..geometry.model import FootprintSpec, StepModel, SymbolSpec, compat_text_dump
 from ..jobs import CANCEL_LIBRARY_SWITCH, JobCancelled, JobContext
 from ..workspace import SymbolStyle, Workspace, current, current_or_none
 from . import heights, stackup
@@ -242,7 +242,8 @@ def footprint_fingerprint(spec: FootprintSpec) -> str:
     courtyard, texts, bodies, height, STEP reference) plus name and description – but also
     valid for edited or imported footprints whose generator data is stale or missing.
     """
-    data = spec.model_dump(mode="json", exclude={"generator", "parameters", "family", "ipc_name", "density"})
+    data = compat_text_dump(spec.model_dump(mode="json", exclude={"generator", "parameters", "family", "ipc_name",
+                                                                  "density"}))
     return _digest(data)
 
 
@@ -310,6 +311,7 @@ class _AltiumGuard:
         self._bridge: Any = None
         self._resolved = False
         self.states: dict[str, Any] = {}
+        self._prefetched: set[str] = set()
         self.notes: list[str] = []
 
     def _get(self) -> Any | None:
@@ -328,10 +330,38 @@ class _AltiumGuard:
         if note not in self.notes:
             self.notes.append(note)
 
+    def prefetch(self, libraries: Sequence[Path]) -> None:
+        """Ask Altium once for the state of many libraries (bridge ``document_states``, one script run per 200
+        files); :meth:`refusal` then answers from it instead of one script run per library."""
+        existing = [p for p in libraries if p.exists()]
+        bridge = self._get() if existing else None
+        if bridge is None:
+            return
+        from .bridge.core import AltiumNotRunning
+
+        try:
+            states = bridge.document_states(existing)
+        except AltiumNotRunning:
+            self._bridge = None
+            return
+        except Exception as exc:  # noqa: BLE001 - bridge, protocol and OS errors: writing goes on with a note
+            log.warning("Dokumentstatus in Altium nicht ermittelbar: %s", exc)
+            self._disable(
+                f"Der Zustand der Bibliotheken in Altium konnte nicht geprüft werden ({exc}). In Altium geöffnete "
+                "Bibliotheken bitte selbst neu laden."
+            )
+            return
+        self.states.update(states)
+        self._prefetched.update(states)
+
     def refusal(self, library: Path) -> str | None:
         """``ALTIUM_MODIFIED_MESSAGE`` if Altium has the library open with unsaved changes."""
         if not library.exists():
             return None
+        key = os.path.normcase(str(library))
+        if key in self._prefetched:
+            state = self.states.get(key)
+            return ALTIUM_MODIFIED_MESSAGE if getattr(state, "open", False) and getattr(state, "modified", False) else None
         bridge = self._get()
         if bridge is None:
             return None
@@ -2757,11 +2787,15 @@ def scan_message(result: Mapping[str, Any]) -> str:
     return f"Bibliotheken geprüft: {files} – " + ", ".join(parts) + "."
 
 
-def _register_imported(session: _Session, library: Path, names: Sequence[str]) -> list[dict[str, str]]:
+def _register_imported(
+    session: _Session, library: Path, names: Sequence[str], *, extract_step: bool = True, quiet: bool = False
+) -> list[dict[str, str]]:
     """Register components found in a workspace library as ``imported`` (spec read back).
 
     The read-back notes (content the PartForge model cannot hold) go into the status
-    message; such components are never regenerated from their spec (library manifest)."""
+    message; such components are never regenerated from their spec (library manifest).
+    ``extract_step``: embedded 3D models are extracted into ``3D\\`` (the library import leaves that optional –
+    thousands of vendor models would be copied twice); ``quiet``: notes only in the status, not in the job log."""
     kind = library_file_kind(library)
     out: list[dict[str, str]] = []
     rel = session.rel(library)
@@ -2770,12 +2804,12 @@ def _register_imported(session: _Session, library: Path, names: Sequence[str]) -
     for name in names:
         notes: list[str] = []
         try:
-            spec = _read_component(session.writer(), library, name, extract_step=True, notes=notes)
+            spec = _read_component(session.writer(), library, name, extract_step=extract_step, notes=notes)
         except (WriterUnavailable, RustWriterError, RuntimeError, OSError) as exc:
             session.log(f"{name} aus {library.name} nicht lesbar: {exc}", "warn")
             spec = None
         message = _clip(_adoption_message(library, notes)) if notes else None
-        if notes:
+        if notes and not quiet:
             session.log(f"{name}: {message}", "warn")
         if kind == "schlib":
             sym = cast(SymbolSpec | None, spec)

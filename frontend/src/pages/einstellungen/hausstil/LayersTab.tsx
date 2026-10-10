@@ -1,18 +1,19 @@
 /**
  * Lagen: Zuordnung der logischen Footprint-Lagen zu Altium-Lagen (Top Overlay, Mechanical 1–32) mit
- * Vorlagen (Ihre Standardvorlage / IPC-Wizard der TR-Bibliotheken), optionaler .stackup-Datei und einem
- * Lagenplan im Leiterplatten-Look (Mechanical 1–32 mit Namen und Rollen).
+ * Vorlagen (Ihre Standardvorlage / IPC-Wizard der TR-Bibliotheken), optionaler .stackup-Datei, eigenem Lagensatz
+ * (`LayerSetCard`) und einem Lagenplan im Leiterplatten-Look (Mechanical 1–32 mit Namen und Rollen).
  */
 import { Check, CircuitBoard, FileStack, Layers3, Lightbulb, TriangleAlert, Wand2 } from 'lucide-react'
 import { useState } from 'react'
 import { errorMessage } from '@/api/client'
 import { trackJob } from '@/api/jobs'
 import { useApplyLayerStack, useLayerStack, useParsedLayerStack, type LayerStackInfo, type MechLayer } from '@/api/settings'
-import type { LayerMap } from '@/api/system'
+import type { LayerMap, LayerSetSettings } from '@/api/system'
 import { Badge, Button, Callout, Card, confirm, PathInput, Select, Skeleton, type SelectGroupDef } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { LAYERS } from '@/lib/geometry'
 import { useDebounced } from '../hooks'
+import { LayerSetCard } from './LayerSetCard'
 import { StyleRow } from './StyleRow'
 
 type Role = keyof LayerMap
@@ -129,17 +130,23 @@ export function LayersTab({
   map,
   savedStackup,
   stackup,
+  savedLayerSet,
+  layerSet,
   dirty,
   onMap,
   onStackup,
+  onLayerSet,
 }: {
   savedMap: LayerMap
   map: LayerMap
   savedStackup: string | null
   stackup: string | null
+  savedLayerSet: LayerSetSettings
+  layerSet: LayerSetSettings
   dirty: boolean
   onMap: (map: LayerMap) => void
   onStackup: (path: string | null) => void
+  onLayerSet: (layerSet: LayerSetSettings) => void
 }) {
   const server = useLayerStack()
   const pathForParse = useDebounced(stackup && stackup !== savedStackup ? stackup : null, 600)
@@ -186,8 +193,9 @@ export function LayersTab({
   const runApply = async () => {
     const ok = await confirm({
       title: 'Lagen in alle Footprint-Bibliotheken übernehmen?',
-      description:
-        'PartForge schreibt Lagennamen, -typen und Paare des Lagenaufbaus in den Kopf jeder PcbLib. Primitive bleiben unverändert; bei unerwartetem Dateiaufbau bleibt die Datei unberührt.',
+      description: `PartForge schreibt Lagennamen, -typen und Paare des Lagenaufbaus${
+        savedLayerSet.mode === 'none' ? '' : ' sowie den Lagensatz'
+      } in den Kopf jeder PcbLib. Primitive bleiben unverändert; bei unerwartetem Dateiaufbau bleibt die Datei unberührt.`,
       confirmLabel: 'Übernehmen',
       icon: <Layers3 />,
     })
@@ -350,6 +358,14 @@ export function LayersTab({
             </Button>
           </div>
         </Card>
+
+        <LayerSetCard
+          value={layerSet}
+          saved={savedLayerSet}
+          map={map}
+          roles={ROLES.map((r) => ({ label: r.label, color: roleColor(r), layer: map[r.key] }))}
+          onChange={onLayerSet}
+        />
       </div>
 
       <StackDiagram

@@ -414,6 +414,8 @@ const JOB_SCOPES: Readonly<Record<string, readonly string[]>> = {
   'datasheet-find': [],
   'altium.odbc_test': [],
   'altium.open': [],
+  'library-import.scan': [],
+  'housestyle.check': [],
   // Zustand in Altium (Installation, Aktualisierung, Prüfung in Altium)
   'altium.install_state': ['altium'],
   'altium.install': ['altium'],

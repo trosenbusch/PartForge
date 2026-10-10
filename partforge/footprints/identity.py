@@ -26,7 +26,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import asdict, is_dataclass
 from typing import Any
 
-from ..geometry.model import FootprintSpec
+from ..geometry.model import FootprintSpec, compat_text_dump
 from . import geom
 from .models import FamilyInfo, ParamSpec
 from .params import ParamError, nom, parse_tol
@@ -218,5 +218,5 @@ def land_hash(spec: FootprintSpec) -> str:
 
 def geometry_hash(spec: FootprintSpec) -> str:
     """Hash over the complete footprint content except name, texts of the description and metadata."""
-    data = spec.model_dump(mode="json", exclude={"name", "description", "generator", "parameters"})
+    data = compat_text_dump(spec.model_dump(mode="json", exclude={"name", "description", "generator", "parameters"}))
     return _digest(data)[:HASH_LENGTH]
