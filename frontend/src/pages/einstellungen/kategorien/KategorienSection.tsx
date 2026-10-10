@@ -1,4 +1,4 @@
-import { t as translate, useI18n } from '@/lib/i18n'
+import { metadataLabel, t as translate, useI18n } from '@/lib/i18n'
 /**
  * Kategorien und Felder – der Schema-Designer. Links die Kategorien, rechts die gewählte Kategorie mit den Reitern
  * Felder (sofort gespeichert, mit Rückgängig), Texte (Vorlagen mit Live-Vorschau) und Eigenschaften.
@@ -122,7 +122,7 @@ function SchemaDesigner({ root }: { root: string }) {
           onValueChange={select}
           options={list.map((c) => ({
             value: c.table,
-            label: c.label,
+            label: metadataLabel(c.label, translate),
             description: translate("{value1} · {value2} Bauteile", { value1: c.table, value2: formatNumber(c.part_count ?? 0) }),
             icon: <CategoryTile icon={c.icon} color={c.color} size="sm" className="size-5 rounded-md [&_svg]:size-3" />,
           }))}
@@ -240,7 +240,7 @@ function CategoryEditor({
         <div className="flex items-start gap-4 px-5 pb-4 pt-5">
           <CategoryTile icon={draft.icon} color={draft.color} size="lg" />
           <div className="min-w-0 flex-1">
-            <h2 className="line-clamp-2 text-h3 font-semibold tracking-[-0.02em] text-fg">{draft.label.trim() || category.label}</h2>
+            <h2 className="line-clamp-2 text-h3 font-semibold tracking-[-0.02em] text-fg">{metadataLabel(draft.label.trim() || category.label, translate)}</h2>
             <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-fg-muted">
               <span className="mono text-fg">{category.table}</span>
               <span aria-hidden className="text-fg-subtle">·</span>
@@ -297,7 +297,7 @@ function CategoryEditor({
         saving={update.isPending}
         onSave={save}
         onDiscard={reset}
-        label={category.label}
+        label={metadataLabel(category.label, translate)}
         invalid={dirty ? firstError : null}
         shouldBlock={leavesCategory}
         root={root}

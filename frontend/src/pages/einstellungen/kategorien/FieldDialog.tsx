@@ -1,4 +1,4 @@
-import { t as translate, useI18n } from '@/lib/i18n'
+import { metadataLabel, t as translate, useI18n } from '@/lib/i18n'
 /**
  * Feld anlegen oder bearbeiten: Spaltenname (= Altium-Parameter), Beschriftung, Art, Einheit, Auswahloptionen,
  * Merkmale, weiche Längengrenze und Hilfetext. Geschützte Felder erlauben nur Beschriftung, Hilfe, Pflicht,
@@ -224,8 +224,8 @@ function FieldDialogBody({ onOpenChange, category, field, kinds }: FieldDialogPr
         title={editing ? translate("Feld „{value1}“ bearbeiten", { value1: field?.label ?? '' }) : translate("Feld hinzufügen")}
         description={
           editing
-            ? translate("Kategorie {value1} · Spalte {value2}", { value1: category.label, value2: field?.column ?? '' })
-            : translate("Neue Spalte in {value1} – wird zum Altium-Parameter und erscheint in Tabelle und Formularen.", { value1: category.label })
+            ? translate("Kategorie {value1} · Spalte {value2}", { value1: metadataLabel(category.label, translate), value2: field?.column ?? '' })
+            : translate("Neue Spalte in {value1} – wird zum Altium-Parameter und erscheint in Tabelle und Formularen.", { value1: metadataLabel(category.label, translate) })
         }
       />
       <DialogBody className="@container flex flex-col gap-5">

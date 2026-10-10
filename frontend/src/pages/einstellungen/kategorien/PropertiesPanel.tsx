@@ -1,4 +1,4 @@
-import { t as translate, useI18n } from '@/lib/i18n'
+import { metadataLabel, t as translate, useI18n } from '@/lib/i18n'
 /**
  * Eigenschaften einer Kategorie: Bezeichnung, Präfix, Symbol und Farbe, Standardsymbol (mit Vorschau),
  * Sichtbarkeit in Altium, Tabellenname und – abgesetzt – Löschen mit getippter Bestätigung.
@@ -190,7 +190,7 @@ function DangerZone({ category, onDeleted }: { category: CategoryDef; onDeleted:
         open={open}
         onOpenChange={setOpen}
         icon={<Trash2 />}
-        title={translate("„{value1}“ löschen?", { value1: category.label })}
+        title={translate("„{value1}“ löschen?", { value1: metadataLabel(category.label, translate) })}
         description={
           <>
             {translate("Die Tabelle")}{' '}<span className="mono text-fg">{category.table}</span> {' '}{translate("wird mit allen Feldern")}{' '}
@@ -201,7 +201,7 @@ function DangerZone({ category, onDeleted }: { category: CategoryDef; onDeleted:
         onConfirm={async () => {
           const out = await del.mutateAsync(category.table)
           onDeleted()
-          toast.success(translate("Kategorie „{value1}“ gelöscht", { value1: category.label }), {
+          toast.success(translate("Kategorie „{value1}“ gelöscht", { value1: metadataLabel(category.label, translate) }), {
             description: out.backup ? translate("Sicherung: {value1}", { value1: out.backup }) : undefined,
             action: { label: translate("Sicherungen"), onClick: () => navigate('/einstellungen/bibliothek') },
           })

@@ -1,5 +1,5 @@
 import { useI18n, localizeMessage } from '@/lib/i18n'
-import { t as tr } from '@/lib/i18n'
+import { metadataLabel, t as tr } from '@/lib/i18n'
 import { motion } from 'motion/react'
 import {
   ArchiveRestore,
@@ -430,7 +430,7 @@ function DistributionCard({
                 >
                   <span className="flex min-w-0 items-center gap-2">
                     <span aria-hidden className="size-2 shrink-0 rounded-full" style={{ background: c.color ?? 'var(--pf-fg-subtle)' }} />
-                    <span className="truncate text-ui text-fg">{c.label}</span>
+                    <span className="truncate text-ui text-fg">{metadataLabel(c.label, tr)}</span>
                   </span>
                   <span aria-hidden className="relative h-2 overflow-hidden rounded-full bg-surface-3">
                     <motion.span
@@ -1012,7 +1012,7 @@ function RecentChanges({ stats, unavailable }: { stats: LibraryStats | undefined
                 metaParts.push(
                   <span className="inline-flex items-center gap-1.5">
                     <span aria-hidden className="size-1.5 shrink-0 rounded-full" style={{ background: cat.color ?? undefined }} />
-                    {cat.label}
+                    {metadataLabel(cat.label, tr)}
                   </span>,
                 )
               }
@@ -1028,7 +1028,7 @@ function RecentChanges({ stats, unavailable }: { stats: LibraryStats | undefined
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
-                      <span className={cn('min-w-0 break-all text-ui text-fg', e.part_number && 'mono')}>{e.part_number ?? cat?.label ?? tr("Bibliothek")}</span>
+                      <span className={cn('min-w-0 break-all text-ui text-fg', e.part_number && 'mono')}>{e.part_number ?? (cat ? metadataLabel(cat.label, tr) : tr("Bibliothek"))}</span>
                       <span className="shrink-0 text-xs text-fg-subtle">{meta.label}</span>
                     </span>
                     <span className="block text-2xs leading-4 text-fg-subtle">

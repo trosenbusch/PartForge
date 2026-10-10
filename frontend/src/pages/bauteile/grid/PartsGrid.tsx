@@ -214,7 +214,7 @@ export function PartsGrid({
   handleRef,
   className,
 }: PartsGridProps) {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const table = category.table
   const persistKey = `parts:${table}`
   const apiRef = useRef<GridApi<PartRow> | null>(null)
@@ -835,8 +835,10 @@ export function PartsGrid({
       )}
     >
       <AgGridReact<PartRow>
+        // localeText applies when the grid is created: a new language needs a new grid
+        key={language}
         theme={forgeGridTheme}
-        localeText={AG_GRID_LOCALE_DE}
+        localeText={language === 'de' ? AG_GRID_LOCALE_DE : undefined}
         columnTypes={FORGE_COLUMN_TYPES}
         rowModelType="infinite"
         datasource={datasource}

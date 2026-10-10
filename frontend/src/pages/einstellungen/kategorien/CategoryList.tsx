@@ -1,4 +1,4 @@
-import { t as translate, useI18n, getLocale } from '@/lib/i18n'
+import { metadataLabel, t as translate, useI18n, getLocale } from '@/lib/i18n'
 /** Linke Spalte des Schema-Designers: Suche, Kategorien mit Symbol, Tabellenname, Zähler und Altium-Status. */
 import { motion } from 'motion/react'
 import { EyeOff, Plus, Search } from 'lucide-react'
@@ -28,7 +28,7 @@ export function CategoryList({ categories, loading, selected, dirtyTable, onSele
   const listRef = useRef<HTMLUListElement>(null)
   const q = fold(query.trim())
   const visible = q
-    ? categories.filter((c) => fold(`${c.label} ${c.table} ${c.prefix}`).includes(q))
+    ? categories.filter((c) => fold(`${metadataLabel(c.label, translate)} ${c.label} ${c.table} ${c.prefix}`).includes(q))
     : categories
 
   // Gewählte Kategorie sichtbar halten (nach „Neue Kategorie“, Sprung per ?k=…) – nur die Liste scrollen, nie die Seite
@@ -59,7 +59,7 @@ export function CategoryList({ categories, loading, selected, dirtyTable, onSele
       const letter = fold(e.key)
       const start = index + 1
       const order = [...visible.slice(start), ...visible.slice(0, start)]
-      const hit = order.find((c) => fold(c.label).startsWith(letter))
+      const hit = order.find((c) => fold(metadataLabel(c.label, translate)).startsWith(letter))
       if (hit) focusAt(visible.indexOf(hit))
       else return
     } else return
@@ -131,7 +131,7 @@ export function CategoryList({ categories, loading, selected, dirtyTable, onSele
                   <CategoryTile icon={c.icon} color={c.color} size="sm" />
                   <span className="min-w-0 flex-1">
                     <span className="flex items-start gap-1.5">
-                      <span className="line-clamp-2 text-ui font-medium leading-snug text-fg">{c.label}</span>
+                      <span className="line-clamp-2 text-ui font-medium leading-snug text-fg">{metadataLabel(c.label, translate)}</span>
                       {dirtyTable === c.table && (
                         <span aria-label={translate("ungespeichert")} role="img" className="mt-1.5 size-1.5 shrink-0 rounded-full bg-accent shadow-[0_0_6px_var(--pf-accent)]" />
                       )}

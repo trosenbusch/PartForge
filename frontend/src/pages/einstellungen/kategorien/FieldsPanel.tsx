@@ -1,4 +1,4 @@
-import { t as translate, useI18n, getLocale } from '@/lib/i18n'
+import { metadataLabel, t as translate, useI18n, getLocale } from '@/lib/i18n'
 /**
  * Felder einer Kategorie: Reihenfolge per Ziehen (Griff) oder Tastatur (Leertaste aufnehmen, ↑/↓, Leertaste ablegen,
  * Alt+↑/↓ direkt), Beschriftung direkt in der Zeile, Merkmale (Pflicht, Schaltplan, Design) als Umschalter – jede
@@ -93,7 +93,7 @@ export function FieldsPanel({ category, kinds }: { category: CategoryDef; kinds:
     const f = byColumn.get(c)
     if (!f) return false
     if (!showCommon && f.common && !q) return false
-    return !q || fold(`${f.label} ${f.column}`).includes(q)
+    return !q || fold(`${metadataLabel(f.label, translate)} ${f.label} ${f.column}`).includes(q)
   })
   const visibleSet = new Set(visible)
 
@@ -157,7 +157,7 @@ export function FieldsPanel({ category, kinds }: { category: CategoryDef; kinds:
       }
       toast.success(message, {
         id: `schema-field-${f.column}`,
-        description: steps > 1 ? translate("„Rückgängig“ nimmt alle {value1} Änderungen an „{value2}“ zurück.", { value1: steps, value2: f.label }) : undefined,
+        description: steps > 1 ? translate("„Rückgängig“ nimmt alle {value1} Änderungen an „{value2}“ zurück.", { value1: steps, value2: metadataLabel(f.label, translate) }) : undefined,
         action: {
           label: translate("Rückgängig"),
           onClick: () => {
@@ -177,10 +177,10 @@ export function FieldsPanel({ category, kinds }: { category: CategoryDef; kinds:
 
   const removeField = async (f: FieldDef) => {
     const ok = await confirm({
-      title: translate("Feld „{value1}“ entfernen?", { value1: f.label }),
+      title: translate("Feld „{value1}“ entfernen?", { value1: metadataLabel(f.label, translate) }),
       description: (
         <>
-          {translate("Die Spalte")}{' '}<span className="mono text-fg">{f.column}</span> {' '}{translate("wird mit allen Werten aus „")}{category.label}{translate("“ gelöscht. PartForge legt vorher automatisch eine Sicherung an; Vorlagen, die das Feld nutzen, werden angepasst.")}</>
+          {translate("Die Spalte")}{' '}<span className="mono text-fg">{f.column}</span> {' '}{translate("wird mit allen Werten aus „")}{metadataLabel(category.label, translate)}{translate("“ gelöscht. PartForge legt vorher automatisch eine Sicherung an; Vorlagen, die das Feld nutzen, werden angepasst.")}</>
       ),
       confirmLabel: translate("Entfernen"),
       destructive: true,
@@ -196,7 +196,7 @@ export function FieldsPanel({ category, kinds }: { category: CategoryDef; kinds:
       },
     })
     if (ok) {
-      toast.success(translate("Feld „{value1}“ entfernt", { value1: f.label }), {
+      toast.success(translate("Feld „{value1}“ entfernt", { value1: metadataLabel(f.label, translate) }), {
         description: translate("Der vorherige Stand liegt in den Sicherungen."),
         action: { label: translate("Sicherungen"), onClick: () => navigate('/einstellungen/bibliothek') },
       })
@@ -225,7 +225,7 @@ export function FieldsPanel({ category, kinds }: { category: CategoryDef; kinds:
   }
 
   const onHandleKey = (e: KeyboardEvent<HTMLButtonElement>, f: FieldDef) => {
-    const label = f.label
+    const label = metadataLabel(f.label, translate)
     if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
       e.preventDefault()
       const before = order
@@ -287,7 +287,7 @@ export function FieldsPanel({ category, kinds }: { category: CategoryDef; kinds:
       </div>
 
       {/* Tabelle */}
-      <div role="table" aria-label={translate("Felder von {value1}", { value1: category.label })} aria-rowcount={visible.length + 1} className="@container">
+      <div role="table" aria-label={translate("Felder von {value1}", { value1: metadataLabel(category.label, translate) })} aria-rowcount={visible.length + 1} className="@container">
         <div role="rowgroup">
           <div role="row" className={cn(ROW_GRID, 'border-b border-line bg-surface-2/40 px-5 py-2')}>
             <span role="columnheader">
@@ -386,7 +386,7 @@ function FlagHeader({ title, hint }: { title: string; hint: string }) {
 type FlagKey = 'required' | 'show_on_schematic' | 'add_to_design'
 
 function toggleMessage(f: FieldDef, key: FlagKey, value: boolean): string {
-  const name = `„${f.label}“`
+  const name = `„${metadataLabel(f.label, translate)}“`
   if (key === 'required') return value ? translate("{value1} ist jetzt Pflichtfeld", { value1: name }) : translate("{value1} ist kein Pflichtfeld mehr", { value1: name })
   if (key === 'show_on_schematic') return value ? translate("{value1} wird im Schaltplan angezeigt", { value1: name }) : translate("{value1} wird im Schaltplan ausgeblendet", { value1: name })
   return value ? translate("{value1} wird ins Design übernommen", { value1: name }) : translate("{value1} wird nicht mehr ins Design übernommen", { value1: name })
@@ -471,7 +471,7 @@ function FieldRow({
         ) : (
           <button
             type="button"
-            aria-label={translate("„{value1}“ verschieben", { value1: f.label })}
+            aria-label={translate("„{value1}“ verschieben", { value1: metadataLabel(f.label, translate) })}
             aria-pressed={grabbed}
             aria-keyshortcuts="Space Alt+ArrowUp Alt+ArrowDown"
             onPointerDown={(e) => {
@@ -495,7 +495,7 @@ function FieldRow({
           {kindIcon(f.kind)}
         </span>
         <span className="min-w-0 flex-1">
-          <InlineLabel value={f.label} onCommit={onRename} />
+          <InlineLabel value={f.label} display={metadataLabel(f.label, translate)} onCommit={onRename} />
           <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5">
             <span className="mono truncate text-2xs text-fg-subtle">{f.column}</span>
             {f.common && <Badge className="h-4 px-1.5">{translate("Standard")}</Badge>}
@@ -529,7 +529,7 @@ function FieldRow({
           on={f.required}
           icon={<Asterisk />}
           label={translate("Pflichtfeld")}
-          field={f.label}
+          field={metadataLabel(f.label, translate)}
           disabled={isPartNumber}
           disabledReason={translate("Die Teilenummer ist immer Pflicht")}
           onChange={(v) => onToggle('required', v)}
@@ -540,7 +540,7 @@ function FieldRow({
           on={f.show_on_schematic}
           icon={<Eye />}
           label={translate("Im Schaltplan sichtbar")}
-          field={f.label}
+          field={metadataLabel(f.label, translate)}
           onChange={(v) => onToggle('show_on_schematic', v)}
         />
       </span>
@@ -549,7 +549,7 @@ function FieldRow({
           on={f.add_to_design}
           icon={<FileInput />}
           label={translate("Ins Design übernehmen")}
-          field={f.label}
+          field={metadataLabel(f.label, translate)}
           disabled={locked}
           disabledReason={translate("Bei geschützten Feldern fest")}
           onChange={(v) => onToggle('add_to_design', v)}
@@ -557,14 +557,14 @@ function FieldRow({
       </span>
 
       <span role="cell" className="flex items-center justify-end">
-        <IconButton size="sm" label={translate("„{value1}“ bearbeiten", { value1: f.label })} icon={<Pencil />} onClick={onEdit} />
+        <IconButton size="sm" label={translate("„{value1}“ bearbeiten", { value1: metadataLabel(f.label, translate) })} icon={<Pencil />} onClick={onEdit} />
         {locked ? (
           // Kein IconButton: dessen aria-disabled schaltet Zeigerereignisse ab – der Grund soll beim Überfahren erscheinen
-          <Tooltip content={translate("„{value1}“ kann nicht entfernt werden – {value2}.", { value1: f.label, value2: lockReason })}>
+          <Tooltip content={translate("„{value1}“ kann nicht entfernt werden – {value2}.", { value1: metadataLabel(f.label, translate), value2: lockReason })}>
             <button
               type="button"
               aria-disabled="true"
-              aria-label={translate("„{value1}“ entfernen (nicht möglich: geschütztes Feld)", { value1: f.label })}
+              aria-label={translate("„{value1}“ entfernen (nicht möglich: geschütztes Feld)", { value1: metadataLabel(f.label, translate) })}
               onClick={() => undefined}
               className="flex size-7 cursor-not-allowed items-center justify-center rounded-control text-fg-subtle opacity-40 outline-none focus-ring [&_svg]:size-3.5"
             >
@@ -572,7 +572,7 @@ function FieldRow({
             </button>
           </Tooltip>
         ) : (
-          <IconButton size="sm" label={translate("„{value1}“ entfernen", { value1: f.label })} icon={<Trash2 />} className="hover:text-danger-text" onClick={onRemove} />
+          <IconButton size="sm" label={translate("„{value1}“ entfernen", { value1: metadataLabel(f.label, translate) })} icon={<Trash2 />} className="hover:text-danger-text" onClick={onRemove} />
         )}
       </span>
     </Reorder.Item>
@@ -624,7 +624,8 @@ function FlagToggle({
 }
 
 /** Beschriftung direkt in der Zeile ändern (Klick oder Enter, Enter speichert, Esc bricht ab) */
-function InlineLabel({ value, onCommit }: { value: string; onCommit: (label: string) => void }) {
+/** `display` is the localized label; editing starts from the stored `value` (built-in labels stay German). */
+function InlineLabel({ value, display, onCommit }: { value: string; display: string; onCommit: (label: string) => void }) {
   useI18n()
   const [editing, setEditing] = useState(false)
   const [text, setText] = useState(value)
@@ -649,10 +650,10 @@ function InlineLabel({ value, onCommit }: { value: string; onCommit: (label: str
           setEditing(true)
         }}
         title={translate("Beschriftung ändern")}
-        aria-label={translate("Beschriftung „{value1}“ ändern", { value1: value })}
+        aria-label={translate("Beschriftung „{value1}“ ändern", { value1: display })}
         className="-mx-1 block max-w-full truncate rounded-sm px-1 text-left text-ui font-medium text-fg outline-none transition-colors hover:bg-surface-3/70 focus-ring"
       >
-        {value}
+        {display}
       </button>
     )
   }

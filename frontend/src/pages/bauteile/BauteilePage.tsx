@@ -249,7 +249,7 @@ export default function BauteilePage() {
   const sum = (categories.data ?? []).reduce((s, c) => s + (c.part_count ?? 0), 0)
   // Die Trefferzahl steht in der Werkzeugleiste – der Untertitel ordnet die Kategorie ein
   const subtitle = category
-    ? [CATEGORY_GROUPS[category.table], category.prefix ? t("Bezeichner {1}", { 1: category.prefix }) : null].filter(Boolean).join(' · ') ||
+    ? [CATEGORY_GROUPS[category.table] && t(CATEGORY_GROUPS[category.table]), category.prefix ? t("Bezeichner {1}", { 1: category.prefix }) : null].filter(Boolean).join(' · ') ||
       plural(category.part_count ?? 0, t("Bauteil"), t("Bauteile"))
     : categories.data
       ? t("{1} in {2}", { 1: plural(sum, t("Bauteil"), t("Bauteile")), 2: plural(categories.data.length, t("Kategorie"), t("Kategorien")) })
