@@ -1,4 +1,4 @@
-import { useI18n } from '@/lib/i18n'
+import { localizeMessage, useI18n } from '@/lib/i18n'
 /**
  * Serien-Assistent (`/serien`): eine komplette Bauteilserie in fünf Schritten – Kategorie → Hersteller-Serie →
  * Werte und Varianten (Live-Zähler) → Vorschau (alle Zeilen mit Status) → Erzeugen (Job mit Fortschritt).
@@ -108,6 +108,12 @@ function seriesWritten(r: SeriesCommitResult | null | undefined): boolean {
 }
 
 /** Adresse mit anderem Schritt (übrige Parameter bleiben) */
+/** Title of the running series' template: built-in titles are catalog sources, custom ones stay as written */
+function TemplateTitle({ title }: { title: string }) {
+  useI18n()
+  return <>{localizeMessage(title)}</>
+}
+
 function withStep(params: URLSearchParams, step: StepIndex): URLSearchParams {
   const next = new URLSearchParams(params)
   next.set('schritt', STEP_IDS[step])
@@ -631,7 +637,7 @@ export default function SerienPage() {
   const footerContext =
     step >= 1 && summary ? (
       <span className="flex min-w-0 items-center gap-2">
-        <span className="truncate">{summary.category === category ? summary.title : categoryLabel}</span>
+        <span className="truncate">{summary.category === category ? <TemplateTitle title={summary.title} /> : categoryLabel}</span>
         {footerCount && (
           <>
             <span aria-hidden className="text-fg-subtle">

@@ -166,7 +166,7 @@ function RunStopped({ job, onBack, onRescan }: { job: Job<ImportRunResult>; onBa
     >
       {error
         ? formatNumbersInText(error)
-        : t("{0} Bis dahin übernommene Dateien bleiben in der Bibliothek – für den aktuellen Stand die Quelle erneut einlesen.", { "0": String(cancelText === 'Abgebrochen' ? t("Der Import wurde abgebrochen.") : cancelText.replace(/\s*\.?$/, '.')) })}
+        : t("{0} Bis dahin übernommene Dateien bleiben in der Bibliothek – für den aktuellen Stand die Quelle erneut einlesen.", { "0": String(cancelText === t('Abgebrochen') ? t("Der Import wurde abgebrochen.") : cancelText.replace(/\s*\.?$/, '.')) })}
     </Callout>
   )
 }

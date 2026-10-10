@@ -228,7 +228,7 @@ export function SourceCard({
         )}
         {cancelled && job && (
           <Callout tone="neutral" title={t("Einlesen abgebrochen")} actions={<IconButton size="sm" label={t("Hinweis schließen")} icon={<X />} onClick={onDismiss} />}>
-            {jobCancelText(job) === 'Abgebrochen' ? t("Die Quelle wurde nicht vollständig gelesen.") : jobCancelText(job)} {t(" „Einlesen“ startet neu.")}</Callout>
+            {jobCancelText(job) === t('Abgebrochen') ? t("Die Quelle wurde nicht vollständig gelesen.") : jobCancelText(job)} {t(" „Einlesen“ startet neu.")}</Callout>
         )}
       </CardContent>
     </Card>

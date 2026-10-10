@@ -150,7 +150,8 @@ export function duplicatesReplaceable(dblib: DbLibStatus | null | undefined): bo
 function reasonOf(issue: DbLibIssue | undefined): string | undefined {
   if (!issue) return undefined
   if (issue.code === 'outdated') {
-    const inner = /\(([^)]+)\)/.exec(issue.message)?.[1]
+    // from the localized message: „(Kategorien oder Felder wurden geändert)“ → „(categories or fields were changed)“
+    const inner = /\(([^)]+)\)/.exec(localizeMessage(issue.message))?.[1]
     if (inner) return inner.charAt(0).toUpperCase() + inner.slice(1)
   }
   return DBLIB_REASON[issue.code] ?? shortReason(issue.message, 60)

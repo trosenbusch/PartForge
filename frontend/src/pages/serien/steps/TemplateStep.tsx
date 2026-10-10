@@ -1,4 +1,4 @@
-import { getLocale, useI18n } from '@/lib/i18n'
+import { getLocale, localizeMessage, useI18n } from '@/lib/i18n'
 /**
  * Schritt 2 – Hersteller-Serie: Vorlagen der Kategorie als Karten (Beispiel-Teilenummer aus der Vorlagenliste,
  * Prüfstatus mit Quellen), Suche und Filter, eigene Vorlagen anlegen/bearbeiten/löschen.
@@ -55,7 +55,7 @@ export function TemplateStep({
       if (filter === 'verified' && !t.verified) return false
       if (filter === 'custom' && t.builtin) return false
       if (!q) return true
-      return [t.manufacturer, t.series, t.title, t.description, t.pattern ?? ''].some((x) => fold(x).includes(q))
+      return [t.manufacturer, t.series, t.title, localizeMessage(t.title), t.description, t.pattern ?? ''].some((x) => fold(x).includes(q))
     })
   }, [all, search, filter])
 

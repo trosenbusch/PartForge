@@ -338,7 +338,7 @@ function LibraryRow({
                       <li key={`${i}-${f}`}>
                         <Badge variant="neutral" className="gap-1.5 font-normal">
                           <span className="mono text-fg-subtle">{i + 1}</span>
-                          {f}
+                          {localizeMessage(f)}
                         </Badge>
                       </li>
                     ))}

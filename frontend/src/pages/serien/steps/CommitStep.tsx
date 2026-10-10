@@ -237,7 +237,7 @@ function JobProgress({
             </span>
           </ProgressRing>
           <div className="min-w-0 flex-1">
-            <div className="micro-label">{info.title}</div>
+            <div className="micro-label">{localizeMessage(info.title)}</div>
             <h2
               id="serien-job"
               ref={headingRef}
@@ -359,7 +359,7 @@ export function CommitStep({
       <section aria-label={tr("Ergebnis")} className="flex w-full flex-col">
         <SuccessView
           result={job.result}
-          title={jobInfo.title}
+          title={localizeMessage(jobInfo.title)}
           template={template.id === jobInfo.templateId ? template : null}
           categoryLabel={categoryLabel}
           duration={duration}
@@ -393,7 +393,7 @@ export function CommitStep({
       <StepHeading
         id="serien-erzeugen"
         title={tr("Erzeugen")}
-        description={tr("{v0} → {v1}. PartForge legt zuerst eine Sicherung an, dann Symbol, Footprints und Bauteile.", { v0: template.title, v1: categoryLabel })}
+        description={tr("{v0} → {v1}. PartForge legt zuerst eine Sicherung an, dann Symbol, Footprints und Bauteile.", { v0: localizeMessage(template.title), v1: categoryLabel })}
       />
       {!preview ? (
         previewError ? (

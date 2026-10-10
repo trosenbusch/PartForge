@@ -259,7 +259,7 @@ function parseLog(log: readonly JobLogEntry[]): LogInfo {
     } else if ((m = t.match(/^Kontrolle der (.+?) mit hochaufgelösten Seitenbildern \(Seiten ([^)]+)\)/))) {
       out.visionPages = parsePageList(m[2])
       out.visionActive = true
-      note('check', 'info', translate("Kontrolle der {0} mit Seitenbildern", { "0": String(m[1]) }))
+      note('check', 'info', `Kontrolle der ${m[1]} mit Seitenbildern`)
       out.reached = 'check'
     } else if ((m = t.match(/^Nach der Kontrolle: .*; (\d+) Fehler, (\d+) Warnungen/))) {
       out.visionActive = false

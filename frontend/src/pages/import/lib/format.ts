@@ -133,7 +133,7 @@ export const EFFORT_LABEL: Record<string, string> = {
 }
 
 export function effortLabel(effort: string | null | undefined): string {
-  if (!effort) return 'Standard'
+  if (!effort) return t('Standard')
   return EFFORT_LABEL[effort] ?? effort
 }
 

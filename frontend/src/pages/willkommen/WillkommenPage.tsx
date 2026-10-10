@@ -25,7 +25,7 @@ import { ForgeLogo, ForgeMark } from '@/components/brand/ForgeLogo'
 import { Badge, Button, Kbd, Spinner } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { baseName, shortenPath } from '@/lib/format'
-import { DEFAULT_DBLIB_FILE, EXAMPLE_PART_COUNT } from '@/lib/libraryDefaults'
+import { DEFAULT_LIBRARY_NAME, EXAMPLE_PART_COUNT } from '@/lib/libraryDefaults'
 
 const ease = [0.16, 1, 0.3, 1] as const
 
@@ -472,7 +472,7 @@ function HeroVisual({ active, onWake }: { active: boolean; onWake: () => void })
         active={active}
         icon={<PlugZap />}
         label="Altium Designer"
-        mpn={DEFAULT_DBLIB_FILE}
+        mpn={`${tr(DEFAULT_LIBRARY_NAME)}.DbLib`}
         meta={tr("{0} Bauteile · synchron", { "0": String(EXAMPLE_PART_COUNT) })}
         badge={<span className="size-1.5 rounded-full bg-success shadow-[0_0_8px_var(--pf-success)]" />}
       />

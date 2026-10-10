@@ -4,7 +4,7 @@
  * Screenreader hören die Teilenummer und ihre Bedeutung als einen Text. Segmente kommen vom Backend
  * (`TemplateSummary.example`) oder aus `splitMpn` – Werte wie „10kΩ“ erscheinen deutsch („10 kΩ“).
  */
-import { useI18n } from '@/lib/i18n'
+import { localizeMessage, useI18n } from '@/lib/i18n'
 import type { CSSProperties } from 'react'
 import type { MpnSegment } from '@/api/series'
 import { formatQuantityText } from '@/components/grid/cellFormat'
@@ -12,7 +12,9 @@ import { Tooltip } from '@/components/ui'
 import { cn } from '@/lib/cn'
 
 /** Bedeutung für die Anzeige: Werte deutsch („10kΩ“ → „10 kΩ“), Codetexte unverändert */
-const meaningText = (s: MpnSegment): string | null => (s.meaning && s.kind === 'value' ? formatQuantityText(s.meaning) : s.meaning)
+/** Option labels of built-in templates are German sources (translated); custom templates keep their own text. */
+const meaningText = (s: MpnSegment): string | null =>
+  !s.meaning ? null : s.kind === 'value' ? formatQuantityText(s.meaning) : localizeMessage(s.meaning)
 
 /** Farben der Segmente (Diagrammpalette ohne Kupfer – Kupfer bleibt Signalfarbe) */
 const TINTS = ['var(--pf-chart-2)', 'var(--pf-chart-5)', 'var(--pf-chart-3)', 'var(--pf-chart-4)', 'var(--pf-chart-6)']

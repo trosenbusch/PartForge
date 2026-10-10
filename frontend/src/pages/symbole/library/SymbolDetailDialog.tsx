@@ -151,7 +151,7 @@ function PinList({ spec }: { spec: SymbolSpec }) {
                 {electricalLabel(p.electrical)}
                 {p.hidden && tr(' · verborgen')}
               </td>
-              {multi && <td className="mono border-b border-line px-3 py-1 text-fg-muted">{p.part === 0 ? 'alle' : partLetter(p.part ?? 1)}</td>}
+              {multi && <td className="mono border-b border-line px-3 py-1 text-fg-muted">{p.part === 0 ? tr('alle') : partLetter(p.part ?? 1)}</td>}
             </tr>
           ))}
         </tbody>

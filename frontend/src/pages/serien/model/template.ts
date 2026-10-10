@@ -1,4 +1,4 @@
-import { t as tr } from '@/lib/i18n'
+import { localizeMessage, t as tr } from '@/lib/i18n'
 /**
  * Auswertung einer Serienvorlage für die Oberfläche: Art (Regeln, Matrix, Katalog), Varianten (Toleranz, TK,
  * Spannung, Verpackung), Baugrößen mit Kennwerten, Muster-Segmente. Spiegelt die Regeln von
@@ -42,7 +42,7 @@ export const optionApplies = (o: TemplateOption, size: string | null): boolean =
 
 /** Text einer Option für die Oberfläche: Beschriftung, sonst Bedeutung, sonst Code */
 export function optionText(o: TemplateOption, builtin = false): string {
-  return (o.label ? (builtin ? tr(o.label) : o.label) : '') || (o.value ? formatQuantityText(o.value) : '') || o.code || tr("ohne")
+  return (o.label ? (builtin ? localizeMessage(o.label) : o.label) : '') || (o.value ? formatQuantityText(o.value) : '') || o.code || tr("ohne")
 }
 
 /** Vorauswahl einer Variable (je Baugröße, `default`, sonst die erste gültige) – ohne `requires` */

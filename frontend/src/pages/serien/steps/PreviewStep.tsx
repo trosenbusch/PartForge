@@ -241,7 +241,7 @@ export function PreviewStep({
               )}
               <MpnCheck
                 templateId={template.id}
-                templateTitle={template.title}
+                templateTitle={localizeMessage(template.title)}
                 rows={rows}
                 sizes={sizes}
                 onReveal={reveal}

@@ -1,4 +1,4 @@
-import { localizeMessage, useI18n } from '@/lib/i18n'
+import { localizeMessage, metadataLabel, t as translate, useI18n } from '@/lib/i18n'
 /**
  * Eigene Serienvorlage anlegen oder bearbeiten: Grunddaten, Teilenummern-Muster (Platzhalter als Chips),
  * Werteformat, Baugrößen mit Kennwerten, Codetabellen, Gültigkeit (Bereich + E-Reihen), Brücke und Prüfvermerk.
@@ -120,7 +120,9 @@ function FormSection({ title, description, children }: { title: string; descript
 
 /** Fehlertext des Backends ohne „Ungültige Eingabe. template.“-Vorspann */
 function cleanError(error: unknown): string {
-  return errorMessage(error).replace(/^Ungültige Eingabe\.\s*/, '').replace(/\btemplate\./g, '')
+  const text = errorMessage(error)
+  const prefix = translate('Ungültige Eingabe.')
+  return (text.startsWith(prefix) ? text.slice(prefix.length).trimStart() : text).replace(/\btemplate\./g, '')
 }
 
 /** Erstes bedienbares Feld des Formulars (Kategorie bzw. beim Bearbeiten „Hersteller“) – nicht der Schließen-Knopf */
@@ -239,7 +241,7 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
   const okSamples = shownResults.filter((r) => r.valid && r.roundtrip && !r.missing_fields.length).length
 
   // Pflichtfelder der Kategorie (z. B. Leistung), die laut Test leer blieben – jede Zeile der Serie wäre „ungültig“
-  const gaps = useMemo(() => gapsOf(draft, testData).map((g) => ({ ...g, label: tr(g.label), hint: tr(g.hint) })), [draft, testData, tr])
+  const gaps = useMemo(() => gapsOf(draft, testData).map((g) => ({ ...g, label: metadataLabel(g.label, tr), hint: tr(g.hint) })), [draft, testData, tr])
   const sizeGaps = useMemo(() => {
     const out: Partial<Record<SizeAttr, Set<string>>> = {}
     for (const g of gaps) if (g.sizeAttr) out[g.sizeAttr] = new Set(g.sizes)
@@ -247,7 +249,7 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
   }, [gaps])
   const categoryDef = categories.data?.find((c) => c.table === draft.category)
   /** Bezeichnung einer Spalte der Kategorie („Power“ → „Leistung“) */
-  const fieldLabel = (column: string) => tr(categoryDef?.fields.find((f) => f.column === column)?.label ?? column)
+  const fieldLabel = (column: string) => metadataLabel(categoryDef?.fields.find((f) => f.column === column)?.label ?? column, tr)
   const fieldMap = draft.original?.fields ?? fieldsFor(draft.category)
   /** Größen-Attribut füllt ein Pflichtfeld der Kategorie (Leistung bei Widerständen …) – Stern an der Spalte */
   const requiredAttr = (attr: SizeAttr) =>
@@ -315,7 +317,7 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
     { name: 'packaging', label: tr("Verpackung") },
     ...draft.variables
       .filter((v) => !['tolerance', 'tcr', 'voltage', 'dielectric', 'packaging'].includes(v.name))
-      .map((v) => ({ name: v.name, label: v.label })),
+      .map((v) => ({ name: v.name, label: tr(v.label) })),
   ]
   const firstSample = test.data?.samples.find((s) => s.mpn)
   const basicsOk = Boolean(template.id && template.manufacturer && template.series && template.pattern && draft.sizes.length)

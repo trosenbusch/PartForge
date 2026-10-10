@@ -177,7 +177,7 @@ export function spokenPinName(name: string): string {
   const text = displayText(name)
   if (!hasOverbar(name)) return text
   const all = parseOverbar(name).every((c) => c.barred)
-  return `${text} (${all ? 'invertiert' : tr('teilweise invertiert')})`
+  return `${text} (${all ? tr('invertiert') : tr('teilweise invertiert')})`
 }
 
 // --------------------------------------------------------------------------- Symbole
@@ -188,8 +188,8 @@ export const ELECTRICAL_LABEL: Record<ElectricalType, string> = {
   get io() { return tr("Ein-/Ausgang") },
   get passive() { return tr("Passiv") },
   get power() { return tr("Versorgung") },
-  open_collector: 'Open Collector',
-  open_emitter: 'Open Emitter',
+  get open_collector() { return tr("Open Collector") },
+  get open_emitter() { return tr("Open Emitter") },
   get hiz() { return tr("Hochohmig (Tri-State)") },
 }
 

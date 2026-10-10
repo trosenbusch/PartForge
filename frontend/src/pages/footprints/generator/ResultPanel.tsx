@@ -333,7 +333,7 @@ function NameBlock({
           </Tooltip>
         )}
         <Badge variant="outline">{tr("Dichte")}{' '}{densityLabel(density)}</Badge>
-        {calc?.package && calc.package !== calc.standardMatch && <Badge variant="outline">{calc.package}</Badge>}
+        {calc?.package && calc.package !== calc.standardMatch && <Badge variant="outline">{localizeMessage(calc.package)}</Badge>}
       </div>
       {saveTarget && <SaveTargetLine target={saveTarget} />}
     </div>
@@ -499,7 +499,7 @@ const FORMULA = {
 function ColHead({ sym, sub, formula }: { sym: string; sub: string; formula: string }) {
   return (
     <th scope="col" aria-label={`${sym}${sub}`} className="pb-1 text-right font-normal">
-      <Tooltip content={formula}>
+      <Tooltip content={tr(formula)}>
         <button
           type="button"
           className="mono inline-flex cursor-help items-baseline rounded-sm text-xs font-semibold text-fg-muted outline-none focus-ring"
@@ -774,7 +774,7 @@ function BgaBlock({ calc }: { calc: CalcRecord }) {
           <span className="text-fg">{formatDim(bga.land)} mm</span>
         </Row>
       </dl>
-      {bga.rule && <p className="mt-1 text-2xs leading-4 text-fg-subtle">{bga.rule}</p>}
+      {bga.rule && <p className="mt-1 text-2xs leading-4 text-fg-subtle">{localizeMessage(bga.rule)}</p>}
     </div>
   )
 }

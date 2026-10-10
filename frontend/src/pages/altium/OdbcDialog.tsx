@@ -257,7 +257,7 @@ function Report({ report: r, summary, log }: { report: OdbcReport; summary: stri
                           <Badge variant="danger" dot className="self-start">
                             {t.found ? 'Problem' : tr("Fehlt")}
                           </Badge>
-                          {t.error && <span className="text-2xs text-danger-text">{t.error}</span>}
+                          {t.error && <span className="text-2xs text-danger-text">{localizeMessage(t.error)}</span>}
                           {t.missing_columns.length > 0 && (
                             <span className="text-2xs text-fg-muted">{tr("Spalten fehlen: ")}{t.missing_columns.join(', ')}</span>
                           )}

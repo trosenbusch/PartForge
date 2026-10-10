@@ -122,7 +122,7 @@ export function CatalogGrid({ groups, onOpen, empty }: CatalogGridProps) {
               </h2>
               <span className="text-2xs tabular-nums text-fg-subtle">
                 {group.items.length} {group.items.length === 1 ? tr('Vorlage') : tr('Vorlagen')}
-                {group.family.group !== familyShortLabel(group.family) && ` · ${tr(group.family.group)}`}
+                {tr(group.family.group) !== familyShortLabel(group.family) && ` · ${tr(group.family.group)}`}
               </span>
               <span aria-hidden className="ml-1 h-px flex-1 bg-line" />
             </div>

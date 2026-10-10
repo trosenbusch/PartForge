@@ -221,7 +221,7 @@ function FieldDialogBody({ onOpenChange, category, field, kinds }: FieldDialogPr
     <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
       <DialogHeader
         icon={editing ? <Pencil /> : <TableProperties />}
-        title={editing ? translate("Feld „{value1}“ bearbeiten", { value1: field?.label ?? '' }) : translate("Feld hinzufügen")}
+        title={editing ? translate("Feld „{value1}“ bearbeiten", { value1: metadataLabel(field?.label ?? '', translate) }) : translate("Feld hinzufügen")}
         description={
           editing
             ? translate("Kategorie {value1} · Spalte {value2}", { value1: metadataLabel(category.label, translate), value2: field?.column ?? '' })

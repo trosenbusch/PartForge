@@ -1,4 +1,4 @@
-import { t as translate, useI18n, getLocale } from '@/lib/i18n'
+import { t as translate, useI18n, getLocale, metadataLabel } from '@/lib/i18n'
 /**
  * Neue Kategorie: aus einer eingebauten Vorlage (Felder, Vorlagen und Standardsymbol werden übernommen – auch
  * mehrfach, z. B. „Präzisionswiderstände“ auf Basis „Widerstände“) oder leer (nur Standardfelder).
@@ -96,7 +96,7 @@ function Body({
 
   const list = templates.data ?? []
   const q = query.trim().toLocaleLowerCase(getLocale())
-  const shown = q ? list.filter((t) => `${t.label} ${t.table}`.toLocaleLowerCase(getLocale()).includes(q)) : list
+  const shown = q ? list.filter((t) => `${t.label} ${metadataLabel(t.label)} ${t.table}`.toLocaleLowerCase(getLocale()).includes(q)) : list
 
   const pick = (t: CategoryDef) => {
     setTemplate(t)
@@ -244,7 +244,7 @@ function Body({
                     >
                       <CategoryTile icon={t.icon} color={t.color} size="sm" />
                       <span className="min-w-0 flex-1">
-                        <span className="line-clamp-2 text-ui font-medium leading-snug text-fg">{t.label}</span>
+                        <span className="line-clamp-2 text-ui font-medium leading-snug text-fg">{metadataLabel(t.label)}</span>
                         <span className="flex items-center gap-1.5 text-2xs text-fg-subtle">
                           <span className="mono truncate">{t.table}</span>
                           <span aria-hidden>·</span>
@@ -261,7 +261,7 @@ function Body({
 
         {mode === 'vorlage' && template && templateExists && (
           <p className="-mb-1 text-xs text-fg-muted">
-            „{template.label}{translate("“ gibt es in dieser Bibliothek schon. Die neue Kategorie wird eine eigene Tabelle mit denselben Feldern – etwa für eine Variante.")}</p>
+            „{metadataLabel(template.label)}{translate("“ gibt es in dieser Bibliothek schon. Die neue Kategorie wird eine eigene Tabelle mit denselben Feldern – etwa für eine Variante.")}</p>
         )}
 
         {(mode === 'leer' || template) && (

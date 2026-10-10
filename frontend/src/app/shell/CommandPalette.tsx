@@ -254,7 +254,7 @@ export function CommandPalette() {
                       {ranked ? (
                         <>
                           {ranked.length > 0 && (
-                            <Command.Group heading="Beste Treffer">
+                            <Command.Group heading={tr("Beste Treffer")}>
                               {ranked.map((cmd) => (
                                 <CommandRow key={cmd.id} cmd={cmd} showGroup onRun={runCmd} />
                               ))}

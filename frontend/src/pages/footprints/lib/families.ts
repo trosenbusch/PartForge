@@ -113,9 +113,9 @@ export function presetFacet(presets: readonly FootprintPreset[]): { param: strin
 /** Zweite Zeile der Familie: Gruppe (falls nicht gleich dem Namen) bzw. Klammerzusatz, Vorlagenzahl */
 export function familySubtitle(f: FootprintFamily): string {
   const short = familyShortLabel(f)
-  const extra = /\(([^)]*)\)\s*$/.exec(f.label)?.[1]
-  const lead = f.group !== short ? f.group : (extra ?? f.group)
-  return `${tr(lead)} · ${f.presets.length} ${f.presets.length === 1 ? tr('Vorlage') : tr('Vorlagen')}`
+  const extra = /\(([^)]*)\)\s*$/.exec(tr(f.label))?.[1]
+  const lead = tr(f.group) !== short ? tr(f.group) : (extra ?? tr(f.group))
+  return `${lead} · ${f.presets.length} ${f.presets.length === 1 ? tr('Vorlage') : tr('Vorlagen')}`
 }
 
 const FACET_LABEL: Record<string, Record<string, string>> = {

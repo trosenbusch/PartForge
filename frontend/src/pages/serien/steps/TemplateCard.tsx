@@ -36,7 +36,7 @@ export interface TemplateCardProps {
 }
 
 function sourceLine(s: TemplateSource): string {
-  return [s.title, s.document, s.revision ? tr("Stand {v0}", { v0: s.revision }) : null, s.pages ? tr("S. {v0}", { v0: s.pages }) : null]
+  return [localizeMessage(s.title), s.document, s.revision ? tr("Stand {v0}", { v0: localizeMessage(s.revision) }) : null, s.pages ? tr("S. {v0}", { v0: s.pages }) : null]
     .filter(Boolean)
     .join(' · ')
 }
@@ -107,7 +107,7 @@ export function TemplateCard({ template: t, selected, radioProps, onEdit, onDele
               {t.manufacturer}
             </span>
             <span id={`${id}-title`} className="mt-0.5 block truncate text-md font-semibold tracking-[-0.01em] text-fg">
-              {t.series}
+              {t.builtin ? tr(t.series) : t.series}
             </span>
             {/* zwei Zeilen reserviert: Beispiele der Karten einer Reihe stehen auf gleicher Höhe */}
             <span className="mt-0.5 line-clamp-2 min-h-[2lh] text-xs leading-snug text-fg-muted">{productType(t)}</span>

@@ -1,5 +1,5 @@
 import { useLocalizedMemo } from '@/components/preview/useLocalizedMemo'
-import { t as tr, useI18n } from '@/components/preview/i18n'
+import { localizeMessage, t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Vorlagen einer Familie als dichte Liste: je Zeile Schlüssel und Kennzahlen (Pins · Raster · Körper); die gewählte
  * Vorlage zeigt zusätzlich Bezeichnung und Datenquelle. Listbox mit Pfeiltasten: Solange nichts geändert ist, lädt
@@ -240,7 +240,7 @@ function PresetRow({
         <span className="flex max-w-72 flex-col gap-0.5">
           <span className="font-medium">{tr(preset.label)}</span>
           {factsText && <span className="text-fg-muted">{factsText}</span>}
-          {preset.source && <span className="text-fg-muted">{tr("Quelle:")}{' '}{preset.source}</span>}
+          {preset.source && <span className="text-fg-muted">{tr("Quelle:")}{' '}{localizeMessage(preset.source)}</span>}
         </span>
       }
     >
@@ -286,7 +286,7 @@ function PresetRow({
           // Nur bei der gewählten Vorlage: Datenquelle (sonst die Bezeichnung)
           <span className="mt-0.5 pl-[22px] text-2xs leading-4 text-fg-subtle">
             {/* geschützte Bindestriche: „SOT96‑1“ bricht nicht am Bindestrich */}
-            {preset.source ? tr("Quelle: {value0}", { value0: String(preset.source.replace(/(\w)-(\w)/g, `$1${NB_HYPHEN}$2`)) }) : subtitle}
+            {preset.source ? tr("Quelle: {value0}", { value0: String(localizeMessage(preset.source).replace(/(\w)-(\w)/g, `$1${NB_HYPHEN}$2`)) }) : subtitle}
           </span>
         )}
       </button>
