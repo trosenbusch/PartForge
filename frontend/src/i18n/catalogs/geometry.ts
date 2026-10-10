@@ -383,7 +383,6 @@ const geometry: Record<string, string> = {
   "extrudierter Körper": "extruded body",
   "extrudierte Körper": "extruded bodies",
   "Kein 3D-Modell hinterlegt": "No 3D model assigned",
-  "Ohne Generator-Parameter (importiert) – nur ansehen.": "No generator parameters (imported) — view only.",
   "Alle Status": "All statuses",
   "Vorlagen-Katalog anzeigen": "Show preset catalog",
   "Name oder Familie …": "Name or family …",

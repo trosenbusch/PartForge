@@ -4,7 +4,9 @@ import { localizeMessage, t as tr, useI18n } from '@/components/preview/i18n'
  * Detail eines gespeicherten Footprints: Vorschau (Footprint/3D), Kennwerte, Bibliotheksdatei, Status, Verwendung
  * (Liste der Bauteile mit Links), 3D-Modell – „Bearbeiten“ (Generator mit den gespeicherten Parametern),
  * „Neu generieren“ (Vorlagen-Footprints mit dem aktuellen Hausstil neu berechnen und – nach Rückfrage – ersetzen),
- * STEP und Löschen. Der Fokus startet auf der Hauptaktion.
+ * „In Altium bearbeiten“ (Bibliothek in Altium öffnen; PartForge übernimmt das Speichern dort, `@/pages/_shared/AltiumEdit`),
+ * STEP und Löschen. Der Fokus startet auf der Hauptaktion. Eine in Altium bearbeitete Fassung (`source = 'altium'`)
+ * ersetzen „Bearbeiten“ und „Neu generieren“ nur nach Rückfrage.
  *
  * Eigene Namen (z. B. „MY_SOIC8“ statt „SOIC127P600X175-8N“) bleiben bei „Neu generieren“ und „Bearbeiten“ erhalten:
  * Das Backend vermerkt einen eigenen Namen beim Speichern in `spec.generator.name` (nur dann – erzeugte Namen stehen in
@@ -26,6 +28,7 @@ import {
   type FootprintFamily,
   type LibraryFootprintDetail,
 } from '@/api/footprints'
+import { altiumPreviousSource } from '@/api/altiumEdit'
 import { trackJob } from '@/api/jobs'
 import { useCategories } from '@/api/library'
 import { usePartsUsing } from '@/api/parts'
@@ -54,6 +57,8 @@ import { FILE_TYPES, notifySaveResult, saveFile } from '@/lib/download'
 import { baseName, formatDateTime, formatNumber, formatRelativeTime, plural } from '@/lib/format'
 import type { FootprintRequest } from '@/lib/geometry'
 import { revealPath } from '@/lib/native'
+import { AltiumEditButton, AltiumEditStatus } from '@/pages/_shared/AltiumEdit'
+import { confirmReplaceAltiumVersion } from '@/pages/_shared/altiumEditRules'
 import { densityLabel } from '../lib/calc'
 import { closestPreset, familyShortLabel } from '../lib/families'
 import { formatDim, normalizeParams } from '../lib/params'
@@ -171,7 +176,8 @@ function DetailContent({
   const canRegenerate = Boolean(family && generator && generator.params)
   // An imported model need not be extracted yet: the download reads it from the source library.
   const hasStep = Boolean(detail.step?.exists || (detail.bodies ?? []).length
-    || (detail.step && (rec.source === 'imported' || rec.source === 'external')))
+    || (detail.step && (rec.source === 'imported' || rec.source === 'external' || rec.source === 'altium')))
+  const fromAltium = rec.source === 'altium'
   const external = rec.source === 'external'
 
   const categories = useCategories()
@@ -185,7 +191,9 @@ function DetailContent({
     const params = generator.params && typeof generator.params === 'object' ? (generator.params as Record<string, unknown>) : {}
     return closestPreset(family, normalizeParams(family.params, params))?.key ?? null
   }, [family, generator])
-  const canRebuild = Boolean(family && presetKey && rec.source === 'generated')
+  // eine in Altium bearbeitete Vorlage lässt sich (nach Rückfrage) wieder aus dem Generator erzeugen
+  const canRebuild = Boolean(family && presetKey
+    && (rec.source === 'generated' || (fromAltium && altiumPreviousSource(generator) === 'generated')))
 
   // Daten kamen nach dem Öffnen: Fokus vom Dialog auf die Hauptaktion setzen
   useEffect(() => {
@@ -250,12 +258,24 @@ function DetailContent({
         return
       }
       const usedBy = dry.usage ? plural(dry.usage, tr('Bauteil verwendet'), tr('Bauteile verwenden')) : null
+      const altiumNote = fromAltium ? (
+        <span className="block font-medium text-warning-text">
+          {tr('„{0}“ wurde in Altium bearbeitet – diese Fassung wird ersetzt; Änderungen, die nur dort gemacht wurden, gehen verloren.', { 0: rec.name })}
+        </span>
+      ) : null
       const ok = !renamed
         ? await confirm({
             title: tr("„{value0}“ neu erzeugen?", { value0: String(rec.name) }),
-            description: tr("Die Geometrie wird mit dem aktuellen Hausstil neu berechnet und ersetzt den Footprint in {value0}{value1}", { value0: String(target), value1: String(usedBy ? tr(" – {value0} ihn.", { value0: String(usedBy) }) : '.') }),
+            description: (
+              <span className="flex flex-col gap-2">
+                <span className="block">
+                  {tr("Die Geometrie wird mit dem aktuellen Hausstil neu berechnet und ersetzt den Footprint in {value0}{value1}", { value0: String(target), value1: String(usedBy ? tr(" – {value0} ihn.", { value0: String(usedBy) }) : '.') })}
+                </span>
+                {altiumNote}
+              </span>
+            ),
             confirmLabel: tr('Ersetzen'),
-            destructive: dry.usage > 0,
+            destructive: dry.usage > 0 || fromAltium,
           })
         : !dry.new
           ? await confirm({
@@ -306,8 +326,9 @@ function DetailContent({
    * Im Generator öffnen: die gespeicherten Parameter – und ein eigener Name (`generator.name`), damit „Speichern“ diesen
    * Footprint aktualisiert statt unter dem erzeugten Namen einen anderen zu ersetzen.
    */
-  const edit = () => {
+  const edit = async () => {
     if (!family || !generator) return
+    if (!(await confirmReplaceAltiumVersion(rec, 'edit'))) return
     onRegenerate(family, generator, { name: customName(generator) })
   }
 
@@ -366,7 +387,7 @@ function DetailContent({
         }
       />
       <DialogBody className="grid min-h-0 grid-cols-[minmax(0,1fr)_17.5rem] gap-5 overflow-hidden">
-        {spec || rec.source === 'imported' || rec.source === 'external' ? (
+        {spec || rec.source === 'imported' || rec.source === 'external' || fromAltium ? (
           <PreviewPanel footprint={spec} stepSource={{ name: rec.name, revision: rec.content_hash ?? rec.updated }}
             hideEmptyTabs defaultTab={spec ? 'footprint' : '3d'} title={rec.name} className="h-full min-h-[22rem]" />
         ) : (
@@ -383,6 +404,7 @@ function DetailContent({
           </div>
         )}
         <aside aria-label={tr("Angaben")} className="flex min-h-0 flex-col gap-4 overflow-y-auto pr-1">
+          <AltiumEditStatus kind="footprint" name={rec.name} />
           {rec.status !== 'ok' && (
             <Callout tone={meta.variant === 'warning' ? 'warning' : 'danger'} title={tr(meta.label)}>
               {localizeMessage(rec.status_message ?? meta.text)}
@@ -527,7 +549,8 @@ function DetailContent({
         >
           {tr("Löschen")}
         </Button>
-        {!canRegenerate && <span className="text-2xs text-fg-subtle">{tr("Ohne Generator-Parameter (importiert) – nur ansehen.")}</span>}
+        {!canRegenerate && <span className="text-2xs text-fg-subtle">{tr("Ohne Generator-Parameter – in PartForge nicht bearbeitbar.")}</span>}
+        <AltiumEditButton kind="footprint" rec={rec} fileExists={detail.file_exists} />
         <Button variant="secondary" leftIcon={<Download />} loading={busy} disabled={!hasStep} onClick={() => void step()}>
           STEP
         </Button>
@@ -544,7 +567,7 @@ function DetailContent({
           variant="primary"
           leftIcon={<PencilRuler />}
           disabled={!canRegenerate}
-          onClick={edit}
+          onClick={() => void edit()}
         >
           {tr("Bearbeiten")}
         </Button>

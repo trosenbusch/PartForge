@@ -4,6 +4,13 @@
 
 ### Neu
 
+- **In Altium bearbeiten** (Detailansicht eines Symbols oder Footprints): öffnet die SchLib/PcbLib in Altium
+  Designer und zeigt das Bauteil dort. Nach dem Speichern in Altium übernimmt PartForge die Änderungen automatisch –
+  Vorschau, Pins/Pads, Bauhöhe und 3D-Modell stammen dann aus der gespeicherten Datei, die Herkunft heißt „In Altium
+  bearbeitet“. Auch andere in derselben Datei geänderte, umbenannte oder neue Bauteile werden erkannt; ein reines
+  Neuspeichern ohne Änderung nicht. „Bearbeiten“ und „Neu generieren“ ersetzen eine solche Fassung nur nach
+  Rückfrage. Die Beobachtung übersteht einen Neustart und endet mit „Bearbeitung beenden“, wenn Altium beendet
+  wird oder nach 12 Stunden ohne Speichern.
 - **Englisch und Deutsch** (*Einstellungen › Allgemein › Profil und Darstellung › Sprache*): Oberfläche,
   Desktop-Dialoge, Meldungen und Zahlenformate in der gewählten Sprache. Standard ist Englisch – auch bestehende
   Installationen zeigen nach dem Update Englisch, bis „Deutsch“ gewählt und gespeichert ist.

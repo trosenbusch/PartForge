@@ -110,7 +110,11 @@ export function localizeMessage(source: string): string {
   const cached = messageCache.get(source)
   if (cached !== undefined) return cached
   let result = source
-  if (source.length <= 16_000) {
+  if (source.includes('\n')) {
+    // Line by line: a template's placeholder also matches line breaks and would swallow the following lines
+    // ("Aus Altium übernommen: {0}." over a whole two-line job message). No catalog template spans lines.
+    result = source.split('\n').map(localizeMessage).join('\n')
+  } else if (source.length <= 16_000) {
     for (const { pattern, names, english } of messageTemplates) {
       const match = pattern.exec(source)
       if (!match) continue
@@ -119,7 +123,6 @@ export function localizeMessage(source: string): string {
       break
     }
   }
-  if (result === source && source.includes('\n')) result = source.split('\n').map(localizeMessage).join('\n')
   if (messageCache.size >= 1000) messageCache.clear()
   messageCache.set(source, result)
   return result

@@ -8,6 +8,7 @@ import { t as tr, useI18n } from '@/components/preview/i18n'
  */
 import { ArrowDownWideNarrow, Filter, Plus, RotateCcw, Search, X } from 'lucide-react'
 import { useRef } from 'react'
+import { useAltiumEditTargets } from '@/api/altiumEdit'
 import { errorMessage } from '@/api/client'
 import { SYMBOL_GROUPS, useSymbolKinds, useSymbolLibrary, type SymbolEntry, type SymbolKindInfo } from '@/api/symbols'
 import { PageActions } from '@/app/page'
@@ -70,6 +71,14 @@ function entryTypeLabel(e: SymbolEntry, kindLabel: (key: string) => string | und
 function StatusOrUsage({ entry }: { entry: SymbolEntry }) {
   useI18n()
   const status = STATUS_LABEL[entry.status]
+  const inAltium = useAltiumEditTargets('symbol').has(entry.name.toLocaleLowerCase('en'))
+  if (inAltium) {
+    return (
+      <Badge variant="info" dot>
+        {tr('In Altium geöffnet')}
+      </Badge>
+    )
+  }
   if (status && status.tone !== 'success') {
     return (
       <Badge variant={status.tone === 'danger' ? 'danger' : 'warning'} dot>

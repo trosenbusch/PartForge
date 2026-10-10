@@ -174,6 +174,14 @@ Linien `#800000`, Pins `#000080`) – so sehen Symbole aus wie später in Altium
    Standard-Symbole parametrieren oder IC-Pinliste bearbeiten (Seiten per Drag&Drop) mit Live-Vorschau.
 6. **Footprints**: Galerie; **Footprint-Generator**: Gehäusefamilie wählen → Maße (min/nom/max) →
    Dichte L/N/M → Live-Vorschau mit Bemaßung, Lagen-Umschaltern, 3D-Ansicht, IPC-Name.
+   Detaildialoge (Symbole und Footprints): „In Altium bearbeiten“ (`pages/_shared/AltiumEdit.tsx`, API
+   `api/altiumEdit.ts`) – Knopf in der Fußleiste (deaktiviert mit Grund: extern, nicht synchronisiert, Datei fehlt,
+   Altium nicht gestartet; bei laufender Bearbeitung „In Altium zeigen“), Zustand in der Seitenleiste („In Altium
+   geöffnet“ / „gespeichert, wird übernommen“ / Fehler, „Jetzt übernehmen“, „Bearbeitung beenden“), Abzeichen
+   „In Altium geöffnet“ auf den Galeriekarten. Die Sitzungsliste (`['altium', 'edit-sessions']`) pollt alle 3 s,
+   solange etwas beobachtet wird, sonst alle 30 s; die Übernahme-Jobs (`libraries.altium-edit`) melden sich selbst als
+   Toast und laden alle Daten neu. Eine in Altium bearbeitete Fassung (`source = 'altium'`) ersetzen „Bearbeiten“ und
+   „Neu generieren“ nur nach Rückfrage (`altiumEditRules.ts`).
 7. **Altium**: DbLib-Status (aktuell/veraltet) mit „Neu erzeugen", ODBC-Verbindungstest, „In Altium
    installieren/öffnen", Bibliotheksdateien (synchron/ausstehend) mit „Synchronisieren", Backend-Wahl,
    Prüfbericht („Bibliothek prüfen") mit Fix-Aktionen.

@@ -14,6 +14,7 @@ import { PageActions } from '@/app/page'
 import { useRegisterCommands } from '@/app/commands'
 import { GalleryCard, VirtualGallery } from '@/components/data'
 import { CHROME_MUTED } from '@/components/preview'
+import { useAltiumEditTargets } from '@/api/altiumEdit'
 import { Badge, Button, EmptyState, Input, SegmentedControl, Select, Skeleton } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { formatNumber, plural } from '@/lib/format'
@@ -335,6 +336,7 @@ function SavedCard({
 }) {
   useI18n()
   const meta = statusMeta(entry.status)
+  const inAltium = useAltiumEditTargets('footprint').has(entry.name.toLocaleLowerCase('en'))
   return (
     <GalleryCard
       board
@@ -349,7 +351,11 @@ function SavedCard({
         .filter(Boolean)
         .join(' · ')}
       badge={
-        entry.status !== 'ok' ? (
+        inAltium ? (
+          <Badge variant="info" dot size="sm">
+            {tr('In Altium geöffnet')}
+          </Badge>
+        ) : entry.status !== 'ok' ? (
           <Badge variant={meta.variant} dot size="sm">
             {tr(meta.label)}
           </Badge>

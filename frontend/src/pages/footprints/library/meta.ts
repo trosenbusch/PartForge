@@ -18,4 +18,5 @@ export const SOURCE_LABEL: Record<string, string> = {
   datasheet: 'Datenblatt (KI)',
   imported: 'Importiert',
   external: 'Externe Bibliothek',
+  altium: 'In Altium bearbeitet',
 }

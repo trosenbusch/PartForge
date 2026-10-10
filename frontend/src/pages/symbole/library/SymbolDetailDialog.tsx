@@ -3,7 +3,8 @@ import { localizeMessage, t as tr, useI18n } from '@/components/preview/i18n'
  * Detailansicht eines Bibliothekssymbols (Leinwand mit Teilen, Verwendung mit Liste der Bauteile, Datei, Status, Pins)
  * mit „Bearbeiten“ (öffnet den Generator mit `spec.generator`) und „Neu generieren“ (gleiche Anfrage mit dem aktuellen
  * Hausstil; Probelauf zeigt Pinänderungen – erst nach Rückfrage gespeichert) – bzw. eines Symboltyps aus dem Katalog
- * („Im Generator öffnen“).
+ * („Im Generator öffnen“). „In Altium bearbeiten“ öffnet die SchLib in Altium; PartForge übernimmt das Speichern dort
+ * (`@/pages/_shared/AltiumEdit`) – eine so bearbeitete Fassung ersetzen „Bearbeiten“ und „Neu generieren“ nur nach Rückfrage.
  */
 import { useQueryClient } from '@tanstack/react-query'
 import { ChevronRight, Copy, Cpu, ExternalLink, FolderOpen, Microchip, Pencil, RefreshCw, Shapes, Square, Trash2 } from 'lucide-react'
@@ -11,6 +12,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
 import { ApiError, errorMessage } from '@/api/client'
+import { altiumPreviousSource } from '@/api/altiumEdit'
 import { useCategories } from '@/api/library'
 import { usePartsUsing } from '@/api/parts'
 import type { Job } from '@/api/system'
@@ -44,6 +46,8 @@ import { cn } from '@/lib/cn'
 import { baseName, formatDateTime, formatNumber, formatRelativeTime, plural } from '@/lib/format'
 import { electricalLabel, partLetter, type SymbolSpec } from '@/lib/geometry'
 import { revealPath } from '@/lib/native'
+import { AltiumEditButton, AltiumEditStatus } from '@/pages/_shared/AltiumEdit'
+import { confirmReplaceAltiumVersion } from '@/pages/_shared/altiumEditRules'
 import { OverbarName } from '../shared'
 import { copyText, generatorName, generatorRequest, parseUpdated, SOURCE_LABEL, STATUS_LABEL } from '../util'
 import { openSpecInGenerator, pinListName, type OpenResult } from '../generator/load'
@@ -259,8 +263,9 @@ function LibrarySymbolBody({
   const status = rec ? (STATUS_LABEL[rec.status] ?? { label: rec.status, tone: 'neutral' as const }) : null
   const updated = parseUpdated(rec?.updated)
 
-  const edit = () => {
+  const edit = async () => {
     if (!spec) return
+    if (!asPinList && !(await confirmReplaceAltiumVersion(rec, 'edit'))) return
     const result = openSpecInGenerator(spec, kinds, { record: rec, entries })
     if (!result.ok) {
       toast.error(tr('Bearbeiten nicht möglich'), { description: tr('Das Symbol enthält weder Generator-Angaben noch Pins.') })
@@ -272,7 +277,10 @@ function LibrarySymbolBody({
 
   /** Gespeicherte Generator-Anfrage (ohne sie lässt sich nichts neu erzeugen) */
   const request = spec ? (generatorRequest(spec) as SymbolRequest | null) : null
-  const canRebuild = Boolean(request && rec && rec.source === 'generated')
+  const fromAltium = rec?.source === 'altium'
+  // eine in Altium bearbeitete Fassung lässt sich (nach Rückfrage) wieder aus dem Generator erzeugen
+  const canRebuild = Boolean(request && rec
+    && (rec.source === 'generated' || (fromAltium && altiumPreviousSource(spec?.generator) === 'generated')))
 
   /**
    * Mit dem aktuellen Hausstil neu erzeugen – nur nach Rückfrage speichern (Pinänderungen aus dem Probelauf). Ein eigener
@@ -323,6 +331,11 @@ function LibrarySymbolBody({
                 {dry.changes.length > 6 ? tr(" … und {value0} weitere", { value0: String(formatNumber(dry.changes.length - 6)) }) : ''}
               </span>
             )}
+            {!renamed && fromAltium && (
+              <span className="block font-medium text-warning-text">
+                {tr('„{0}“ wurde in Altium bearbeitet – diese Fassung wird ersetzt; Änderungen, die nur dort gemacht wurden, gehen verloren.', { 0: rec.name })}
+              </span>
+            )}
             {replaces && usedBy && (
               <span className={cn('block', renamed && 'font-medium text-warning-text')}>
                 {tr("{value0} {value1} – {value2} danach die neue Zeichnung.", { value0: String(usedBy), value1: String(renamed ? `„${fresh.name}“` : tr('das Symbol')), value2: String(dry.usage === 1 ? tr('es zeigt') : tr('sie zeigen')) })}
@@ -331,7 +344,7 @@ function LibrarySymbolBody({
           </span>
         ),
         confirmLabel: dry.needs_confirmation ? tr('Neue Belegung übernehmen') : replaces ? tr('Ersetzen') : tr('Neu speichern'),
-        destructive: replaces && (dry.needs_confirmation || dry.usage > 0),
+        destructive: replaces && (dry.needs_confirmation || dry.usage > 0 || (!renamed && fromAltium)),
       })
       if (!ok) return
       const out = await symbolsApi.save({ ...input, allow_pinout_change: dry.needs_confirmation })
@@ -403,6 +416,7 @@ function LibrarySymbolBody({
           )}
         </div>
         <div className="flex min-w-0 flex-col gap-4 @[44rem]:pt-9">
+          <AltiumEditStatus kind="symbol" name={rec.name} />
           <Usage name={rec.name} count={rec.usage} onNavigate={onClose} />
           <KeyValueList
             labelWidth="7.5rem"
@@ -484,6 +498,7 @@ function LibrarySymbolBody({
         )}
         <div className="flex items-center gap-2">
           <IconButtonCopy disabled={!rec} onClick={() => rec && void copyText(rec.name, tr('Symbolname'))} />
+          <AltiumEditButton kind="symbol" rec={rec} fileExists={data?.file_exists} />
           {canRebuild && (
             <Tooltip content={tr("Mit dem aktuellen Hausstil neu erzeugen – ändert sich etwas, fragt PartForge vor dem Speichern (inkl. Pinbelegung).")}>
               <Button variant="secondary" leftIcon={<RefreshCw />} loading={rebuilding} onClick={() => void rebuild()}>
@@ -493,12 +508,12 @@ function LibrarySymbolBody({
           )}
           {asPinList && spec ? (
             <Tooltip content={tr("Pins als neue IC-Pinliste „{value0}“ übernehmen – die Zeichnung von „{value1}“ bleibt unverändert.", { value0: String(pinListName(spec.name, entries)), value1: String(spec.name) })}>
-              <Button variant="primary" leftIcon={<Cpu />} disabled={rec?.source === 'external'} onClick={edit}>
+              <Button variant="primary" leftIcon={<Cpu />} disabled={rec?.source === 'external'} onClick={() => void edit()}>
                 {tr("Als IC-Pinliste übernehmen")}
               </Button>
             </Tooltip>
           ) : (
-            <Button variant="primary" leftIcon={<Pencil />} disabled={!spec || rec?.source === 'external'} onClick={edit}>
+            <Button variant="primary" leftIcon={<Pencil />} disabled={!spec || rec?.source === 'external'} onClick={() => void edit()}>
               {tr("Bearbeiten")}
             </Button>
           )}

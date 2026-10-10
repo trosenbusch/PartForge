@@ -845,6 +845,7 @@ export const HEALTH_JOB_KINDS: ReadonlySet<string> = new Set([
   'libraries.layers',
   'libraries.import',
   'libraries.conform',
+  'libraries.altium-edit',
 ])
 
 /** Direkte Schreibzugriffe (ohne Job), nach denen der Bericht nicht mehr stimmt: Bauteile, Kategorien, externe Bibliotheken */

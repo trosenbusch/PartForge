@@ -151,6 +151,7 @@ export const SOURCE_LABEL: Record<string, string> = {
   datasheet: 'Datenblatt',
   imported: 'Importiert',
   external: 'Extern',
+  altium: 'In Altium bearbeitet',
 }
 
 export const STATUS_LABEL: Record<string, { label: string; tone: 'success' | 'warning' | 'danger' | 'neutral' }> = {

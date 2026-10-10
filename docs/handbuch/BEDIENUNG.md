@@ -349,6 +349,38 @@ neuen Symbole und Footprints folgen ihm.
   Lagen und zeigt, was vom Hausstil abweicht – mit Beleg. Übernehmen Sie die gewünschten Werte und speichern Sie wie
   gewohnt (**Strg+S**). Die Beispielbibliothek bleibt unverändert.
 
+### In Altium bearbeiten
+
+Was der Generator nicht kann – eine Sonderform des Bestückungsdrucks, ein anderes 3D-Modell, eine eigene
+Pin-Anordnung –, ändern Sie direkt in Altium Designer:
+
+1. Öffnen Sie unter **Bibliothek** das Symbol bzw. den Footprint und klicken Sie auf **In Altium bearbeiten**.
+   Altium muss laufen; PartForge öffnet die SchLib/PcbLib, zeigt das Bauteil und holt Altium nach vorn.
+2. Ändern Sie das Bauteil in Altium und speichern Sie (**Strg+S**). Sie können mehrmals speichern.
+3. Wenige Sekunden nach jedem Speichern übernimmt PartForge die Änderungen: Vorschau, Pins bzw. Pads, Bauhöhe und
+   3D-Modell kommen aus der gespeicherten Datei, die Herkunft lautet *In Altium bearbeitet*. Eine Meldung nennt die
+   übernommenen Bauteile – auch andere, die Sie in derselben Datei geändert oder neu angelegt haben.
+
+Solange PartForge die Datei beobachtet, zeigt die Detailansicht **In Altium geöffnet** mit **Jetzt übernehmen** und
+**Bearbeitung beenden**; in der Bibliothek tragen solche Bauteile das Abzeichen *In Altium geöffnet*. Die Beobachtung
+übersteht einen Neustart von PartForge und endet von selbst, wenn Altium beendet wird oder zwölf Stunden lang nicht
+gespeichert wurde.
+
+Gut zu wissen:
+
+- Das Bauteil, das Sie mit **In Altium bearbeiten** geöffnet haben, gilt nach jedem Speichern als bearbeitet – so
+  geht auch eine Änderung nicht verloren, die PartForge nicht darstellen kann (etwa am 3D-Modell). Bei den übrigen
+  Bauteilen derselben Datei zählt nur eine Änderung an Geometrie, Pins/Pads, Texten, Beschreibung oder Bauhöhe; ein
+  bloßes Neuspeichern nicht (Altium schreibt die Datei dabei komplett neu, PartForge erkennt das). Ändern Sie an einem
+  anderen Bauteil nur das 3D-Modell, öffnen Sie es dafür ebenfalls mit **In Altium bearbeiten**.
+- **Bearbeiten** (Generator) und **Neu generieren** ersetzen eine in Altium bearbeitete Fassung erst nach Rückfrage;
+  die vorherige Datei bleibt in `Backups\lib`.
+- Benennen Sie ein Bauteil in Altium um, meldet PartForge das: Der neue Name wird übernommen, Bauteile verweisen aber
+  weiter auf den alten Namen (Status *Fehlt*) – passen Sie die Verweise an oder benennen Sie es zurück.
+- Ändern Sie in Altium die Pins eines Symbols, nennt die Meldung die Änderung und wie viele Bauteile es verwenden;
+  die Bibliotheksprüfung zeigt danach unpassende Pin/Pad-Zuordnungen.
+- Bauteile externer Bibliotheken und noch nicht synchronisierte Bauteile lassen sich so nicht bearbeiten.
+
 ### Bibliotheken importieren
 
 Die Seite **Bibliotheksimport** übernimmt Symbole und Footprints vorhandener Altium-Bibliotheken – etwa einer

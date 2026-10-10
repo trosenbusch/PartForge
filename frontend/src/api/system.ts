@@ -124,6 +124,8 @@ export const LIBRARY_JOB_KINDS: ReadonlySet<string> = new Set([
   'libraries.layers',
   'libraries.import',
   'libraries.conform',
+  'altium.edit',
+  'libraries.altium-edit',
   'series',
   'datasheet-commit',
   'import',

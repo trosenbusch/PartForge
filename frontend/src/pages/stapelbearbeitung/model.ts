@@ -18,11 +18,11 @@ import { baseName, formatDecimal, formatNumber, plural } from '@/lib/format'
 // --------------------------------------------------------------------------- Auswahl
 
 export type Kind = 'symbol' | 'footprint'
-export type Source = 'imported' | 'generated' | 'datasheet'
+export type Source = 'imported' | 'generated' | 'datasheet' | 'altium'
 export type LibraryFileKind = 'schlib' | 'pcblib'
 
 export const KINDS: readonly Kind[] = ['symbol', 'footprint']
-export const SOURCES: readonly Source[] = ['imported', 'generated', 'datasheet']
+export const SOURCES: readonly Source[] = ['imported', 'generated', 'datasheet', 'altium']
 
 export const KIND_LABEL: Record<Kind, string> = { get symbol() { return tr("Symbole") }, footprint: 'Footprints' }
 /** Herkunft eines registrierten Symbols/Footprints (`RecordSource`) */
@@ -30,12 +30,14 @@ export const SOURCE_LABEL: Record<string, string> = {
   get imported() { return tr("Importiert") },
   get generated() { return tr("Erzeugt") },
   get datasheet() { return tr("Aus Datenblatt") },
+  get altium() { return tr("In Altium bearbeitet") },
   get external() { return tr("Extern") },
 }
 const SOURCE_ADJECTIVE: Record<Source, string> = {
   get imported() { return tr("importierte") },
   get generated() { return tr("erzeugte") },
   get datasheet() { return tr("aus Datenblättern übernommene") },
+  get altium() { return tr("in Altium bearbeitete") },
 }
 export const FILE_KIND_OF: Record<Kind, LibraryFileKind> = { symbol: 'schlib', footprint: 'pcblib' }
 
