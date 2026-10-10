@@ -155,9 +155,31 @@ function thirdPartyLicenses(): Plugin {
         }
       }
       const helpers = RUNTIME_HELPERS.map((name) => fileURLToPath(new URL(`./node_modules/${name}`, import.meta.url)))
+      // The STEP parser is bundled by a separate worker build, outside this module graph.
+      const stepDir = fileURLToPath(new URL('./node_modules/occt-import-js', import.meta.url))
+      const stepPackage = readPackage(stepDir)
+      if (stepPackage) {
+        stepPackage.license += ' (Open CASCADE Technology: LGPL-2.1 mit OCCT-Ausnahme)'
+        for (const file of ['dist/license.occt.txt', 'dist/license.occt-import-js.txt']) {
+          stepPackage.texts.push({ file, text: readFileSync(join(stepDir, file), 'utf8').trim() })
+        }
+        stepPackage.texts.push({
+          file: 'Open CASCADE Technology / OCCT_LGPL_EXCEPTION.txt',
+          text: readFileSync(new URL('../scripts/licenses/occt-lgpl-exception.txt', import.meta.url), 'utf8').trim(),
+        }, {
+          file: 'STEP library sources and rebuild instructions',
+          text: [
+            'The STEP preview uses Open CASCADE Technology, distributed unchanged as a separate WASM file.',
+            'occt-import-js 0.0.23: https://github.com/kovacsv/occt-import-js/tree/0.0.23',
+            'Open CASCADE Technology 7.6.1 (d2abb6d844231cb8f29be6894440874a4700e4a5): https://github.com/Open-Cascade-SAS/OCCT/tree/V7_6_1',
+            'Sources, rebuilding and replacing the library: https://github.com/trosenbusch/PartForge/blob/main/THIRD_PARTY_NOTICES.md',
+          ].join('\n'),
+        })
+      }
       const packages = [
         ...[...dirs].filter((dir) => existsSync(join(dir, 'package.json'))).map((dir) => readPackage(dir)),
         ...helpers.filter((dir) => existsSync(join(dir, 'package.json'))).map((dir) => readPackage(dir, true)),
+        stepPackage,
       ].filter((p): p is BundledPackage => p !== null)
       // je Paketname eine Fassung (verschachtelte Kopien gleicher Version zusammenfassen)
       const unique = new Map<string, BundledPackage>()

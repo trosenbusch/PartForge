@@ -82,6 +82,10 @@ export function PartPreview({ row, designatorPrefix, className }: { row: PartRow
         onTabChange={setTab}
         symbol={symbol.data?.spec ?? null}
         footprint={footprint.data?.spec ?? null}
+        stepSource={footprint.data ? {
+          name: footprint.data.record.name,
+          revision: footprint.data.record.content_hash ?? footprint.data.record.updated,
+        } : undefined}
         loading={{ symbol: symbol.isFetching && !symbol.data, footprint: footprint.isFetching && !footprint.data }}
         error={{ symbol: s.message, footprint: f.message }}
         emptyText={{

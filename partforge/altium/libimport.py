@@ -137,7 +137,7 @@ class LibraryImportOptions(BaseModel):
     files: list[str] | None = Field(default=None, description="Gewählte Dateien (rel), None = alle")
     target: str | None = Field(default=None, description="Zielordner unter Symbols\\Import bzw. Footprints\\Import")
     replace: bool = Field(default=False, description="Geänderte, schon importierte Dateien überschreiben")
-    extract_3d: bool = Field(default=False, description="Eingebettete 3D-Modelle für die Vorschau in 3D\\ ablegen")
+    extract_3d: bool = Field(default=False, description="Eingebettete STEP-Modelle vorab in 3D\\ ablegen; ohne diese Option lädt die Vorschau sie bei Bedarf")
     convert: bool = Field(default=False, description="Danach an den Hausstil angleichen (Stapelbearbeitung)")
 
 

@@ -23,7 +23,7 @@ die Auswahl bleibt auch nach einem Neustart erhalten.
 | **Datenblatt-Import** | PDF ablegen oder „Datenblatt suchen“ → Claude liest Hersteller, Bestellvarianten, Parameter, Pinbelegung und Gehäusemaße → Vorschlag mit Symbol, Footprint und 3D → ein Klick übernimmt alles. |
 | **Footprint-Generator** | IPC-7351B (Dichte L/N/M) für 21 Gehäusefamilien von 01005 bis BGA und THT, mit Bemaßung, Berechnungsnachweis, 3D-Körper und STEP-Export. |
 | **Symbol-Generator** | Rund 40 Standardsymbole im Hausstil plus IC-Symbole aus Pinlisten mit automatischer Pin-Anordnung und Mehrteil-Symbolen. |
-| **Bibliotheksimport** | Symbole und Footprints vorhandener Altium-Bibliotheken übernehmen: Ordner, SchLib/PcbLib, IntLib, LibPkg oder ZIP; Namenskonflikte werden erkannt, aus den Symbolen entsteht auf Wunsch eine Bauteiltabelle. |
+| **Bibliotheksimport** | Symbole und Footprints vorhandener Altium-Bibliotheken übernehmen: Ordner, SchLib/PcbLib, IntLib, LibPkg oder ZIP; Namenskonflikte werden erkannt, aus den Symbolen entsteht auf Wunsch eine Bauteiltabelle. Eingebettete STEP-Modelle erscheinen in der 3D-Vorschau, auch bei bestehenden Importen ohne erneuten Import. |
 | **Stapelbearbeitung** | Importierte Symbole und Footprints in einem Arbeitsgang an den Hausstil angleichen (Schriften, Pinlängen, Präfixe, Lagen, Linienbreiten, Texte, Lagensatz) – verlustfrei, mit Sicherung und Rückgängig; Hausstil aus einer Beispielbibliothek übernehmen. |
 | **Altium** | DbLib automatisch aktuell halten, in Altium installieren, „In Altium aktualisieren“, alle Bauteile in Altium prüfen, Lagen nach der eigenen `.stackup`-Vorlage und eigener Lagensatz (`.layerset`). |
 

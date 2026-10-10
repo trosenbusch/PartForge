@@ -553,6 +553,19 @@ def _npm_component(folder: Path, meta: dict[str, Any], *, helper: str = "") -> C
     texts = _dedupe(texts)
     if license == "siehe Lizenztext":
         license = guess_license(texts) or license
+    if name == "occt-import-js":
+        license += " (Open CASCADE Technology: LGPL-2.1 mit OCCT-Ausnahme)"
+        helper = (
+            "Die STEP-Vorschau verwendet Open CASCADE Technology, unverändert als separates WASM im Web Worker. "
+            "occt-import-js 0.0.23: https://github.com/kovacsv/occt-import-js/tree/0.0.23 ; "
+            "Open CASCADE Technology 7.6.1 (Submodul d2abb6d844231cb8f29be6894440874a4700e4a5): "
+            "https://github.com/Open-Cascade-SAS/OCCT/tree/V7_6_1 . "
+            "Quellen, Bau und Austausch: https://github.com/trosenbusch/PartForge/blob/main/THIRD_PARTY_NOTICES.md ."
+        )
+        # The npm tarball has OCCT's LGPL text but omits the accompanying exception.
+        # Shared with the frontend's notice builder; copied verbatim from OCCT V7_6_1.
+        texts.append(("Open CASCADE Technology / OCCT_LGPL_EXCEPTION.txt",
+                      read_text(LICENSE_DIR / "occt-lgpl-exception.txt")))
     return Component(name=name, version=str(pkg.get("version", "")), license=license, url=_npm_url(pkg, name),
                      note=helper, texts=texts)
 
@@ -601,7 +614,8 @@ def render(python: list[Component], frontend: list[Component], *, version: str, 
         "",
         "PartForge selbst steht unter der MIT-Lizenz (Datei LICENSE). Das Programmpaket enthält die unten",
         "aufgeführten Komponenten von Drittanbietern; zu jeder folgen Lizenz, Quelle und die Lizenztexte.",
-        "Copyleft: Keine Komponente steht ausschließlich unter GPL/LGPL/AGPL – odfpy wird unter Apache-2.0 genutzt,",
+        "Copyleft: Die STEP-Vorschau nutzt occt-import-js (LGPL-2.1) und Open CASCADE Technology",
+        "(LGPL-2.1 mit OCCT-Ausnahme); odfpy wird unter Apache-2.0 genutzt,",
         "der PyInstaller-Bootloader steht unter GPL-2.0-or-later mit Bootloader-Ausnahme, certifi unter MPL-2.0",
         "(unveränderte Datei, Quelle: https://github.com/certifi/python-certifi).",
         "Nicht enthalten: altium-designer-mcp (GPL-3.0, separat zu installieren; Quelle:",

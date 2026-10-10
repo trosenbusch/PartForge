@@ -316,6 +316,19 @@ die PcbLib, **STEP herunterladen** liefert das 3D-Modell.
 
 ![3D-Ansicht](bilder/27-footprint-3d.png)
 
+**Importierte 3D-Modelle:** Öffnen Sie bei einem Bauteil oder einem Footprint aus der Bibliothek den Reiter
+**3D**. PartForge zeigt die tatsächliche STEP-Geometrie; mehrere Modelle eines Footprints werden mit ihren
+jeweiligen Drehungen und Positionen dargestellt. Eingebettete Modelle werden beim ersten Öffnen aus der
+importierten PcbLib gelesen und lokal zwischengespeichert. Das funktioniert auch bei bereits importierten
+Bibliotheken, für die **3D-Modelle vorab ablegen** ausgeschaltet war – ein erneuter Import ist nicht nötig.
+Die PcbLib bleibt unverändert, und für die Darstellung ist keine Internetverbindung erforderlich.
+
+Kann ein Modell nicht geladen werden, zeigt die Vorschau die Ursache an. Bei einem verknüpften statt eingebetteten
+STEP-Modell muss die referenzierte `.step`- oder `.stp`-Datei noch erreichbar sein; stellen Sie die Datei am
+ursprünglich verknüpften Ort wieder bereit. Für das Lesen eingebetteter Modelle muss der Bibliotheks-Writer eingerichtet sein.
+Die interaktive 3D-Ansicht benötigt WebGL im Browser bzw. in WebView2; ohne WebGL bleiben die 2D-Vorschau und
+der Download vorhandener STEP-Dateien verfügbar.
+
 **Hausstil:** Linienbreiten, Pin-1-Markierung, Namensschema, Symbolfarben, Schriften und die Zuordnung der
 mechanischen Lagen stellen Sie einmal unter *Einstellungen › Hausstil* ein (Reiter Footprints, Lagen, Symbole). Alle
 neuen Symbole und Footprints folgen ihm.
@@ -351,8 +364,12 @@ Hersteller-Bibliothek oder einer großen Sammlung wie der Celestial-Bibliothek.
    in der Quelle; übernommen wird der erste).
 3. **Importieren:** Dateien auswählen, den **Zielordner** festlegen (die Dateien landen in `Symbols\Import\<Ziel>` und
    `Footprints\Import\<Ziel>`) und **Importieren**. Optional: geänderte, schon importierte Dateien ersetzen,
-   eingebettete 3D-Modelle für die Vorschau ablegen und **danach an den Hausstil angleichen** (Regeln der letzten
+   **3D-Modelle vorab ablegen** und **danach an den Hausstil angleichen** (Regeln der letzten
    Stapelbearbeitung).
+
+**3D-Modelle vorab ablegen** speichert eingebettete STEP-Dateien schon beim Import im Ordner `3D`.
+Die Option ist standardmäßig aus: Die 3D-Vorschau lädt benötigte Modelle auch ohne sie aus der importierten
+PcbLib. So müssen bei großen Bibliotheken nicht sofort alle Modelle entpackt werden.
 
 Die Dateien werden unverändert kopiert – Schriften, Lagen und 3D-Modelle bleiben, wie sie sind. Mit **Bauteile
 anlegen …** erzeugt PartForge aus den importierten Symbolen eine Tabelle (Teilenummer, Symbol, Footprint, Parameter)

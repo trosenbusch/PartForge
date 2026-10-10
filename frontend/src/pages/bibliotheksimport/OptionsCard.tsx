@@ -113,13 +113,13 @@ export function OptionsCard({
             checked={options.extract3d}
             onCheckedChange={(extract3d) => onOptionsChange({ extract3d })}
             disabled={starting || plan.footprints === 0}
-            label="3D‑Modelle ablegen"
+            label={t("3D-Modelle vorab ablegen")}
             description={
               plan.footprints === 0
                 ? t("Keine Footprints in der Auswahl.")
                 : plan.with3d > 0
-                  ? t("{0} ein 3D‑Modell – für die 3D‑Vorschau im Ordner „3D“ ablegen.", { "0": String(plural(plan.with3d, t("Footprint hat"), t("Footprints haben"))) })
-                  : t("Eingebettete 3D‑Modelle für die 3D‑Vorschau im Ordner „3D“ ablegen.")
+                  ? t("{0} ein 3D-Modell. STEP-Dateien jetzt im Ordner „3D“ ablegen; sonst lädt die Vorschau sie bei Bedarf.", { "0": String(plural(plan.with3d, t("Footprint hat"), t("Footprints haben"))) })
+                  : t("Eingebettete STEP-Dateien jetzt im Ordner „3D“ ablegen; sonst lädt die Vorschau sie bei Bedarf.")
             }
           />
           <div className="flex flex-col gap-1">

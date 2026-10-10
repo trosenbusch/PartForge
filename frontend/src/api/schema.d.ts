@@ -1494,6 +1494,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/libraries/footprints/{name}/step-models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Footprint Step Models
+         * @description Read all STEP references, lazily extracting embedded data into the private cache.
+         *
+         *     Import-time extraction is not required. Original library bytes and registry records
+         *     are preserved. Generated STEP copies of existing prisms are omitted from the preview.
+         */
+        get: operations["footprint_step_models_api_libraries_footprints__name__step_models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/libraries/footprints/{name}/step-models/{model_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Footprint Step Model
+         * @description Serve only a currently registered model; no caller-supplied file paths are accepted.
+         */
+        get: operations["footprint_step_model_api_libraries_footprints__name__step_models__model_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/libraries/footprints/{name}/step": {
         parameters: {
             query?: never;
@@ -4976,6 +5019,46 @@ export interface components {
              */
             exists: boolean;
         };
+        /** FootprintStepModel */
+        FootprintStepModel: {
+            /**
+             * Id
+             * @description Opaque model revision, bound to the active workspace and file contents
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Url
+             * @description Authenticated relative URL of this STEP revision
+             */
+            url: string;
+            /**
+             * Rotation
+             * @description X/Y/Z rotations in degrees
+             */
+            rotation: [
+                number,
+                number,
+                number
+            ];
+            /**
+             * Offset
+             * @description X/Y/Z translation in millimetres
+             */
+            offset: [
+                number,
+                number,
+                number
+            ];
+        };
+        /** FootprintStepModels */
+        FootprintStepModels: {
+            /** Models */
+            models?: components["schemas"]["FootprintStepModel"][];
+            /** Warnings */
+            warnings?: string[];
+        };
         /** FootprintStyle */
         FootprintStyle: {
             /**
@@ -6233,7 +6316,7 @@ export interface components {
             replace: boolean;
             /**
              * Extract 3D
-             * @description Eingebettete 3D-Modelle für die Vorschau in 3D\ ablegen
+             * @description Eingebettete STEP-Modelle vorab in 3D\ ablegen; ohne diese Option lädt die Vorschau sie bei Bedarf
              * @default false
              */
             extract_3d: boolean;
@@ -13697,6 +13780,69 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FootprintEntry"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    footprint_step_models_api_libraries_footprints__name__step_models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FootprintStepModels"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    footprint_step_model_api_libraries_footprints__name__step_models__model_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+                model_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description STEP model at the requested revision */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "model/step": unknown;
                 };
             };
             /** @description Validation Error */

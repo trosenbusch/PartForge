@@ -4867,6 +4867,97 @@
         }
       }
     },
+    "/api/libraries/footprints/{name}/step-models": {
+      "get": {
+        "tags": [
+          "libraries"
+        ],
+        "summary": "Footprint Step Models",
+        "description": "Read all STEP references, lazily extracting embedded data into the private cache.\n\nImport-time extraction is not required. Original library bytes and registry records\nare preserved. Generated STEP copies of existing prisms are omitted from the preview.",
+        "operationId": "footprint_step_models_api_libraries_footprints__name__step_models_get",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FootprintStepModels"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/libraries/footprints/{name}/step-models/{model_id}": {
+      "get": {
+        "tags": [
+          "libraries"
+        ],
+        "summary": "Footprint Step Model",
+        "description": "Serve only a currently registered model; no caller-supplied file paths are accepted.",
+        "operationId": "footprint_step_model_api_libraries_footprints__name__step_models__model_id__get",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          },
+          {
+            "name": "model_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Model Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "STEP model at the requested revision",
+            "content": {
+              "model/step": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/libraries/footprints/{name}/step": {
       "get": {
         "tags": [
@@ -13067,6 +13158,89 @@
         ],
         "title": "FootprintStepInfo"
       },
+      "FootprintStepModel": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Opaque model revision, bound to the active workspace and file contents"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "Authenticated relative URL of this STEP revision"
+          },
+          "rotation": {
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array",
+            "maxItems": 3,
+            "minItems": 3,
+            "title": "Rotation",
+            "description": "X/Y/Z rotations in degrees"
+          },
+          "offset": {
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array",
+            "maxItems": 3,
+            "minItems": 3,
+            "title": "Offset",
+            "description": "X/Y/Z translation in millimetres"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "url",
+          "rotation",
+          "offset"
+        ],
+        "title": "FootprintStepModel"
+      },
+      "FootprintStepModels": {
+        "properties": {
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/FootprintStepModel"
+            },
+            "type": "array",
+            "title": "Models"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "type": "object",
+        "title": "FootprintStepModels"
+      },
       "FootprintStyle": {
         "properties": {
           "density": {
@@ -15514,7 +15688,7 @@
           "extract_3d": {
             "type": "boolean",
             "title": "Extract 3D",
-            "description": "Eingebettete 3D-Modelle für die Vorschau in 3D\\ ablegen",
+            "description": "Eingebettete STEP-Modelle vorab in 3D\\ ablegen; ohne diese Option lädt die Vorschau sie bei Bedarf",
             "default": false
           },
           "convert": {

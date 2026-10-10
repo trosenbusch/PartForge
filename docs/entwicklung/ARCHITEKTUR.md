@@ -618,6 +618,15 @@ SVG-/3D-Vorschau, STEP); das Frontend spiegelt ihn über OpenAPI.
   Eckenradius %, Seite (top/bottom/through), Bohrung, Langloch (`hole_length`, `hole_rotation`), Paste/Maske,
   `thermal` (EP).
 * 3D: `Body3D` = extrudiertes Prisma (Umriss + z-Bereich + Farbe); optional `StepModel` (Datei, Drehung, Versatz).
+  Registrierte Footprints können zusätzlich mehrere originale STEP-Körper aus einer PcbLib darstellen:
+  `altium.step_preview.resolve_models` liefert Dateiversion, Modellname, Drehung und Versatz je Körper,
+  ohne die editierbare Spec oder die PcbLib zu verändern. `GET /api/libraries/footprints/{name}/step-models`
+  liefert das Modellverzeichnis mit Hinweisen; `…/step-models/{model_id}` liefert die STEP-Bytes. Beide Routen
+  halten den Workspace während des Zugriffs. Modell-IDs binden Bibliothek, Footprint, Inhalt und Platzierung;
+  der Client kann keine beliebigen Dateipfade anfordern. Eingebettete Modelle werden bei Bedarf über den
+  vorhandenen Extraktionscache gelesen; gespeicherte STEP-Dateien funktionieren auch ohne Writer.
+  Automatisch aus `Body3D` erzeugte STEP-Dateien werden nicht zusätzlich über dieselben Prismen gezeichnet.
+  Die Tessellierung erfolgt offline im Frontend-Web-Worker mit `occt-import-js`, siehe `FRONTEND.md`.
 * Texte: `FpText.font` (`stroke` | `truetype`) und `font_name` (TrueType-Schrift). Die Standardwerte zählen nicht
   zum Fingerabdruck und zur Identität (`geometry.model.compat_text_dump`) – ältere Footprints gelten dadurch nicht
   als geändert.
@@ -1220,7 +1229,9 @@ Dateien**; der Hausstil ist ein eigener, optionaler Schritt (§8.8).
   registriert (zuerst geprüft: doppelt in der Quelle, dann woanders registriert); eine Datei ohne übernehmbare Namen
   nicht kopiert; eine geänderte, schon importierte Datei nur mit `replace` – importierte Bauteile dieser Datei, die
   die neue Fassung nicht mehr enthält, werden dann abgemeldet (`removed`; sonst schriebe die nächste
-  Synchronisierung sie zurück). `extract_3d` legt eingebettete STEP-Modelle in `3D\` ab. `convert` gleicht danach die importierten
+  Synchronisierung sie zurück). `extract_3d` legt eingebettete STEP-Modelle vorab in `3D\` ab (Standard `false`).
+  Unabhängig davon liest die 3D-Vorschau benötigte Modelle aus der kopierten PcbLib bei Bedarf (§5), auch für
+  frühere Importe ohne Extraktion. `convert` gleicht danach die importierten
   Dateien an den Hausstil an (Regeln der letzten Stapelbearbeitung, `housestyle.saved_rules`). Ergebnis `copied,
   unchanged, symbols, footprints, libraries, conflicts, skipped, errors, removed, conversion, message`.
 * **Vorschau** `GET /api/library-import/preview?scan_id&rel&name&theme` (SVG, vor dem Import, über den Rust-Reader).

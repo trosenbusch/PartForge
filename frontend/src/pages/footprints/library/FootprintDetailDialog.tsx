@@ -169,7 +169,7 @@ function DetailContent({
   const generator = spec?.generator && typeof spec.generator === 'object' ? (spec.generator as Record<string, unknown>) : null
   const meta = statusMeta(rec.status)
   const canRegenerate = Boolean(family && generator && generator.params)
-  const hasStep = Boolean(detail.step?.exists || (detail.bodies ?? []).length)
+  const hasStep = Boolean(detail.step || (detail.bodies ?? []).length || rec.source === 'imported' || rec.source === 'external')
   const external = rec.source === 'external'
 
   const categories = useCategories()
@@ -364,8 +364,9 @@ function DetailContent({
         }
       />
       <DialogBody className="grid min-h-0 grid-cols-[minmax(0,1fr)_17.5rem] gap-5 overflow-hidden">
-        {spec ? (
-          <PreviewPanel footprint={spec} hideEmptyTabs defaultTab="footprint" title={rec.name} className="h-full min-h-[22rem]" />
+        {spec || rec.source === 'imported' || rec.source === 'external' ? (
+          <PreviewPanel footprint={spec} stepSource={{ name: rec.name, revision: rec.content_hash ?? rec.updated }}
+            hideEmptyTabs defaultTab={spec ? 'footprint' : '3d'} title={rec.name} className="h-full min-h-[22rem]" />
         ) : (
           <div className="flex items-center justify-center rounded-card border border-line bg-surface">
             <EmptyState

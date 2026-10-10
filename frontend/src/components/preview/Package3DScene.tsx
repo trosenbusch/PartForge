@@ -1,4 +1,3 @@
-import { useLocalizedMemo } from '@/components/preview/useLocalizedMemo'
 import { t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * 3D-Szene eines Footprints (three.js über @react-three/fiber) – wird von <Package3D> **lazy** geladen, damit three.js
@@ -9,7 +8,7 @@ import { t as tr, useI18n } from '@/components/preview/i18n'
  */
 import { ContactShadows, OrbitControls } from '@react-three/drei'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { useEffect, useId, useImperativeHandle, useRef, useState, type KeyboardEvent, type Ref, type RefObject } from 'react'
+import { useEffect, useId, useImperativeHandle, useMemo, useRef, useState, type KeyboardEvent, type Ref, type RefObject } from 'react'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
@@ -19,7 +18,6 @@ import {
   boxAdd,
   boxHeight,
   boxWidth,
-  emptyBox,
   footprintBBox,
   formatMm,
   isEmptyBox,
@@ -33,10 +31,13 @@ import {
   type Point,
 } from '@/lib/geometry'
 import { CanvasBadge, CanvasKeyHint } from './CanvasChrome'
+import { createStepGeometry, fitSceneBounds, type StepSceneModel } from './stepScene'
 import type { CanvasHandle } from './types'
 
 export interface Package3DSceneProps {
   spec: FootprintSpec
+  /** Tessellated STEP instances, with their individual Altium placements. */
+  stepModels?: readonly StepSceneModel[]
   autoRotate?: boolean
   onAutoRotateChange?: (on: boolean) => void
   /** Leiterplatte mit Pads und Bestückungsdruck zeigen */
@@ -160,14 +161,19 @@ interface BoardModel {
   barrels: THREE.BufferGeometry | null
   silk: THREE.BufferGeometry | null
   bodies: { body: Body3D; geometry: THREE.BufferGeometry; position: [number, number, number]; metal: boolean }[]
+  steps: (ReturnType<typeof createStepGeometry> & { key: string; opacity: number })[]
   /** Kugel der Szene (Kamera einpassen) */
   center: THREE.Vector3
   radius: number
   height: number
   size: Box
+  floor: number
+  shadowKey: string
 }
 
-function buildModel(spec: FootprintSpec, withBoard: boolean): BoardModel {
+const NO_STEP_MODELS: readonly StepSceneModel[] = []
+
+function buildModel(spec: FootprintSpec, withBoard: boolean, stepModels: readonly StepSceneModel[]): BoardModel {
   const content = footprintBBox(spec, { bodies: true })
   const box = isEmptyBox(content) ? { x1: -1, y1: -1, x2: 1, y2: 1 } : content
   const w = boxWidth(box)
@@ -239,14 +245,9 @@ function buildModel(spec: FootprintSpec, withBoard: boolean): BoardModel {
 
   // 3D-Körper
   const bodies: BoardModel['bodies'] = []
-  let height = 0
-  const all = emptyBox()
-  boxAdd(all, bx1, by1)
-  boxAdd(all, bx2, by2)
   for (const body of spec.bodies ?? []) {
     if (body.outline.length < 3) continue
     const h = Math.max(body.z_top - body.z_bottom, 0.01)
-    height = Math.max(height, body.z_top)
     const xs = body.outline.map((p) => p.x)
     const ys = body.outline.map((p) => p.y)
     const bw = Math.max(...xs) - Math.min(...xs)
@@ -266,6 +267,29 @@ function buildModel(spec: FootprintSpec, withBoard: boolean): BoardModel {
     bodies.push({ body, geometry: geo, position: [0, body.z_bottom, 0], metal })
   }
 
+  const steps = stepModels.flatMap((instance) => instance.meshes.map((mesh, index) => ({
+    ...createStepGeometry(mesh, instance),
+    key: `${instance.id}-${index}`,
+    opacity: Math.max(0, Math.min(1, instance.opacity ?? 1)),
+  })))
+  const packageBounds = bodies.map(({ geometry, position }) => {
+    geometry.computeBoundingBox()
+    return geometry.boundingBox!.clone().translate(new THREE.Vector3(...position))
+  })
+  for (const step of steps) packageBounds.push(step.geometry.boundingBox!)
+  const contentBounds = fitSceneBounds(packageBounds.length ? packageBounds : [
+    new THREE.Box3(new THREE.Vector3(box.x1, 0, -box.y2), new THREE.Vector3(box.x2, cu, -box.y1)),
+  ]).box
+  const visibleBounds = [...packageBounds]
+  if (withBoard) visibleBounds.push(new THREE.Box3(
+    new THREE.Vector3(bx1, -thickness - cu, -by2),
+    new THREE.Vector3(bx2, Math.max(cu, SILK_THICKNESS), -by1),
+  ))
+  const fit = fitSceneBounds(visibleBounds.length ? visibleBounds : [contentBounds])
+  const size = { ...box }
+  boxAdd(size, contentBounds.min.x, -contentBounds.max.z)
+  boxAdd(size, contentBounds.max.x, -contentBounds.min.z)
+
   const merge = (list: THREE.BufferGeometry[]) => {
     if (!list.length) return null
     const merged = mergeGeometries(list.map((g) => (g.index ? g.toNonIndexed() : g)), false)
@@ -273,12 +297,8 @@ function buildModel(spec: FootprintSpec, withBoard: boolean): BoardModel {
     return merged
   }
 
-  const topY = Math.max(height, cu)
-  const bottomY = withBoard ? -thickness : 0
-  const center = new THREE.Vector3((all.x1 + all.x2) / 2, (topY + bottomY) / 2, -(all.y1 + all.y2) / 2)
-  const radius = Math.hypot(boxWidth(all) / 2, boxHeight(all) / 2, (topY - bottomY) / 2)
   return {
-    box: all,
+    box: { x1: fit.box.min.x, y1: -fit.box.max.z, x2: fit.box.max.x, y2: -fit.box.min.z },
     thickness,
     board,
     padsTop: merge(top),
@@ -286,10 +306,13 @@ function buildModel(spec: FootprintSpec, withBoard: boolean): BoardModel {
     barrels: merge(barrels),
     silk: merge(silk),
     bodies,
-    center,
-    radius,
-    height,
-    size: box,
+    steps,
+    center: fit.center,
+    radius: fit.radius,
+    height: Math.max(0, contentBounds.max.y) - Math.min(0, contentBounds.min.y),
+    size,
+    floor: fit.box.min.y,
+    shadowKey: THREE.MathUtils.generateUUID(),
   }
 }
 
@@ -300,6 +323,7 @@ function disposeModel(m: BoardModel) {
   m.barrels?.dispose()
   m.silk?.dispose()
   m.bodies.forEach((b) => b.geometry.dispose())
+  m.steps.forEach((step) => step.geometry.dispose())
 }
 
 // --------------------------------------------------------------------------- Szene
@@ -337,7 +361,7 @@ function CameraRig({ model, rigRef }: { model: BoardModel; rigRef: RefObject<Rig
   const size = useThree((s) => s.size)
   const anim = useRef<{ from: THREE.Vector3; to: THREE.Vector3; fromT: THREE.Vector3; toT: THREE.Vector3; t0: number } | null>(null)
 
-  const target = useLocalizedMemo(() => {
+  const target = useMemo(() => {
     const vfov = ((fov || 30) * Math.PI) / 180
     const aspect = size.width / Math.max(size.height, 1)
     const hfov = 2 * Math.atan(Math.tan(vfov / 2) * aspect)
@@ -417,7 +441,7 @@ function SceneContent({
   rigRef: RefObject<RigApi | null>
 }) {
   useI18n()
-  const materials = useLocalizedMemo(
+  const materials = useMemo(
     () => ({
       mask: new THREE.MeshPhysicalMaterial({ color: '#0C3022', roughness: 0.55, metalness: 0.02, clearcoat: 0.28, clearcoatRoughness: 0.45 }),
       core: new THREE.MeshStandardMaterial({ color: '#5F5A43', roughness: 0.92, metalness: 0 }),
@@ -429,7 +453,7 @@ function SceneContent({
   )
   useEffect(() => () => Object.values(materials).forEach((m) => m.dispose()), [materials])
 
-  const bodyMaterials = useLocalizedMemo(
+  const bodyMaterials = useMemo(
     () =>
       model.bodies.map(({ body, metal }) =>
         metal
@@ -453,15 +477,37 @@ function SceneContent({
   )
   useEffect(() => () => bodyMaterials.forEach((m) => m.dispose()), [bodyMaterials])
 
-  const extent = Math.max(boxWidth(model.box), boxHeight(model.box))
+  const stepMaterials = useMemo(() => model.steps.map(({ colors, opacity }) => colors.map((rgb) => {
+    const color = new THREE.Color().setRGB(rgb[0], rgb[1], rgb[2], THREE.SRGBColorSpace)
+    const metal = isMetal(`#${color.getHexString()}`)
+    return new THREE.MeshStandardMaterial({
+      color,
+      roughness: metal ? 0.35 : 0.55,
+      metalness: metal ? 0.72 : 0.03,
+      opacity,
+      transparent: opacity < 1,
+      depthWrite: opacity >= 1,
+      side: THREE.DoubleSide,
+    })
+  })), [model])
+  useEffect(() => () => stepMaterials.flat().forEach((material) => material.dispose()), [stepMaterials])
+  const lightTarget = useMemo(() => {
+    const target = new THREE.Object3D()
+    target.position.copy(model.center)
+    return target
+  }, [model])
+
+  const extent = Math.max(boxWidth(model.box), boxHeight(model.box), model.height, 0.1)
   const lightDist = model.radius * 3
   return (
     <>
       <RoomEnvironmentMap />
       <ambientLight intensity={0.22} />
       <hemisphereLight args={['#E8EEFF', '#2A1A10', 0.55]} />
+      <primitive object={lightTarget} />
       <directionalLight
-        position={[lightDist * 0.55, lightDist * 1.1, lightDist * 0.75]}
+        target={lightTarget}
+        position={[model.center.x + lightDist * 0.55, model.center.y + lightDist * 1.1, model.center.z + lightDist * 0.75]}
         intensity={2.3}
         castShadow
         shadow-mapSize={[2048, 2048]}
@@ -476,8 +522,8 @@ function SceneContent({
         shadow-camera-far={lightDist * 4}
       />
       {/* kühles Gegenlicht + warme „Glut“ von links vorn */}
-      <directionalLight position={[-lightDist, lightDist * 0.5, -lightDist]} intensity={0.85} color="#9FB8FF" />
-      <directionalLight position={[-lightDist * 0.8, lightDist * 0.25, lightDist * 0.6]} intensity={0.45} color="#FFB27A" />
+      <directionalLight target={lightTarget} position={[model.center.x - lightDist, model.center.y + lightDist * 0.5, model.center.z - lightDist]} intensity={0.85} color="#9FB8FF" />
+      <directionalLight target={lightTarget} position={[model.center.x - lightDist * 0.8, model.center.y + lightDist * 0.25, model.center.z + lightDist * 0.6]} intensity={0.45} color="#FFB27A" />
 
       {showBoard && (
         <group>
@@ -500,10 +546,20 @@ function SceneContent({
             dispose={null}
           />
         ))}
+        {model.steps.map((step, index) => (
+          <mesh
+            key={step.key}
+            geometry={step.geometry}
+            material={stepMaterials[index]}
+            castShadow
+            receiveShadow
+            dispose={null}
+          />
+        ))}
       </group>
       <ContactShadows
-        key={`${model.radius.toFixed(3)}-${showBoard}`}
-        position={[model.center.x, (showBoard ? -model.thickness : 0) - 0.02, model.center.z]}
+        key={model.shadowKey}
+        position={[model.center.x, model.floor - 0.02, model.center.z]}
         scale={extent * 2.6}
         blur={2.6}
         opacity={0.55}
@@ -531,6 +587,7 @@ function SceneContent({
 
 export default function Package3DScene({
   spec,
+  stepModels = NO_STEP_MODELS,
   autoRotate = false,
   onAutoRotateChange,
   showBoard = true,
@@ -542,7 +599,7 @@ export default function Package3DScene({
 }: Package3DSceneProps) {
   useI18n()
   const uid = useId().replace(/:/g, '')
-  const model = useLocalizedMemo(() => buildModel(spec, showBoard), [spec, showBoard])
+  const model = useMemo(() => buildModel(spec, showBoard, stepModels), [spec, showBoard, stepModels])
   useEffect(() => () => disposeModel(model), [model])
   const controlsRef = useRef<OrbitControlsImpl | null>(null)
   const rigRef = useRef<RigApi | null>(null)
@@ -620,6 +677,8 @@ export default function Package3DScene({
       aria-roledescription={tr("3D-Ansicht")}
       aria-label={label}
       aria-describedby={`${uid}-help`}
+      data-step-models={stepModels.length}
+      data-step-meshes={model.steps.length}
       // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex
       tabIndex={0}
       onKeyDown={onKeyDown}
@@ -662,7 +721,7 @@ export default function Package3DScene({
       )}
       <CanvasKeyHint tone="board">{tr("Pfeiltasten drehen · +/− zoomen · 0 zurücksetzen · Leertaste dreht automatisch")}</CanvasKeyHint>
       <p id={`${uid}-help`} className="sr-only">
-        {(spec.bodies ?? []).length} {tr("3D-Körper, Höhe")}{' '}{formatMm(model.height)} {tr("Millimeter. Ziehen dreht, Mausrad zoomt, rechte Maustaste verschiebt. Pfeiltasten drehen, Plus und Minus zoomen, 0 setzt die Ansicht zurück, die Leertaste schaltet die automatische Drehung um.")}
+        {(spec.bodies ?? []).length + stepModels.length} {tr("3D-Körper, Höhe")}{' '}{formatMm(model.height)} {tr("Millimeter. Ziehen dreht, Mausrad zoomt, rechte Maustaste verschiebt. Pfeiltasten drehen, Plus und Minus zoomen, 0 setzt die Ansicht zurück, die Leertaste schaltet die automatische Drehung um.")}
       </p>
     </div>
   )

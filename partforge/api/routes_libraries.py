@@ -48,9 +48,10 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Literal
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from ..altium import layersets, stackup, sync
@@ -118,6 +119,19 @@ class FootprintStepInfo(BaseModel):
     file: str
     path: str | None = None
     exists: bool = False
+
+
+class FootprintStepModel(BaseModel):
+    id: str = Field(description="Opaque model revision, bound to the active workspace and file contents")
+    name: str
+    url: str = Field(description="Authenticated relative URL of this STEP revision")
+    rotation: tuple[float, float, float] = Field(description="X/Y/Z rotations in degrees")
+    offset: tuple[float, float, float] = Field(description="X/Y/Z translation in millimetres")
+
+
+class FootprintStepModels(BaseModel):
+    models: list[FootprintStepModel] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
 
 
 class FootprintDetail(BaseModel):
@@ -786,6 +800,58 @@ def _step_path(ws: Workspace, rec: FootprintRecord) -> Path | None:
     return ws.abs(file) if file else None
 
 
+@router.get("/libraries/footprints/{name:path}/step-models", response_model=FootprintStepModels)
+def footprint_step_models(name: str, response: Response, ws: Workspace = Depends(require_workspace)) -> FootprintStepModels:
+    """Read all STEP references, lazily extracting embedded data into the private cache.
+
+    Import-time extraction is not required. Original library bytes and registry records
+    are preserved. Generated STEP copies of existing prisms are omitted from the preview.
+    """
+    from ..altium.step_preview import resolve_models
+
+    with _direct_write(ws):
+        rec = registry.get_footprint(name, with_usage=False)
+        if rec is None:
+            raise HTTPException(status_code=404, detail=f"Footprint „{name}“ ist nicht registriert.")
+        models, warnings = resolve_models(ws, rec)
+        response.headers["Cache-Control"] = "private, no-cache"
+        return FootprintStepModels(models=[FootprintStepModel(
+            id=model.id, name=model.name,
+            url=f"/api/libraries/footprints/{quote(rec.name, safe='')}/step-models/{model.id}",
+            rotation=model.rotation, offset=model.offset,
+        ) for model in models], warnings=warnings)
+
+
+@router.get(
+    "/libraries/footprints/{name:path}/step-models/{model_id}", response_class=Response,
+    responses={200: {"content": {"model/step": {}}, "description": "STEP model at the requested revision"}},
+)
+def footprint_step_model(name: str, model_id: str, ws: Workspace = Depends(require_workspace)) -> Response:
+    """Serve only a currently registered model; no caller-supplied file paths are accepted."""
+    from ..altium.step_preview import resolve_models
+
+    with _direct_write(ws):
+        if len(model_id) != 64 or any(char not in "0123456789abcdef" for char in model_id):
+            raise HTTPException(status_code=404, detail="Das STEP-Modell wurde nicht gefunden.")
+        rec = registry.get_footprint(name, with_usage=False)
+        if rec is None:
+            raise HTTPException(status_code=404, detail=f"Footprint „{name}“ ist nicht registriert.")
+        models, _ = resolve_models(ws, rec)
+        model = next((item for item in models if item.id == model_id), None)
+        if model is None:
+            raise HTTPException(status_code=404, detail="Das STEP-Modell wurde geändert oder ist nicht mehr verfügbar. Bitte die Vorschau neu laden.")
+        try:
+            data = model.read()
+        except (OSError, ValueError) as exc:
+            raise HTTPException(status_code=409, detail="Das STEP-Modell wurde geändert oder ist nicht mehr verfügbar. Bitte die Vorschau neu laden.") from exc
+        return Response(content=data, media_type="model/step", headers={
+            "Content-Disposition": f"inline; filename*=UTF-8''{quote(model.name, safe='')}",
+            "Cache-Control": "private, max-age=31536000, immutable",
+            "ETag": f'"{model.id}"',
+            "X-Content-Type-Options": "nosniff",
+        })
+
+
 @router.get(
     "/libraries/footprints/{name:path}/step",
     response_class=Response,
@@ -793,25 +859,35 @@ def _step_path(ws: Workspace, rec: FootprintRecord) -> Path | None:
 )
 def download_step(name: str, ws: Workspace = Depends(require_workspace)) -> Response:
     """The footprint's STEP model (file in the 3D folder, or generated from its 3D bodies)."""
-    rec = registry.get_footprint(name)
-    if rec is None:
-        raise HTTPException(status_code=404, detail=f"Footprint „{name}“ ist nicht registriert.")
-    path = _step_path(ws, rec)
-    if path is not None and path.is_file():
-        return FileResponse(path, media_type="model/step", filename=path.name)
-    if rec.spec is not None and rec.spec.bodies:
-        from ..footprints import step_text
+    from ..altium.step_preview import resolve_models
 
-        try:
-            text = step_text(rec.spec)
-        except ValueError as exc:
-            raise HTTPException(status_code=404, detail=str(exc)) from exc
-        return Response(
-            content=text.encode("ascii"),
-            media_type="model/step",
-            headers={"Content-Disposition": f'attachment; filename="{rec.name}.step"'},
-        )
-    raise HTTPException(status_code=404, detail=f"Footprint „{rec.name}“ hat kein 3D-Modell.")
+    with _direct_write(ws):
+        rec = registry.get_footprint(name)
+        if rec is None:
+            raise HTTPException(status_code=404, detail=f"Footprint „{name}“ ist nicht registriert.")
+        models, _ = resolve_models(ws, rec)
+        if models:
+            model = models[0]
+            try:
+                data = model.read()
+            except (OSError, ValueError) as exc:
+                raise HTTPException(status_code=409, detail=str(exc)) from exc
+            return Response(content=data, media_type="model/step", headers={
+                "Content-Disposition": f"attachment; filename*=UTF-8''{quote(model.name, safe='')}",
+            })
+        if rec.spec is not None and rec.spec.bodies:
+            from ..footprints import step_text
+
+            try:
+                text = step_text(rec.spec)
+            except ValueError as exc:
+                raise HTTPException(status_code=404, detail=str(exc)) from exc
+            return Response(
+                content=text.encode("ascii"),
+                media_type="model/step",
+                headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quote(rec.name + '.step', safe='')}"},
+            )
+        raise HTTPException(status_code=404, detail=f"Footprint „{rec.name}“ hat kein 3D-Modell.")
 
 
 @router.get("/libraries/footprints/{name:path}/thumbnail.svg", response_class=Response, responses=_THUMBNAIL_RESPONSES)

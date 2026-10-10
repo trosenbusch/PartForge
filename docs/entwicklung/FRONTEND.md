@@ -27,12 +27,31 @@ Schlüssel in den englischen Katalogen unter `src/i18n/catalogs/`. Zahlen und Da
 | sonner | 2 | Toasts |
 | ag-grid-community / ag-grid-react | 36.2 | Bauteiltabelle (Theming-API, Quartz-Basis) |
 | three, @react-three/fiber, @react-three/drei | 0.186 / 9.8 / 10.7 | 3D-Vorschau der Gehäuse |
+| occt-import-js | 0.0.23 | STEP-Tessellierung mit OpenCascade als lokal gebündeltes WASM im Web Worker |
 | recharts | 3.10 | Dashboard-Diagramme |
 | react-dropzone | 20 | Datenblatt-Drop |
 | @fontsource-variable/inter, …/jetbrains-mono | 5 | Schriften lokal (App läuft offline) |
 
 Diese Versionen sind neuer als das Trainingswissen der Modelle. **Vor Nutzung einer API die Typdefinitionen
 im installierten Paket lesen** (z. B. `frontend/node_modules/ag-grid-react/dist/types/...`).
+
+### STEP-Vorschau
+
+`src/lib/step.ts` lädt STEP-Geometrie über einen Web Worker (`step.worker.ts`), damit die Oberfläche während
+der Tessellierung bedienbar bleibt. Worker und OpenCascade-WASM werden mit dem Programm ausgeliefert; kein CDN
+und kein externer Konvertierungsdienst sind nötig. Ergebnisse liegen in einem nach Inhalts-Hash begrenzten
+Speichercache. Abbruch, Zeit- und Größenlimits gelten auch für fehlerhafte Modelle.
+
+`src/components/preview/stepScene.ts` verbindet die STEP-Netze mit der vorhandenen Gehäusevorschau.
+OpenCascade liefert Millimeter und berücksichtigt die Baugruppenpositionen innerhalb der STEP-Datei. Zusätzlich
+folgen die in Altium gespeicherten Drehungen und Versätze jedes Modellkörpers; erst danach wird Z-oben auf
+das Y-oben-System des Viewers abgebildet. Gemeinsame Cache-Geometrie bleibt unverändert, jede sichtbare Instanz
+besitzt eigene Three.js-Puffer. Das Einpassen der Kamera verwendet die tatsächlichen Grenzen aller Modelle.
+
+Die registrierte Footprint-Vorschau holt das Modellverzeichnis erst beim Öffnen der 3D-Ansicht. Modelle werden
+über ihre IDs geladen; die API nimmt keine beliebigen Dateipfade entgegen. Ladefortschritt und Modellfehler
+stehen in der Vorschau, während die 2D-Ansicht weiterhin nutzbar ist. WebGL wird nur für die interaktive
+Darstellung benötigt, nicht für den STEP-Download.
 
 ## 2. Markenidee
 

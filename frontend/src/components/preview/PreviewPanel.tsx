@@ -23,6 +23,7 @@ import {
   Component as SymbolIcon,
 } from 'lucide-react'
 import { useRef, useState, type ReactNode } from 'react'
+import type { StepSource } from '@/api/stepModels'
 import {
   Dialog,
   DialogContent,
@@ -67,6 +68,7 @@ type PerTab<T> = T | Partial<Record<PreviewTab, T>>
 export interface PreviewPanelProps {
   symbol?: SymbolSpec | null
   footprint?: FootprintSpec | null
+  stepSource?: StepSource
   /** Rechenprotokoll des Footprint-Generators (Bemaßung Zmax/Gmin/Xmax) */
   calc?: unknown
   tab?: PreviewTab
@@ -181,6 +183,7 @@ function ViewState({
 export function PreviewPanel({
   symbol,
   footprint,
+  stepSource,
   calc,
   tab: tabProp,
   defaultTab,
@@ -208,9 +211,9 @@ export function PreviewPanel({
     const all: PreviewTab[] = ['symbol', 'footprint', '3d']
     if (!hideEmptyTabs) return all
     return all.filter((t) =>
-      t === 'symbol' ? Boolean(symbol) || Boolean(perTab(loading, t)) : Boolean(footprint) || Boolean(perTab(loading, t)),
+      t === 'symbol' ? Boolean(symbol) || Boolean(perTab(loading, t)) : Boolean(footprint) || (t === '3d' && Boolean(stepSource)) || Boolean(perTab(loading, t)),
     )
-  }, [hideEmptyTabs, symbol, footprint, loading])
+  }, [hideEmptyTabs, symbol, footprint, stepSource, loading])
 
   const [innerTab, setInnerTab] = useState<PreviewTab>(defaultTab ?? (symbol ? 'symbol' : footprint ? 'footprint' : 'symbol'))
   const tab = available.includes(tabProp ?? innerTab) ? (tabProp ?? innerTab) : (available[0] ?? 'symbol')
@@ -291,19 +294,23 @@ export function PreviewPanel({
     </div>
   )
 
+  const threeSpec: FootprintSpec | null = footprint ?? (stepSource ? {
+    name: stepSource.name, description: '', family: '', pads: [], tracks: [], arcs: [], regions: [], texts: [], bodies: [],
+  } : null)
   const threeView = () => (
     <div className="relative size-full">
-      {footprint && (
+      {threeSpec && (
         <Package3D
           ref={threeRef}
-          spec={footprint}
+          spec={threeSpec}
+          stepSource={stepSource}
           autoRotate={prefs.autoRotate}
           onAutoRotateChange={(autoRotate) => prefs.set({ autoRotate })}
           className="absolute inset-0"
         />
       )}
       <ViewState
-        hasContent={Boolean(footprint)}
+        hasContent={Boolean(threeSpec)}
         loading={perTab(loading, '3d') ?? perTab(loading, 'footprint')}
         error={perTab(error, '3d') ?? perTab(error, 'footprint')}
         empty={emptyText?.['3d'] ?? tr('Kein Footprint zugeordnet')}
@@ -522,6 +529,7 @@ export function PreviewPanel({
               <PreviewPanel
                 symbol={symbol}
                 footprint={footprint}
+                stepSource={stepSource}
                 calc={calc}
                 tab={tab}
                 onTabChange={setTab}
