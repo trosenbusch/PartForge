@@ -117,7 +117,7 @@ function BatchEditor({ root }: { root: string }) {
         : !stats.pending
           ? 'Alles im Hausstil – nichts anzuwenden.'
           : stats.writeLibraries === 0
-            ? 'Keine der Bibliotheken lässt sich ändern (nicht lesbar bzw. übersprungen).'
+            ? 'Keine der Bibliotheken lässt sich ändern (nicht prüfbar bzw. übersprungen).'
             : null
 
   // ------------------------------------------------------------------ Aktionen

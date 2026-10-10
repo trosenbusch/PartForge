@@ -16,8 +16,10 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import subprocess
-from pathlib import Path
+from collections.abc import Sequence
+from pathlib import Path, PurePath
 
 log = logging.getLogger("partforge.desktop")
 
@@ -26,6 +28,43 @@ OPENABLE_SUFFIXES = {
     ".pdf", ".schlib", ".pcblib", ".dblib", ".intlib", ".libpkg", ".step", ".stp",
     ".xlsx", ".xls", ".csv", ".ods", ".png", ".jpg", ".jpeg", ".svg", ".txt", ".md", ".log", ".json",
 }
+
+ALL_FILES = "Alle Dateien (*.*)"
+_FILTER_RE = re.compile(r"^\s*(?P<label>[^()]*?)\s*\((?P<patterns>[^()]*)\)\s*$")
+_PATTERN_RE = re.compile(r"\*(?:\.(?:\w+|\*))*")
+
+
+def file_types(filters: Sequence[str] | None) -> tuple[str, ...]:
+    """File filters of the web UI as pywebview accepts them, plus :data:`ALL_FILES` (last, once).
+
+    pywebview rejects a whole dialog for one filter it does not like (``ValueError``: the description may only hold
+    letters, digits, ``_`` and blanks, the patterns must look like ``*.ext``) – the button then seems dead. So other
+    characters in the description become blanks ("Altium-Bibliotheken" -> "Altium Bibliotheken"), a file name
+    pattern becomes its extension ("X2.EXE" -> "*.EXE") and a filter that stays unusable is left out (logged)."""
+    out: list[str] = []
+    for raw in filters or ():
+        found = _FILTER_RE.match(str(raw))
+        if found is None:
+            log.warning("Dateifilter ignoriert (Form „Beschreibung (*.ext)“ erwartet): %r", raw)
+            continue
+        label = re.sub(r"\s+", " ", re.sub(r"[^\w ]+", " ", found["label"])).strip() or "Dateien"
+        patterns: list[str] = []
+        for part in found["patterns"].split(";"):
+            part = part.strip()
+            if part and not part.startswith("*"):
+                part = f"*{PurePath(part).suffix}" if PurePath(part).suffix else ""
+            if part and _PATTERN_RE.fullmatch(part) and part not in patterns:
+                patterns.append(part)
+        if not patterns:
+            log.warning("Dateifilter ohne gültiges Muster ignoriert: %r", raw)
+            continue
+        entry = f"{label} ({';'.join(patterns)})"
+        if entry not in out:
+            out.append(entry)
+    if ALL_FILES in out:
+        out.remove(ALL_FILES)
+    out.append(ALL_FILES)
+    return tuple(out)
 
 
 class DesktopApi:
@@ -43,7 +82,11 @@ class DesktopApi:
         if window is None:
             return None
         directory = initial if initial and Path(initial).is_dir() else ""
-        result = window.create_file_dialog(webview.FileDialog.FOLDER, directory=directory)
+        try:
+            result = window.create_file_dialog(webview.FileDialog.FOLDER, directory=directory)
+        except Exception:
+            log.exception("Ordnerdialog fehlgeschlagen")
+            raise
         return str(result[0]) if result else None
 
     def pick_file(self, initial: str | None = None, filters: list[str] | None = None) -> str | None:
@@ -56,8 +99,12 @@ class DesktopApi:
         if initial:
             p = Path(initial)
             directory = str(p if p.is_dir() else p.parent) if (p.is_dir() or p.parent.is_dir()) else ""
-        file_types = tuple(filters or ()) + ("Alle Dateien (*.*)",)
-        result = window.create_file_dialog(webview.FileDialog.OPEN, directory=directory, file_types=file_types)
+        try:
+            result = window.create_file_dialog(webview.FileDialog.OPEN, directory=directory,
+                                               file_types=file_types(filters))
+        except Exception:
+            log.exception("Dateidialog fehlgeschlagen")
+            raise
         return str(result[0]) if result else None
 
     def save_file(self, suggested_name: str, content: str, filters: list[str] | None = None) -> str | None:
@@ -72,8 +119,12 @@ class DesktopApi:
         if window is None:
             return None
         name = Path(str(suggested_name or "PartForge-Export")).name
-        file_types = tuple(filters or ()) + ("Alle Dateien (*.*)",)
-        result = window.create_file_dialog(webview.FileDialog.SAVE, save_filename=name, file_types=file_types)
+        try:
+            result = window.create_file_dialog(webview.FileDialog.SAVE, save_filename=name,
+                                               file_types=file_types(filters))
+        except Exception:
+            log.exception("Speichern-Dialog fehlgeschlagen")
+            raise
         if not result:
             return None
         target = Path(result if isinstance(result, str) else result[0])

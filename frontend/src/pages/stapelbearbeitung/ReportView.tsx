@@ -199,8 +199,8 @@ function Summary({
       `${plural(stats.refused, 'Bibliothek wird', 'Bibliotheken werden')} beim Anwenden übersprungen.`,
     stats.unreadable > 0 &&
       (stats.unreadable === 1
-        ? '1 Bibliothek ist nicht lesbar und bleibt unverändert.'
-        : `${formatNumber(stats.unreadable)} Bibliotheken sind nicht lesbar und bleiben unverändert.`),
+        ? '1 Bibliothek ist nicht prüfbar und bleibt unverändert.'
+        : `${formatNumber(stats.unreadable)} Bibliotheken sind nicht prüfbar und bleiben unverändert.`),
   ].filter((n): n is string => Boolean(n))
 
   return (

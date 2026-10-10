@@ -283,3 +283,111 @@ def test_lone_courtyard_cross_depends_on_the_house_style():
     assert sorted(t.layer for t in plan.records.of_kind("track") if R.track_length(t) == approx(1.0)) == \
         ["Mechanical 15"] * 2
     assert [t.layer for t in plan.new] == ["Mechanical 17"] * 2
+
+
+# --------------------------------------------------------------------------- layer types the library declares
+
+
+def _vendor_header() -> dict[int, MechLayer]:
+    """Header of a vendor library with its own scheme (like an Altium IPC-wizard library)."""
+    return {
+        2: MechLayer(number=2, name="Fab Notes", kind="FabNotes"),
+        5: MechLayer(number=5, name="Top Assembly", kind="AssemblyTop"),
+        7: MechLayer(number=7, name="Top Value", kind="ValueTop"),
+        9: MechLayer(number=9, name="Top Designator", kind="DesignatorTop"),
+        11: MechLayer(number=11, name="Top Dimensions", kind="DimensionsTop"),
+        15: MechLayer(number=15, name="Top Courtyard", kind="CourtyardTop"),
+        18: MechLayer(number=18, name="Bottom Component Center", kind="ComponentCenterBottom"),
+        20: MechLayer(number=20, name="Bottom Component Outline", kind="ComponentOutlineBottom"),
+    }
+
+
+def _vendor_footprint(name: str = "CONN") -> R.FootprintRecords:
+    return footprint(name, [
+        pad("1", -1.25, 0, 1.0, 1.5), pad("2", 1.25, 0, 1.0, 1.5),
+        *rect("Mechanical 5", -2.0, -1.5, 2.0, 1.5),                      # assembly drawing
+        *rect("Mechanical 15", -2.5, -2.0, 2.5, 2.0, 0.05),               # courtyard
+        *rect("Mechanical 11", -3.0, -2.5, 3.0, 2.5),                     # dimensions (bigger than everything)
+        *rect("Mechanical 20", -2.6, -2.1, 2.6, 2.1),                     # bottom outline
+        track("Mechanical 9", -0.4, 1.0, 0.4, 1.0),                       # graphics on the designator layer
+        R.new_track("Mechanical 9", 0, 0.8, 0.2, 1.2, 0.1),
+        track("Mechanical 18", -0.5, 0, 0.5, 0), track("Mechanical 18", 0, -0.5, 0, 0.5),  # bottom centre cross
+        text("Mechanical 9", ".Designator", height=1.0),
+        text("Mechanical 7", ".Comment", height=1.0),
+        text("Mechanical 2", ".Designator", height=1.5),                  # fab notes keep their own
+    ])
+
+
+def test_declared_layer_types_without_a_house_role_stay():
+    found = roles_of(_vendor_footprint(), header=_vendor_header())
+    assert found["Mechanical 2"] == ("keep", "kind")
+    assert found["Mechanical 11"] == ("keep", "kind")      # dimensions – content alone would say "courtyard"
+    assert found["Mechanical 18"] == ("keep", "kind")
+    assert found["Mechanical 20"] == ("keep", "kind")      # bottom side
+    assert found["Mechanical 5"] == ("assembly", "kind") and found["Mechanical 9"] == ("designator", "kind")
+
+
+def test_names_of_note_and_dimension_layers_are_no_roles():
+    header = {2: MechLayer(number=2, name="Fab Notes", kind=None), 3: MechLayer(number=3, name="Assembly Notes", kind=None),
+              11: MechLayer(number=11, name="Top Dimensions", kind=None)}
+    records = footprint("X", [pad("1", 0, 0), *rect("Mechanical 2", -1, -1, 1, 1), *rect("Mechanical 3", -2, -2, 2, 2),
+                              *rect("Mechanical 11", -3, -3, 3, 3)])
+    found = C.infer_layer_roles([records], header)
+    assert set(found) == {"Mechanical 2", "Mechanical 3", "Mechanical 11"}
+    assert all(role.reason != "name" for role in found.values())  # "Fab Notes" is no fabrication drawing
+
+
+def test_vendor_footprint_converts_without_touching_declared_layers():
+    records = _vendor_footprint()
+    layer_roles = C.infer_layer_roles([records], _vendor_header())
+    plan = C.plan_footprint(records, layer_roles, C.FootprintRules(), HOUSE, LAYERS)  # graphics on Mech 9: no crash
+    result = _apply(plan)
+    by_layer: dict[str, list[R.Primitive]] = {}
+    for prim in result.primitives:
+        by_layer.setdefault(prim.layer or "", []).append(prim)
+    # the designator layer's graphics and text move to the house designator layer; only the text is restyled
+    assert sorted(p.kind for p in by_layer["Mechanical 11"]) == ["text"] + ["track"] * 6  # 4 dimension tracks stay too
+    designator = next(p for p in by_layer["Mechanical 11"] if p.kind == "text")
+    assert designator.text == ".Designator" and designator.font_kind == "truetype" and designator.height == approx(0.8)
+    assert next(p for p in by_layer["Mechanical 19"] if p.kind == "text").text == ".Comment"
+    # fab notes, dimensions, bottom layers: untouched (the fab notes' .Designator keeps its style)
+    fab = next(p for p in by_layer["Mechanical 2"] if p.kind == "text")
+    assert fab.font_kind == "stroke" and fab.height == approx(1.5)
+    assert len(by_layer["Mechanical 18"]) == 2 and len(by_layer["Mechanical 20"]) == 4
+    # the bottom centre cross is no top centre: the house centre cross is added
+    assert [t.layer for t in plan.new if t.kind == "track"] == ["Mechanical 17", "Mechanical 17"]
+
+
+def test_without_a_designator_layer_every_designator_is_the_designator():
+    header = {5: MechLayer(number=5, name="Top Assembly", kind="AssemblyTop")}
+    records = footprint("X", [pad("1", 0, 0), *rect("Mechanical 5", -1, -1, 1, 1), text("Mechanical 5", ".Designator")])
+    layer_roles = C.infer_layer_roles([records], header)
+    roles = C.primitive_roles(records, layer_roles)
+    assert roles[-1] == "designator"
+
+
+def test_declared_layers_move_to_the_house_layer_of_the_same_type():
+    kind_layers = {"DimensionsTop": "Mechanical 23", "ComponentOutlineBottom": "Mechanical 22",
+                   "ComponentCenterBottom": "Mechanical 18", "AssemblyTop": "Mechanical 9"}
+    role_layers = {"Mechanical 9": "Bestückungszeichnung", "Mechanical 11": "Bezeichner"}
+    records = _vendor_footprint()
+    layer_roles = C.infer_layer_roles([records], _vendor_header(), kind_layers=kind_layers, role_layers=role_layers)
+    assert (layer_roles["Mechanical 11"].target, layer_roles["Mechanical 20"].target) == ("Mechanical 23", "Mechanical 22")
+    assert layer_roles["Mechanical 18"].target is None  # same number in the house stack: stays
+    assert layer_roles["Mechanical 11"].note == "wandert nach Mechanical 23 (gleicher Lagentyp DimensionsTop)"
+    assert layer_roles["Mechanical 2"].note is None and layer_roles["Mechanical 2"].kind == "FabNotes"
+    plan = C.plan_footprint(records, layer_roles, C.FootprintRules(), HOUSE, LAYERS)
+    layers = [p.layer for p in _apply(plan).primitives]
+    assert layers.count("Mechanical 23") == 4 and layers.count("Mechanical 22") == 4 and layers.count("Mechanical 20") == 0
+    assert "Top Dimensions: Mechanical 11 → Mechanical 23 (4)" in [c.message for c in plan.changes]
+    # rule off: nothing moves
+    off = C.plan_footprint(records, layer_roles, C.FootprintRules(layers=False), HOUSE, LAYERS)
+    assert "Mechanical 23" not in [p.layer for p in _apply(off).primitives]
+
+
+def test_kept_layer_on_a_house_role_layer_gets_a_note():
+    header = {9: MechLayer(number=9, name="User Notes", kind="UserNotesX")}
+    records = footprint("X", [pad("1", 0, 0), track("Mechanical 9", 5, 5, 6, 5)])
+    found = C.infer_layer_roles([records], header, kind_layers={}, role_layers={"Mechanical 9": "Bestückungszeichnung"})
+    assert found["Mechanical 9"].role == "keep" and found["Mechanical 9"].target is None
+    assert found["Mechanical 9"].note == "bleibt – im Hausstil ist Mechanical 9 die Lage „Bestückungszeichnung“"

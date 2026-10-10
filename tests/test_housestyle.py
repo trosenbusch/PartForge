@@ -339,3 +339,26 @@ def test_change_messages_use_the_german_decimal_comma():
     messages = " ".join(c.message for c in plan.changes)
     assert "Linienbreite 0,1 mm" in messages and "Arial 0,5 mm" not in messages and "0.1 mm" not in messages
     assert "±0,5 mm" in messages
+
+
+@pytest.mark.rustwriter
+def test_one_footprint_that_cannot_be_planned_does_not_block_its_library(
+    house: Workspace, foreign: dict[str, Path], monkeypatch: pytest.MonkeyPatch
+):
+    original = C.plan_footprint
+
+    def plan(records: R.FootprintRecords, *args: Any, **kwargs: Any) -> C.FootprintPlan:
+        if records.name == "FOREIGN_SOIC8":
+            raise R.PcbRecordError("Feld für track nicht vorhanden.")
+        return original(records, *args, **kwargs)
+
+    monkeypatch.setattr(C, "plan_footprint", plan)
+    report = H.check(H.ConformSelection(kinds=["footprint"]), C.ConformRules())
+    problems = {c.name: c.problems for c in report.components}
+    assert problems["FOREIGN_SOIC8"] == ["Nicht angepasst: Feld für track nicht vorhanden."]
+    assert report.libraries[0].problem is None
+    out = H.apply(H.ConformSelection(kinds=["footprint"]), C.ConformRules())
+    assert out["errors"] == [] and out["components"] == 1 and len(out["libraries"]) == 1
+    converted = _footprint_records(foreign["pcblib"])
+    assert "Mechanical 13" not in {p.layer for p in converted["foreign_0603"].of_kind("track")}
+    assert "Mechanical 13" in {p.layer for p in converted["foreign_soic8"].of_kind("track")}  # left as it was

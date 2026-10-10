@@ -27,6 +27,7 @@ import json
 import logging
 import os
 import shutil
+import struct
 import uuid
 from collections import Counter
 from collections.abc import Iterable, Mapping
@@ -241,10 +242,16 @@ def _plan_schlib(target: _Target, rules: C.ConformRules, style: SymbolStyle) -> 
             records = S.parse_records(data)
             pin_raw = tree.get(f"{storage}/PinTextData")
             pin_text = S.parse_pin_text_data(pin_raw)
-            symbol_plan = C.plan_symbol(name, records, pin_text, rules.symbols, style, font_ids)
         except (S.SchRecordError, ValueError) as exc:
             plan.components.append(ComponentReport(kind="symbol", name=name, library=target.rel, source=rec.source,
                                                    problems=[f"Nicht lesbar: {exc}"]))
+            continue
+        try:
+            symbol_plan = C.plan_symbol(name, records, pin_text, rules.symbols, style, font_ids)
+        except (S.SchRecordError, ValueError, struct.error, IndexError) as exc:
+            log.warning("Symbol %s in %s nicht angepasst: %s", name, target.path, exc, exc_info=True)
+            plan.components.append(ComponentReport(kind="symbol", name=name, library=target.rel, source=rec.source,
+                                                   problems=[f"Nicht angepasst: {exc}"]))
             continue
         if not symbol_plan.modified:
             continue
@@ -283,7 +290,15 @@ def _plan_pcblib(
         header_layers = {}
     manual = rules.footprints.roles.get(target.rel) or next(
         (v for k, v in rules.footprints.roles.items() if _rel_key(k) == _rel_key(target.rel)), None)
-    roles = C.infer_layer_roles([rec for _storage, rec in footprints.values()], header_layers, manual)
+    # the house stack decides where declared layer types without a house role go (Dimensions -> its layer …)
+    kind_layers: dict[str, str] = {}
+    for number, layer in sorted(stack.header_layers().items()):
+        if layer.kind:
+            kind_layers.setdefault(layer.kind, f"Mechanical {number}")
+    role_layers = {house_layer: C.ROLE_LABELS[role] for role in C.MAPPED_ROLES
+                   if (house_layer := C._target_layer(role, layer_map)) is not None}
+    roles = C.infer_layer_roles([rec for _storage, rec in footprints.values()], header_layers, manual,
+                                kind_layers=kind_layers, role_layers=role_layers)
     report.roles = list(roles.values())
     side_names = ("PrimitiveGuids/Data", "UniqueIDPrimitiveInformation/Data")
     for key, (storage, records) in footprints.items():
@@ -291,7 +306,13 @@ def _plan_pcblib(
         if rec is None:
             continue
         report.selected += 1
-        fp_plan = C.plan_footprint(records, roles, rules.footprints, style, layer_map)
+        try:
+            fp_plan = C.plan_footprint(records, roles, rules.footprints, style, layer_map)
+        except (R.PcbRecordError, ValueError, struct.error, IndexError) as exc:
+            log.warning("Footprint %s in %s nicht angepasst: %s", records.name, target.path, exc, exc_info=True)
+            plan.components.append(ComponentReport(kind="footprint", name=records.name, library=target.rel,
+                                                   source=rec.source, problems=[f"Nicht angepasst: {exc}"]))
+            continue
         if not fp_plan.modified:
             continue
         report.affected += 1
@@ -407,7 +428,7 @@ def check(selection: ConformSelection, rules: C.ConformRules, *, ctx: JobContext
             except Exception as exc:  # noqa: BLE001 - one unreadable file must not stop the check
                 log.warning("Hausstil-Prüfung von %s nicht möglich: %s", target.path, exc)
                 lib_report = LibraryReport(library=target.rel, kind=target.kind, selected=len(target.records),
-                                           problem=f"Nicht lesbar: {exc}")
+                                           problem=f"Nicht prüfbar: {exc}")
                 report.libraries.append(lib_report)
                 report.checked += len(target.records)
                 continue
@@ -649,9 +670,10 @@ def apply(selection: ConformSelection, rules: C.ConformRules, *, ctx: JobContext
                         continue
                     try:
                         plan = _plan(target, rules, ws, stack, ops)
-                    except Exception as exc:  # noqa: BLE001 - one unreadable file must not stop the batch
-                        out["errors"].append({"library": target.rel, "message": f"Nicht lesbar: {exc}"})
-                        session.log(f"{target.rel}: nicht lesbar ({exc})", "error")
+                    except Exception as exc:  # noqa: BLE001 - one file must not stop the batch
+                        log.warning("Hausstil für %s nicht geplant: %s", target.path, exc, exc_info=True)
+                        out["errors"].append({"library": target.rel, "message": f"Nicht angepasst: {exc}"})
+                        session.log(f"{target.rel}: nicht angepasst ({exc})", "error")
                         continue
                     report.libraries.append(plan.report)
                     report.checked += plan.report.selected

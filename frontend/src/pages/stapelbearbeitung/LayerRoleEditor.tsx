@@ -148,6 +148,11 @@ export function LayerRoleEditor({ library, manual, onChange, layers, inactive }:
                       }
                     />
                   </div>
+                  {r.note && own === undefined && !removed && (
+                    <span className={`mt-0.5 block text-2xs leading-snug [overflow-wrap:anywhere] ${r.target ? 'text-fg-subtle' : 'text-warning-text'}`}>
+                      {r.note}
+                    </span>
+                  )}
                 </td>
               </tr>
             )

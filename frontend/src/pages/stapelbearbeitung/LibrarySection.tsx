@@ -1,6 +1,6 @@
 /**
  * Bibliotheken des Berichts: je Datei eine aufklappbare Zeile mit Art, Pfad, geprüften und abweichenden Bauteilen und
- * Kennzeichen (nicht lesbar, wird übersprungen, Lagen-Kopf, nicht erkannte Lagen, eigene Rollen). Aufgeklappt: Grund
+ * Kennzeichen (nicht prüfbar, wird übersprungen, Lagen-Kopf, nicht erkannte Lagen, eigene Rollen). Aufgeklappt: Grund
  * für das Überspringen bzw. den Lesefehler, Abweichungen des Lagen-Kopfs, die Schrifttabelle nach der Umstellung
  * (SchLib) und der Editor der Lagenrollen (PcbLib). Viele Dateien (eine je Bauteil): Filter, Suche, seitenweise.
  */
@@ -243,7 +243,7 @@ function LibraryRow({
   const manualCount = Object.keys(manual).length
   const pending = pendingRoles(lib, manual)
   const status = lib.problem
-    ? 'nicht lesbar'
+    ? 'nicht prüfbar'
     : `${plural(lib.selected, 'Bauteil', 'Bauteile')} geprüft${
         lib.affected > 0
           ? `, ${formatNumber(lib.affected)} ${lib.affected === 1 ? 'weicht' : 'weichen'} ab`
@@ -270,7 +270,7 @@ function LibraryRow({
             <span className="text-ui font-medium text-fg [overflow-wrap:anywhere]">{name}</span>
             {lib.problem && (
               <Badge variant="danger" dot>
-                Nicht lesbar
+                Nicht prüfbar
               </Badge>
             )}
             {lib.refusal && (
@@ -322,7 +322,7 @@ function LibraryRow({
           >
             <div className="flex flex-col gap-4 pb-4 pl-[2.625rem] pr-4 pt-0.5">
               {lib.problem && (
-                <Callout tone="danger" title="Nicht lesbar – bleibt unverändert">
+                <Callout tone="danger" title="Nicht prüfbar – bleibt unverändert">
                   {lib.problem}
                 </Callout>
               )}

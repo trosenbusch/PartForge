@@ -461,7 +461,7 @@ export interface ReportStats {
   affected: number
   /** Bibliotheken, deren Lagen-Kopf abweicht */
   headerLibraries: number
-  /** Bauteile mit Problemen (nicht lesbar) */
+  /** Bauteile mit Problemen (nicht lesbar bzw. nicht angepasst) */
   problemComponents: number
   unreadable: number
   /** Bibliotheken, die „Anwenden“ überspringen würde */

@@ -79,7 +79,9 @@ export async function pickFolder(initial?: string | null): Promise<string | null
   if (!fn) return null
   try {
     return (await fn(initial ?? null)) ?? null
-  } catch {
+  } catch (e) {
+    // wie Abbrechen behandeln – aber sichtbar für die Fehlersuche (Details im Protokoll des Programms)
+    console.error('Ordnerdialog fehlgeschlagen', e)
     return null
   }
 }
@@ -89,7 +91,9 @@ export async function pickFile(initial?: string | null, filters?: string[]): Pro
   if (!fn) return null
   try {
     return (await fn(initial ?? null, filters ?? null)) ?? null
-  } catch {
+  } catch (e) {
+    // wie Abbrechen behandeln – aber sichtbar für die Fehlersuche (Details im Protokoll des Programms)
+    console.error('Dateidialog fehlgeschlagen', e)
     return null
   }
 }

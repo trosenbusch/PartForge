@@ -1246,12 +1246,21 @@ verlustfrei auf Datensatzebene (§8.6): was eine Regel nicht betrifft, behält s
   kleiner wie im Generator), `add_texts` (fehlende ergänzen), `add_center` (fehlendes Bauteilmitte-Kreuz ergänzen),
   `header` (Lagenaufbau und Lagensatz im Kopf, §8.3 – gepatcht oder erneuert).
 * **Rollen der Quell-Lagen** je Bibliothek (`infer_layer_roles`, im Bericht mit Grund): von Hand
-  (`FootprintRules.roles[<Bibliothek>][<Lage>]`), Lagentyp im Kopf (`MECHKIND`), Lagenname, Inhalt (Mehrheit der
-  Footprints: der äußere Umriss, der die Pads umschließt, ist der Courtyard, der innere die Bestückungszeichnung),
-  sonst „unverändert“. Unabhängig von der Lage: `.Designator`/`.Comment` sind Bezeichner/Wert, 3D-Körper die
-  3D-Lage, ein Kreuz durch den Ursprung die Bauteilmitte (`center_crosses`: ein zweites Kreuz auf dem Courtyard ist
-  das Courtyard-Kreuz des Stils `center_cross`; ein einzelnes Kreuz auf dem Courtyard gilt nur dann als Bauteilmitte,
-  wenn der Hausstil kein Courtyard-Kreuz zeichnet).
+  (`FootprintRules.roles[<Bibliothek>][<Lage>]`), Lagentyp im Kopf (`MECHKIND`; ein Typ ohne Rolle im Hausstil –
+  FabNotes, AssemblyNotes, Dimensions, jede Bottom-Lage … – heißt „unverändert“, Name und Inhalt werden dann nicht
+  mehr gefragt; kennt der Lagenaufbau des Hausstils denselben Typ auf einer anderen Lage, wandert sie dorthin –
+  `LayerRole.target`, z. B. „Top Dimensions“ Mech 11 → Mech 23 –, sonst nennt `LayerRole.note` eine Überschneidung
+  mit einer Rollen-Lage des Hausstils), Lagenname (nie bei Notizen, Bemaßung, Board … – „Fab Notes“ ist keine Fertigungszeichnung), Inhalt
+  (Mehrheit der Footprints: der äußere Umriss, der die Pads umschließt, ist der Courtyard, der innere die
+  Bestückungszeichnung), sonst „unverändert“. Unabhängig von der Lage: 3D-Körper die 3D-Lage, ein Kreuz durch den
+  Ursprung die Bauteilmitte (`center_crosses`: ein zweites Kreuz auf dem Courtyard ist das Courtyard-Kreuz des Stils
+  `center_cross`; ein einzelnes Kreuz auf dem Courtyard gilt nur dann als Bauteilmitte, wenn der Hausstil kein
+  Courtyard-Kreuz zeichnet; Kreuze auf Lagen, die die Bibliothek als etwas ohne Hausstil-Rolle ausweist – etwa
+  „Bottom Component Center“ –, bleiben), `.Designator`/`.Comment` Bezeichner/Wert – hat die Bibliothek eine eigene
+  Bezeichner- bzw. Wert-Lage, bleiben zusätzliche auf anderen ausgewiesenen Lagen (Bestückungszeichnung, Fab Notes)
+  bei deren Rolle. In Hausschrift und -höhe kommen nur `.Designator`/`.Comment` in ihrer Rolle; Linien und freie
+  Texte auf einer Bezeichner-/Wert-Lage wandern nur mit. Lässt sich ein einzelnes Bauteil nicht planen, meldet der
+  Bericht es („Nicht angepasst: …“) und die übrigen der Datei werden trotzdem angepasst.
 * **Prüfen** (`check`, `POST /api/housestyle/check {selection, rules}`, Job `housestyle.check`, liest nur) →
   `ConformReport`: `checked`, `affected`, `summary` (Regel → Anzahl Bauteile; `header` → Anzahl Bibliotheken), je
   Bibliothek `roles`, `header`

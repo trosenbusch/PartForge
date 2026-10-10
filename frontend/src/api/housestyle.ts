@@ -46,6 +46,12 @@ export interface ConformLayerRole {
   reason: 'kind' | 'name' | 'content' | 'manual' | 'default'
   primitives: number
   name: string | null
+  /** Lagentyp im Bibliothekskopf (MECHKIND) */
+  kind?: string | null
+  /** Lage des Hausstils mit demselben Lagentyp – „unverändert“ wandert dorthin */
+  target?: string | null
+  /** Hinweis: wohin die Lage wandert bzw. dass sie auf einer Lage des Hausstils liegt */
+  note?: string | null
 }
 
 export interface ConformLibraryReport {

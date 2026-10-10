@@ -136,6 +136,13 @@ _NAME_ROLES: Final[tuple[tuple[str, str], ...]] = (
     ("bestück", "assembly"),
     ("fab", "assembly"),
 )
+#: Words of layer names that never mean a role of the house style ("Fab Notes" is no fabrication drawing)
+_NO_ROLE_WORDS: Final[tuple[str, ...]] = (
+    "note", "dimension", "drill", "board", "route", "v cut", "v-cut", "vcut", "title", "sheet", "gold", "glue",
+    "coat", "stiffener", "cavity", "panel",
+)
+#: MECHKIND values that mean "no type"
+_UNSET_KINDS: Final = frozenset({"notset", "none", "unknown", ""})
 CROSS_WIDTH: Final = 0.1
 _EPS: Final = 1e-4
 
@@ -185,6 +192,10 @@ class LayerRole(BaseModel):
     reason: Literal["kind", "name", "content", "manual", "default"]
     primitives: int = 0
     name: str | None = Field(default=None, description="Lagenname im Bibliothekskopf")
+    kind: str | None = Field(default=None, description="Lagentyp im Bibliothekskopf (MECHKIND)")
+    target: str | None = Field(default=None, description="Lage des Hausstils mit demselben Lagentyp – eine Lage "
+                                                         "„unverändert“ wandert dorthin")
+    note: str | None = Field(default=None, description="Hinweis zur Lage (Ziel bzw. Überschneidung mit dem Hausstil)")
 
 
 def parse_prefix_map(text: str) -> dict[str, str]:
@@ -242,7 +253,8 @@ def center_crosses(
     """Indexes of the component centre cross and of the courtyard cross (``FootprintStyle.center_cross``: a cross
     on the courtyard *in addition* to the centre).
 
-    The centre is the cross on the component-centre layer, else one on any other layer except the courtyard. A
+    The centre is the cross on the component-centre layer, else one on any other layer except the courtyard and
+    layers the library declares as something without a house role (a bottom-side centre or courtyard, notes …). A
     cross on the courtyard is the courtyard cross – unless it is the only one and the house style draws none
     (``courtyard_cross=False``): then it is the centre drawn on the courtyard. ``None`` (style unknown, e.g. when
     learning from an example) keeps a lone courtyard cross as courtyard cross."""
@@ -254,10 +266,14 @@ def center_crosses(
         entry = layer_roles.get(layer)
         return entry.role if entry is not None else "keep"
 
+    def declared_other(layer: str) -> bool:
+        entry = layer_roles.get(layer)
+        return entry is not None and entry.role == "keep" and entry.reason in ("kind", "manual")
+
     courtyard = [layer for layer in crosses if role(layer) == "courtyard"]
     center = next((layer for layer in crosses if role(layer) == "component_center"), None)
     if center is None:
-        center = next((layer for layer in crosses if layer not in courtyard), None)
+        center = next((layer for layer in crosses if layer not in courtyard and not declared_other(layer)), None)
     if center is None and courtyard and courtyard_cross is False:
         center = courtyard[0]
     court = next((layer for layer in courtyard if layer != center), None)
@@ -345,7 +361,7 @@ def _name_role(name: str | None, number: int) -> str | None:
     if not name or re.fullmatch(rf"Mechanical\s*{number}", name.strip(), re.IGNORECASE):
         return None
     text = name.casefold()
-    if "bottom" in text or "unten" in text:
+    if "bottom" in text or "unten" in text or any(word in text for word in _NO_ROLE_WORDS):
         return None
     for key, role in _NAME_ROLES:
         if key in text:
@@ -357,13 +373,21 @@ def infer_layer_roles(
     footprints: Iterable[R.FootprintRecords],
     header_layers: Mapping[int, object] | None = None,
     manual: Mapping[str, str] | None = None,
+    *,
+    kind_layers: Mapping[str, str] | None = None,
+    role_layers: Mapping[str, str] | None = None,
 ) -> dict[str, LayerRole]:
     """Role of every mechanical layer used by the footprints of one library.
 
     Order: hand-set role (``manual``), layer kind of the header, layer name, content (majority of the
     footprints: the outer outline that encloses the pads is the courtyard, the inner one the assembly
     drawing). Layers only holding centre crosses, special texts or bodies get ``keep`` – those primitives
-    have their own role anyway (:func:`primitive_roles`)."""
+    have their own role anyway (:func:`primitive_roles`).
+
+    ``kind_layers`` (layer type -> layer of the house stack): a layer kept because of its declared type moves to the
+    house layer of the same type (``target``, e.g. "Top Dimensions" Mech 11 -> Mech 23). ``role_layers`` (house
+    layer -> role label): a kept layer without such a target that is a role layer of the house style gets a note –
+    its primitives will sit on that layer."""
     counts: Counter[str] = Counter()
     votes: dict[str, Counter[str]] = {}
     for records in footprints:
@@ -387,6 +411,11 @@ def infer_layer_roles(
         if kind in KIND_ROLES:
             out[layer] = LayerRole(layer=layer, role=KIND_ROLES[kind], reason="kind", primitives=count, name=name)  # type: ignore[arg-type]
             continue
+        if kind and kind.replace(" ", "").casefold() not in _UNSET_KINDS:
+            # a layer type the house style has no role for (fab/assembly notes, dimensions, the bottom side …): the
+            # library says what the layer is – names and content must not turn it into an assembly drawing
+            out[layer] = LayerRole(layer=layer, role="keep", reason="kind", primitives=count, name=name)
+            continue
         by_name = _name_role(name, number)
         if by_name:
             out[layer] = LayerRole(layer=layer, role=by_name, reason="name", primitives=count, name=name)  # type: ignore[arg-type]
@@ -399,6 +428,17 @@ def infer_layer_roles(
                 out[layer] = LayerRole(layer=layer, role=role, reason="content", primitives=count, name=name)  # type: ignore[arg-type]
                 continue
         out[layer] = LayerRole(layer=layer, role="keep", reason="default", primitives=count, name=name)
+    for layer, entry in out.items():
+        number = L.mechanical_number(layer) or 0
+        entry.kind = getattr(header_layers.get(number), "kind", None) if header_layers else None
+        if entry.role != "keep":
+            continue
+        target = kind_layers.get(entry.kind) if kind_layers and entry.kind and entry.reason == "kind" else None
+        if target and target != layer:
+            entry.target = target
+            entry.note = f"wandert nach {target} (gleicher Lagentyp {entry.kind})"
+        elif role_layers and layer in role_layers:
+            entry.note = f"bleibt – im Hausstil ist {layer} die Lage „{role_layers[layer]}“"
     return out
 
 
@@ -412,6 +452,9 @@ def primitive_roles(
     :func:`center_crosses`."""
     prims = records.primitives
     center, court = center_crosses(prims, layer_roles, courtyard_cross=courtyard_cross)
+    # a library with its own designator/value layer: extra .Designator/.Comment on other declared layers (assembly
+    # drawing, fab notes …) belong to those layers; without one, every .Designator is the designator
+    dedicated = {r.role for r in layer_roles.values() if r.role in ("designator", "comment")}
     out: list[str | None] = []
     for index, prim in enumerate(prims):
         if prim.kind in ("pad", "via"):
@@ -428,7 +471,12 @@ def primitive_roles(
             continue
         special = _special_text_role(prim)
         if special:
-            out.append(special)
+            entry = layer_roles.get(prim.layer or "")
+            if (special in dedicated and entry is not None and entry.reason in ("kind", "manual")
+                    and entry.role not in ("designator", "comment")):
+                out.append(None if entry.role == "keep" else entry.role)
+            else:
+                out.append(special)
             continue
         layer = prim.layer
         if _is_overlay(layer):
@@ -550,9 +598,20 @@ def plan_footprint(
     center, court = center_crosses(work.primitives, layer_roles, courtyard_cross=style.center_cross)
     crosses = {*center, *court}
     moved: Counter[tuple[str, str, str]] = Counter()
+    retyped: Counter[tuple[str, str, str]] = Counter()
     widened: Counter[tuple[str, float]] = Counter()
     for index, (prim, role) in enumerate(zip(work.primitives, roles, strict=True)):
         if role is None:
+            # a kept layer with a declared type moves to the house layer of that type (pads and vias never)
+            entry = layer_roles.get(prim.layer or "")
+            if (rules.layers and entry is not None and entry.target and prim.kind not in ("pad", "via")
+                    and prim.layer != entry.target):
+                current = prim.layer or ""
+                try:
+                    prim.set_layer(entry.target)
+                    retyped[(entry.name or entry.kind or current, current, entry.target)] += 1
+                except R.PcbRecordError:
+                    pass
             continue
         if rules.layers and role != "silkscreen":
             target = _target_layer(role, layer_map)
@@ -573,6 +632,8 @@ def plan_footprint(
             widened[(role, round(wanted, 4))] += 1
     for (role, current, target), count in sorted(moved.items()):
         plan.changes.append(Change(rule="layers", message=f"{ROLE_LABELS[role]}: {current} → {target} ({count})"))
+    for (label, current, target), count in sorted(retyped.items()):
+        plan.changes.append(Change(rule="layers", message=f"{label}: {current} → {target} ({count})"))
     for (role, wanted), count in sorted(widened.items()):
         plan.changes.append(Change(rule="widths", message=f"{ROLE_LABELS[role]}: Linienbreite {_mm(wanted)} ({count})"))
 
@@ -586,7 +647,9 @@ def plan_footprint(
     font = style.text_font
     font_name = (style.text_font_name or "Arial").strip() or "Arial"
     stroke = round(max(0.05, round(0.15 * height / 0.01) * 0.01), 4)
-    texts = {role: [p for p, r in zip(work.primitives, roles, strict=True) if r == role]
+    # only the special strings in their role get the house font – graphics and free texts on a designator/value
+    # layer only move, a .Designator of the assembly drawing keeps its style
+    texts = {role: [p for p, r in zip(work.primitives, roles, strict=True) if r == role and _special_text_role(p) == role]
              for role in ("designator", "comment")}
     if rules.texts:
         wanted_state = (font, font_name if font == "truetype" else None, round(height, 4))

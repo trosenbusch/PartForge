@@ -36,6 +36,8 @@
 
 ### Geändert
 
+- „Durchsuchen …“ öffnet den Dateidialog jetzt auch dort, wo bisher nichts geschah: externe Bibliotheken, `.stackup`,
+  `X2.EXE` (der Dateifilter enthielt Zeichen, die das Programmfenster ablehnte).
 - Schreibt PartForge in eine Bibliothek, bleiben alle anderen Bauteile darin Byte für Byte erhalten – auch in Altium
   gespeicherte mit TrueType-Texten, Mechanical 17–32, eingebetteten Schriften und Pinschriften (bisher setzte der
   Bibliotheks-Writer sie auf seinen eigenen Stand zurück).
