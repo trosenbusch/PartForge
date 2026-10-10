@@ -46,6 +46,8 @@ const messages: Record<string, string> = {
   "Die Antwort von Claude wurde abgeschnitten (zu lang). Bitte weniger Seiten wählen.": "Claude's response was truncated (too long). Please select fewer pages.",
   "Gehäusezeichnungen": "Package drawings",
   "Kontrolle der {0} mit hochaufgelösten Seitenbildern (Seiten {1}) …": "Checking {0} using high-resolution page images (pages {1})…",
+  "Kontrolle der Pintabellen mit hochaufgelösten Seitenbildern (Seiten {0}) …": "Checking pin tables using high-resolution page images (pages {0})…",
+  "Kontrolle der Gehäusezeichnungen mit hochaufgelösten Seitenbildern (Seiten {0}) …": "Checking package drawings using high-resolution page images (pages {0})…",
   "Die Bibliothek „{0}“ ist nicht mehr geöffnet – die Kosten der Analyse wurden in ihrem Ordner gesichert ({1}) und erscheinen, sobald sie wieder geöffnet wird.": "The library “{0}” is no longer open – analysis costs were saved in its folder ({1}) and will appear when it is opened again.",
   "{0} Die Analyse wurde nicht gestartet, es sind keine Kosten entstanden.": "{0} The analysis was not started and no costs were incurred.",
   "Datenblatt wird gelesen …": "Reading datasheet…",

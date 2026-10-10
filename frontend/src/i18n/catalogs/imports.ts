@@ -163,6 +163,8 @@ const messages: Record<string, string> = {
   "alle Seiten": "all pages",
   "Vorauswahl mit dem schnellen Modell": "Preselection with the fast model",
   "Kontrolle der {0} mit Seitenbildern": "Check {0} using page images",
+  "Kontrolle der Pintabellen mit Seitenbildern": "Check pin tables using page images",
+  "Kontrolle der Gehäusezeichnungen mit Seitenbildern": "Check package drawings using page images",
   "lässt keine Gründlichkeit wählen – Anfrage mit der Standardeinstellung des Modells": "does not support choosing reasoning effort – using the model's default",
   "Seite {0} …": "Page {0} …",
   "{0} mit Textebene": "{0} with text layer",

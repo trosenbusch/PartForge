@@ -430,19 +430,19 @@ def murata_grm() -> MpnTemplate:
         fields=dict(CAPACITOR_FIELDS),
         sources=[
             Source(title="Murata Part Numbering – Chip Multilayer Ceramic Capacitors (SMD)", url=_MURATA_NUMBERING_URL,
-                   pages="1-4", revision=f"abgerufen {_MURATA_CHECKED}",
+                   pages="1-4", revision=_MURATA_CHECKED,
                    note="❶ Serie GRM, ❷ L×B (15 = 0402, 18 = 0603, 21 = 0805, 31 = 1206, 32 = 1210), ❸ Dicke T, "
                         "❹ Temperaturcharakteristik (R7 = X7R), ❺ Nennspannung, ❻ Kapazität in pF (3 Stellen), "
                         "❼ Toleranz (K = ±10 %), ❽ individuelle Spezifikation, ❾ Verpackung (D/E/W Papier Ø 180 mm, "
                         "J/F Papier Ø 330 mm, L Blister Ø 180 mm, K Blister Ø 330 mm)"),
             Source(title="Murata-Produktdatenbank (pim.murata.com) – Produktdetails je Teilenummer",
-                   url=_MURATA_DETAILS_URL.format(part="GRM155R71H102KA01"), revision=f"Stand {_MURATA_CHECKED}",
+                   url=_MURATA_DETAILS_URL.format(part="GRM155R71H102KA01"), revision=_MURATA_CHECKED,
                    note="Je Typ geprüft: L/B/T mit Toleranz, Kapazität und Toleranz, Nennspannung, X7R, "
                         "Verpackungscodes, Lieferstatus (In Production / To be discontinued) und Nachfolger – "
                         "abgefragt über die öffentliche Schnittstelle pimapi.murata.com (products/search), die die "
                         "Produktseiten speist. GRM32ER71H106KA12L (früher im Katalog) führt Murata nicht mehr."),
             Source(title="Murata Spezifikationsblatt GRM155R71H102KA01-01A (Beispiel)", url=_MURATA_SPEC_EXAMPLE_URL,
-                   revision="Stand 18.06.2026", pages="2",
+                   revision="18.06.2026", pages="2",
                    note="Teilenummernschlüssel und Maße 1,0 × 0,5 × 0,5 mm (±0,05 mm), Verpackung D: Papier Ø 180 mm"),
         ],
         verified=True,

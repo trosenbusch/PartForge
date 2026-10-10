@@ -178,10 +178,11 @@ const PYDANTIC_MESSAGES: [RegExp, string][] = [
 ]
 
 function translatePydantic(msg: string): string {
+  // the backend's own validators answer in German („Value error, Seitenzahlen beginnen bei 1.“)
   for (const [re, de] of PYDANTIC_MESSAGES) {
-    if (re.test(msg)) return msg.replace(re, tr(de))
+    if (re.test(msg)) return localizeMessage(msg.replace(re, tr(de)))
   }
-  return msg
+  return localizeMessage(msg)
 }
 
 export function detailToMessage(detail: unknown, status: number): string {

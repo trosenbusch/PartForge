@@ -104,6 +104,52 @@ describe('message interpolation', () => {
       `Die Datei „${name}“ existiert nicht.`)
   })
 
+  test('fixed backend wording inside a message is translated, quoted user data is not', () => {
+    assert.equal(i18n.localizeMessage('Kontrolle der Gehäusezeichnungen mit hochaufgelösten Seitenbildern (Seiten 3, 4) …'),
+      'Checking package drawings using high-resolution page images (pages 3, 4)…')
+    assert.equal(i18n.localizeMessage('Kontrolle der Pintabellen mit Seitenbildern'), 'Check pin tables using page images')
+    // an unquoted value that is catalog wording is localized even without a dedicated template
+    assert.equal(i18n.localizeMessage('Kontrolle der Bauteile mit hochaufgelösten Seitenbildern (Seiten 2) …'),
+      'Checking Parts using high-resolution page images (pages 2)…')
+    // „…“ marks a name: a part, file or symbol called like a catalog word keeps its spelling
+    assert.equal(i18n.localizeMessage('Die Datei „Widerstände“ existiert nicht.'), 'The file “Widerstände” does not exist.')
+    i18n.setLanguage('de')
+    assert.equal(i18n.localizeMessage('Kontrolle der Gehäusezeichnungen mit Seitenbildern'), 'Kontrolle der Gehäusezeichnungen mit Seitenbildern')
+  })
+
+  test('assembled backend messages: name prefixes and joined parts, never a swallowed sentence', () => {
+    assert.equal(i18n.localizeMessage('UQFN-10 1.4x1.8 (RSW0010A): Abgebrochen'), 'UQFN-10 1.4x1.8 (RSW0010A): Cancelled')
+    assert.equal(i18n.localizeMessage('C:\\Teile\\Modell.step: Abgebrochen'), 'C:\\Teile\\Modell.step: Cancelled')
+    assert.equal(i18n.localizeMessage('Abgebrochen – Speichern fehlgeschlagen'), 'Cancelled – Save failed')
+    // „{0}{1} geschrieben.“ must not turn an unknown German sentence into „… neu written.“
+    const unknown = 'Die Datei kam aus einem anderen Werkzeug und wurde von ihm neu geschrieben.'
+    assert.equal(i18n.localizeMessage(unknown), unknown)
+    // but a name in front is still a valid value
+    assert.equal(i18n.localizeMessage('Passive.PcbLib geschrieben.'), 'Passive.PcbLib written.')
+  })
+
+  test('reported backend messages are English, including counts and short label templates', () => {
+    assert.equal(i18n.localizeMessage('UQFN-10 1.4x1.8 (RSW0010A): Bei gleichmäßiger Verteilung muss die Anschlusszahl durch 4 teilbar sein (sonst Anschlüsse je Seite angeben).'),
+      'UQFN-10 1.4x1.8 (RSW0010A): With even distribution, the lead count must be divisible by 4 (otherwise specify the leads per side).')
+    assert.equal(i18n.localizeMessage('Die DbLib war veraltet (Kategorien oder Felder geändert) und wurde neu geschrieben.'),
+      'The DbLib was outdated (categories or fields changed) and has been rewritten.')
+    assert.equal(i18n.localizeMessage('12 Bauteile'), '12 parts')
+    assert.equal(i18n.localizeMessage('1 Gehäuse'), '1 package')
+    assert.equal(i18n.localizeMessage('3 Gehäuse'), '3 packages')
+    assert.equal(i18n.localizeMessage('2 Bauteile, 30 Pins, 1 Fehler'), '2 parts, 30 pins, 1 error')
+    // a list that is not only counts stays untouched
+    assert.equal(i18n.localizeMessage('2 Bauteile, Murata GRM'), '2 Bauteile, Murata GRM')
+    // a template with an inserted count of one uses the English singular
+    assert.equal(i18n.localizeMessage('Synchronisieren: 1 Fehler'), 'Synchronize: 1 error')
+    // each clause keeps its own name prefix
+    assert.equal(i18n.localizeMessage('Massenbearbeitung abgebrochen – R-1: Pflichtfeld fehlt; R-2: Pflichtfeld fehlt'),
+      'Bulk edit cancelled – R-1: Required field missing; R-2: Required field missing')
+    assert.equal(i18n.localizeMessage('Arial 10 (fett, kursiv)'), 'Arial 10 (bold, italic)')
+    assert.equal(i18n.localizeMessage('Gehäuse SOT-23'), 'Package SOT-23')
+    // a short template never takes German text as its value
+    assert.equal(i18n.localizeMessage('Gehäuse ohne passende Familie'), 'Gehäuse ohne passende Familie')
+  })
+
   test('localizes health remedies and the complete default writer-unavailable diagnostic', () => {
     assert.equal(i18n.localizeMessage('Datenblatt-URL eintragen oder ein Datenblatt importieren.'),
       'Enter a datasheet URL or import a datasheet.')
