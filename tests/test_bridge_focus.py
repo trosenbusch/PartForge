@@ -192,3 +192,48 @@ def test_bridge_uses_the_guard_only_for_the_real_launcher(tmp_path, monkeypatch:
     with pytest.raises(core.BridgeWedgedError):
         bridge.execute("ping")
     assert used == []  # a test launcher never starts X2.EXE, so no guard
+
+
+class FrontApi(FakeApi):
+    """FakeApi with the calls of "In Altium bearbeiten" (Altium is to come to the front)."""
+
+    def __init__(self, *, altium: int = ALTIUM_WINDOW, **kwargs):
+        super().__init__(steals=0, **kwargs)
+        self.altium = altium
+        self.allowed = 0
+        self.restored: list[int] = []
+
+    def allow_foreground(self) -> bool:
+        self.allowed += 1
+        return True
+
+    def altium_window(self) -> int:
+        return self.altium
+
+    def restore(self, hwnd: int) -> None:
+        self.restored.append(hwnd)
+
+
+def test_bring_altium_to_front_restores_and_activates_its_main_window():
+    api = FrontApi()
+    assert focus.allow_altium_foreground(api) and api.allowed == 1
+    assert focus.bring_altium_to_front(api)
+    assert api.restored == [ALTIUM_WINDOW] and api.activated == [ALTIUM_WINDOW]
+
+
+def test_bring_altium_to_front_without_window_or_api_does_nothing():
+    api = FrontApi(altium=0)
+    assert not focus.bring_altium_to_front(api) and api.activated == []
+    assert not focus.allow_altium_foreground(FakeApi())  # an API without the call: never raises
+    assert not focus.bring_altium_to_front(FakeApi())
+
+
+def test_bring_altium_to_front_stops_an_older_guard():
+    """A keep_foreground watcher still running from an earlier background call must not push Altium back."""
+    guard_api = FakeApi(steal_after=10_000)
+    with keep_foreground(guard_api, grace_s=1.0, poll_s=0.01):
+        pass
+    assert focus.bring_altium_to_front(FrontApi())
+    guard_api.window = ALTIUM_WINDOW
+    time.sleep(0.1)
+    assert guard_api.activated == []

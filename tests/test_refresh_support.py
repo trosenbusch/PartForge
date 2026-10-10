@@ -165,6 +165,17 @@ class FakeBridge:
         self.opened.append(text)
         return was_open
 
+    def edit_component(self, path: Any, name: str, kind: str | None = None) -> Any:
+        from partforge.altium.bridge.core import ComponentFocus
+
+        self._call("edit_component", path, name, kind)
+        text = str(path)
+        was_open = text in self.opened
+        self.opened.append(text)
+        found = name.casefold() in {n.casefold() for n in self.components.get(os.path.normcase(text), [name])}
+        return ComponentFocus(path=text, name=name, was_open=was_open, found=found, current=name if found else "",
+                              modified=text in self.modified)
+
     def set_components(self, library: Path, names: list[str]) -> None:
         self.components[os.path.normcase(str(library))] = list(names)
 

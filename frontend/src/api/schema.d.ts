@@ -2175,6 +2175,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/altium/edit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Edit In Altium
+         * @description Job: open the library of a symbol/footprint in Altium and show it there; PartForge takes every save over.
+         */
+        post: operations["edit_in_altium_api_altium_edit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/altium/edit/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Edit Sessions
+         * @description The libraries of the open library that are being edited in Altium (watched for saves).
+         */
+        get: operations["edit_sessions_api_altium_edit_sessions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/altium/edit/sessions/{session_id}/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check Edit Session
+         * @description Job: take over what was saved in Altium now (the watcher does it on its own a moment after a save).
+         */
+        post: operations["check_edit_session_api_altium_edit_sessions__session_id__check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/altium/edit/sessions/{session_id}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End Edit Session
+         * @description Stop watching the library; a save that was not taken over yet is taken over first (job).
+         */
+        post: operations["end_edit_session_api_altium_edit_sessions__session_id__end_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/datasheets": {
         parameters: {
             query?: never;
@@ -3442,7 +3522,7 @@ export interface components {
              * Sources
              * @description Herkunft (None = alle außer extern)
              */
-            sources?: ("generated" | "datasheet" | "imported" | "external")[] | null;
+            sources?: ("generated" | "datasheet" | "imported" | "external" | "altium")[] | null;
             /**
              * Libraries
              * @description Bibliotheksdateien (relativ), None = alle
@@ -4078,6 +4158,86 @@ export interface components {
             nom?: number | null;
             /** Max */
             max?: number | null;
+        };
+        /** EditEndOut */
+        EditEndOut: {
+            /**
+             * Ended
+             * @description Beendet (true) – oder erst nach der Übernahme im Job (false)
+             */
+            ended: boolean;
+            /**
+             * Job
+             * @description JobSnapshot der abschließenden Übernahme
+             */
+            job?: {
+                [key: string]: unknown;
+            } | null;
+            /** Message */
+            message: string;
+        };
+        /** EditIn */
+        EditIn: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "symbol" | "footprint";
+            /** Name */
+            name: string;
+        };
+        /**
+         * EditResult
+         * @description The last take-over of a session.
+         */
+        EditResult: {
+            /** Time */
+            time: string;
+            /** Message */
+            message: string;
+            /** Edited */
+            edited?: string[];
+            /** Added */
+            added?: string[];
+            /** Removed */
+            removed?: string[];
+        };
+        /**
+         * EditSessionInfo
+         * @description A session as the UI sees it.
+         */
+        EditSessionInfo: {
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "symbol" | "footprint";
+            /** Library */
+            library: string;
+            /** Library Abs */
+            library_abs?: string | null;
+            /** Targets */
+            targets?: string[];
+            /** Started */
+            started: string;
+            /** Last Activity */
+            last_activity: string;
+            /**
+             * State
+             * @description watching = Datei wie beim letzten Übernehmen, saved = in Altium gespeichert (wird gleich übernommen), checking = Übernahme läuft, error = letzte Übernahme fehlgeschlagen
+             * @enum {string}
+             */
+            state: "watching" | "saved" | "checking" | "error";
+            /**
+             * Job Id
+             * @description laufender Übernahme-Job
+             */
+            job_id?: string | null;
+            last_result?: components["schemas"]["EditResult"] | null;
+            /** Error */
+            error?: string | null;
         };
         /** ExportJobOut */
         ExportJobOut: {
@@ -14844,6 +15004,121 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AltiumJobOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_in_altium_api_altium_edit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AltiumJobOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_sessions_api_altium_edit_sessions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EditSessionInfo"][];
+                };
+            };
+        };
+    };
+    check_edit_session_api_altium_edit_sessions__session_id__check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AltiumJobOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    end_edit_session_api_altium_edit_sessions__session_id__end_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EditEndOut"];
                 };
             };
             /** @description Validation Error */

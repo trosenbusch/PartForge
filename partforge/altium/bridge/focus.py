@@ -16,6 +16,11 @@ would land in Altium. :func:`keep_foreground` guards one bridge call:
 Only the first seconds after the launch are guarded (Altium activates itself when the command arrives);
 a newer guard replaces an older one. The watcher never delays the bridge call. Set
 ``PARTFORGE_ALTIUM_KEEP_FOCUS=0`` to switch the guard off.
+
+The opposite case – the user wants to work in Altium ("In Altium bearbeiten") – uses
+:func:`allow_altium_foreground` before the launch (Windows lets another process take the foreground only
+when the foreground process allows it) and :func:`bring_altium_to_front` afterwards (best effort: restores a
+minimised main window and activates it).
 """
 from __future__ import annotations
 
@@ -37,7 +42,7 @@ GRACE_S = 6.0
 POLL_S = 0.03
 ALTIUM_IMAGE = "x2.exe"
 
-__all__ = ["keep_foreground", "WindowApi", "GRACE_S", "POLL_S"]
+__all__ = ["keep_foreground", "allow_altium_foreground", "bring_altium_to_front", "WindowApi", "GRACE_S", "POLL_S"]
 
 
 class WindowApi(Protocol):
@@ -88,6 +93,17 @@ class _Win32Api:
         k.QueryFullProcessImageNameW.restype = wintypes.BOOL
         k.CloseHandle.argtypes = [wintypes.HANDLE]
         k.GetCurrentThreadId.restype = wintypes.DWORD
+        u.AllowSetForegroundWindow.argtypes = [wintypes.DWORD]
+        u.AllowSetForegroundWindow.restype = wintypes.BOOL
+        u.GetWindow.argtypes = [wintypes.HWND, wintypes.UINT]
+        u.GetWindow.restype = wintypes.HWND
+        u.GetWindowTextLengthW.argtypes = [wintypes.HWND]
+        u.GetWindowTextLengthW.restype = ctypes.c_int
+        u.ShowWindow.argtypes = [wintypes.HWND, ctypes.c_int]
+        u.ShowWindow.restype = wintypes.BOOL
+        self._enum_proc = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+        u.EnumWindows.argtypes = [self._enum_proc, wintypes.LPARAM]
+        u.EnumWindows.restype = wintypes.BOOL
 
     def foreground(self) -> int:
         return int(self.user32.GetForegroundWindow() or 0)
@@ -141,6 +157,33 @@ class _Win32Api:
         info.cbSize = self._ctypes.sizeof(info)
         return int(info.dwTime) if self.user32.GetLastInputInfo(self._ctypes.byref(info)) else 0
 
+    def allow_foreground(self) -> bool:
+        """Let any process take the foreground once (only effective while this process is in front)."""
+        asfw_any = 0xFFFFFFFF
+        return bool(self.user32.AllowSetForegroundWindow(asfw_any))
+
+    def altium_window(self) -> int:
+        """Altium's main window: the visible, unowned top-level window of ``X2.EXE`` with the longest title
+        (0 if there is none)."""
+        u = self.user32
+        gw_owner = 4
+        found: list[tuple[int, int]] = []
+
+        def visit(hwnd: int, _param: int) -> bool:
+            if hwnd and u.IsWindowVisible(hwnd) and not u.GetWindow(hwnd, gw_owner):
+                length = int(u.GetWindowTextLengthW(hwnd))
+                if length and self.image_name(self.process_id(hwnd)).casefold() == ALTIUM_IMAGE:
+                    found.append((length, int(hwnd)))
+            return True
+
+        u.EnumWindows(self._enum_proc(visit), 0)
+        return max(found)[1] if found else 0
+
+    def restore(self, hwnd: int) -> None:
+        sw_restore = 9
+        if self.user32.IsIconic(hwnd):
+            self.user32.ShowWindow(hwnd, sw_restore)
+
 
 _api: WindowApi | None = None
 _state_lock = threading.Lock()
@@ -176,6 +219,42 @@ def keep_foreground(api: WindowApi | None = None, *, grace_s: float = GRACE_S, p
         with contextlib.suppress(Exception):  # the guard must never break a bridge call
             _start(api, grace_s, poll_s)
     yield
+
+
+def allow_altium_foreground(api: WindowApi | None = None) -> bool:
+    """Before a launch the user asked for: allow Altium to come to the front (never raises)."""
+    api = api or _default_api()
+    allow = getattr(api, "allow_foreground", None)
+    if allow is None:
+        return False
+    try:
+        return bool(allow())
+    except Exception as exc:  # noqa: BLE001 - only a convenience
+        log.debug("Vordergrundwechsel nicht freigegeben: %s", exc)
+        return False
+
+
+def bring_altium_to_front(api: WindowApi | None = None) -> bool:
+    """Activate Altium's main window (restored if minimised); ``False`` if it is not found or Windows refused.
+    Never raises – the bridge call it follows has succeeded."""
+    global _current
+    api = api or _default_api()
+    window = getattr(api, "altium_window", None)
+    if api is None or window is None:
+        return False
+    try:
+        hwnd = int(window())
+        if not hwnd:
+            return False
+        with _state_lock:
+            _current = next(_generation)  # an older keep_foreground watcher must not undo this
+        restore = getattr(api, "restore", None)
+        if restore is not None:
+            restore(hwnd)
+        return bool(api.activate(hwnd))
+    except Exception as exc:  # noqa: BLE001 - only a convenience
+        log.debug("Altium nicht nach vorn geholt: %s", exc)
+        return False
 
 
 def _start(api: WindowApi, grace_s: float, poll_s: float) -> None:

@@ -6440,6 +6440,160 @@
         }
       }
     },
+    "/api/altium/edit": {
+      "post": {
+        "tags": [
+          "altium"
+        ],
+        "summary": "Edit In Altium",
+        "description": "Job: open the library of a symbol/footprint in Altium and show it there; PartForge takes every save over.",
+        "operationId": "edit_in_altium_api_altium_edit_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AltiumJobOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/altium/edit/sessions": {
+      "get": {
+        "tags": [
+          "altium"
+        ],
+        "summary": "Edit Sessions",
+        "description": "The libraries of the open library that are being edited in Altium (watched for saves).",
+        "operationId": "edit_sessions_api_altium_edit_sessions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EditSessionInfo"
+                  },
+                  "type": "array",
+                  "title": "Response Edit Sessions Api Altium Edit Sessions Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/altium/edit/sessions/{session_id}/check": {
+      "post": {
+        "tags": [
+          "altium"
+        ],
+        "summary": "Check Edit Session",
+        "description": "Job: take over what was saved in Altium now (the watcher does it on its own a moment after a save).",
+        "operationId": "check_edit_session_api_altium_edit_sessions__session_id__check_post",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AltiumJobOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/altium/edit/sessions/{session_id}/end": {
+      "post": {
+        "tags": [
+          "altium"
+        ],
+        "summary": "End Edit Session",
+        "description": "Stop watching the library; a save that was not taken over yet is taken over first (job).",
+        "operationId": "end_edit_session_api_altium_edit_sessions__session_id__end_post",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditEndOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/datasheets": {
       "get": {
         "tags": [
@@ -9617,7 +9771,8 @@
                     "generated",
                     "datasheet",
                     "imported",
-                    "external"
+                    "external",
+                    "altium"
                   ]
                 },
                 "type": "array"
@@ -10987,6 +11142,203 @@
         "type": "object",
         "title": "DimValue",
         "description": "One package dimension (mm, angles in degrees); ``None`` = not given in the datasheet."
+      },
+      "EditEndOut": {
+        "properties": {
+          "ended": {
+            "type": "boolean",
+            "title": "Ended",
+            "description": "Beendet (true) – oder erst nach der Übernahme im Job (false)"
+          },
+          "job": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job",
+            "description": "JobSnapshot der abschließenden Übernahme"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ended",
+          "message"
+        ],
+        "title": "EditEndOut"
+      },
+      "EditIn": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "symbol",
+              "footprint"
+            ],
+            "title": "Kind"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "name"
+        ],
+        "title": "EditIn"
+      },
+      "EditResult": {
+        "properties": {
+          "time": {
+            "type": "string",
+            "title": "Time"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "edited": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Edited"
+          },
+          "added": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Added"
+          },
+          "removed": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Removed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "time",
+          "message"
+        ],
+        "title": "EditResult",
+        "description": "The last take-over of a session."
+      },
+      "EditSessionInfo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "symbol",
+              "footprint"
+            ],
+            "title": "Kind"
+          },
+          "library": {
+            "type": "string",
+            "title": "Library"
+          },
+          "library_abs": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Library Abs"
+          },
+          "targets": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Targets"
+          },
+          "started": {
+            "type": "string",
+            "title": "Started"
+          },
+          "last_activity": {
+            "type": "string",
+            "title": "Last Activity"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "watching",
+              "saved",
+              "checking",
+              "error"
+            ],
+            "title": "State",
+            "description": "watching = Datei wie beim letzten Übernehmen, saved = in Altium gespeichert (wird gleich übernommen), checking = Übernahme läuft, error = letzte Übernahme fehlgeschlagen"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Id",
+            "description": "laufender Übernahme-Job"
+          },
+          "last_result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EditResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "library",
+          "started",
+          "last_activity",
+          "state"
+        ],
+        "title": "EditSessionInfo",
+        "description": "A session as the UI sees it."
       },
       "ExportJobOut": {
         "properties": {

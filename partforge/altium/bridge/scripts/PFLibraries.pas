@@ -1,8 +1,8 @@
 { PartForge Altium bridge - library management commands.
 
   ping, installed_libraries, install_library, uninstall_library, open_document,
-  document_state, document_states, refresh_document, close_own_documents, list_components,
-  resolve_db_components, dblib_install_state, refresh_dblib.
+  edit_component, document_state, document_states, refresh_document, close_own_documents,
+  list_components, resolve_db_components, dblib_install_state, refresh_dblib.
   Built only from API calls verified on Altium Designer 26.10 (altium-live.md,
   altium-verify-2 kit); see PFUtils.pas for the coding rules.
   Portions derived from altium-mcp (MIT License) - see THIRD_PARTY_NOTICES.txt. }
@@ -112,6 +112,118 @@ begin
         begin
             Client.ShowDocument(Doc);
             PFOutKV('was_open', PFBoolStr(WasOpen));
+        end;
+    end;
+end;
+
+{ "In Altium bearbeiten": open a SchLib/PcbLib (or bring it to the front) and make one component
+  the current one of its library editor. Only the shown component changes - the document itself
+  is never modified, saved or closed. Names are compared case-insensitively.
+  Out: was_open, found, current (component shown afterwards), modified. }
+procedure PFCmdEditComponent(Dummy: Integer);
+var
+    Path, Kind, Name, Wanted, S, Current : String;
+    Doc, Lib, It, Comp, Hit, Board : IDispatch;
+    WasOpen, Found, IsModified : Boolean;
+    I : Integer;
+begin
+    Path := PFArg('path');
+    Kind := UpperCase(PFArg('kind'));
+    Name := PFArg('name');
+    Wanted := UpperCase(Name);
+    if not FileExists(Path) then
+        PFFail('file not found: ' + Path)
+    else
+    begin
+        WasOpen := Client.IsDocumentOpen(Path);
+        if WasOpen then
+            Doc := Client.GetDocumentByPath(Path)
+        else
+        begin
+            PFLog('open ' + Path);
+            Doc := Client.OpenDocument(Kind, Path);
+        end;
+        if Doc = Nil then
+            PFFail('document could not be opened: ' + Path)
+        else
+        begin
+            Client.ShowDocument(Doc);
+            Found := False;
+            Current := '';
+            Hit := Nil;
+            if Kind = 'SCHLIB' then
+            begin
+                Lib := Nil;
+                if SchServer <> Nil then
+                    Lib := SchServer.GetSchDocumentByPath(Path);
+                if Lib = Nil then
+                    PFFail('schematic library not available: ' + Path)
+                else
+                begin
+                    It := Lib.SchLibIterator_Create;
+                    It.AddFilter_ObjectSet(MkSet(eSchComponent));
+                    Comp := It.FirstSchObject;
+                    while Comp <> Nil do
+                    begin
+                        S := Comp.LibReference;
+                        if Hit = Nil then
+                            if UpperCase(S) = Wanted then
+                                Hit := Comp;
+                        Comp := It.NextSchObject;
+                    end;
+                    Lib.SchIterator_Destroy(It);
+                    if Hit <> Nil then
+                    begin
+                        PFLog('select ' + Name);
+                        Lib.CurrentSchComponent := Hit;
+                        Lib.GraphicallyInvalidate;
+                        Found := True;
+                    end;
+                    Comp := Lib.CurrentSchComponent;
+                    if Comp <> Nil then
+                        Current := Comp.LibReference;
+                end;
+            end
+            else
+            begin
+                Lib := Nil;
+                if PCBServer <> Nil then
+                    Lib := PCBServer.GetPCBLibraryByPath(Path);
+                if Lib = Nil then
+                    PFFail('PCB library not available: ' + Path)
+                else
+                begin
+                    for I := 0 to Lib.ComponentCount - 1 do
+                    begin
+                        Comp := Lib.GetComponent(I);
+                        if Comp <> Nil then
+                        begin
+                            S := Comp.Name;
+                            if Hit = Nil then
+                                if UpperCase(S) = Wanted then
+                                    Hit := Comp;
+                        end;
+                    end;
+                    if Hit <> Nil then
+                    begin
+                        PFLog('select ' + Name);
+                        Lib.CurrentComponent := Hit;
+                        Board := Lib.Board;
+                        if Board <> Nil then
+                            Board.ViewManager_FullUpdate;
+                        Lib.RefreshView;
+                        Found := True;
+                    end;
+                    Comp := Lib.CurrentComponent;
+                    if Comp <> Nil then
+                        Current := Comp.Name;
+                end;
+            end;
+            IsModified := Doc.Modified;
+            PFOutKV('was_open', PFBoolStr(WasOpen));
+            PFOutKV('found', PFBoolStr(Found));
+            PFOutKV('current', Current);
+            PFOutKV('modified', PFBoolStr(IsModified));
         end;
     end;
 end;

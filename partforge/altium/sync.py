@@ -27,6 +27,8 @@ How ``ensure_*`` writes (one batch per library file, under the process-wide libr
 4. **Pin-out protection.** A different pin-out (``{designator: (pin name, part)}``) for an
    existing symbol name is refused with a German message (``allow_pin_changes=True`` after the
    user confirmed); nothing is written or registered in that case.
+   An ``altium`` component (edited in Altium, :mod:`partforge.altium.editing`) is never skipped as unchanged:
+   saving it from PartForge replaces the Altium version on purpose, even with the same geometry.
 5. **Never overwrite what PartForge does not own.** A component of the same name that is
    already in the target file but was neither written by PartForge nor taken over into the
    registry is *adopted* (registered from the file as ``imported``, not written). A symbol
@@ -1241,6 +1243,7 @@ def _prepare_items(
             and existing.status == "ok"
             and existing.spec is not None
             and _rel_key(existing.library) == _rel_key(item.rel)
+            and existing.source != "altium"
             and ops.fingerprint(existing.spec) == ops.fingerprint(item.spec)
             and item.library.is_file()
         ):

@@ -75,7 +75,9 @@ class UpsertResult(BaseModel):
     unchanged: list[str] = Field(default_factory=list)  # mode="update": existing rows without differences
 
 
-RecordSource = Literal["generated", "datasheet", "imported", "external"]
+#: ``altium`` = edited and saved in Altium Designer ("In Altium bearbeiten", altium/editing.py): the library file
+#: holds the authoritative version, the spec is its read-back.
+RecordSource = Literal["generated", "datasheet", "imported", "external", "altium"]
 RecordStatus = Literal["ok", "pending", "missing", "error"]
 
 

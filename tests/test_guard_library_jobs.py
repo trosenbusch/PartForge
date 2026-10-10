@@ -15,7 +15,7 @@ import pytest
 from fastapi.testclient import TestClient
 from test_writer_samples import resistor_symbol
 
-from partforge.altium import housestyle, libimport, sync
+from partforge.altium import editing, housestyle, libimport, sync
 from partforge.api import routes_libraries, routes_series, routes_system
 from partforge.api.routes_system import WorkspaceCreateIn, WorkspaceOpenIn
 from partforge.datasheet import proposal
@@ -180,6 +180,45 @@ def start_conform(client: TestClient, monkeypatch: pytest.MonkeyPatch, gate: Gat
     return str(client.post("/api/housestyle/apply", json={}).json()["job"]["id"])
 
 
+def _fake_altium(client: TestClient) -> None:
+    from test_refresh_support import FakeBridge
+
+    from partforge.api import routes_altium
+
+    client.app.dependency_overrides[routes_altium.get_bridge] = lambda: FakeBridge()  # type: ignore[attr-defined]
+
+
+def start_altium_edit(client: TestClient, monkeypatch: pytest.MonkeyPatch, gate: Gate, ws: Workspace) -> str:
+    """As POST /altium/edit starts it: the baseline of the library file is the step in progress."""
+    from types import SimpleNamespace
+
+    from partforge.api import routes_altium_edit
+
+    _fake_altium(client)
+    path = ws.root / "Footprints" / "PF_GUARD.PcbLib"
+    monkeypatch.setattr(editing, "_editable", lambda _ws, kind, name: (SimpleNamespace(name=name), path))
+    monkeypatch.setattr(routes_altium_edit, "get_writer", lambda **_kw: object())
+    monkeypatch.setattr(sync, "get_writer", lambda **_kw: object())
+    monkeypatch.setattr(editing, "_reader", lambda _writer: object())
+    monkeypatch.setattr(editing, "capture_baseline", lambda _writer, _path: (gate.run(None), editing.FileBaseline())[1])
+    return str(client.post("/api/altium/edit", json={"kind": "footprint", "name": "PF_GUARD"}).json()["job"]["id"])
+
+
+def start_altium_take_over(client: TestClient, monkeypatch: pytest.MonkeyPatch, gate: Gate, ws: Workspace) -> str:
+    """As POST /altium/edit/sessions/{id}/check (and the watcher) starts it."""
+    from partforge.api import routes_altium_edit
+
+    service = editing.AltiumEditService(altium_running=None)
+    service.load(ws)
+    session = editing.EditSession(id="guard", kind="footprint", library=r"Footprints\PF_GUARD.PcbLib",
+                                  targets=["PF_GUARD"], started="2026-10-10T12:00:00",
+                                  last_activity="2026-10-10T12:00:00", baseline=editing.FileBaseline())
+    service._sessions[session.id] = session
+    client.app.dependency_overrides[routes_altium_edit.get_edit_service] = lambda: service  # type: ignore[attr-defined]
+    monkeypatch.setattr(editing, "_take_over", lambda s, _service, _id, **_kw: gate.run(s.ctx))
+    return str(client.post("/api/altium/edit/sessions/guard/check").json()["job"]["id"])
+
+
 STARTERS: dict[str, Starter] = {
     "libraries.sync": start_sync,
     "libraries.scan": start_scan,
@@ -192,6 +231,8 @@ STARTERS: dict[str, Starter] = {
     "import": start_import,
     "libraries.import": start_library_import,
     "libraries.conform": start_conform,
+    "altium.edit": start_altium_edit,
+    "libraries.altium-edit": start_altium_take_over,
 }
 
 

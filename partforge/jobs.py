@@ -109,6 +109,8 @@ LIBRARY_JOB_KINDS: frozenset[str] = frozenset({
     "import",  # spreadsheet import (routes_parts -> importers.spreadsheet.run_import(library=…))
     "libraries.import",  # library import (routes_libimport -> altium.libimport.run_import)
     "libraries.conform",  # batch edit to the house style (routes_housestyle -> altium.housestyle.apply/undo_last)
+    "altium.edit",  # "In Altium bearbeiten": baseline + session (routes_altium_edit -> altium.editing.start_editing)
+    "libraries.altium-edit",  # take over what was saved in Altium (altium.editing.take_over)
 })
 #: Job log line of a job a library switch stopped (unless the job reports it itself).
 LIBRARY_SWITCH_MESSAGE = (

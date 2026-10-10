@@ -529,7 +529,8 @@ ensure_default_symbol_kinds() -> list[str]                            # dieselbe
 build_examples(ws, *, tables=None) -> ExampleContent                  # rein, ohne Datenbank
 ```
 
-* `SymbolRecord`: `name`, `library` (rel. Pfad), `source` (`generated|datasheet|imported|external`), `spec`
+* `SymbolRecord`: `name`, `library` (rel. Pfad), `source` (`generated|datasheet|imported|external|altium` – `altium` =
+  in Altium bearbeitet, §8.9), `spec`
   (`SymbolSpec|None`), `pin_count`, `part_count`, `kind`, `status` (`ok|pending|missing|error`), `status_message`,
   `updated`, `usage`, `content_hash` (sha256 des gespeicherten Spec-Texts; gesetzt, wenn der Record mit Spec
   gelesen wurde – leichte Listen ohne Spec: `None`, dafür `registry.content_hashes`). `get_symbol`/`get_footprint`
@@ -942,7 +943,8 @@ component_thumbnail(spec, theme="dark") -> str        # das eine Vorschaubild (R
 ```
 
 * Die Registry ist der Sollzustand: registrieren, je Bibliotheksdatei **ein** Schreibaufruf (unter `library_lock`),
-  unveränderte Specs (Fingerabdruck) überspringen, geänderte Pinbelegung eines vorhandenen Namens nur nach
+  unveränderte Specs (Fingerabdruck) überspringen (nie ein `altium`-Eintrag: Speichern aus PartForge ersetzt die
+  Altium-Fassung absichtlich, auch bei gleicher Geometrie; ebenso `unchanged` im Probelauf des Editors), geänderte Pinbelegung eines vorhandenen Namens nur nach
   Bestätigung (`allow_pin_changes`), Footprints mit 3D-Körpern bekommen `3D/<Name>.step`, Teilepfade folgen
   verschobenen Symbolen/Footprints (`parts.set_library_path`). Danach `events.LIBRARIES_WRITTEN`. Fortschritt je
   Art: „Symbole geschrieben: 3 (2 unverändert, 1 mit Fehler)“, „Footprints geschrieben: 5“.
@@ -1068,7 +1070,8 @@ component_thumbnail(spec, theme="dark") -> str        # das eine Vorschaubild (R
   gerade geöffneten Bibliothek. Jeder Job, der Bauteile, Registry oder Bibliotheksdateien schreibt
   (`jobs.LIBRARY_JOB_KINDS`: `libraries` = „Bibliotheken schreiben“, `libraries.sync|scan|save|delete|layers`,
   `libraries.import` = Bibliotheksimport (§8.7), `libraries.conform` = Stapelbearbeitung und ihr Rückgängigmachen
-  (§8.8), `series`, `datasheet-commit`, `import` = Tabellenimport), hält die Bibliothek, für die er gestartet wurde, seine
+  (§8.8), `altium.edit` / `libraries.altium-edit` = In Altium bearbeiten und Übernehmen (§8.9), `series`,
+  `datasheet-commit`, `import` = Tabellenimport), hält die Bibliothek, für die er gestartet wurde, seine
   ganze Laufzeit: `with library_hold(ctx, root) as ws`.
   Direkte Schreibzugriffe im Request (Editor speichern/löschen, externe Bibliotheken, Datenblatt hochladen,
   korrigieren, löschen) halten sie mit `ctx=None`. Halten ist geteilt (mehrere Jobs gleichzeitig; verschachtelt im
@@ -1097,7 +1100,8 @@ aus Vorlagen erzeugtes Skriptprojekt, Daten über Spec-Dateien, Start über
 `"<X2.EXE>" -RScriptingSystem:RunScript(ProjectName=…|ProcName="PartForgeBridge>Run")`, Schritt-Log und Timeout
 `script_timeout_s`. Hängt ein Skript, meldet `BridgeWedgedError` „In Altium Strg+F3 drücken“. PartForge schließt
 **niemals** Dialoge anderer Prozesse. Funktionen: Status, DbLib installieren/deinstallieren/Installationszustand,
-DbLib aktualisieren, Dokument öffnen/Zustand/neu laden, Zustand vieler Dokumente in einem Lauf
+DbLib aktualisieren, Dokument öffnen/Zustand/neu laden, Bauteil zum Bearbeiten zeigen (`edit_component`, §8.9),
+Zustand vieler Dokumente in einem Lauf
 (`document_states`: je Pfad geöffnet/geändert, höchstens 200 Pfade je Skriptlauf – Import und Stapelbearbeitung
 fragen damit alle Zieldateien vorab ab, `_AltiumGuard.prefetch`), DB-Bauteil auflösen (Prüfung), SchLib/PcbLib
 schreiben.
@@ -1105,6 +1109,13 @@ schreiben.
 bleibt verborgen (kein neuer Editor-Tab). `resolve_db_component` installiert eine nicht installierte DbLib nur
 vorübergehend und gibt danach ihr verstecktes Dokument samt Datenbankverbindung wieder frei
 (`DbComponentResolution.released`). Beides VERIFIED (`altium-e2e.md` §5.2, §5.3).
+`edit_component(path, name)` öffnet eine SchLib/PcbLib (oder holt die offene nach vorn) und macht das Bauteil zum
+aktuellen des Bibliothekseditors (SchLib: Iterator + `CurrentSchComponent` + `GraphicallyInvalidate`; PcbLib:
+`GetComponent(i)` + `CurrentComponent` + `Board.ViewManager_FullUpdate` + `RefreshView`; Namen ohne
+Groß-/Kleinschreibung) – das Dokument wird nie geändert, gespeichert oder geschlossen und **nicht** als PartForges
+eigenes vermerkt (`close_own_documents` schließt es nie). Antwort `ComponentFocus {was_open, found, current,
+modified}`. VERIFIED 2026-10-10 mit Altium 26.10 (öffnen, umschalten bei offener Bibliothek, unbekannter Name:
+`found = 0`, `modified` bleibt 0).
 
 **Fensterfokus** (`bridge/focus.py`): Altium holt sein Hauptfenster nach vorn, sobald ein RunScript-Befehl
 ankommt – bei automatischer Aktualisierung nach jeder Änderung landeten sonst Tastendrücke des Benutzers in Altium.
@@ -1115,6 +1126,11 @@ dieser Zeit alle 30 ms das Vordergrundfenster und aktiviert das vorher aktive Fe
 einem anderen Programm oder nach einer Wiederherstellung per Klick/Taste wieder zu Altium, hört der Wächter auf; ein
 neuerer Start ersetzt den älteren Wächter. Der Aufruf wird nie verzögert, Fehler des Wächters erreichen ihn nicht.
 Abschaltbar mit `PARTFORGE_ALTIUM_KEEP_FOCUS=0`.
+Ausnahme „In Altium bearbeiten“ (`execute(…, foreground=True)`): kein Wächter; vor dem Start
+`allow_altium_foreground()` (`AllowSetForegroundWindow(ASFW_ANY)` – Windows lässt einen anderen Prozess nur nach vorn,
+wenn der Vordergrundprozess es erlaubt), nach der Antwort `bring_altium_to_front()`: das sichtbare, nicht besessene
+Hauptfenster von `X2.EXE` (längster Titel) wiederherstellen, falls minimiert, und aktivieren; ein noch laufender
+älterer Wächter wird beendet. Beides nie mit Ausnahme.
 
 **Prüfung in Altium** (`POST /api/altium/verify`, Job `altium.verify`; Auswahl, Modelle und gespeichertes Ergebnis in
 `altium/verify.py`, Ablauf in `routes_altium`):
@@ -1308,6 +1324,79 @@ verlustfrei auf Datensatzebene (§8.6): was eine Regel nicht betrifft, behält s
   Linienbreiten, Textschrift und -höhe, Pin-1-Punkt und Courtyard-Kreuz vor – je Vorschlag mit Beleg und
   `differs`; `symbol`/`footprint`/`layers` sind vollständige, geprüfte Einstellungen. Die Einstellungsseite übernimmt
   die gewählten Vorschläge in den Entwurf.
+
+### 8.9 In Altium bearbeiten (`editing.py`, `routes_altium_edit.py`)
+
+Ein registriertes Symbol/Footprint in Altium bearbeiten; PartForge übernimmt jedes Speichern dort automatisch.
+
+```python
+start_editing(ctx, root, kind, name, bridge, *, service=None) -> dict   # Job altium.edit
+take_over(ctx, root, session_id, *, final=False, trigger="manual", service=None) -> dict   # Job libraries.altium-edit
+edit_signature(spec, *, height=None) -> str; byte_marks(path, lib_kind) -> {name: hash} | None
+capture_baseline(writer, path) -> FileBaseline; classify(baseline, now, *, targets, rel, manifest, records, fingerprint)
+AltiumEditService: start/stop, load(ws), poll(), sessions(), info(ws), submit_take_over(ws, id), end(ws, id)
+get_edit_service() / set_edit_service() / start_service() / stop_service()   # Lifespan des Routers
+```
+
+* **Start** (`POST /api/altium/edit {kind, name}` → `{job}`; vorab 404 nicht registriert, 409 extern / nicht
+  `ok` (noch nicht geschrieben) / Datei fehlt / nicht im Bibliotheksordner, 503 Altium nicht gestartet, kein
+  X2.EXE, kein Bibliotheks-Writer mit Rust-Reader): hält die Bibliothek, hält den **Stand** der Datei fest
+  (`FileBaseline`: Größe, mtime, SHA-256; je Bauteil `bytes` = Hash seiner Streams aus `preserve.snapshot`/
+  `component_storages`, `sig` = `edit_signature` des zurückgelesenen Specs) und öffnet sie über
+  `bridge.edit_component` (Altium kommt nach vorn, §8.5). Eine Sitzung je Datei; `targets` = die zum Bearbeiten
+  geöffneten Bauteile (ein zweites Bauteil derselben Datei setzt die Sitzung fort, eine noch nicht übernommene
+  Speicherung wird vorher übernommen). Scheitert die Brücke, bleibt keine neue Sitzung zurück. Ergebnis `{message,
+  session, found, was_open, modified, continued, …}`.
+* **Sitzungen** (`EditSession`) stehen in der Bibliothek (`pf_meta` `altium.edit.sessions`) und überstehen
+  Neustarts. Der Dienst (Thread `partforge-altium-edit`) prüft alle 1,5 s nur Größe und mtime der beobachteten
+  Dateien; eine geänderte Datei, die `SETTLE_S` = 1 s unverändert blieb, startet den Job „Änderungen aus Altium
+  übernehmen: `<Datei>`“ (einer je Sitzung). Fehlschläge: erneuter Versuch nach 15 s × Versuch, nach 5 Versuchen erst
+  beim nächsten Speichern (Zustand `error` mit Meldung). Eine Sitzung endet auf Wunsch (`POST …/end`: eine noch nicht
+  übernommene Speicherung zuerst als Job, `{ended: false, job}`, sonst `{ended: true}`), nach `MAX_IDLE_S` = 12 h ohne
+  Speichern, wenn Altium seit 30 s nicht mehr läuft (Prozessliste, nur bei unveränderter Datei; in der Testsuite aus),
+  wenn die Datei fehlt oder kein geöffnetes Bauteil mehr darin ist. `GET /api/altium/edit/sessions` →
+  `EditSessionInfo {id, kind, library, library_abs, targets, started, last_activity, state (watching|saved|checking|
+  error), job_id, last_result, error}` – billig (kein Altium), das Frontend pollt es, solange etwas beobachtet wird.
+  `POST …/check` übernimmt sofort.
+* **Übernahme** (`take_over`, unter `library_lock` der Datei): unveränderter Inhalt (SHA-256) → nur mtime
+  nachtragen (`quiet`). Sonst Stand neu lesen (Signaturen nur für Bauteile mit geänderten Bytes; ändert sich die
+  Datei währenddessen oder ist sie gesperrt → `retry`, `quiet`) und `classify`:
+  * Bytes gleich → unverändert;
+  * seit dem Stand von PartForge geschrieben (Manifest gilt für die Datei, sein Fingerabdruck = der des Registry-Specs)
+    → eigener Schreibvorgang (`own`, z. B. ein Bauteil, das die Synchronisierung inzwischen in dieselbe Datei schrieb);
+  * Name in einer anderen Bibliothek registriert → `conflicts` (nie stillschweigend verschoben);
+  * neuer Name → `added`;
+  * ein `target` mit geänderten Bytes → `edited` (auch Änderungen, die das PartForge-Modell nicht zeigt, z. B. am
+    3D-Modell);
+  * jedes andere Bauteil nur bei geänderter **Signatur** → `edited`. Altium serialisiert beim Speichern **alle**
+    Bauteile neu (VERIFIED 2026-10-10 mit Altium 26.10 an einer PartForge-PcbLib: ein bloßes Speichern änderte die
+    Bytes aller Footprints, sortierte ihre Primitive um, vertauschte Linienendpunkte, rundete auf Altiums interne
+    Einheit – 0,87 mm → 0,870001 mm – und machte aus den extrudierten Körpern 3D-Modelle, die der Reader nur als
+    Hinweis meldet). `edit_signature` ist dagegen unempfindlich: Primitive sortiert, Linienendpunkte geordnet, Winkel
+    modulo 360°, Polygone ab ihrem kleinsten Punkt in kleinerer Richtung, Werte auf 1 µm (Symbole 0,001 mil) gerundet,
+    Footprints ohne 3D-Körper und STEP-Verweis, dafür mit der in der PcbLib gespeicherten **Bauhöhe**
+    (`heights.read_footprint_heights`; der Reader leitet `spec.height` aus den 3D-Körpern ab, eine in Altium gesetzte
+    Höhe steht nur im `HEIGHT`-Parameter – VERIFIED am selben Tag: geöffneter Footprint und einer mit geänderter Höhe
+    `edited`, fünf nur neu gespeicherte unverändert);
+  * verschwundene Namen → `removed`.
+  `edited`/`added` werden neu gelesen (eingebettete STEP-Modelle nach `3D\`) und mit `source = "altium"`, Status `ok`
+  registriert (Statusmeldung = was PartForge nicht darstellen kann); Footprints bekommen die gespeicherte Bauhöhe,
+  `family`/`ipc_name`/`density` der vorherigen Fassung bleiben. `spec.generator` behält die Generatordaten der
+  vorherigen Fassung **ohne** `geometry_hash`/`land_hash` („Bearbeiten“/„Neu generieren“ bleiben möglich, nach
+  Rückfrage) plus `altium_edit = {saved, previous_source}`. Geänderte Pinbelegung (Symbole) bzw. Pads (Footprints)
+  stehen mit der Verwendung in `warnings`. Registrierte Bauteile, die fehlen, werden `missing` („in Altium gelöscht
+  oder umbenannt“; genau ein neuer Name zugleich → als wahrscheinliche Umbenennung gemeldet, das Ziel der Sitzung folgt
+  ihm; Bauteile verweisen weiter auf den alten Namen). Das **Manifest** der Datei wird auf die gespeicherte Datei
+  gesetzt: eigene Schreibvorgänge behalten ihren Fingerabdruck, alle anderen eigenen und übernommenen Bauteile
+  `None` – keine vollständige Neuerzeugung dieser Datei (§8.4), kein „außerhalb geändert“. Danach ist die gespeicherte
+  Datei der neue Stand der Sitzung. Schlussmeldung: „Aus Altium übernommen: „A“, „B“.“ (+ Zeilen zu Umbenennung,
+  fehlenden Bauteilen, Konflikten); `quiet` (keine Meldung im Frontend), wenn nur PartForge geschrieben hat oder
+  nichts inhaltlich geändert wurde. Ergebnis `{message, quiet, retry, ended, edited, added, removed, renamed,
+  conflicts, own, warnings, session, kind, library}`.
+* **Herkunft `altium`** im Rest von PartForge: nie in `_OWN_SOURCES` (keine Höhenreparatur, keine Hausstil-Regeln
+  am Spec – die Stapelbearbeitung ändert die Datei und liest neu), die 3D-Vorschau liest die Modelle aus der PcbLib
+  (§5), der Bibliotheksimport behandelt sie wie `imported` derselben Datei, der Editor-Probelauf meldet nie
+  `unchanged`.
 
 ## 9. Serien-Assistent (`partforge/domain/mpn`)
 

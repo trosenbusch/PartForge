@@ -75,6 +75,8 @@ __all__ = [
 
 #: Subfolder of ``Symbols\\`` / ``Footprints\\`` that receives imported libraries.
 IMPORT_FOLDER: Final = "Import"
+#: Registry sources of components whose content lives in their imported file (also after an edit in Altium).
+_FILE_SOURCES: Final = frozenset({"imported", "altium"})
 SCAN_TTL_S: Final = 6 * 3600
 MAX_SCANS: Final = 8
 _SAFE_SEGMENT_RE: Final = re.compile(r'[<>:"|?*\x00-\x1f]')
@@ -517,7 +519,7 @@ def _classify(result: ImportScan, ws: Workspace, folder: str, *, check_files: bo
             key = (entry.kind, comp.name.casefold())
             registered = known.get(comp.name.casefold())
             if registered is not None:
-                same_file = registered.source == "imported" and _rel_key(registered.library) == _rel_key(target)
+                same_file = registered.source in _FILE_SOURCES and _rel_key(registered.library) == _rel_key(target)
                 comp.state = "imported" if same_file else "taken"
                 comp.registered_library = registered.library
             elif key in seen:
@@ -674,7 +676,7 @@ def run_import(options: LibraryImportOptions, *, ctx: JobContext | None = None) 
                     continue
                 registered = registered_names[entry.kind].get(comp.name.casefold())
                 if registered is not None and not (
-                    registered.source == "imported" and _rel_key(registered.library) == _rel_key(target_rel)
+                    registered.source in _FILE_SOURCES and _rel_key(registered.library) == _rel_key(target_rel)
                 ):
                     out["conflicts"].append({"kind": "symbol" if entry.kind == "schlib" else "footprint",
                                              "name": comp.name, "library": target_rel,
@@ -712,7 +714,7 @@ def run_import(options: LibraryImportOptions, *, ctx: JobContext | None = None) 
                 # (otherwise "missing in its file" would make the next sync write the old one back)
                 present = {c.name.casefold() for c in entry.components}
                 for rec in list(registered_names[entry.kind].values()):
-                    if (rec.source == "imported" and _rel_key(rec.library) == _rel_key(target_rel)
+                    if (rec.source in _FILE_SOURCES and _rel_key(rec.library) == _rel_key(target_rel)
                             and rec.name.casefold() not in present):
                         with session.bound():
                             gone = (registry.delete_symbol(rec.name) if entry.kind == "schlib"

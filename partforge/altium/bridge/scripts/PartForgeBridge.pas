@@ -19,6 +19,8 @@ begin
         PFCmdUninstallLibrary(0)
     else if Cmd = 'open_document' then
         PFCmdOpenDocument(0)
+    else if Cmd = 'edit_component' then
+        PFCmdEditComponent(0)
     else if Cmd = 'document_state' then
         PFCmdDocumentState(0)
     else if Cmd = 'document_states' then

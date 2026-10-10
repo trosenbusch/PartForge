@@ -192,7 +192,7 @@ def _resolve(ws: Workspace, rec: FootprintRecord, limits: bool) -> tuple[list[Pr
 
     # Generated models have authoritative geometry in the editable spec. In particular,
     # no writer is needed to display a generated/custom STEP file or the existing prisms.
-    if rec.source not in ("imported", "external"):
+    if rec.source not in ("imported", "external", "altium"):
         saved()
         return models, warnings
     if library is None or not library.is_file():

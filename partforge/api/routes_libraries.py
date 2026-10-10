@@ -727,6 +727,7 @@ def save_symbol(
     if dry_run:
         unchanged = bool(
             existing is not None and existing.status == "ok" and existing.spec is not None
+            and existing.source != "altium"  # an Altium version is always replaced (sync rule 3)
             and sync.symbol_fingerprint(existing.spec) == sync.symbol_fingerprint(spec)
             and _same_library(existing.library, library) and library_abs and Path(library_abs).is_file()
         )
@@ -1002,6 +1003,8 @@ def _footprint_unchanged(existing: FootprintRecord | None, spec: FootprintSpec, 
     """Dry run: the save would write nothing (same geometry in the same, existing file). The STEP reference
     the save adds to footprints with 3D bodies is taken from the registered spec (best effort)."""
     if existing is None or existing.status != "ok" or existing.spec is None or not _same_library(existing.library, library):
+        return False
+    if existing.source == "altium":  # edited in Altium: a save from PartForge always replaces it (sync rule 3)
         return False
     if not library_abs or not Path(library_abs).is_file():
         return False

@@ -65,6 +65,7 @@ ROUTER_MODULES = [
     "footprints",
     "libraries",
     "altium",
+    "altium_edit",
     "datasheets",
     "libimport",
     "housestyle",

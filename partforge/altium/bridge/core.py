@@ -39,7 +39,7 @@ from ...config import AppSettings, load_settings, local_data_dir
 from ...geometry.model import FootprintSpec, SymbolSpec
 from ...workspace import FootprintStyle, LayerMap, SymbolStyle
 from ..models import BackendStatus
-from .focus import keep_foreground
+from .focus import allow_altium_foreground, bring_altium_to_front, keep_foreground
 from .process import X2_IMAGE, file_version, is_process_running
 from .protocol import BridgeResponse, parse_response, render_request
 from .spec import RenderedSpec, render_pcblib_spec, render_schlib_spec
@@ -54,6 +54,7 @@ __all__ = [
     "BridgeWedgedError",
     "BridgeCommandError",
     "BridgeWriteResult",
+    "ComponentFocus",
     "DbComponentResolution",
     "DbLibInstallState",
     "DbLibRefreshResult",
@@ -140,6 +141,18 @@ class DocumentState(BaseModel):
 
     path: str
     open: bool = False
+    modified: bool = False
+
+
+class ComponentFocus(BaseModel):
+    """Outcome of ``edit_component``: the library is shown in Altium, ``found`` = the component is the
+    current one of its library editor (``current`` = what Altium shows now)."""
+
+    path: str
+    name: str
+    was_open: bool = False
+    found: bool = False
+    current: str = ""
     modified: bool = False
 
 
@@ -652,8 +665,12 @@ class AltiumBridge:
         *,
         spec: RenderedSpec | None = None,
         timeout_s: float | None = None,
+        foreground: bool = False,
     ) -> BridgeResponse:
-        """Run one bridge command in Altium and return the parsed response."""
+        """Run one bridge command in Altium and return the parsed response.
+
+        ``foreground``: the user asked to work in Altium ("In Altium bearbeiten") – Altium may take the focus
+        (no :func:`~.focus.keep_foreground` guard) and its main window is brought to the front afterwards."""
         if not self.is_running():
             raise AltiumNotRunning("Altium Designer ist nicht gestartet. Bitte Altium starten und erneut versuchen.")
         if not self.x2_path:
@@ -678,14 +695,20 @@ class AltiumBridge:
             try:
                 try:
                     # Altium activates its window when the command arrives: keep the user's window in front
-                    # (only for the real launcher - test launchers never start X2.EXE).
-                    guard = keep_foreground() if self._launcher is _default_launcher else contextlib.nullcontext()
+                    # (only for the real launcher - test launchers never start X2.EXE) - unless the user wants
+                    # to work in Altium now: then Altium may come to the front.
+                    real = self._launcher is _default_launcher
+                    if foreground and real:
+                        allow_altium_foreground()
+                    guard = keep_foreground() if real and not foreground else contextlib.nullcontext()
                     with guard:
                         self._launcher(command_line)
                 except OSError as exc:
                     raise BridgeError(f"Altium Designer konnte nicht angesprochen werden ({self.x2_path}): {exc}") from exc
                 response = self._wait(request_id, timeout)
                 ok = response.ok
+                if ok and foreground and self._launcher is _default_launcher:
+                    bring_altium_to_front()
             finally:
                 self._cleanup(request_id, keep_log=not ok)
             with contextlib.suppress(OSError):
@@ -739,6 +762,26 @@ class AltiumBridge:
         if not was_open:
             self._remember_document(safe)
         return was_open
+
+    def edit_component(self, path: Path, name: str, kind: str | None = None) -> ComponentFocus:
+        """Open (or focus) a SchLib/PcbLib and show the component ``name`` in its library editor
+        ("In Altium bearbeiten"). The document is never modified, saved or closed – the user edits and
+        saves it in Altium. Unlike :meth:`open_document` the library is not remembered as PartForge's
+        own document: :meth:`close_own_documents` must never close it while the user works in it."""
+        p = Path(path)
+        doc_kind = kind or _document_kind(p)
+        if doc_kind not in ("SCHLIB", "PCBLIB"):
+            raise BridgeError(f"„{p.name}“ ist keine SchLib oder PcbLib.")
+        safe = altium_safe_path(p)
+        resp = self.execute("edit_component", {"path": safe, "kind": doc_kind, "name": name}, foreground=True)
+        return ComponentFocus(
+            path=safe,
+            name=name,
+            was_open=resp.flag("was_open"),
+            found=resp.flag("found"),
+            current=resp.value("current", "") or "",
+            modified=resp.flag("modified"),
+        )
 
     def document_state(self, path: Path) -> DocumentState:
         """Open/modified state of a document in Altium (e.g. before rewriting a library)."""

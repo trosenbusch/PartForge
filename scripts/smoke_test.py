@@ -46,8 +46,8 @@ REQUIRED_MODULES = (
     "win32timezone", "pywintypes", "pythoncom", "partforge.app", "partforge.__main__",
     "uvicorn.protocols.http.h11_impl", "uvicorn.lifespan.on", "sqlalchemy.dialects.sqlite",
     *(f"partforge.api.routes_{name}" for name in (
-        "system", "categories", "parts", "series", "symbols", "footprints", "libraries", "altium", "datasheets",
-        "libimport", "housestyle")),
+        "system", "categories", "parts", "series", "symbols", "footprints", "libraries", "altium", "altium_edit",
+        "datasheets", "libimport", "housestyle")),
 )
 #: Extension modules and DLLs below ``_internal`` (glob patterns).
 REQUIRED_FILES = ("win32/win32crypt.pyd", "pywin32_system32/pywintypes3*.dll", "pywin32_system32/pythoncom3*.dll")

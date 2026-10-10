@@ -478,6 +478,23 @@ def test_open_and_close_own_documents(tmp_path):
         bridge.open_document(tmp_path / "x.txt")
 
 
+def test_edit_component_shows_the_component_and_is_no_own_document(tmp_path):
+    def handler(command: str, args: dict[str, str]) -> list[str]:
+        assert command == "edit_component"
+        return ["KV|was_open|1", "KV|found|1", f"KV|current|{escape_field(args['name'])}", "KV|modified|0"]
+
+    bridge, fake = make_bridge(tmp_path, FakeAltium(tmp_path, handler))
+    lib = tmp_path / "PF_CHIP.PcbLib"
+    focus = bridge.edit_component(lib, "RESC1608X50N")
+    assert fake.requests[-1] == ("edit_component", {"path": str(canonical_path(lib)), "kind": "PCBLIB",
+                                                    "name": "RESC1608X50N"})
+    assert focus.found and focus.was_open and focus.current == "RESC1608X50N" and not focus.modified
+    # the user works in it: PartForge must never close it as one of its own documents
+    assert bridge.close_own_documents() == {"closed": [], "modified": [], "not_open": []}
+    with pytest.raises(BridgeError, match="keine SchLib oder PcbLib"):
+        bridge.edit_component(tmp_path / "PartForge.DbLib", "X")
+
+
 def test_altium_safe_path(tmp_path):
     latin = tmp_path / "Bibliothek ÄÖÜ"
     assert altium_safe_path(latin) == str(canonical_path(latin))
