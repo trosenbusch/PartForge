@@ -408,7 +408,7 @@ const PinRowView = memo(function PinRowView({
           >
             {ELECTRICAL_OPTIONS.map((o) => (
               <option key={o.value} value={o.value} className="text-fg">
-                {tr(o.label)}
+                {o.label}
               </option>
             ))}
           </select>

@@ -103,6 +103,7 @@ export interface IcEditorProps {
   onShowInLibrary: (name: string) => void
 }
 
+/** Vorschläge für das freie Gruppenfeld (übersetzt angeboten; Gruppen sind für das Layout nur Beschriftungen) */
 const ROLE_GROUPS = ['Versorgung', 'Masse', 'Eingänge', 'Ausgänge', 'Schaltknoten', 'Signale', 'Nicht verbunden', 'Thermal-Pad']
 const COLUMN_LABEL: Record<PinColumn, string> = { group: 'Gruppe', part: 'Teil', hidden: 'Verborgen', description: 'Beschreibung' }
 /** Unter dieser Höhe des Editors klappen die Eigenschaften automatisch ein (Fenster ≈ 760 px) */
@@ -131,7 +132,7 @@ function toTsv(pins: readonly PinRow[]): string {
     [
       p.designator,
       p.name,
-      ELECTRICAL_OPTIONS.find((o) => o.value === p.electrical)?.label.replace(' / Drain', '').replace(' / Source', '') ?? p.electrical,
+      ELECTRICAL_OPTIONS.find((o) => o.value === p.electrical)?.label.split(' / ')[0] ?? p.electrical,
       p.side ? tr(SIDE_LABEL[p.side]) : tr('Automatisch'),
       p.group,
       String(p.part),
@@ -397,7 +398,7 @@ export function IcEditor({
   const loadExample = () => {
     useGenerator.getState().loadIc({
       ...ic,
-      name: EXAMPLE.name,
+      name: tr(EXAMPLE.name),
       pins: EXAMPLE.pins.map(([d, n, e]) => fromIcPin({ designator: d, name: n, electrical: e })),
     })
   }
@@ -451,7 +452,7 @@ export function IcEditor({
     return map
   }, [ic.partsMode, ic.pins, spec, userParts])
   const groupSuggestions = useLocalizedMemo(
-    () => [...new Set([...ic.pins.map((p) => p.group.trim()).filter(Boolean), ...ROLE_GROUPS])],
+    () => [...new Set([...ic.pins.map((p) => p.group.trim()).filter(Boolean), ...ROLE_GROUPS.map((group) => tr(group))])],
     [ic.pins],
   )
   const sideWarnings: PinIssue[] = useLocalizedMemo(() => {

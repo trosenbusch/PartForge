@@ -77,6 +77,20 @@ test('pin paste understands German and English independently of UI language', ()
   }
 })
 
+test('pin type labels follow the language and paste back from a copied table', () => {
+  const expected = { en: ['Input', 'Power', 'Bidirectional'], de: ['Eingang', 'Versorgung', 'Ein-/Ausgang'] }
+  for (const language of ['en', 'de']) {
+    i18n.setLanguage(language)
+    const label = (type) => pins.ELECTRICAL_OPTIONS.find((o) => o.value === type).label
+    assert.deepEqual([label('input'), label('power'), pins.electricalShort('io')], expected[language])
+    for (const option of pins.ELECTRICAL_OPTIONS) {
+      for (const text of [option.label, option.short, option.label.split(' / ')[0]]) {
+        assert.equal(pins.parseElectrical(text), option.value, `${language}: ${text}`)
+      }
+    }
+  }
+})
+
 test('pin validation switches language and CAD text stays unchanged', () => {
   const pin = pins.makePin('', { name: 'Widerstand', group: 'Versorgung', description: 'Eigene Beschreibung' })
   assert.match(pins.validatePins([pin]).issues[0].message, /pin number missing/)

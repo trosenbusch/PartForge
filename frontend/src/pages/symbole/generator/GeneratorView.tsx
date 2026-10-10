@@ -1,5 +1,6 @@
 import { useLocalizedMemo } from '@/components/preview/useLocalizedMemo'
 import { t as tr, useI18n } from '@/components/preview/i18n'
+import { metadataLabel } from '@/lib/i18n'
 /**
  * Generator-Ansicht: Symboltypen links (einklappbar), Editor in der Mitte (Standardsymbol-Parameter oder IC-Editor),
  * Live-Vorschau rechts. Speichern über die Topbar („In Bibliothek speichern“, Strg+S; „Speichern unter …“,
@@ -514,7 +515,10 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
     },
   ])
 
-  const categoryLabel = (table: string) => categories.data?.find((c) => c.table.toLowerCase() === table.toLowerCase())?.label ?? table
+  const categoryLabel = (table: string) => {
+    const label = categories.data?.find((c) => c.table.toLowerCase() === table.toLowerCase())?.label
+    return label ? metadataLabel(label, tr) : table
+  }
   const existing = libraryInfo.entry
 
   const kindsFailed = Boolean(kinds.error && !kinds.data)

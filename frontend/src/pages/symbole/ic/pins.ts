@@ -86,19 +86,20 @@ export const SIDE_ORDER: IcSide[] = ['left', 'right', 'top', 'bottom']
 /** Tastenkürzel im Seiten-Editor (deutsche Anfangsbuchstaben) */
 export const SIDE_KEYS: Record<string, IcSide | null> = { l: 'left', r: 'right', o: 'top', u: 'bottom', a: null }
 
-export const ELECTRICAL_OPTIONS: { value: ElectricalType; label: string; short: string }[] = [
-  { value: 'input', label: 'Eingang', short: 'Eingang' },
-  { value: 'output', label: 'Ausgang', short: 'Ausgang' },
-  { value: 'io', label: 'Ein-/Ausgang', short: 'Ein-/Ausgang' },
-  { value: 'power', label: 'Versorgung', short: 'Versorgung' },
-  { value: 'passive', label: 'Passiv', short: 'Passiv' },
-  { value: 'open_collector', label: 'Open Collector / Drain', short: 'Open Collector' },
-  { value: 'open_emitter', label: 'Open Emitter / Source', short: 'Open Emitter' },
-  { value: 'hiz', label: 'Hochohmig (Tri-State)', short: 'Tri-State' },
+/** Elektrische Typen; `label` und `short` sind beim Lesen übersetzt */
+export const ELECTRICAL_OPTIONS: readonly { value: ElectricalType; readonly label: string; readonly short: string }[] = [
+  { value: 'input', get label() { return tr('Eingang') }, get short() { return tr('Eingang') } },
+  { value: 'output', get label() { return tr('Ausgang') }, get short() { return tr('Ausgang') } },
+  { value: 'io', get label() { return tr('Ein-/Ausgang') }, get short() { return tr('Ein-/Ausgang') } },
+  { value: 'power', get label() { return tr('Versorgung') }, get short() { return tr('Versorgung') } },
+  { value: 'passive', get label() { return tr('Passiv') }, get short() { return tr('Passiv') } },
+  { value: 'open_collector', get label() { return tr('Open Collector / Drain') }, get short() { return tr('Open Collector') } },
+  { value: 'open_emitter', get label() { return tr('Open Emitter / Source') }, get short() { return tr('Open Emitter') } },
+  { value: 'hiz', get label() { return tr('Hochohmig (Tri-State)') }, get short() { return tr('Tri-State') } },
 ]
 
 export const electricalShort = (type: ElectricalType): string =>
-  tr(ELECTRICAL_OPTIONS.find((o) => o.value === type)?.short ?? type)
+  ELECTRICAL_OPTIONS.find((o) => o.value === type)?.short ?? type
 
 /** Kategoriale Farbe je elektrischem Typ (Punkte in Tabelle und Seiten-Editor) */
 export const ELECTRICAL_COLOR: Record<ElectricalType, { color: string; hollow?: boolean }> = {

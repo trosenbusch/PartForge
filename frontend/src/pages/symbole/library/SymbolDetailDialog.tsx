@@ -537,7 +537,7 @@ function KindBody({ kind, onEdit, onClose }: { kind: SymbolKindInfo; onEdit: (r:
             <KeyValueList
               labelWidth="7.5rem"
               items={[
-                { label: tr('Gruppe'), value: kind.group },
+                { label: tr('Gruppe'), value: tr(kind.group) },
                 { label: tr('Name'), value: spec?.name ?? kind.default_name, mono: true },
                 { label: tr('Präfix'), value: kind.prefix, mono: true },
                 { label: tr('Parameter'), value: kind.params.length ? kind.params.map((p) => tr(p.label)).join(', ') : tr('keine') },

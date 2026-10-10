@@ -1310,7 +1310,7 @@ export function SymbolCanvas({
             {activePin.hidden && <span>{tr("· verborgen")}</span>}
           </div>
           {(activePin.group || activePin.description) && (
-            <div className="mt-1 text-fg-subtle">{[activePin.group, activePin.description].filter(Boolean).join(' · ')}</div>
+            <div className="mt-1 text-fg-subtle">{[activePin.group && tr(activePin.group), activePin.description].filter(Boolean).join(' · ')}</div>
           )}
         </CanvasTooltip>
       )}
