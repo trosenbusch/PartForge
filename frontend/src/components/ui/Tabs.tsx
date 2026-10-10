@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { motion } from 'motion/react'
 import { Tabs as TabsPrimitive } from 'radix-ui'
 import {
@@ -46,6 +47,7 @@ export interface TabsProps extends Omit<ComponentProps<typeof TabsPrimitive.Root
  * „2D | 3D“) bekommen kein `aria-controls` auf ein nicht vorhandenes Element.
  */
 export function Tabs({ value, defaultValue, onValueChange, variant = 'underline', className, children, ...props }: TabsProps) {
+  useI18n()
   const [internal, setInternal] = useState(defaultValue ?? '')
   const current = value ?? internal
   const layoutId = `tabs-${useId()}`
@@ -81,6 +83,7 @@ export function Tabs({ value, defaultValue, onValueChange, variant = 'underline'
 }
 
 export function TabsList({ className, ...props }: ComponentProps<typeof TabsPrimitive.List>) {
+  useI18n()
   const { variant } = useContext(TabsContext)
   return (
     <TabsPrimitive.List
@@ -101,6 +104,7 @@ export interface TabsTriggerProps extends ComponentProps<typeof TabsPrimitive.Tr
 }
 
 export function TabsTrigger({ className, value, icon, count, children, ...props }: TabsTriggerProps) {
+  useI18n()
   const ctx = useContext(TabsContext)
   const active = ctx.value === value
   // Radix setzt aria-controls immer – ohne zugehörigen Inhalt zeigte es ins Leere (axe: aria-valid-attr-value)
@@ -159,6 +163,7 @@ export function TabsTrigger({ className, value, icon, count, children, ...props 
  * selbst fokussierbare Elemente (z. B. eine Leinwand), kann `tabIndex={-1}` den zusätzlichen Stopp entfernen.
  */
 export function TabsContent({ className, value, ...props }: ComponentProps<typeof TabsPrimitive.Content>) {
+  useI18n()
   const { registerPanel } = useContext(TabsContext)
   useLayoutEffect(() => registerPanel(value), [registerPanel, value])
   return <TabsPrimitive.Content value={value} className={cn('outline-none focus-ring-panel', className)} {...props} />

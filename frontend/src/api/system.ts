@@ -1,14 +1,5 @@
-/**
- * System-API: Health, App-Einstellungen, API-Schlüssel, Bibliothek (Workspace), Jobs, KI-Verbindung.
- *
- * Typen kommen aus dem generierten OpenAPI-Schema (`schema.d.ts`, `npm run gen:api`) – so bleiben sie mit
- * dem Backend synchron (`npm run build` prüft das). Nur Endpunkte, die untypisierte `dict`s liefern
- * (Workspace-Info, Health, Jobs), sind hier von Hand beschrieben.
- *
- * Joblisten (`useJobs`) sind **Kurzfassungen** (`GET /api/jobs?brief=true`, live über `/api/jobs/events?brief=true`):
- * Ergebnisse über 8 KB ersetzt das Backend durch eine Zusammenfassung (`result_truncated`). Das volle Ergebnis liefern
- * `fetchJob(id)` / `useJobResult(id)` aus `@/api/jobs` (bzw. `useJob`, das immer vollständige Schnappschüsse hält).
- */
+import { useI18n } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useSyncExternalStore } from 'react'
 import { create } from 'zustand'
@@ -313,10 +304,11 @@ const ALTIUM_STATUS_KEY = ['altium', 'status'] as const
  * (Seitenleiste, Einstellungen › Allgemein › Altium Designer zeigen den neuen Writer gleich).
  */
 export function useSaveSettings() {
+  const { t: tr } = useI18n()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: systemApi.updateSettings,
-    meta: { errorTitle: 'Einstellungen konnten nicht gespeichert werden' },
+    meta: { errorTitle: tr("Einstellungen konnten nicht gespeichert werden") },
     onSuccess: async (data) => {
       qc.setQueryData(systemKeys.settings, data)
       void qc.invalidateQueries({ queryKey: systemKeys.health })
@@ -336,10 +328,11 @@ export function useSaveApiKey() {
 }
 
 export function useDeleteApiKey() {
+  const { t: tr } = useI18n()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: systemApi.deleteApiKey,
-    meta: { errorTitle: 'Schlüssel konnte nicht entfernt werden' },
+    meta: { errorTitle: tr("Schlüssel konnte nicht entfernt werden") },
     onSuccess: (data) => qc.setQueryData(systemKeys.settings, data),
   })
 }
@@ -410,19 +403,21 @@ export function useCreateWorkspace() {
 }
 
 export function useCloseWorkspace() {
+  const { t: tr } = useI18n()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: systemApi.closeWorkspace,
-    meta: { errorTitle: 'Bibliothek konnte nicht geschlossen werden' },
+    meta: { errorTitle: tr("Bibliothek konnte nicht geschlossen werden") },
     onSuccess: () => resetWorkspaceScopedQueries(qc, null),
   })
 }
 
 export function useSaveWorkspaceSettings() {
+  const { t: tr } = useI18n()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: systemApi.putWorkspaceSettings,
-    meta: { errorTitle: 'Bibliothekseinstellungen konnten nicht gespeichert werden' },
+    meta: { errorTitle: tr("Bibliothekseinstellungen konnten nicht gespeichert werden") },
     onSuccess: (info) => {
       qc.setQueryData(systemKeys.workspace, info)
       void qc.invalidateQueries({ queryKey: systemKeys.health })
@@ -643,10 +638,11 @@ export function useLibraryJobs(kind?: string) {
 }
 
 export function useCancelJob() {
+  const { t: tr } = useI18n()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: systemApi.cancelJob,
-    meta: { errorTitle: 'Job konnte nicht abgebrochen werden' },
+    meta: { errorTitle: tr("Job konnte nicht abgebrochen werden") },
     onSettled: () => qc.invalidateQueries({ queryKey: systemKeys.jobsAll }),
   })
 }
@@ -709,14 +705,15 @@ export function aiProblemFromText(text: string): AiProblemCode {
 
 /** Fehler von `POST /api/ai/test` einordnen: `detail.code` des Backends, sonst Netzwerkstatus bzw. Wortlaut. */
 export function classifyAiError(error: unknown): { code: AiProblemCode; message: string } {
-  const message = cleanErrorText(errorMessage(error, 'Unbekannter Fehler'))
+  const message = cleanErrorText(errorMessage(error, tr("Unbekannter Fehler")))
   if (error instanceof ApiError) {
     const detail = error.detail
     const code = detail && typeof detail === 'object' ? (detail as { code?: unknown }).code : undefined
     if (typeof code === 'string' && AI_PROBLEM_CODES.has(code)) return { code: code as AiProblemCode, message }
     if (error.isNetworkError || error.isTimeout) return { code: 'network', message }
   }
-  return { code: aiProblemFromText(message), message }
+  const raw = error instanceof Error ? error.message : typeof error === 'string' ? error : message
+  return { code: aiProblemFromText(raw), message }
 }
 
 interface AiConnectionState {
@@ -767,7 +764,7 @@ const aiObservers = [
         ...base,
         ok,
         code: ok ? null : 'unexpected',
-        message: ok ? null : `Unerwartete Antwort${data.reply ? `: „${data.reply}“` : ''}`,
+        message: ok ? null : tr("Unerwartete Antwort{0}", { "0": String(data.reply ? `: „${data.reply}“` : '') }),
         model: data.model ?? null,
         latencyMs: typeof data.latency_ms === 'number' ? data.latency_ms : null,
       })

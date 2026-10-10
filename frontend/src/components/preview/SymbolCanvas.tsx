@@ -1,3 +1,5 @@
+import { useLocalizedMemo } from '@/components/preview/useLocalizedMemo'
+import { t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Schaltplansymbol als SVG (mil, +Y oben) – Pins mit Anschlussspitze, Namen (mit Überstrich) und Nummern,
  * alle Grafikarten, Platzhalter für Bezeichner/Kommentar, 100-mil-Punktraster, Zoom/Verschieben/Einpassen,
@@ -10,7 +12,6 @@ import {
   useEffect,
   useId,
   useImperativeHandle,
-  useMemo,
   useRef,
   useState,
   type KeyboardEvent,
@@ -904,6 +905,7 @@ const HIDDEN_LIST_MAX = { wide: 6, compact: 3 }
 
 /** Verborgene Pins, die an ihrer Stelle Sichtbares überdecken würden: kompakt oben rechts (Nummer + Name). */
 function HiddenPinList({ pins, active, compact }: { pins: SymPin[]; active: ReadonlySet<string>; compact: boolean }) {
+  useI18n()
   const max = compact ? HIDDEN_LIST_MAX.compact : HIDDEN_LIST_MAX.wide
   const shown = pins.slice(0, max)
   const more = pins.length - shown.length
@@ -916,9 +918,9 @@ function HiddenPinList({ pins, active, compact }: { pins: SymPin[]; active: Read
       onPointerDown={(e) => e.stopPropagation()}
     >
       <CanvasBadge className="pointer-events-auto min-w-0 cursor-default gap-2.5 pr-3">
-        <span className="flex shrink-0 items-center gap-1.5 text-fg-muted" title={`Verborgene Pins: ${full}`}>
+        <span className="flex shrink-0 items-center gap-1.5 text-fg-muted" title={tr("Verborgene Pins: {value0}", { value0: String(full) })}>
           <EyeOff aria-hidden className="size-3.5" />
-          <span className="font-semibold uppercase tracking-[0.06em]">Verborgen</span>
+          <span className="font-semibold uppercase tracking-[0.06em]">{tr("Verborgen")}</span>
         </span>
         <span className="flex min-w-0 items-center gap-2.5 overflow-hidden whitespace-nowrap" title={full}>
           {shown.map((p) => {
@@ -969,6 +971,7 @@ export function SymbolCanvas({
   'aria-label': ariaLabel,
   ref,
 }: SymbolCanvasProps) {
+  useI18n()
   const uid = useId().replace(/:/g, '')
   const [sizeRef, size, node] = useElementSize<HTMLDivElement>()
   const partCount = Math.max(1, spec?.part_count ?? 1)
@@ -992,13 +995,13 @@ export function SymbolCanvas({
       alive = false
     }
   }, [fontsReady])
-  const hiddenLayout = useMemo(
+  const hiddenLayout = useLocalizedMemo(
     () =>
       spec && showHiddenPins ? layoutHiddenPins(spec, part, pal, showLabels, designator, comment, fontsReady) : NO_HIDDEN,
     [spec, part, pal, showHiddenPins, showLabels, designator, comment, fontsReady],
   )
   const listedHidden = hiddenLayout.listed
-  const box = useMemo(
+  const box = useLocalizedMemo(
     () => (spec ? contentBox(spec, part, hiddenLayout.inPlace, showLabels, pal, designator, comment, fontsReady) : null),
     [spec, part, hiddenLayout, showLabels, pal, designator, comment, fontsReady],
   )
@@ -1039,13 +1042,13 @@ export function SymbolCanvas({
     onZoomChangeRef.current?.(zoomRounded)
   }, [zoomRounded])
 
-  const highlightSet = useMemo(() => new Set(highlight ?? []), [highlight])
+  const highlightSet = useLocalizedMemo(() => new Set(highlight ?? []), [highlight])
 
   // ------------------------------------------------------------------ Hover / Tastatur-Fokus auf Pins
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   const [keyIndex, setKeyIndex] = useState<number | null>(null)
-  const pins = useMemo(() => spec?.pins ?? [], [spec])
-  const visiblePins = useMemo(
+  const pins = useLocalizedMemo(() => spec?.pins ?? [], [spec])
+  const visiblePins = useLocalizedMemo(
     () =>
       pins
         .map((p, i) => [p, i] as const)
@@ -1072,9 +1075,7 @@ export function SymbolCanvas({
 
   const [announce, setAnnounce] = useState('')
   const describePin = (p: SymPin) =>
-    `Pin ${p.designator}${p.name ? `, ${spokenPinName(p.name)}` : ''}, ${electricalLabel(p.electrical)}${
-      partCount > 1 ? `, ${p.part === 0 ? 'alle Teile' : `Teil ${partLetter(p.part ?? 1)}`}` : ''
-    }`
+    tr("Pin {value0}{value1}, {value2}{value3}", { value0: String(p.designator), value1: String(p.name ? `, ${spokenPinName(p.name)}` : ''), value2: String(electricalLabel(p.electrical)), value3: String(partCount > 1 ? `, ${p.part === 0 ? tr('alle Teile') : tr("Teil {value0}", { value0: String(partLetter(p.part ?? 1)) })}` : '') })
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (pz.handleKey(e)) {
@@ -1144,8 +1145,8 @@ export function SymbolCanvas({
   const label =
     ariaLabel ??
     (spec
-      ? `Symbol ${spec.name}${partCount > 1 ? `, Teil ${partLetter(part)} von ${partCount}` : ''}, ${visiblePins.length} Pins`
-      : 'Symbolvorschau')
+      ? tr("Symbol {value0}{value1}, {value2} Pins", { value0: String(spec.name), value1: String(partCount > 1 ? tr(", Teil {value0} von {value1}", { value0: String(partLetter(part)), value1: String(partCount) }) : ''), value2: String(visiblePins.length) })
+      : tr('Symbolvorschau'))
 
   return (
     // Leinwand-Widget mit eigener Tastatursteuerung (Zoom, Verschieben, Pins ansagen) – role="application"
@@ -1156,7 +1157,7 @@ export function SymbolCanvas({
         pz.wheelRef(el)
       }}
       role="application"
-      aria-roledescription="Symbolvorschau"
+      aria-roledescription={tr("Symbolvorschau")}
       aria-label={label}
       aria-describedby={`${uid}-help`}
       // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex
@@ -1253,14 +1254,14 @@ export function SymbolCanvas({
       )}
 
       {!hasSpec && (
-        <div className="absolute inset-0 flex items-center justify-center text-ui text-fg-subtle">Kein Symbol</div>
+        <div className="absolute inset-0 flex items-center justify-center text-ui text-fg-subtle">{tr("Kein Symbol")}</div>
       )}
 
       {partCount > 1 && (showPartTabs ?? true) && (
         <div className="absolute left-3 top-3 z-10 flex items-center gap-2" onPointerDown={(e) => e.stopPropagation()}>
           <SegmentedControl
             size="sm"
-            aria-label="Teil des Symbols"
+            aria-label={tr("Teil des Symbols")}
             value={String(part)}
             onValueChange={(v) => setPart(Number(v))}
             options={Array.from({ length: partCount }, (_, i) => ({
@@ -1278,8 +1279,8 @@ export function SymbolCanvas({
             <span className="mono truncate font-medium text-fg">{spec.name}</span>
             {size.width >= 420 && (
               <span className="whitespace-nowrap text-fg-muted">
-                {visiblePins.length} {visiblePins.length === 1 ? 'Pin' : 'Pins'}
-                {partCount > 1 && ` · Teil ${partLetter(part)}/${partLetter(partCount)}`}
+                {visiblePins.length} {visiblePins.length === 1 ? tr('Pin') : tr('Pins')}
+                {partCount > 1 && tr(" · Teil {value0}/{value1}", { value0: String(partLetter(part)), value1: String(partLetter(partCount)) })}
               </span>
             )}
           </CanvasBadge>
@@ -1300,13 +1301,13 @@ export function SymbolCanvas({
           <div className="flex items-baseline gap-2">
             <span className="mono rounded-sm bg-surface-3 px-1.5 text-2xs font-semibold text-fg">{activePin.designator}</span>
             <span className="truncate text-ui font-semibold text-fg">
-              {activePin.name ? <OverbarHtml value={activePin.name} /> : <span className="text-fg-subtle">ohne Namen</span>}
+              {activePin.name ? <OverbarHtml value={activePin.name} /> : <span className="text-fg-subtle">{tr("ohne Namen")}</span>}
             </span>
           </div>
           <div className="mt-1 flex flex-wrap gap-x-2 text-fg-muted">
             <span>{electricalLabel(activePin.electrical)}</span>
-            {partCount > 1 && <span>· {activePin.part === 0 ? 'alle Teile' : `Teil ${partLetter(activePin.part ?? 1)}`}</span>}
-            {activePin.hidden && <span>· verborgen</span>}
+            {partCount > 1 && <span>· {activePin.part === 0 ? tr('alle Teile') : tr("Teil {value0}", { value0: String(partLetter(activePin.part ?? 1)) })}</span>}
+            {activePin.hidden && <span>{tr("· verborgen")}</span>}
           </div>
           {(activePin.group || activePin.description) && (
             <div className="mt-1 text-fg-subtle">{[activePin.group, activePin.description].filter(Boolean).join(' · ')}</div>
@@ -1316,8 +1317,8 @@ export function SymbolCanvas({
 
       {interactive && hasSpec && (
         <CanvasKeyHint>
-          Pfeiltasten verschieben · +/− zoomen · 0 einpassen · N nächster Pin
-          {partCount > 1 ? ' · Bild↑/↓ Teil' : ''}
+          {tr("Pfeiltasten verschieben · +/− zoomen · 0 einpassen · N nächster Pin")}
+          {partCount > 1 ? tr(' · Bild↑/↓ Teil') : ''}
         </CanvasKeyHint>
       )}
 
@@ -1325,16 +1326,16 @@ export function SymbolCanvas({
         {spec
           ? `${(spec.pins ?? [])
               .filter((p) => inPart(p.part, part) && !p.hidden)
-              .map((p) => `Pin ${p.designator}${p.name ? ` ${displayText(p.name)}` : ''}`)
+              .map((p) => tr("Pin {value0}{value1}", { value0: String(p.designator), value1: String(p.name ? ` ${displayText(p.name)}` : '') }))
               .join(', ')}. `
           : ''}
         {spec && showHiddenPins && (spec.pins ?? []).some((p) => p.hidden && inPart(p.part, part))
-          ? `Verborgen: ${(spec.pins ?? [])
+          ? tr("Verborgen: {value0}. ", { value0: String((spec.pins ?? [])
               .filter((p) => p.hidden && inPart(p.part, part))
-              .map((p) => `Pin ${p.designator}${p.name ? ` ${displayText(p.name)}` : ''}`)
-              .join(', ')}. `
+              .map((p) => tr("Pin {value0}{value1}", { value0: String(p.designator), value1: String(p.name ? ` ${displayText(p.name)}` : '') }))
+              .join(', ')) })
           : ''}
-        Mit N den nächsten Pin ansagen, Pfeiltasten verschieben, Plus und Minus zoomen, 0 passt ein.
+        {tr("Mit N den nächsten Pin ansagen, Pfeiltasten verschieben, Plus und Minus zoomen, 0 passt ein.")}
       </p>
       <div className="sr-only" aria-live="polite">
         {announce}

@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { AnimatePresence, motion } from 'motion/react'
 import { X } from 'lucide-react'
 import { Dialog as DialogPrimitive } from 'radix-ui'
@@ -38,6 +39,7 @@ const DrawerContext = createContext<DrawerState>({ open: false, modal: true })
  * <Drawer open onOpenChange><DrawerContent size="md"><DrawerHeader …/><DrawerBody>…</DrawerBody><DrawerFooter>…</DrawerFooter></DrawerContent></Drawer>
  */
 export function Drawer({ open, defaultOpen, onOpenChange, modal = true, children }: DrawerProps) {
+  useI18n()
   const [internal, setInternal] = useState(defaultOpen ?? false)
   const isOpen = open ?? internal
   return (
@@ -72,6 +74,7 @@ export function DrawerContent({
   onCloseAutoFocus,
   ...props
 }: DrawerContentProps) {
+  const { t: tr } = useI18n()
   const { open, modal } = useContext(DrawerContext)
   const returnFocus = useReturnFocus(open)
   return (
@@ -125,7 +128,7 @@ export function DrawerContent({
               {children}
               {!hideClose && (
                 <DialogPrimitive.Close
-                  aria-label="Schließen"
+                  aria-label={tr("Schließen")}
                   className="absolute right-3.5 top-3.5 flex size-7 items-center justify-center rounded-control text-fg-subtle outline-none transition-colors hover:bg-surface-3 hover:text-fg focus-ring"
                 >
                   <X className="size-4" />
@@ -149,6 +152,7 @@ export interface DrawerHeaderProps {
 }
 
 export function DrawerHeader({ title, description, icon, children, className }: DrawerHeaderProps) {
+  useI18n()
   return (
     <div className={cn('shrink-0 border-b border-line px-5 pb-4 pt-5 pr-14', className)}>
       <div className="flex items-start gap-3">
@@ -175,10 +179,12 @@ export function DrawerHeader({ title, description, icon, children, className }: 
 }
 
 export function DrawerBody({ className, ...props }: ComponentProps<'div'>) {
+  useI18n()
   return <div className={cn('min-h-0 flex-1 overflow-y-auto px-5 py-4', className)} {...props} />
 }
 
 export function DrawerFooter({ className, ...props }: ComponentProps<'div'>) {
+  useI18n()
   return (
     <div
       className={cn(

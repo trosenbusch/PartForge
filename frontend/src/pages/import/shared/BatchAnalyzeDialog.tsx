@@ -1,3 +1,5 @@
+import { localizeMessage } from '@/lib/i18n'
+import { t, useI18n } from '@/lib/i18n'
 import { useQueries } from '@tanstack/react-query'
 import { CircleAlert, FileScan, FileText } from 'lucide-react'
 import { useState } from 'react'
@@ -16,6 +18,7 @@ import { useBatchPrompt, type BatchItem } from '../store'
  * sind abgewählt (ein neuer Versuch kostet erneut), bereits analysierte nicht wählbar.
  */
 export function BatchAnalyzeDialog({ onAnalyze }: { onAnalyze: (ids: string[]) => Promise<number> }) {
+  useI18n()
   const items = useBatchPrompt((s) => s.items)
   const close = useBatchPrompt((s) => s.close)
   return (
@@ -35,6 +38,7 @@ export function BatchAnalyzeDialog({ onAnalyze }: { onAnalyze: (ids: string[]) =
 }
 
 function BatchForm({ items, onClose, onAnalyze }: { items: BatchItem[]; onClose: () => void; onAnalyze: (ids: string[]) => Promise<number> }) {
+  useI18n()
   const ai = useAiStatus().data
   const navigate = useNavigate()
   const [selected, setSelected] = useState(() => new Set(items.filter((i) => i.state === 'new').map((i) => i.id)))
@@ -63,7 +67,7 @@ function BatchForm({ items, onClose, onAnalyze }: { items: BatchItem[]; onClose:
   const analyzable = items.filter((i) => i.state !== 'analyzed').length
   const label =
     runLabel(known[0]?.model_label) ||
-    (ai ? `${ai.model_label || modelDisplayName(ai.model)} · Gründlichkeit ${effortLabel(ai.effort)}` : '')
+    (ai ? t("{0} · Gründlichkeit {1}", { "0": String(ai.model_label || modelDisplayName(ai.model)), "1": String(effortLabel(ai.effort)) }) : '')
 
   const toggle = (id: string, on: boolean) =>
     setSelected((s) => {
@@ -87,15 +91,15 @@ function BatchForm({ items, onClose, onAnalyze }: { items: BatchItem[]; onClose:
       <DialogHeader
         tone="spark"
         icon={<FileScan />}
-        title={`${plural(items.length, 'PDF', 'PDFs')} gespeichert – jetzt analysieren?`}
+        title={t("{0} gespeichert – jetzt analysieren?", { "0": String(plural(items.length, 'PDF', 'PDFs')) })}
         description={
           analyzable < items.length
-            ? 'Claude liest jedes gewählte Datenblatt einzeln – jede Analyse kostet. Bereits analysierte bleiben, wie sie sind.'
-            : 'Claude liest jedes gewählte Datenblatt einzeln – jede Analyse kostet.'
+            ? t("Claude liest jedes gewählte Datenblatt einzeln – jede Analyse kostet. Bereits analysierte bleiben, wie sie sind.")
+            : t("Claude liest jedes gewählte Datenblatt einzeln – jede Analyse kostet.")
         }
       />
       <DialogBody className="flex flex-col gap-3 pt-2">
-        <ul aria-label="Abgelegte Datenblätter" className="divide-y divide-line rounded-card border border-line">
+        <ul aria-label={t("Abgelegte Datenblätter")} className="divide-y divide-line rounded-card border border-line">
           {items.map((i, index) => {
             const disabled = i.state === 'analyzed'
             const est = estimates[index]
@@ -103,7 +107,7 @@ function BatchForm({ items, onClose, onAnalyze }: { items: BatchItem[]; onClose:
             return (
               <li key={i.id} className={cn('flex items-start gap-3 px-3 py-2.5', disabled && 'opacity-70')}>
                 <Checkbox
-                  aria-label={`„${i.name}“ analysieren${text ? ` – erwartet ${text.full}` : ''}`}
+                  aria-label={t("„{0}“ analysieren{1}", { "0": String(i.name), "1": String(text ? t(" – erwartet {0}", { "0": String(text.full) }) : '') })}
                   checked={selected.has(i.id)}
                   disabled={disabled}
                   onCheckedChange={(v) => toggle(i.id, v === true)}
@@ -115,22 +119,20 @@ function BatchForm({ items, onClose, onAnalyze }: { items: BatchItem[]; onClose:
                     {i.name}
                   </div>
                   <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-2xs text-fg-subtle">
-                    {i.pageCount > 0 && <span className="tabular-nums">{plural(i.pageCount, 'Seite', 'Seiten')}</span>}
-                    {est?.data && est.data.pages.length > 0 && <span>{plural(est.data.pages.length, 'Seite', 'Seiten')} für Claude</span>}
+                    {i.pageCount > 0 && <span className="tabular-nums">{plural(i.pageCount, t("Seite"), t("Seiten"))}</span>}
+                    {est?.data && est.data.pages.length > 0 && <span>{plural(est.data.pages.length, t("Seite"), t("Seiten"))} {t(" für Claude")}</span>}
                     {i.state === 'failed' && (
                       <Badge variant="danger" size="sm">
                         <CircleAlert />
-                        Letzte Analyse fehlgeschlagen
-                      </Badge>
+                        {t("Letzte Analyse fehlgeschlagen")}</Badge>
                     )}
                     {i.state === 'analyzed' && (
                       <Badge variant="spark" size="sm">
-                        Bereits analysiert
-                      </Badge>
+                        {t("Bereits analysiert")}</Badge>
                     )}
-                    {i.state === 'new' && <Badge size="sm">Neu</Badge>}
+                    {i.state === 'new' && <Badge size="sm">{t("Neu")}</Badge>}
                   </div>
-                  {i.state === 'failed' && i.error && <p className="mt-1 line-clamp-2 text-2xs leading-4 text-danger-text">{i.error}</p>}
+                  {i.state === 'failed' && i.error && <p className="mt-1 line-clamp-2 text-2xs leading-4 text-danger-text">{localizeMessage(i.error)}</p>}
                 </div>
                 {!disabled && (
                   <span aria-hidden className="mono shrink-0 pt-0.5 text-xs text-fg-muted">
@@ -142,35 +144,32 @@ function BatchForm({ items, onClose, onAnalyze }: { items: BatchItem[]; onClose:
           })}
         </ul>
         <p className="text-xs leading-relaxed text-fg-muted">
-          {label || 'Standardeinstellungen'}
-          {limit ? ` · höchstens ${formatUsd(limit)} je Datenblatt` : ''}. Die Analysen laufen im Hintergrund – Fortschritt und
-          Ergebnis stehen in der Liste.
-        </p>
+          {label || t("Standardeinstellungen")}
+          {limit ? t(" · höchstens {0} je Datenblatt", { "0": String(formatUsd(limit)) }) : ''}{t(". Die Analysen laufen im Hintergrund – Fortschritt und Ergebnis stehen in der Liste.")}</p>
       </DialogBody>
       <DialogFooter className="justify-between">
         <div className="min-w-0 text-xs leading-snug text-fg-muted" aria-live="polite">
           {chosen.length ? (
             <>
               <div className="flex items-center gap-1.5">
-                Erwartet <span className="mono whitespace-nowrap font-semibold text-fg">{known.length ? totalText.typical : '…'}</span>
+                {t("Erwartet ")}<span className="mono whitespace-nowrap font-semibold text-fg">{known.length ? totalText.typical : '…'}</span>
                 {loading && <Spinner size={11} />}
               </div>
               {totalText.upTo && known.length > 0 ? (
                 <div className="text-2xs text-fg-subtle">{totalText.upTo}</div>
               ) : limit ? (
-                <div className="text-2xs text-fg-subtle">höchstens {formatUsd(limit * chosen.length)}</div>
+                <div className="text-2xs text-fg-subtle">{t("höchstens ")}{formatUsd(limit * chosen.length)}</div>
               ) : null}
             </>
           ) : (
-            'Nichts ausgewählt'
+            t("Nichts ausgewählt")
           )}
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" onClick={onClose}>
-            Nur speichern
-          </Button>
+            {t("Nur speichern")}</Button>
           <Button variant="spark" leftIcon={<FileScan />} loading={pending} disabled={!chosen.length} onClick={() => void start()}>
-            {chosen.length ? `${plural(chosen.length, 'Datenblatt', 'Datenblätter')} analysieren` : 'Analysieren'}
+            {chosen.length ? t("{0} analysieren", { "0": String(plural(chosen.length, t("Datenblatt"), t("Datenblätter"))) }) : t("Analysieren")}
           </Button>
         </div>
       </DialogFooter>

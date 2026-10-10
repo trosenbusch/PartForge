@@ -1,25 +1,4 @@
-/**
- * Befehlsregister für die Befehlspalette (Strg+K) und globale Tastenkürzel.
- *
- * Seiten registrieren Befehle, solange sie gemountet sind:
- *
- *   useRegisterCommands([
- *     { id: 'parts.new', title: 'Neues Bauteil', group: 'Aktionen', icon: Plus, hotkey: 'mod+n',
- *       run: () => setDialogOpen(true) },
- *   ])
- *
- * Gleiche IDs überlagern sich: Es gilt die Registrierung der **zuletzt gemounteten** Komponente – auch wenn
- * eine früher gemountete (z. B. die Shell) ihre Liste später neu registriert. Beim Unmount wird der vorige
- * Eintrag wieder aktiv. So kann eine Seite z. B. den Standardbefehl „Neues Bauteil“ durch ihren Dialog ersetzen.
- *
- * Live-Suche (z. B. Bauteile) über Suchanbieter:
- *
- *   useRegisterSearchProvider({ id: 'parts', group: 'Bauteile', search: async (q, signal) => [...] })
- *
- * Strg+S der aktuellen Seite bzw. des offenen Dialogs (die Shell fängt das Kürzel immer ab):
- *
- *   useSaveHandler(save, { enabled: dirty, saveAs, modal })
- */
+import { t as tr } from '@/lib/i18n'
 import type { ComponentType } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { NavigateFunction } from 'react-router'
@@ -367,6 +346,6 @@ export function dispatchSave(kind: SaveKind, ctx: CommandContext, modal: boolean
   // Fehler meldet der Handler selbst (Toast/Inline) – hier nur als Hinweis protokollieren
   void Promise.resolve()
     .then(() => run())
-    .catch((err: unknown) => console.warn('Speichern fehlgeschlagen', err))
+    .catch((err: unknown) => console.warn(tr("Speichern fehlgeschlagen"), err))
   return true
 }

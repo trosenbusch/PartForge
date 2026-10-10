@@ -1,3 +1,4 @@
+import { metadataLabel, t, useI18n } from '@/lib/i18n'
 /**
  * Eingabe für ein Bauteilfeld je Feldart: Auswahlliste (mit vorhandenen Werten, freie Eingabe erlaubt), Ja/Nein,
  * Symbol-/Footprint-Verweis (registrierte Einträge mit Vorschaubild, Pins/Pads, Verwendung und Status – nicht
@@ -47,6 +48,7 @@ export interface FieldInputProps {
 const DISTINCT_FIELDS = new Set(['Manufacturer', 'Package', 'Supplier 1', 'Supplier 2', 'Series'])
 
 export function FieldInput(props: FieldInputProps) {
+  useI18n()
   const { field, describedBy, required, invalid, disabled } = props
   const auto = `fi-${useId().replace(/:/g, '')}`
   const p = { ...props, id: props.id ?? auto }
@@ -84,6 +86,7 @@ function TextInput({
   className,
   'aria-label': ariaLabel,
 }: FieldInputProps) {
+  useI18n()
   const committed = useRef(value)
   const [focused, setFocused] = useState(false)
   const formatted = field.kind === 'quantity' || field.kind === 'range'
@@ -141,6 +144,7 @@ function LongTextInput({
   placeholder,
   'aria-label': ariaLabel,
 }: FieldInputProps) {
+  useI18n()
   const committed = useRef(value)
   return (
     <Textarea
@@ -193,16 +197,17 @@ function EnumInput({
   className,
   'aria-label': ariaLabel,
 }: FieldInputProps) {
+  const { t } = useI18n()
   const distinct = useDistinctValues(table, field.column, suggestions)
   const options = useMemo<ComboboxOption[]>(() => {
-    const out: ComboboxOption[] = field.options.map((o) => ({ value: o, label: o, group: field.options.length ? 'Auswahlliste' : undefined }))
+    const out: ComboboxOption[] = field.options.map((o) => ({ value: o, label: metadataLabel(o, t), group: field.options.length ? t("Auswahlliste") : undefined }))
     for (const d of distinct.data ?? []) {
       if (out.some((o) => o.value.toLowerCase() === d.value.toLowerCase())) continue
-      out.push({ value: d.value, label: d.value, description: `${formatNumber(d.count)}× verwendet`, group: 'In der Bibliothek' })
+      out.push({ value: d.value, label: d.value, description: t("{1}× verwendet", { 1: formatNumber(d.count) }), group: t("In der Bibliothek") })
     }
-    if (value && !out.some((o) => o.value === value)) out.push({ value, label: value, group: 'Aktueller Wert' })
+    if (value && !out.some((o) => o.value === value)) out.push({ value, label: value, group: t("Aktueller Wert") })
     return out
-  }, [field.options, distinct.data, value])
+  }, [field.options, distinct.data, value, t])
   return (
     <Combobox
       id={id}
@@ -214,15 +219,15 @@ function EnumInput({
         onCommit?.(next)
       }}
       allowCustom
-      customLabel={(q) => `„${q}“ übernehmen`}
+      customLabel={(q) => t("„{1}“ übernehmen", { 1: q })}
       clearable
       size={size}
       invalid={invalid}
       disabled={disabled}
       mono={isMono(field)}
-      placeholder={placeholder ?? 'Auswählen …'}
-      searchPlaceholder={`${field.label} suchen …`}
-      emptyText="Keine Treffer – eigenen Wert eingeben"
+      placeholder={placeholder ?? t("Auswählen …")}
+      searchPlaceholder={t("{1} suchen …", { 1: metadataLabel(field.label, t) })}
+      emptyText={t("Keine Treffer – eigenen Wert eingeben")}
       className={className}
       aria-label={ariaLabel}
     />
@@ -232,12 +237,13 @@ function EnumInput({
 const BOOL_EMPTY = '__leer__'
 
 function BoolInput({ value, onChange, onCommit, disabled, 'aria-label': ariaLabel, field, className }: FieldInputProps) {
+  const { t } = useI18n()
   const lower = value.trim().toLowerCase()
   const current = ['ja', 'yes', 'true', '1'].includes(lower) ? 'Ja' : ['nein', 'no', 'false', '0'].includes(lower) ? 'Nein' : BOOL_EMPTY
   return (
     <SegmentedControl
       size="sm"
-      aria-label={ariaLabel ?? field.label}
+      aria-label={ariaLabel ?? metadataLabel(field.label, t)}
       value={current}
       disabled={disabled}
       onValueChange={(v) => {
@@ -246,9 +252,9 @@ function BoolInput({ value, onChange, onCommit, disabled, 'aria-label': ariaLabe
         onCommit?.(next)
       }}
       options={[
-        { value: 'Ja', label: 'Ja' },
-        { value: 'Nein', label: 'Nein' },
-        { value: BOOL_EMPTY, label: '–', title: 'Keine Angabe' },
+        { value: 'Ja', label: t("Ja") },
+        { value: 'Nein', label: t("Nein") },
+        { value: BOOL_EMPTY, label: '–', title: t("Keine Angabe") },
       ]}
       className={className}
     />
@@ -259,9 +265,9 @@ function BoolInput({ value, onChange, onCommit, disabled, 'aria-label': ariaLabe
 
 const STATUS_LABEL: Record<string, string> = {
   ok: 'synchron',
-  pending: 'noch nicht geschrieben',
-  missing: 'fehlt in der Datei',
-  error: 'Fehler beim Schreiben',
+  get pending() { return t("noch nicht geschrieben") },
+  get missing() { return t("fehlt in der Datei") },
+  get error() { return t("Fehler beim Schreiben") },
 }
 
 /**
@@ -269,6 +275,7 @@ const STATUS_LABEL: Record<string, string> = {
  * Footprints auf der dunklen Leiterplatte.
  */
 function RefTile({ children, board }: { children: ReactNode; board?: boolean }) {
+  useI18n()
   return (
     <span
       aria-hidden
@@ -286,8 +293,8 @@ function RefTile({ children, board }: { children: ReactNode; board?: boolean }) 
 function symbolOption(entry: SymbolEntry): ComboboxOption {
   const meta: string[] = []
   if (entry.pin_count) meta.push(`${entry.pin_count} ${entry.pin_count === 1 ? 'Pin' : 'Pins'}`)
-  if (entry.part_count > 1) meta.push(`${entry.part_count} Teile`)
-  if (entry.usage) meta.push(`${formatNumber(entry.usage)}× verwendet`)
+  if (entry.part_count > 1) meta.push(t("{1} Teile", { 1: entry.part_count }))
+  if (entry.usage) meta.push(t("{1}× verwendet", { 1: formatNumber(entry.usage) }))
   if (entry.status !== 'ok') meta.push(STATUS_LABEL[entry.status] ?? entry.status)
   return {
     value: entry.name,
@@ -306,7 +313,7 @@ function footprintOption(entry: FootprintEntry): ComboboxOption {
   const meta: string[] = []
   if (entry.pad_count) meta.push(`${entry.pad_count} ${entry.pad_count === 1 ? 'Pad' : 'Pads'}`)
   if (entry.ipc_name && entry.ipc_name !== entry.name) meta.push(entry.ipc_name)
-  if (entry.usage) meta.push(`${formatNumber(entry.usage)}× verwendet`)
+  if (entry.usage) meta.push(t("{1}× verwendet", { 1: formatNumber(entry.usage) }))
   if (entry.status !== 'ok') meta.push(STATUS_LABEL[entry.status] ?? entry.status)
   return {
     value: entry.name,
@@ -322,6 +329,7 @@ function footprintOption(entry: FootprintEntry): ComboboxOption {
 }
 
 function RefInput({ kind, ...props }: FieldInputProps & { kind: 'symbol' | 'footprint' }) {
+  const { t } = useI18n()
   const symbols = useLibrarySymbols(kind === 'symbol')
   const footprints = useLibraryFootprints(kind === 'footprint')
   const q = kind === 'symbol' ? symbols : footprints
@@ -332,10 +340,10 @@ function RefInput({ kind, ...props }: FieldInputProps & { kind: 'symbol' | 'foot
         : (footprints.data ?? []).map(footprintOption)
     if (props.value && !list.some((o) => o.value.toLowerCase() === props.value.toLowerCase())) {
       const icon = kind === 'symbol' ? <SymbolIcon className="size-4 text-fg-subtle" /> : <CircuitBoard className="size-4 text-fg-subtle" />
-      list.unshift({ value: props.value, label: props.value, description: 'nicht in der Bibliothek registriert', icon })
+      list.unshift({ value: props.value, label: props.value, description: t("nicht in der Bibliothek registriert"), icon })
     }
     return list
-  }, [kind, symbols.data, footprints.data, props.value])
+  }, [kind, symbols.data, footprints.data, props.value, t])
 
   // Liste nicht ladbar: der Name bleibt als Freitext eintragbar
   if (q.isError && !q.data) return <TextInput {...props} />
@@ -350,15 +358,15 @@ function RefInput({ kind, ...props }: FieldInputProps & { kind: 'symbol' | 'foot
         props.onCommit?.(next)
       }}
       allowCustom
-      customLabel={(text) => `„${text}“ verwenden (nicht registriert)`}
+      customLabel={(text) => t("„{1}“ verwenden (nicht registriert)", { 1: text })}
       clearable
       mono
       size={props.size ?? 'md'}
       invalid={props.invalid}
       disabled={props.disabled}
-      placeholder={q.isPending ? 'Bibliothek wird geladen …' : kind === 'symbol' ? 'Symbol wählen …' : 'Footprint wählen …'}
-      searchPlaceholder={kind === 'symbol' ? 'Symbol suchen (Name, Typ) …' : 'Footprint suchen (Name, Familie, IPC) …'}
-      emptyText="Kein Treffer – Namen eingeben, um ihn zu übernehmen"
+      placeholder={q.isPending ? t("Bibliothek wird geladen …") : kind === 'symbol' ? t("Symbol wählen …") : t("Footprint wählen …")}
+      searchPlaceholder={kind === 'symbol' ? t("Symbol suchen (Name, Typ) …") : t("Footprint suchen (Name, Familie, IPC) …")}
+      emptyText={t("Kein Treffer – Namen eingeben, um ihn zu übernehmen")}
       className={props.className}
       contentClassName="w-[min(28rem,calc(100vw-2rem))]"
       aria-label={props['aria-label']}

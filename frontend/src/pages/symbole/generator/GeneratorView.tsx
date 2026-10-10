@@ -1,3 +1,5 @@
+import { useLocalizedMemo } from '@/components/preview/useLocalizedMemo'
+import { t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Generator-Ansicht: Symboltypen links (einklappbar), Editor in der Mitte (Standardsymbol-Parameter oder IC-Editor),
  * Live-Vorschau rechts. Speichern über die Topbar („In Bibliothek speichern“, Strg+S; „Speichern unter …“,
@@ -11,7 +13,7 @@
  */
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Copy, Cpu, FilePlus2, RotateCcw, Save, SaveAll, Shapes, Square } from 'lucide-react'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { ApiError, errorMessage } from '@/api/client'
 import { useCategories } from '@/api/library'
@@ -97,6 +99,7 @@ interface SaveOptions {
 }
 
 export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowInLibrary, compact = false }: GeneratorViewProps) {
+  useI18n()
   const qc = useQueryClient()
   const { resolvedTheme } = useTheme()
   const prefs = usePreviewPrefs()
@@ -110,7 +113,7 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
   const setKind = useGenerator((s) => s.setKind)
   const overrides = useGenerator((s) => s.params[kindKey])
   const storedExtras = useGenerator((s) => s.extras[kindKey])
-  const extras = useMemo(() => ({ ...EMPTY_EXTRAS, ...storedExtras }), [storedExtras])
+  const extras = useLocalizedMemo(() => ({ ...EMPTY_EXTRAS, ...storedExtras }), [storedExtras])
   const ic = useGenerator((s) => s.ic)
   const setParam = useGenerator((s) => s.setParam)
   const setExtras = useGenerator((s) => s.setExtras)
@@ -122,28 +125,28 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
   useEffect(() => {
     if (kinds.data?.length && !kinds.data.some((k) => k.key === kindKey)) setKind(kinds.data[0].key)
   }, [kinds.data, kindKey, setKind])
-  const values = useMemo(() => (kind ? effectiveParams(kind, overrides) : {}), [kind, overrides])
+  const values = useLocalizedMemo(() => (kind ? effectiveParams(kind, overrides) : {}), [kind, overrides])
 
   // ------------------------------------------------------------------ lokale Prüfung, Anfrage (entprellt), Vorschau
-  const icErrors = useMemo(() => (isIc ? validatePins(ic.pins, { partsMode: ic.partsMode }).errorCount : 0), [isIc, ic.pins, ic.partsMode])
-  const localError: string | null = useMemo(() => {
+  const icErrors = useLocalizedMemo(() => (isIc ? validatePins(ic.pins, { partsMode: ic.partsMode }).errorCount : 0), [isIc, ic.pins, ic.partsMode])
+  const localError: string | null = useLocalizedMemo(() => {
     if (!kind) return null
     if (isIc) {
-      if (icErrors > 0) return `Die Pinliste enthält ${icErrors === 1 ? 'einen Fehler' : `${icErrors} Fehler`} – Details unter der Tabelle.`
+      if (icErrors > 0) return tr("Die Pinliste enthält {value0} – Details unter der Tabelle.", { value0: String(icErrors === 1 ? tr('einen Fehler') : tr("{value0} Fehler", { value0: String(icErrors) })) })
       const nameErr = symbolNameError(ic.name)
-      if (nameErr) return `Name: ${nameErr}`
+      if (nameErr) return tr("Name: {value0}", { value0: String(nameErr) })
       const prefixErr = prefixError(ic.prefix)
-      if (prefixErr) return `Präfix: ${prefixErr}`
+      if (prefixErr) return tr("Präfix: {value0}", { value0: String(prefixErr) })
       return null
     }
     const nameErr = symbolNameError(extras.name)
-    if (nameErr) return `Eigener Name (Erweitert): ${nameErr}`
+    if (nameErr) return tr("Eigener Name (Erweitert): {value0}", { value0: String(nameErr) })
     const prefixErr = prefixError(extras.prefix)
-    if (prefixErr) return `Präfix (Erweitert): ${prefixErr}`
+    if (prefixErr) return tr("Präfix (Erweitert): {value0}", { value0: String(prefixErr) })
     return null
   }, [kind, isIc, icErrors, ic.name, ic.prefix, extras.name, extras.prefix])
 
-  const request: SymbolRequest | null = useMemo(() => {
+  const request: SymbolRequest | null = useLocalizedMemo(() => {
     if (!kind || localError) return null
     if (isIc) return ic.pins.length ? icRequest(ic) : null
     const req: SymbolRequest = {
@@ -161,7 +164,7 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
   }, [kind, localError, isIc, ic, values, extras])
   const requestJson = request ? JSON.stringify(request) : ''
   const debouncedJson = useDebouncedValue(requestJson, isIc ? 260 : 120)
-  const debounced = useMemo(() => (debouncedJson ? (JSON.parse(debouncedJson) as SymbolRequest) : null), [debouncedJson])
+  const debounced = useLocalizedMemo(() => (debouncedJson ? (JSON.parse(debouncedJson) as SymbolRequest) : null), [debouncedJson])
   const preview = useSymbolGeneratorPreview(debounced)
 
   // letzte gültige Vorschau behalten (auch bei Fehlern), aber nie die eines anderen Symboltyps zeigen
@@ -180,7 +183,7 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
   const warnings = previewError || !shownMatches ? [] : (shown?.warnings ?? [])
 
   const entries = library.data
-  const libraryNames = useMemo(() => (entries ? new Set(entries.map((e) => e.name.toLowerCase())) : undefined), [entries])
+  const libraryNames = useLocalizedMemo(() => (entries ? new Set(entries.map((e) => e.name.toLowerCase())) : undefined), [entries])
   const findEntry = (name: string | undefined | null): SymbolEntry | null =>
     name ? (entries?.find((e) => e.name.toLowerCase() === name.toLowerCase()) ?? null) : null
 
@@ -195,7 +198,7 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
 
   // Probelauf des Speicherns für den gültigen Stand: Ziel-SchLib, neu/aktuell, Pinänderungen, Ablehnung
   const planSpec = validSpec && !fetching ? validSpec : null
-  const planKey = useMemo(() => (planSpec ? shortHash(JSON.stringify(planSpec)) : ''), [planSpec])
+  const planKey = useLocalizedMemo(() => (planSpec ? shortHash(JSON.stringify(planSpec)) : ''), [planSpec])
   const planLibrary = targetLibrary(planSpec?.name)
   const planQuery = useQuery({
     queryKey: symbolKeys.savePlan(planSpec?.name ?? '', planKey, saveCategory, planLibrary),
@@ -271,10 +274,10 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
   // ------------------------------------------------------------------ Speichern
   const save = useSaveSymbol()
   const savedToast = (name: string, library: string | null, isNew = false) =>
-    toast.success(`„${name}“ gespeichert`, {
+    toast.success(tr("„{value0}“ gespeichert", { value0: String(name) }), {
       id: 'symbole-save',
-      description: library ? `${isNew ? 'Neu in' : 'Aktualisiert in'} ${library}` : 'In die Symbolbibliothek geschrieben.',
-      action: { label: 'In der Bibliothek zeigen', onClick: () => onShowInLibrary(name) },
+      description: library ? `${isNew ? tr('Neu in') : tr('Aktualisiert in')} ${library}` : tr('In die Symbolbibliothek geschrieben.'),
+      action: { label: tr('In der Bibliothek zeigen'), onClick: () => onShowInLibrary(name) },
     })
   // Speichern als Hintergrundjob (Altium geöffnet o. Ä.): Das Job-Dock meldet den Abschluss mit Ziel
   // („Symbol „X“ gespeichert in Symbols\PF_….SchLib“); danach lädt die Bibliothek neu (Name, Status, Plan).
@@ -286,13 +289,13 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
   const blockedReason = canSave
     ? null
     : save.isPending
-      ? 'Wird gespeichert …'
+      ? tr('Wird gespeichert …')
       : !kind
-        ? 'Die Symboltypen sind noch nicht geladen.'
+        ? tr('Die Symboltypen sind noch nicht geladen.')
         : isIc && !ic.pins.length
-          ? 'Die Pinliste ist noch leer.'
+          ? tr('Die Pinliste ist noch leer.')
           : (localError ??
-            (icNameMissing ? 'Bitte zuerst einen Namen eingeben.' : (generatorError ?? (fetching ? 'Die Vorschau wird berechnet …' : 'Das Symbol ist noch nicht gültig.'))))
+            (icNameMissing ? tr('Bitte zuerst einen Namen eingeben.') : (generatorError ?? (fetching ? tr('Die Vorschau wird berechnet …') : tr('Das Symbol ist noch nicht gültig.')))))
 
   const [conflict, setConflict] = useState<(SaveConflict & { resolve: (c: ConflictChoice) => void }) | null>(null)
   const askConflict = (c: SaveConflict) => new Promise<ConflictChoice>((resolve) => setConflict({ ...c, resolve }))
@@ -302,7 +305,7 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
     setSaveAs({
       open: true,
       // unbenanntes IC: kein Vorschlag aus dem Platzhalternamen („IC 10-Pin 2“) – der Name gehört dem Nutzer
-      initial: isIc && !ic.name.trim() ? '' : suggestFreeName(currentName || kind?.default_name || 'Symbol', entries),
+      initial: isIc && !ic.name.trim() ? '' : suggestFreeName(currentName || kind?.default_name || tr('Symbol'), entries),
     })
 
   /** Nach „Speichern unter …“ arbeitet der Entwurf mit dem neuen Namen weiter */
@@ -315,7 +318,7 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
   /** Rückfrage bei geänderter Pinbelegung (aus Probelauf oder 409 „pinout_changed“) */
   const askPinout = (name: string, changes: string[], usage: number) =>
     askConflict({
-      title: `Pinbelegung von „${name}“ ändert sich`,
+      title: tr("Pinbelegung von „{value0}“ ändert sich", { value0: String(name) }),
       description: (
         <>
           {changes.length > 0 ? (
@@ -325,21 +328,21 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
                   {c}
                 </li>
               ))}
-              {changes.length > 12 && <li className="text-fg-subtle">… und {changes.length - 12} weitere</li>}
+              {changes.length > 12 && <li className="text-fg-subtle">{tr("… und")}{' '}{changes.length - 12} {tr("weitere")}</li>}
             </ul>
           ) : (
-            <p className="mb-2">Die Pins des gespeicherten Symbols unterscheiden sich vom Entwurf.</p>
+            <p className="mb-2">{tr("Die Pins des gespeicherten Symbols unterscheiden sich vom Entwurf.")}</p>
           )}
           <p>
             {usage === 1
-              ? 'Ein Bauteil verwendet das Symbol – die Zuordnung seiner Pins zum Footprint ändert sich mit. Bitte danach das Bauteil prüfen.'
+              ? tr('Ein Bauteil verwendet das Symbol – die Zuordnung seiner Pins zum Footprint ändert sich mit. Bitte danach das Bauteil prüfen.')
               : usage > 1
-                ? `${plural(usage, 'Bauteil verwendet', 'Bauteile verwenden')} das Symbol – die Zuordnung ihrer Pins zum Footprint ändert sich mit. Bitte danach die Bauteile prüfen.`
-                : 'Noch verwendet kein Bauteil das Symbol – die Änderung ist unkritisch.'}
+                ? tr("{value0} das Symbol – die Zuordnung ihrer Pins zum Footprint ändert sich mit. Bitte danach die Bauteile prüfen.", { value0: String(plural(usage, tr('Bauteil verwendet'), tr('Bauteile verwenden'))) })
+                : tr('Noch verwendet kein Bauteil das Symbol – die Änderung ist unkritisch.')}
           </p>
         </>
       ),
-      confirmLabel: 'Neue Belegung übernehmen',
+      confirmLabel: tr('Neue Belegung übernehmen'),
       destructive: usage > 0,
     })
 
@@ -351,7 +354,7 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
       // genau das speichern, was die Vorschau für den aktuellen Stand zeigt (auch während der Entprellung)
       fresh = await qc.fetchQuery(symbolPreviewOptions(req, styleKey))
     } catch (error) {
-      toast.error('Symbol ist nicht gültig', { id: 'symbole-save', description: errorMessage(error) })
+      toast.error(tr('Symbol ist nicht gültig'), { id: 'symbole-save', description: errorMessage(error) })
       return
     }
     const name = fresh.spec.name
@@ -359,10 +362,10 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
 
     // Symbole externer Bibliotheken sind schreibgeschützt – gleich den Ausweg anbieten
     if (existing?.source === 'external') {
-      toast.error(`„${existing.name}“ ist schreibgeschützt`, {
+      toast.error(tr("„{value0}“ ist schreibgeschützt", { value0: String(existing.name) }), {
         id: 'symbole-save',
-        description: `Es gehört zur externen Bibliothek ${baseName(existing.library)}. Bitte unter einem neuen Namen speichern.`,
-        action: { label: 'Speichern unter …', onClick: openSaveAs },
+        description: tr("Es gehört zur externen Bibliothek {value0}. Bitte unter einem neuen Namen speichern.", { value0: String(baseName(existing.library)) }),
+        action: { label: tr('Speichern unter …'), onClick: openSaveAs },
       })
       return
     }
@@ -371,27 +374,27 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
     if (existing && existing.kind !== kind.key && !opts.replaceConfirmed && !opts.allowPinoutChange) {
       const typeLabel = existing.kind ? (kinds.data?.find((k) => k.key === existing.kind)?.label ?? existing.kind) : null
       const choice = await askConflict({
-        title: `„${existing.name}“ ersetzen?`,
+        title: tr("„{value0}“ ersetzen?", { value0: String(existing.name) }),
         description: (
           <>
             <p>
               {typeLabel ? (
                 <>
-                  In der Bibliothek ist „{existing.name}“ ein Symbol vom Typ <span className="font-medium text-fg">{typeLabel}</span>.
+                  {tr("In der Bibliothek ist „")}{existing.name}{tr("“ ein Symbol vom Typ")}{' '}<span className="font-medium text-fg">{tr(typeLabel)}</span>.
                 </>
               ) : (
-                <>„{existing.name}“ wurde importiert bzw. von Hand gezeichnet und hat keine Generator-Angaben.</>
+                <>„{existing.name}{tr("“ wurde importiert bzw. von Hand gezeichnet und hat keine Generator-Angaben.")}</>
               )}{' '}
-              Beim Speichern wird seine Zeichnung durch {isIc ? 'ein Kastensymbol aus der Pinliste' : `das ${kind.label}-Symbol`} ersetzt.
+              {tr("Beim Speichern wird seine Zeichnung durch")}{' '}{isIc ? tr('ein Kastensymbol aus der Pinliste') : tr("das {value0}-Symbol", { value0: tr(kind.label) })} {tr("ersetzt.")}
             </p>
             <p className="mt-2">
               {existing.usage > 0
-                ? `${plural(existing.usage, 'Bauteil verwendet', 'Bauteile verwenden')} das Symbol – ihre Schaltpläne zeigen danach die neue Zeichnung.`
-                : 'Noch verwendet kein Bauteil das Symbol.'}
+                ? tr("{value0} das Symbol – ihre Schaltpläne zeigen danach die neue Zeichnung.", { value0: String(plural(existing.usage, tr('Bauteil verwendet'), tr('Bauteile verwenden'))) })
+                : tr('Noch verwendet kein Bauteil das Symbol.')}
             </p>
           </>
         ),
-        confirmLabel: 'Zeichnung ersetzen',
+        confirmLabel: tr('Zeichnung ersetzen'),
         destructive: existing.usage > 0,
       })
       if (choice === 'saveAs') openSaveAs()
@@ -411,10 +414,10 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
       const dry = await symbolsApi.save(input, { dryRun: true })
       if (dry.unchanged) {
         if (opts.name) adoptName(name)
-        toast.info(`„${name}“ ist bereits aktuell`, {
+        toast.info(tr("„{value0}“ ist bereits aktuell", { value0: String(name) }), {
           id: 'symbole-save',
-          description: `Gleiche Zeichnung in ${dry.library ? baseName(dry.library) : 'der Bibliothek'} – nichts zu schreiben.`,
-          action: { label: 'In der Bibliothek zeigen', onClick: () => onShowInLibrary(name) },
+          description: tr("Gleiche Zeichnung in {value0} – nichts zu schreiben.", { value0: String(dry.library ? baseName(dry.library) : tr('der Bibliothek')) }),
+          action: { label: tr('In der Bibliothek zeigen'), onClick: () => onShowInLibrary(name) },
         })
         return
       }
@@ -437,18 +440,18 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
         return
       }
       if (error instanceof ApiError && error.status === 503) {
-        toast.warning(`„${name}“ vorgemerkt – noch nicht geschrieben`, {
+        toast.warning(tr("„{value0}“ vorgemerkt – noch nicht geschrieben", { value0: String(name) }), {
           id: 'symbole-save',
           duration: 12_000,
-          description: `${error.message} Das Symbol ist registriert und wird bei der nächsten Synchronisierung in die SchLib geschrieben.`,
+          description: tr("{value0} Das Symbol ist registriert und wird bei der nächsten Synchronisierung in die SchLib geschrieben.", { value0: String(error.message) }),
         })
         return
       }
-      toast.error('Symbol konnte nicht gespeichert werden', { id: 'symbole-save', description: errorMessage(error) })
+      toast.error(tr('Symbol konnte nicht gespeichert werden'), { id: 'symbole-save', description: errorMessage(error) })
     }
   }
 
-  const copyName = () => validSpec && void copyText(validSpec.name, 'Symbolname')
+  const copyName = () => validSpec && void copyText(validSpec.name, tr('Symbolname'))
 
   /** Strg+S und Knopf: auch ohne gültiges Symbol abfangen (sonst öffnet WebView2 „Seite speichern“) und erklären */
   const trySave = () => {
@@ -456,17 +459,17 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
     if (save.isPending) return
     if (icNameMissing && !localError) {
       setNameAttempt((n) => n + 1)
-      toast.warning('Bitte einen Namen eingeben', {
+      toast.warning(tr('Bitte einen Namen eingeben'), {
         id: 'symbole-save',
-        description: 'Unter diesem Namen steht das IC-Symbol in der Bibliothek und in den Bauteilen.',
+        description: tr('Unter diesem Namen steht das IC-Symbol in der Bibliothek und in den Bauteilen.'),
       })
       return
     }
-    toast.warning('Speichern noch nicht möglich', { id: 'symbole-save', description: blockedReason ?? undefined })
+    toast.warning(tr('Speichern noch nicht möglich'), { id: 'symbole-save', description: blockedReason ?? undefined })
   }
   const trySaveAs = () => {
     if (!request || previewError) {
-      toast.warning('Speichern noch nicht möglich', { id: 'symbole-save', description: blockedReason ?? undefined })
+      toast.warning(tr('Speichern noch nicht möglich'), { id: 'symbole-save', description: blockedReason ?? undefined })
       return
     }
     openSaveAs()
@@ -481,7 +484,7 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
   useRegisterCommands([
     {
       id: 'symbols.save',
-      title: 'Symbol in Bibliothek speichern',
+      title: tr('Symbol in Bibliothek speichern'),
       subtitle: validSpec?.name,
       group: 'Aktionen',
       icon: Save,
@@ -491,20 +494,20 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
     },
     {
       id: 'symbols.saveAs',
-      title: 'Symbol speichern unter …',
-      subtitle: 'Unter einem neuen Namen in die Bibliothek',
+      title: tr('Symbol speichern unter …'),
+      subtitle: tr('Unter einem neuen Namen in die Bibliothek'),
       group: 'Aktionen',
       icon: SaveAll,
       hotkey: 'mod+shift+s',
       priority: 9,
       run: trySaveAs,
     },
-    { id: 'symbols.copyName', title: 'Symbolnamen kopieren', group: 'Aktionen', icon: Copy, when: () => Boolean(validSpec), run: copyName },
-    { id: 'symbols.newIc', title: 'IC-Symbol aus Pinliste', group: 'Aktionen', icon: Cpu, keywords: ['pinliste', 'ic'], run: () => chooseKind(IC_KIND) },
-    { id: 'symbols.resetIc', title: 'Neues IC-Symbol (leere Pinliste)', group: 'Aktionen', icon: FilePlus2, keywords: ['ic', 'neu', 'leeren'], run: newIc },
+    { id: 'symbols.copyName', title: tr('Symbolnamen kopieren'), group: 'Aktionen', icon: Copy, when: () => Boolean(validSpec), run: copyName },
+    { id: 'symbols.newIc', title: tr('IC-Symbol aus Pinliste'), group: 'Aktionen', icon: Cpu, keywords: ['pinliste', 'ic'], run: () => chooseKind(IC_KIND) },
+    { id: 'symbols.resetIc', title: tr('Neues IC-Symbol (leere Pinliste)'), group: 'Aktionen', icon: FilePlus2, keywords: ['ic', tr('neu'), 'leeren'], run: newIc },
     {
       id: 'symbols.altium',
-      title: prefs.altium ? 'Symbol in PartForge-Darstellung zeigen' : 'Symbol wie in Altium zeigen',
+      title: prefs.altium ? tr('Symbol in PartForge-Darstellung zeigen') : tr('Symbol wie in Altium zeigen'),
       group: 'Darstellung',
       icon: Square,
       run: () => prefs.set({ altium: !prefs.altium }),
@@ -521,23 +524,22 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
       <EmptyState
         illustration="offline"
         titleAs="h2"
-        title="Symboltypen nicht geladen"
+        title={tr("Symboltypen nicht geladen")}
         description={
           <>
-            {errorMessage(kinds.error).replace(/\.?$/, '.')} Ohne die Symboltypen kann der Generator nichts erzeugen – bitte
-            erneut versuchen oder das Programm neu starten.
+            {errorMessage(kinds.error).replace(/\.?$/, '.')} {tr("Ohne die Symboltypen kann der Generator nichts erzeugen – bitte erneut versuchen oder das Programm neu starten.")}
           </>
         }
         actions={
           <Button variant="secondary" leftIcon={<RotateCcw />} loading={kinds.isFetching} onClick={() => void kinds.refetch()}>
-            Erneut versuchen
+            {tr("Erneut versuchen")}
           </Button>
         }
         className="h-full"
       />
     ) : (
       <div className="flex flex-col gap-4 p-5" aria-busy="true">
-        <span className="sr-only">Symboltypen werden geladen …</span>
+        <span className="sr-only">{tr("Symboltypen werden geladen …")}</span>
         <div className="flex items-start gap-3.5">
           <Skeleton className="h-14 w-20 rounded-button" />
           <div className="flex-1 space-y-2 pt-1">
@@ -611,14 +613,14 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
         isIc ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 px-8 text-center">
             <Cpu aria-hidden className="size-7 text-fg-subtle" />
-            <p className="text-ui font-medium text-fg">Noch keine Vorschau</p>
-            <p className="max-w-64 text-xs leading-relaxed text-fg-muted">Sobald die Pinliste Pins enthält, erscheint hier das Symbol – live bei jeder Änderung.</p>
+            <p className="text-ui font-medium text-fg">{tr("Noch keine Vorschau")}</p>
+            <p className="max-w-64 text-xs leading-relaxed text-fg-muted">{tr("Sobald die Pinliste Pins enthält, erscheint hier das Symbol – live bei jeder Änderung.")}</p>
           </div>
         ) : !kind ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 px-8 text-center">
             <Shapes aria-hidden className="size-7 text-fg-subtle" />
-            <p className="text-ui font-medium text-fg">{kindsFailed ? 'Keine Vorschau' : 'Symboltypen werden geladen …'}</p>
-            {kindsFailed && <p className="max-w-64 text-xs leading-relaxed text-fg-muted">Die Symboltypen konnten nicht geladen werden.</p>}
+            <p className="text-ui font-medium text-fg">{kindsFailed ? tr('Keine Vorschau') : tr('Symboltypen werden geladen …')}</p>
+            {kindsFailed && <p className="max-w-64 text-xs leading-relaxed text-fg-muted">{tr("Die Symboltypen konnten nicht geladen werden.")}</p>}
           </div>
         ) : undefined
       }
@@ -629,23 +631,23 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
     blockedReason && !icNameMissing
       ? blockedReason
       : icNameMissing
-        ? 'Name fehlt – Klick springt ins Namensfeld'
+        ? tr('Name fehlt – Klick springt ins Namensfeld')
         : plan?.error
           ? plan.error
           : plan?.unchanged && plan.library
-            ? `Bereits aktuell in ${baseName(plan.library)}`
+            ? tr("Bereits aktuell in {value0}", { value0: String(baseName(plan.library)) })
             : existing
-              ? `Aktualisiert „${existing.name}“ in ${baseName(existing.library)}${existing.usage ? ` (${plural(existing.usage, 'Bauteil', 'Bauteile')})` : ''}`
+              ? tr("Aktualisiert „{value0}“ in {value1}{value2}", { value0: String(existing.name), value1: String(baseName(existing.library)), value2: String(existing.usage ? ` (${plural(existing.usage, tr('Bauteil'), tr('Bauteile'))})` : '') })
               : plan?.library
-                ? `Neu in ${baseName(plan.library)}`
-                : 'Symbol registrieren und in die SchLib schreiben'
+                ? tr("Neu in {value0}", { value0: String(baseName(plan.library)) })
+                : tr('Symbol registrieren und in die SchLib schreiben')
   const saveEnabled = canSave || (icNameMissing && !localError && Boolean(request) && !save.isPending)
 
   return (
     <>
       <PageActions>
-        <IconButton label="Symbolnamen kopieren" icon={<Copy />} disabled={!validSpec} onClick={copyName} />
-        <IconButton label="Speichern unter …" hotkey="mod+shift+s" icon={<SaveAll />} disabled={!request || Boolean(previewError) || save.isPending} onClick={trySaveAs} />
+        <IconButton label={tr("Symbolnamen kopieren")} icon={<Copy />} disabled={!validSpec} onClick={copyName} />
+        <IconButton label={tr("Speichern unter …")} hotkey="mod+shift+s" icon={<SaveAll />} disabled={!request || Boolean(previewError) || save.isPending} onClick={trySaveAs} />
         <Tooltip content={saveTooltip} hotkey={saveEnabled ? 'mod+s' : undefined}>
           <span tabIndex={saveEnabled ? undefined : 0} className="rounded-control outline-none focus-ring">
             <Button
@@ -656,7 +658,7 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
               aria-keyshortcuts="Control+S"
               onClick={trySave}
             >
-              In Bibliothek speichern
+              {tr("In Bibliothek speichern")}
             </Button>
           </span>
         </Tooltip>
@@ -672,7 +674,7 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
         collapsible
         collapsed={kindsCollapsed}
         onCollapsedChange={onKindsCollapsedChange}
-        label="Breite der Symboltypen-Leiste"
+        label={tr("Breite der Symboltypen-Leiste")}
         className="h-full"
         startClassName="bg-bg-elev"
         start={
@@ -695,7 +697,7 @@ export function GeneratorView({ kindsCollapsed, onKindsCollapsedChange, onShowIn
             minSize={isIc ? 260 : 320}
             maxSize={isIc ? 760 : 560}
             minRest={isIc ? 500 : 300}
-            label={isIc ? 'Breite der Vorschau' : 'Breite des Parameter-Bereichs'}
+            label={isIc ? tr('Breite der Vorschau') : tr('Breite des Parameter-Bereichs')}
             className="h-full"
             startClassName="bg-surface/40"
             start={editor}

@@ -1,3 +1,4 @@
+import { metadataLabel, t, useI18n } from '@/lib/i18n'
 /**
  * Änderungsverlauf eines Bauteils (`GET /api/parts/{table}/{pn}/history`, neueste zuerst): wer, wann, welche
  * Felder von → nach. Anlegen/Import mit vielen Feldern ist eingeklappt.
@@ -14,13 +15,13 @@ import { formatDateTime, formatRelativeTime, plural } from '@/lib/format'
 import { displayValue } from '../model/fields'
 
 const ACTION: Record<HistoryAction, { label: string; icon: LucideIcon; tone: string }> = {
-  create: { label: 'Angelegt', icon: Plus, tone: 'text-success-text' },
-  import: { label: 'Importiert', icon: FileUp, tone: 'text-info-text' },
-  update: { label: 'Geändert', icon: Pencil, tone: 'text-accent-text' },
-  bulk_update: { label: 'Massenbearbeitung', icon: Layers, tone: 'text-accent-text' },
-  delete: { label: 'Gelöscht', icon: Trash2, tone: 'text-danger-text' },
-  schema: { label: 'Kategorie geändert', icon: Settings2, tone: 'text-fg-muted' },
-  restore: { label: 'Wiederhergestellt', icon: ArchiveRestore, tone: 'text-success-text' },
+  create: { get label() { return t("Angelegt") }, icon: Plus, tone: 'text-success-text' },
+  import: { get label() { return t("Importiert") }, icon: FileUp, tone: 'text-info-text' },
+  update: { get label() { return t("Geändert") }, icon: Pencil, tone: 'text-accent-text' },
+  bulk_update: { get label() { return t("Massenbearbeitung") }, icon: Layers, tone: 'text-accent-text' },
+  delete: { get label() { return t("Gelöscht") }, icon: Trash2, tone: 'text-danger-text' },
+  schema: { get label() { return t("Kategorie geändert") }, icon: Settings2, tone: 'text-fg-muted' },
+  restore: { get label() { return t("Wiederhergestellt") }, icon: ArchiveRestore, tone: 'text-success-text' },
 }
 
 /** Einträge mit allen Feldern (Anlegen, Import, Wiederherstellen, Löschen) – eingeklappt starten */
@@ -68,13 +69,14 @@ function Change({
   /** Nur den Wert zeigen (Stand beim Löschen) – kein „vorher → geleert“ */
   snapshot?: boolean
 }) {
+  const { t } = useI18n()
   const fmt = (v: unknown) => (v === null || v === undefined || v === '' ? null : displayValue(field, String(v)))
   if (snapshot) {
     const value = fmt(before ?? after)
     return (
       <li className="grid grid-cols-[minmax(0,7.5rem)_minmax(0,1fr)] gap-2 text-xs">
         <span className="truncate text-fg-muted" title={column}>
-          {field?.label ?? column}
+          {metadataLabel(field?.label ?? column, t)}
         </span>
         {value !== null ? <span className="mono min-w-0 break-words text-fg">{value}</span> : <span className="text-fg-subtle">–</span>}
       </li>
@@ -89,11 +91,11 @@ function Change({
     return (
       <li className="grid grid-cols-[minmax(0,7.5rem)_minmax(0,1fr)] gap-2 text-xs">
         <span className="truncate text-fg-muted" title={column}>
-          {field?.label ?? column}
+          {metadataLabel(field?.label ?? column, t)}
         </span>
         <span className="flex min-w-0 flex-col gap-0.5">
           <span className="mono break-words text-fg-subtle">
-            <span className="sr-only">vorher: </span>
+            <span className="sr-only">{t("vorher:")} </span>
             {diff.before.map((s, i) =>
               s.changed ? (
                 <del key={i} className="rounded-sm bg-danger/10 px-0.5 text-danger-text decoration-danger/60">
@@ -105,7 +107,7 @@ function Change({
             )}
           </span>
           <span className="mono break-words text-fg">
-            <span className="sr-only">nachher: </span>
+            <span className="sr-only">{t("nachher:")} </span>
             {diff.after.map((s, i) =>
               s.changed ? (
                 <ins key={i} className="rounded-sm bg-success/12 px-0.5 text-success-text no-underline">
@@ -123,22 +125,23 @@ function Change({
   return (
     <li className="grid grid-cols-[minmax(0,7.5rem)_minmax(0,1fr)] gap-2 text-xs">
       <span className="truncate text-fg-muted" title={column}>
-        {field?.label ?? column}
+        {metadataLabel(field?.label ?? column, t)}
       </span>
       <span className="flex min-w-0 flex-wrap items-center gap-1.5">
         {b !== null && (
           <>
             <span className="mono max-w-full break-words text-fg-subtle line-through decoration-fg-subtle/50">{b}</span>
-            <ArrowRight aria-label="zu" className="size-3 shrink-0 text-fg-subtle" />
+            <ArrowRight aria-label={t("zu")} className="size-3 shrink-0 text-fg-subtle" />
           </>
         )}
-        {a !== null ? <span className="mono max-w-full break-words text-fg">{a}</span> : <span className="italic text-fg-subtle">geleert</span>}
+        {a !== null ? <span className="mono max-w-full break-words text-fg">{a}</span> : <span className="italic text-fg-subtle">{t("geleert")}</span>}
       </span>
     </li>
   )
 }
 
 function Entry({ entry, fields, last }: { entry: PartHistoryEntry; fields: Map<string, FieldDef>; last: boolean }) {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const meta = ACTION[entry.action] ?? ACTION.update
   const Icon = meta.icon
@@ -163,8 +166,8 @@ function Entry({ entry, fields, last }: { entry: PartHistoryEntry; fields: Map<s
       </span>
       <div className="min-w-0 flex-1 pt-1">
         <div className="flex flex-wrap items-baseline gap-x-1.5 text-ui">
-          <span className="font-medium text-fg">{meta.label}</span>
-          {entry.author && <span className="text-fg-muted">von {entry.author}</span>}
+          <span className="font-medium text-fg">{metadataLabel(meta.label, t)}</span>
+          {entry.author && <span className="text-fg-muted">{t("von")} {entry.author}</span>}
           <Tooltip content={formatDateTime(entry.ts)}>
             <time dateTime={entry.ts} className="ml-auto shrink-0 cursor-default text-2xs text-fg-subtle">
               {formatRelativeTime(entry.ts)}
@@ -175,10 +178,10 @@ function Entry({ entry, fields, last }: { entry: PartHistoryEntry; fields: Map<s
           <div className="mt-1.5 rounded-control border border-line bg-surface-2/40 px-2.5 py-2">
             {snapshot && (
               <div aria-hidden className="micro-label pb-1">
-                Werte beim Löschen
+                {t("Werte beim Löschen")}
               </div>
             )}
-            <ul aria-label={snapshot ? 'Werte beim Löschen' : undefined} className="flex flex-col gap-1">
+            <ul aria-label={snapshot ? t("Werte beim Löschen") : undefined} className="flex flex-col gap-1">
               {shown.map((p) => (
                 <Change key={p.col} column={p.col} field={fields.get(p.col)} before={p.before} after={p.after} snapshot={snapshot} />
               ))}
@@ -194,10 +197,10 @@ function Entry({ entry, fields, last }: { entry: PartHistoryEntry; fields: Map<s
           >
             <ChevronDown aria-hidden className={cn('size-3.5 transition-transform', open && 'rotate-180')} />
             {open
-              ? 'Weniger anzeigen'
+              ? t("Weniger anzeigen")
               : shown.length === 0
-                ? `${snapshot ? 'Werte beim Löschen' : plural(hidden, 'Feld', 'Felder')} anzeigen${snapshot ? ` (${plural(hidden, 'Feld', 'Felder')})` : ''}`
-                : `${plural(hidden, 'weiteres Feld', 'weitere Felder')} anzeigen`}
+                ? t("{1} anzeigen{2}", { 1: snapshot ? t("Werte beim Löschen") : plural(hidden, t("Feld"), t("Felder")), 2: snapshot ? ` (${plural(hidden, t("Feld"), t("Felder"))})` : '' })
+                : t("{1} anzeigen", { 1: plural(hidden, t("weiteres Feld"), t("weitere Felder")) })}
           </button>
         )}
       </div>
@@ -206,6 +209,7 @@ function Entry({ entry, fields, last }: { entry: PartHistoryEntry; fields: Map<s
 }
 
 export function HistoryTimeline({ table, pn, fields }: { table: string; pn: string; fields: FieldDef[] }) {
+  const { t } = useI18n()
   const history = usePartHistory(table, pn)
   const byColumn = new Map(fields.map((f) => [f.column, f]))
   if (history.isPending) {
@@ -223,13 +227,13 @@ export function HistoryTimeline({ table, pn, fields }: { table: string; pn: stri
       </div>
     )
   }
-  if (history.isError) return <Callout tone="danger" title="Verlauf nicht verfügbar">{errorMessage(history.error)}</Callout>
+  if (history.isError) return <Callout tone="danger" title={t("Verlauf nicht verfügbar")}>{errorMessage(history.error)}</Callout>
   const entries = history.data ?? []
   if (!entries.length) {
-    return <EmptyState size="sm" icon={<Pencil />} title="Noch keine Änderungen" description="Änderungen an diesem Bauteil erscheinen hier mit Bearbeiter und Zeitpunkt." />
+    return <EmptyState size="sm" icon={<Pencil />} title={t("Noch keine Änderungen")} description={t("Änderungen an diesem Bauteil erscheinen hier mit Bearbeiter und Zeitpunkt.")} />
   }
   return (
-    <motion.ol initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} aria-label="Änderungsverlauf">
+    <motion.ol initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} aria-label={t("Änderungsverlauf")}>
       {entries.map((e, i) => (
         <Entry key={e.id} entry={e} fields={byColumn} last={i === entries.length - 1} />
       ))}

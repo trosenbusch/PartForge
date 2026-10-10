@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 /**
  * Platz für den Detailbereich rechts neben der Tabelle: schiebt die Tabelle zur Seite (genug Breite) oder liegt
  * darüber (schmales Fenster). Breite per Ziehen oder Pfeiltasten am linken Rand, gespeichert.
@@ -25,6 +26,7 @@ export function DetailDock({
   main: ReactNode
   panel: ReactNode
 }) {
+  const { t } = useI18n()
   const containerRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState(0)
   const [dragWidth, setDragWidth] = useState<number | null>(null)
@@ -97,7 +99,7 @@ export function DetailDock({
               role="separator"
               tabIndex={0}
               aria-orientation="vertical"
-              aria-label="Breite des Detailbereichs"
+              aria-label={t("Breite des Detailbereichs")}
               aria-valuenow={w}
               aria-valuemin={DETAIL_MIN}
               aria-valuemax={max}

@@ -1,3 +1,5 @@
+import { useLocalizedMemo } from '@/components/preview/useLocalizedMemo'
+import { t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Vorlagen einer Familie als dichte Liste: je Zeile Schlüssel und Kennzahlen (Pins · Raster · Körper); die gewählte
  * Vorlage zeigt zusätzlich Bezeichnung und Datenquelle. Listbox mit Pfeiltasten: Solange nichts geändert ist, lädt
@@ -5,7 +7,7 @@
  * – Enter lädt (rückgängig mit Strg+Z). Facetten (Bauteilart/Gehäusetyp) und Suche bei vielen Vorlagen.
  */
 import { Check, RotateCcw, Search, X } from 'lucide-react'
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import type { FootprintFamily, FootprintPreset } from '@/api/footprints'
 import { Badge, Button, Kbd, Tooltip } from '@/components/ui'
 import { cn } from '@/lib/cn'
@@ -26,8 +28,9 @@ export interface PresetPickerProps {
 }
 
 export function PresetPicker({ family, presets, value, changed, onSelect, onReset }: PresetPickerProps) {
+  useI18n()
   const uid = useId()
-  const facet = useMemo(() => presetFacet(presets), [presets])
+  const facet = useLocalizedMemo(() => presetFacet(presets), [presets])
   const current = presets.find((p) => p.key === value) ?? null
   const currentFacet = facet && current ? String(current.params[facet.param] ?? '') : null
   // Facette folgt der gewählten Vorlage, bis der Nutzer selbst filtert
@@ -40,7 +43,7 @@ export function PresetPicker({ family, presets, value, changed, onSelect, onRese
     setQuery('')
   }
 
-  const visible = useMemo(() => {
+  const visible = useLocalizedMemo(() => {
     let list = presets.slice()
     if (facet && activeFacet) list = list.filter((p) => String(p.params[facet.param] ?? '') === activeFacet)
     const q = query.trim()
@@ -116,37 +119,37 @@ export function PresetPicker({ family, presets, value, changed, onSelect, onRese
                     listRef.current?.querySelector<HTMLElement>('[role="option"][tabindex="0"]')?.focus()
                   }
                 }}
-                placeholder={`In ${presets.length} Vorlagen suchen …`}
-                aria-label="Vorlagen durchsuchen"
+                placeholder={tr("In {value0} Vorlagen suchen …", { value0: String(presets.length) })}
+                aria-label={tr("Vorlagen durchsuchen")}
                 className="h-full w-full min-w-0 bg-transparent text-2xs text-fg outline-none placeholder:text-fg-subtle"
               />
               {query && (
-                <button type="button" aria-label="Suche leeren" onClick={() => setQuery('')} className="text-fg-subtle hover:text-fg">
+                <button type="button" aria-label={tr("Suche leeren")} onClick={() => setQuery('')} className="text-fg-subtle hover:text-fg">
                   <X className="size-3" />
                 </button>
               )}
             </label>
           ) : (
             <span className="text-2xs tabular-nums text-fg-subtle">
-              {presets.length} {presets.length === 1 ? 'Vorlage' : 'Vorlagen'}
+              {presets.length} {presets.length === 1 ? tr('Vorlage') : tr('Vorlagen')}
             </span>
           )
         }
       >
-        Vorlage
+        {tr("Vorlage")}
       </SectionLabel>
 
       {facet && (
-        <div role="group" aria-label="Vorlagen filtern" className="flex flex-wrap gap-1">
-          <FacetChip active={!activeFacet} onClick={() => setFacetChoice({ family: family.key, value: null })} label="Alle Vorlagen">
-            Alle
+        <div role="group" aria-label={tr("Vorlagen filtern")} className="flex flex-wrap gap-1">
+          <FacetChip active={!activeFacet} onClick={() => setFacetChoice({ family: family.key, value: null })} label={tr("Alle Vorlagen")}>
+            {tr("Alle")}
           </FacetChip>
           {facet.values.map((v) => (
             <FacetChip
               key={v.value}
               active={activeFacet === v.value}
               onClick={() => setFacetChoice({ family: family.key, value: v.value })}
-              label={`${facetLabel(facet.param, v.value)} (${v.count} ${v.count === 1 ? 'Vorlage' : 'Vorlagen'})`}
+              label={`${facetLabel(facet.param, v.value)} (${v.count} ${v.count === 1 ? tr('Vorlage') : tr('Vorlagen')})`}
             >
               {v.value}
             </FacetChip>
@@ -156,7 +159,7 @@ export function PresetPicker({ family, presets, value, changed, onSelect, onRese
 
       {visible.length === 0 ? (
         <p className="rounded-control border border-dashed border-line-strong px-3 py-4 text-center text-xs text-fg-muted">
-          Keine Vorlage passt{query ? ` zu „${query}“` : ''}.
+          {tr("Keine Vorlage passt")}{query ? tr(" zu „{value0}“", { value0: String(query) }) : ''}.
         </p>
       ) : (
         <div className="group/list flex flex-col gap-1">
@@ -185,8 +188,8 @@ export function PresetPicker({ family, presets, value, changed, onSelect, onRese
             ))}
           </div>
           <p id={`${uid}-keys`} className="hidden items-center gap-1.5 text-2xs text-fg-subtle group-focus-within/list:flex">
-            <Kbd keys={['↑', '↓']} size="xs" /> wählen ·<Kbd keys={['Enter']} size="xs" /> lädt die Vorlage
-            {changed > 0 && <span className="text-fg-muted">· Strg+Z macht es rückgängig</span>}
+            <Kbd keys={['↑', '↓']} size="xs" /> {tr("wählen ·")}<Kbd keys={['Enter']} size="xs" /> {tr("lädt die Vorlage")}
+            {changed > 0 && <span className="text-fg-muted">{tr("· Strg+Z macht es rückgängig")}</span>}
           </p>
         </div>
       )}
@@ -195,10 +198,10 @@ export function PresetPicker({ family, presets, value, changed, onSelect, onRese
         <div className="flex items-center gap-2 text-2xs text-fg-muted">
           <span aria-hidden className="size-1.5 rounded-full bg-accent shadow-[0_0_6px_var(--pf-glow-indicator)]" />
           <span className="min-w-0 flex-1">
-            {changed} {changed === 1 ? 'Wert weicht' : 'Werte weichen'} von „{current.key}“ ab
+            {changed} {changed === 1 ? tr('Wert weicht') : tr('Werte weichen')} {tr("von „")}{current.key}{tr("“ ab")}
           </span>
           <Button variant="ghost" size="xs" leftIcon={<RotateCcw />} onClick={onReset}>
-            Zurücksetzen
+            {tr("Zurücksetzen")}
           </Button>
         </div>
       )}
@@ -225,6 +228,7 @@ function PresetRow({
   onFocus: () => void
   onKeyDown: (e: KeyboardEvent<HTMLElement>) => void
 }) {
+  useI18n()
   const facts = presetFactsShort(family, preset)
   const subtitle = presetSubtitle(preset)
   const factsText = presetFactsText(family, preset)
@@ -234,9 +238,9 @@ function PresetRow({
       delayDuration={700}
       content={
         <span className="flex max-w-72 flex-col gap-0.5">
-          <span className="font-medium">{preset.label}</span>
+          <span className="font-medium">{tr(preset.label)}</span>
           {factsText && <span className="text-fg-muted">{factsText}</span>}
-          {preset.source && <span className="text-fg-muted">Quelle: {preset.source}</span>}
+          {preset.source && <span className="text-fg-muted">{tr("Quelle:")}{' '}{preset.source}</span>}
         </span>
       }
     >
@@ -274,7 +278,7 @@ function PresetRow({
           {factsText && <span className="sr-only">, {factsText}</span>}
           {selected && changed > 0 && (
             <Badge variant="accent" size="sm" className="h-4 shrink-0 px-1.5">
-              angepasst
+              {tr("angepasst")}
             </Badge>
           )}
         </span>
@@ -282,7 +286,7 @@ function PresetRow({
           // Nur bei der gewählten Vorlage: Datenquelle (sonst die Bezeichnung)
           <span className="mt-0.5 pl-[22px] text-2xs leading-4 text-fg-subtle">
             {/* geschützte Bindestriche: „SOT96‑1“ bricht nicht am Bindestrich */}
-            {preset.source ? `Quelle: ${preset.source.replace(/(\w)-(\w)/g, `$1${NB_HYPHEN}$2`)}` : subtitle}
+            {preset.source ? tr("Quelle: {value0}", { value0: String(preset.source.replace(/(\w)-(\w)/g, `$1${NB_HYPHEN}$2`)) }) : subtitle}
           </span>
         )}
       </button>

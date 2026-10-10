@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 /**
  * Schritt 1 – Kategorie: vier Karten (Widerstände, Kondensatoren, Induktivitäten, Ferrite) mit Zahl der
  * Hersteller-Serien und der Bauteile in der Bibliothek. Darunter Schnellstart aus einer Teilenummer und
@@ -50,6 +51,7 @@ interface CategoryCard {
 }
 
 export function CategoryStep({ onPick, onResume, onApplyDecoded, onDecodedChange, onCustomTemplate }: CategoryStepProps) {
+  const { t: tr } = useI18n()
   const uid = useId().replace(/:/g, '')
   const templates = useSeriesTemplates()
   const categories = useCategories()
@@ -68,14 +70,14 @@ export function CategoryStep({ onPick, onResume, onApplyDecoded, onDecodedChange
       const def = categories.data?.find((c) => c.table === table)
       return {
         table,
-        label: def?.label ?? meta?.label ?? table,
-        description: meta?.description ?? 'Eigene Hersteller-Serien dieser Kategorie.',
+        label: tr(def?.label ?? meta?.label ?? table),
+        description: tr(meta?.description ?? 'Eigene Hersteller-Serien dieser Kategorie.'),
         color: def?.color ?? null,
         templates: all.filter((t) => t.category === table),
         parts: def ? def.part_count : null,
       }
     })
-  }, [templates.data, categories.data])
+  }, [templates.data, categories.data, tr])
 
   const keys = cards.map((c) => c.table)
   const { radioProps } = useRadioCards({
@@ -98,15 +100,15 @@ export function CategoryStep({ onPick, onResume, onApplyDecoded, onDecodedChange
     <section aria-labelledby="serien-kategorie" className="flex flex-col gap-5">
       <StepHeading
         id="serien-kategorie"
-        title="Welche Bauteile sollen entstehen?"
-        description="PartForge kennt die Teilenummern-Muster, Codetabellen und lieferbaren Werte der Hersteller – Sie wählen nur noch Bauformen und Bereich."
+        title={tr("Welche Bauteile sollen entstehen?")}
+        description={tr("PartForge kennt die Teilenummern-Muster, Codetabellen und lieferbaren Werte der Hersteller – Sie wählen nur noch Bauformen und Bereich.")}
       />
 
       {failed && (
         <Callout
           tone="danger"
           urgent
-          title="Hersteller-Serien nicht geladen"
+          title={tr("Hersteller-Serien nicht geladen")}
           actions={
             <Button
               size="sm"
@@ -115,12 +117,10 @@ export function CategoryStep({ onPick, onResume, onApplyDecoded, onDecodedChange
               loading={templates.isFetching}
               onClick={() => void templates.refetch()}
             >
-              Erneut versuchen
-            </Button>
+              {tr("Erneut versuchen")}</Button>
           }
         >
-          {errorMessage(templates.error)} Die Zahl der Serien je Kategorie ist deshalb unbekannt.
-        </Callout>
+          {errorMessage(templates.error)} {tr("Die Zahl der Serien je Kategorie ist deshalb unbekannt.")}</Callout>
       )}
 
       <div
@@ -188,26 +188,25 @@ export function CategoryStep({ onPick, onResume, onApplyDecoded, onDecodedChange
                       {card.description}
                       <span className="sr-only">
                         {counts
-                          ? ` ${plural(card.templates.length, 'Hersteller-Serie', 'Hersteller-Serien')}`
-                          : ' Zahl der Hersteller-Serien unbekannt'}
-                        {card.parts !== null ? `, ${formatNumber(card.parts)} in der Bibliothek.` : '.'}
+                          ? ` ${plural(card.templates.length, tr("Hersteller-Serie"), tr("Hersteller-Serien"))}`
+                          : tr("Zahl der Hersteller-Serien unbekannt")}
+                        {card.parts !== null ? tr(", {v0} in der Bibliothek.", { v0: formatNumber(card.parts) }) : '.'}
                       </span>
                     </span>
                     {/* Kennzahlen untereinander – alle Karten gleich (nebeneinander bräche je nach Zahl mal um, mal nicht) */}
                     <span aria-hidden className="mt-auto flex flex-col gap-0.5 pt-1.5 text-xs text-fg-subtle">
                       <span>
                         <span className="mono font-semibold text-fg">{counts ? formatNumber(card.templates.length) : '–'}</span>{' '}
-                        {counts && card.templates.length === 1 ? 'Hersteller-Serie' : 'Hersteller-Serien'}
+                        {counts && card.templates.length === 1 ? tr("Hersteller-Serie") : tr("Hersteller-Serien")}
                       </span>
                       {card.parts !== null && (
                         <span>
-                          <span className="mono font-semibold text-fg">{formatNumber(card.parts)}</span> in der Bibliothek
-                        </span>
+                          <span className="mono font-semibold text-fg">{formatNumber(card.parts)}</span> {tr("in der Bibliothek")}</span>
                       )}
                     </span>
                     {counts && (
                       <span aria-hidden className="truncate text-2xs text-fg-subtle">
-                        {makers.length ? makerList(makers) : 'Eigene Vorlage möglich'}
+                        {makers.length ? makerList(makers) : tr("Eigene Vorlage möglich")}
                       </span>
                     )}
                   </span>
@@ -234,9 +233,8 @@ export function CategoryStep({ onPick, onResume, onApplyDecoded, onDecodedChange
               </span>
               <div className="min-w-0 flex-1">
                 <h3 id={`${uid}-recent`} className="text-sm font-semibold text-fg">
-                  Zuletzt verwendet
-                </h3>
-                <p className="mt-0.5 text-xs text-fg-muted">Mit der gemerkten Auswahl weitermachen.</p>
+                  {tr("Zuletzt verwendet")}</h3>
+                <p className="mt-0.5 text-xs text-fg-muted">{tr("Mit der gemerkten Auswahl weitermachen.")}</p>
               </div>
             </div>
             <ul aria-labelledby={`${uid}-recent`} className="flex flex-col divide-y divide-line border-t border-line">
@@ -252,7 +250,7 @@ export function CategoryStep({ onPick, onResume, onApplyDecoded, onDecodedChange
                     >
                       <span className="min-w-0 flex-1">
                         <span className="micro-label block">{categoryLabel(t.category)}</span>
-                        <span className="mt-0.5 block truncate text-ui font-medium text-fg">{t.title}</span>
+                        <span className="mt-0.5 block truncate text-ui font-medium text-fg">{t.builtin ? tr(t.title) : t.title}</span>
                         {details.length > 0 && (
                           <span className="mt-0.5 block text-xs text-fg-muted">
                             {details.map((d, i) => (
@@ -270,7 +268,7 @@ export function CategoryStep({ onPick, onResume, onApplyDecoded, onDecodedChange
                           </span>
                         )}
                       </span>
-                      <span className="sr-only">Fortsetzen</span>
+                      <span className="sr-only">{tr("Fortsetzen")}</span>
                       <ChevronRight
                         aria-hidden
                         className="size-4 shrink-0 text-fg-subtle transition-[color,transform] group-hover/recent:translate-x-0.5 group-hover/recent:text-fg"

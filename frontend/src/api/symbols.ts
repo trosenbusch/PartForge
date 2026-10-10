@@ -1,16 +1,4 @@
-/**
- * Symbole: Generator (Symboltypen, Live-Vorschau, IC-Seitenzuordnung) und Symbolbibliothek (Registrierung).
- *
- *   const kinds = useSymbolKinds('dark')                    // GET  /api/symbols/kinds?thumbnails=true
- *   const preview = useSymbolGeneratorPreview(request)      // POST /api/symbols/preview?svg=false (entprellt aufrufen)
- *   await symbolsApi.autoSides(pins, true)                  // POST /api/symbols/auto-sides
- *   const lib = useSymbolLibrary()                          // GET  /api/libraries/symbols (ohne Vorschaubilder)
- *   symbolsApi.thumbnail(name, 'dark', entry.content_hash)  // GET  …/symbols/{name}/thumbnail.svg?v=<content_hash> (dauerhaft)
- *   const plan = await symbolsApi.save(input, { dryRun: true })   // PUT …?dry_run=true: Ziel, neu/unverändert, Pinänderung
- *   await symbolsApi.save({ ...input, library: 'Symbols\\PF_Power.SchLib' })   // ausdrückliche Ziel-SchLib (neue Namen)
- *
- * Die Leinwände zeichnen aus dem Spec – Vorschau und Detail werden darum ohne SVG geladen (`svg=false`).
- */
+import { useI18n } from '@/lib/i18n'
 import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { ApiError, api } from './client'
 import { useWorkspace, type Job } from './system'
@@ -223,13 +211,14 @@ export type SaveSymbolResult = { kind: 'saved'; record: SymbolEntry; out: Symbol
  * geänderter Pinbelegung ({@link pinoutChanged}).
  */
 export function useSaveSymbol() {
+  const { t: tr } = useI18n()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (input: SymbolSaveIn): Promise<SaveSymbolResult> => {
       const out = await symbolsApi.save(input)
       if (out.job) return { kind: 'job', job: out.job as unknown as Job, out }
       if (out.record) return { kind: 'saved', record: out.record, out }
-      throw new Error('Das Backend hat weder einen Eintrag noch einen Job geliefert.')
+      throw new Error(tr("Das Backend hat weder einen Eintrag noch einen Job geliefert."))
     },
     meta: { silentError: true },
     // auch bei 503 („vorgemerkt“) ist der Eintrag registriert → Liste neu laden
@@ -262,10 +251,11 @@ export function invalidateSymbolLibrary(qc: QueryClient, deleted?: string | null
  * direkten Löschen lädt das Detail des Namens nicht neu; läuft es als Job, lädt der Job-Abschluss alles neu.
  */
 export function useDeleteSymbol() {
+  const { t: tr } = useI18n()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ name, force }: { name: string; force?: boolean }) => symbolsApi.remove(name, force),
-    meta: { errorTitle: 'Symbol konnte nicht gelöscht werden' },
+    meta: { errorTitle: tr("Symbol konnte nicht gelöscht werden") },
     onSettled: (out, error, { name }) => {
       const gone = !error && Boolean(out?.result && (out.result.deleted.length || out.result.unregistered.length))
       invalidateSymbolLibrary(qc, gone ? name : null)

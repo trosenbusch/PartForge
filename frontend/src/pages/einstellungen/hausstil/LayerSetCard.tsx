@@ -1,3 +1,4 @@
+import { t as translate, useI18n } from '@/lib/i18n'
 /**
  * Lagensatz (Altium „View Configuration › Layer Sets“): PartForge schreibt einen eigenen Lagensatz in den Kopf jeder
  * PcbLib – keiner, „Component Layers“ aus der Lagenzuordnung oder ein Satz aus einer Altium-.layerset-Datei. Die
@@ -60,6 +61,7 @@ export function LayerSetCard({
   roles: LayerSetRole[]
   onChange: (next: LayerSetSettings) => void
 }) {
+  useI18n()
   const changed = JSON.stringify(value) !== JSON.stringify(saved)
   const debouncedMap = useDebounced(map, 400)
   const builtin = useBuiltinLayerSet(value.mode === 'builtin' ? debouncedMap : null, value.current)
@@ -103,32 +105,29 @@ export function LayerSetCard({
     <Card className="overflow-hidden">
       <div className="border-b border-line px-5 py-3.5">
         <h2 className="flex items-center gap-2 text-ui font-semibold text-fg">
-          Lagensatz
-          {changed && (
+          {translate("Lagensatz")}{changed && (
             <Badge variant="accent" className="h-4 px-1.5">
-              geändert
-            </Badge>
+              {translate("geändert")}</Badge>
           )}
         </h2>
         <p className="text-xs text-fg-muted">
-          Eigener Lagensatz in jeder PcbLib – in Altium unter „View Configuration › Layer Sets“, beim Öffnen auf Wunsch aktiv
-        </p>
+          {translate("Eigener Lagensatz in jeder PcbLib – in Altium unter „View Configuration › Layer Sets“, beim Öffnen auf Wunsch aktiv")}</p>
       </div>
       <div className="flex flex-col divide-y divide-line px-5">
         <StyleRow
-          label="Lagensatz"
+          label={translate("Lagensatz")}
           help={
             value.mode === 'none'
-              ? 'Nur die eingebauten Sätze von Altium (All Layers, Signal Layers …).'
+              ? translate("Nur die eingebauten Sätze von Altium (All Layers, Signal Layers …).")
               : value.mode === 'builtin'
-                ? 'Kupfer, Paste, Lötstopp, Bestückungsdruck, Bohrlagen und alle Mechanik-Lagen der Zuordnung.'
-                : 'Ein Satz aus einer Altium-Lagensatz-Datei (.layerset) – die Definition wird gespeichert.'
+                ? translate("Kupfer, Paste, Lötstopp, Bestückungsdruck, Bohrlagen und alle Mechanik-Lagen der Zuordnung.")
+                : translate("Ein Satz aus einer Altium-Lagensatz-Datei (.layerset) – die Definition wird gespeichert.")
           }
           isDefault={value.mode === 'none'}
-          defaultText="Keiner"
+          defaultText={translate("Keiner")}
           onReset={() => setMode('none')}
         >
-          <SegmentedControl<LayerSetSettings['mode']> aria-label="Lagensatz" size="sm" value={value.mode} onValueChange={setMode} options={MODES} />
+          <SegmentedControl<LayerSetSettings['mode']> aria-label={translate("Lagensatz")} size="sm" value={value.mode} onValueChange={setMode} options={MODES.map((mode) => ({ ...mode, label: translate(mode.label) }))} />
         </StyleRow>
 
         {value.mode === 'file' && (
@@ -138,30 +137,30 @@ export function LayerSetCard({
               onValueChange={(v) => setFile(v.trim() ? v : null)}
               prefix={<FileStack />}
               browse="file"
-              fileFilters={['Altium-Lagensatz (*.layerset)']}
-              placeholder="Pfad der .layerset-Datei"
-              aria-label="Pfad der .layerset-Datei"
+              fileFilters={[translate("Altium-Lagensatz (*.layerset)")]}
+              placeholder={translate("Pfad der .layerset-Datei")}
+              aria-label={translate("Pfad der .layerset-Datei")}
               invalid={Boolean(filePath && parsed.isError && !value.layers.length)}
             />
-            {filePath && parsed.isFetching && <p className="text-xs text-fg-muted">Lese Lagensatz …</p>}
+            {filePath && parsed.isFetching && <p className="text-xs text-fg-muted">{translate("Lese Lagensatz …")}</p>}
             {filePath && parsed.isError && (
-              <Callout tone={value.layers.length ? 'warning' : 'danger'} title="Datei nicht lesbar">
+              <Callout tone={value.layers.length ? 'warning' : 'danger'} title={translate("Datei nicht lesbar")}>
                 {errorMessage(parsed.error)}
-                {value.layers.length > 0 && ` Gespeichert bleibt „${value.name ?? ''}“ mit ${value.layers.length} Lagen.`}
+                {value.layers.length > 0 && translate(" Gespeichert bleibt „{value1}“ mit {value2} Lagen.", { value1: value.name ?? '', value2: value.layers.length })}
               </Callout>
             )}
             {sets.length > 1 && (
-              <StyleRow label="Satz aus der Datei" help={`${sets.length} Lagensätze in der Datei`} className="py-0">
+              <StyleRow label={translate("Satz aus der Datei")} help={translate("{value1} Lagensätze in der Datei", { value1: sets.length })} className="py-0">
                 <Select
                   value={selected?.name ?? ''}
                   onValueChange={(name) => {
                     const set = sets.find((s) => s.name === name)
                     if (set) onChange(fromDef(set, value))
                   }}
-                  options={sets.map((s) => ({ value: s.name, label: s.name, description: `${s.layers.length} Lagen` }))}
-                  placeholder="Lagensatz wählen"
+                  options={sets.map((s) => ({ value: s.name, label: s.name, description: translate("{value1} Lagen", { value1: s.layers.length }) }))}
+                  placeholder={translate("Lagensatz wählen")}
                   className="w-56"
-                  aria-label="Lagensatz aus der Datei"
+                  aria-label={translate("Lagensatz aus der Datei")}
                 />
               </StyleRow>
             )}
@@ -169,7 +168,7 @@ export function LayerSetCard({
         )}
 
         {value.mode === 'builtin' && (
-          <StyleRow label="Name" help="So heißt der Satz in Altium." isDefault={!value.name?.trim()} defaultText={BUILTIN_NAME} onReset={() => onChange({ ...value, name: null })}>
+          <StyleRow label="Name" help={translate("So heißt der Satz in Altium.")} isDefault={!value.name?.trim()} defaultText={BUILTIN_NAME} onReset={() => onChange({ ...value, name: null })}>
             <Input
               value={value.name ?? ''}
               onChange={(e) => onChange({ ...value, name: e.target.value || null })}
@@ -182,10 +181,10 @@ export function LayerSetCard({
 
         {value.mode !== 'none' && (
           <StyleRow
-            label="Beim Öffnen aktiv"
-            help="Altium zeigt beim Öffnen der Bibliothek nur die Lagen dieses Satzes."
+            label={translate("Beim Öffnen aktiv")}
+            help={translate("Altium zeigt beim Öffnen der Bibliothek nur die Lagen dieses Satzes.")}
             isDefault={value.current}
-            defaultText="an"
+            defaultText={translate("an")}
             onReset={() => onChange({ ...value, current: true })}
           >
             <Switch checked={value.current} onCheckedChange={(current) => onChange({ ...value, current })} />
@@ -208,11 +207,10 @@ export function LayerSetCard({
               <p className="mb-2 flex items-center gap-1.5 text-xs text-fg-muted">
                 <Layers2 aria-hidden className="size-3.5 shrink-0 text-fg-subtle" />
                 <span className="min-w-0">
-                  <span className="font-medium text-fg">„{shown.name}“</span> · {shown.layers.length} Lagen
-                  {shown.active ? ` · aktive Lage ${layerLabel(shown.active)}` : ''}
+                  <span className="font-medium text-fg">„{shown.name}“</span> · {shown.layers.length} {' '}{translate("Lagen")}{shown.active ? translate(" · aktive Lage {value1}", { value1: layerLabel(shown.active) }) : ''}
                 </span>
               </p>
-              <ul className="flex flex-wrap gap-1.5" aria-label={`Lagen von ${shown.name}`}>
+              <ul className="flex flex-wrap gap-1.5" aria-label={translate("Lagen von {value1}", { value1: shown.name })}>
                 {shown.layers.map((t) => {
                   const role = roleByToken.get(t.toUpperCase())
                   return (
@@ -233,17 +231,14 @@ export function LayerSetCard({
               {missingRoles.length > 0 && (
                 <p className="mt-2 flex items-start gap-1.5 text-xs text-warning-text">
                   <TriangleAlert aria-hidden className="mt-px size-3.5 shrink-0" />
-                  Nicht im Satz: {missingRoles.map((r) => `${r.label} (${r.layer})`).join(', ')} – diese Lagen blendet der Satz aus.
-                </p>
+                  {translate("Nicht im Satz:")}{' '}{missingRoles.map((r) => `${r.label} (${r.layer})`).join(', ')} {' '}{translate("– diese Lagen blendet der Satz aus.")}</p>
               )}
             </>
           ) : (
-            <p className="text-xs text-fg-muted">Noch kein Lagensatz gewählt.</p>
+            <p className="text-xs text-fg-muted">{translate("Noch kein Lagensatz gewählt.")}</p>
           )}
           <p className="mt-2 text-2xs leading-snug text-fg-subtle">
-            Neue Footprint-Bibliotheken erhalten den Satz automatisch; vorhandene über „Auf Bibliotheken anwenden …“ oder die
-            Stapelbearbeitung (Lagen-Kopf).
-          </p>
+            {translate("Neue Footprint-Bibliotheken erhalten den Satz automatisch; vorhandene über „Auf Bibliotheken anwenden …“ oder die Stapelbearbeitung (Lagen-Kopf).")}</p>
         </div>
       )}
     </Card>

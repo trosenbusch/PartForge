@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Minus } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
@@ -44,6 +45,7 @@ const toneHint: Record<StatTone, string> = {
 }
 
 export function CountUp({ value, format = (n) => formatNumber(Math.round(n)) }: { value: number; format?: (n: number) => string }) {
+  useI18n()
   const display = useCountUp(value)
   return <>{format(display)}</>
 }
@@ -90,6 +92,7 @@ export function StatCard({
   actionLabel,
   className,
 }: StatCardProps) {
+  useI18n()
   const interactive = Boolean(onClick)
   const Comp = interactive ? 'button' : 'div'
   const hasHistory = Boolean(sparkline && sparkline.length > 1 && Math.max(...sparkline) !== Math.min(...sparkline))

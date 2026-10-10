@@ -1,3 +1,4 @@
+import { t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Vorschaubild eines registrierten Footprints aus `GET /api/libraries/footprints/{name}/thumbnail.svg?v=<content_hash>`
  * (Leiterplatte, immer dunkel) – lädt erst im Sichtbereich. `content_hash` (aus Liste, Detail und Speichern) ändert sich
@@ -17,10 +18,11 @@ import { PackageGlyph } from '../PackageGlyph'
 type ThumbEntry = Pick<LibraryFootprint, 'name' | 'content_hash' | 'family'>
 
 function Glyph({ family, small }: { family: string | null; small?: boolean }) {
+  useI18n()
   return (
     <span className={cn('flex size-full items-center justify-center', CHROME_MUTED.board)}>
       <PackageGlyph family={family} className={small ? 'size-4' : 'size-9'} />
-      <span className="sr-only">Keine Vorschau</span>
+      <span className="sr-only">{tr("Keine Vorschau")}</span>
     </span>
   )
 }

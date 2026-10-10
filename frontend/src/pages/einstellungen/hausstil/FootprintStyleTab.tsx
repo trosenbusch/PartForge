@@ -1,3 +1,4 @@
+import { t as translate, useI18n, localizeMessage, getLocale } from '@/lib/i18n'
 /**
  * Hausstil der Footprints: Dichte und Toleranzen, Pads, Bestückungsdruck, Mechanik-Lagen, 3D – mit Live-Vorschau
  * (0603 und SOIC-8) aus dem Generator, Vergleich mit dem gespeicherten Stand und Prüfergebnis.
@@ -35,6 +36,7 @@ export function FootprintStyleTab({
   draft: FootprintStyle
   onChange: (patch: Partial<FootprintStyle>) => void
 }) {
+  useI18n()
   const d = FOOTPRINT_DEFAULTS
   const pendingKeys = pendingFootprintKeys(saved, draft, false)
   const pending = (k: keyof FootprintStyle) => pendingKeys.includes(k)
@@ -42,16 +44,16 @@ export function FootprintStyleTab({
   return (
     <div className="grid grid-cols-1 items-start gap-5 @[48rem]:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
       <Card className="px-5 pb-2">
-        <StyleGroup title="Dichte und Toleranzen" description="Grundlage der IPC-7351B-Berechnung aller Pads und Courtyards">
+        <StyleGroup title={translate("Dichte und Toleranzen")} description={translate("Grundlage der IPC-7351B-Berechnung aller Pads und Courtyards")}>
           <StyleRow
-            label="Dichte"
-            help="Klein (L): kleine Pads für dichte Bestückung (Level C) · Nominal (N): Standard (Level B) · Groß (M): große Pads (Level A)"
+            label={translate("Dichte")}
+            help={translate("Klein (L): kleine Pads für dichte Bestückung (Level C) · Nominal (N): Standard (Level B) · Groß (M): große Pads (Level A)")}
             isDefault={draft.density === d.density}
             defaultText={densityLabel(d.density)}
             onReset={() => onChange({ density: d.density })}
           >
             <SegmentedControl<FootprintStyle['density']>
-              aria-label="Dichte"
+              aria-label={translate("Dichte")}
               size="sm"
               value={draft.density}
               onValueChange={(v) => onChange({ density: v })}
@@ -59,26 +61,26 @@ export function FootprintStyleTab({
             />
           </StyleRow>
           <StyleRow
-            label="Rundung"
-            help="Rundet die berechneten Maße Z, G und X."
+            label={translate("Rundung")}
+            help={translate("Rundet die berechneten Maße Z, G und X.")}
             isDefault={draft.rounding === d.rounding}
-            defaultText="0,05 mm"
+            defaultText={translate("0,05 mm")}
             onReset={() => onChange({ rounding: d.rounding })}
           >
             <SegmentedControl<FootprintStyle['rounding']>
-              aria-label="Rundung"
+              aria-label={translate("Rundung")}
               size="sm"
               value={draft.rounding}
               onValueChange={(v) => onChange({ rounding: v })}
               options={[
-                { value: 'kicad', label: '0,05 mm' },
-                { value: 'ipc', label: '0,01 mm (IPC)' },
+                { value: 'kicad', label: translate("0,05 mm") },
+                { value: 'ipc', label: translate("0,01 mm (IPC)") },
               ]}
             />
           </StyleRow>
           <NumberRow
-            label="Fertigungstoleranz F"
-            help="Toleranz des Leiterplattenherstellers (gesamt)."
+            label={translate("Fertigungstoleranz F")}
+            help={translate("Toleranz des Leiterplattenherstellers (gesamt).")}
             value={draft.fab_tolerance}
             defaultValue={d.fab_tolerance}
             onChange={(v) => onChange({ fab_tolerance: v })}
@@ -87,8 +89,8 @@ export function FootprintStyleTab({
             step={0.01}
           />
           <NumberRow
-            label="Bestückungstoleranz P"
-            help="Platzierungsgenauigkeit des Bestückers (gesamt)."
+            label={translate("Bestückungstoleranz P")}
+            help={translate("Platzierungsgenauigkeit des Bestückers (gesamt).")}
             value={draft.placement_tolerance}
             defaultValue={d.placement_tolerance}
             onChange={(v) => onChange({ placement_tolerance: v })}
@@ -100,14 +102,14 @@ export function FootprintStyleTab({
 
         <StyleGroup title="Pads">
           <StyleRow
-            label="Eckenradius"
-            help="Altium-Prozentwert für abgerundete SMD-Pads (50 % = Radius ¼ der kürzeren Seite)."
+            label={translate("Eckenradius")}
+            help={translate("Altium-Prozentwert für abgerundete SMD-Pads (50 % = Radius ¼ der kürzeren Seite).")}
             isDefault={draft.pad_corner_radius_pct === d.pad_corner_radius_pct}
             defaultText="50 %"
             onReset={() => onChange({ pad_corner_radius_pct: d.pad_corner_radius_pct })}
           >
             <Slider
-              aria-label="Eckenradius"
+              aria-label={translate("Eckenradius")}
               value={[draft.pad_corner_radius_pct]}
               onValueChange={([v]) => onChange({ pad_corner_radius_pct: Math.round(v) })}
               min={0}
@@ -119,8 +121,8 @@ export function FootprintStyleTab({
             />
           </StyleRow>
           <NumberRow
-            label="Min. Kupferabstand"
-            help="Pads benachbarter Anschlüsse werden auf diesen Abstand begrenzt."
+            label={translate("Min. Kupferabstand")}
+            help={translate("Pads benachbarter Anschlüsse werden auf diesen Abstand begrenzt.")}
             value={draft.min_copper_gap}
             defaultValue={d.min_copper_gap}
             onChange={(v) => onChange({ min_copper_gap: v })}
@@ -130,14 +132,14 @@ export function FootprintStyleTab({
           />
           <StyleRow
             label="Exposed Pad"
-            help="Nummer des Wärmepads bei QFN/DFN: nächste freie Nummer (wie im Datenblatt) oder „EP“."
+            help={translate("Nummer des Wärmepads bei QFN/DFN: nächste freie Nummer (wie im Datenblatt) oder „EP“.")}
             pending={pending('exposed_pad_designator')}
             isDefault={draft.exposed_pad_designator === d.exposed_pad_designator}
             defaultText="N+1"
             onReset={() => onChange({ exposed_pad_designator: d.exposed_pad_designator })}
           >
             <SegmentedControl<FootprintStyle['exposed_pad_designator']>
-              aria-label="Nummer des Exposed Pads"
+              aria-label={translate("Nummer des Exposed Pads")}
               size="sm"
               value={draft.exposed_pad_designator}
               onValueChange={(v) => onChange({ exposed_pad_designator: v })}
@@ -149,10 +151,10 @@ export function FootprintStyleTab({
           </StyleRow>
         </StyleGroup>
 
-        <StyleGroup title="Bestückungsdruck" description="Top Overlay – nie auf Kupfer">
+        <StyleGroup title={translate("Bestückungsdruck")} description={translate("Top Overlay – nie auf Kupfer")}>
           <NumberRow
-            label="Linienbreite ICs"
-            help="ICs, Steckverbinder und größere Gehäuse."
+            label={translate("Linienbreite ICs")}
+            help={translate("ICs, Steckverbinder und größere Gehäuse.")}
             value={draft.silk_width}
             defaultValue={d.silk_width}
             onChange={(v) => onChange({ silk_width: v })}
@@ -161,8 +163,8 @@ export function FootprintStyleTab({
             step={0.01}
           />
           <NumberRow
-            label="Linienbreite Chips"
-            help="Chip-Widerstände, -Kondensatoren und -Induktivitäten."
+            label={translate("Linienbreite Chips")}
+            help={translate("Chip-Widerstände, -Kondensatoren und -Induktivitäten.")}
             value={draft.silk_width_small}
             defaultValue={d.silk_width_small}
             onChange={(v) => onChange({ silk_width_small: v })}
@@ -171,8 +173,8 @@ export function FootprintStyleTab({
             step={0.01}
           />
           <NumberRow
-            label="Abstand zu Pads"
-            help="Mindestabstand zwischen Druck und Kupfer (Kante zu Kante)."
+            label={translate("Abstand zu Pads")}
+            help={translate("Mindestabstand zwischen Druck und Kupfer (Kante zu Kante).")}
             value={draft.silk_pad_clearance}
             defaultValue={d.silk_pad_clearance}
             onChange={(v) => onChange({ silk_pad_clearance: v })}
@@ -182,8 +184,8 @@ export function FootprintStyleTab({
             pending={pending('silk_pad_clearance')}
           />
           <NumberRow
-            label="Pin‑1‑Punkt"
-            help="Durchmesser des gefüllten Punkts neben Pin 1."
+            label={translate("Pin‑1‑Punkt")}
+            help={translate("Durchmesser des gefüllten Punkts neben Pin 1.")}
             value={draft.pin1_dot_radius * 4}
             defaultValue={d.pin1_dot_radius * 4}
             onChange={(v) => onChange({ pin1_dot_radius: Number((v / 4).toFixed(4)) })}
@@ -193,10 +195,10 @@ export function FootprintStyleTab({
           />
         </StyleGroup>
 
-        <StyleGroup title="Mechanik-Lagen" description="Bestückungszeichnung, Courtyard, Bauteilmitte und Texte">
+        <StyleGroup title={translate("Mechanik-Lagen")} description={translate("Bestückungszeichnung, Courtyard, Bauteilmitte und Texte")}>
           <NumberRow
-            label="Linienbreite Bestückung"
-            help="Bestückungszeichnung und Bauteilumriss."
+            label={translate("Linienbreite Bestückung")}
+            help={translate("Bestückungszeichnung und Bauteilumriss.")}
             value={draft.assembly_width}
             defaultValue={d.assembly_width}
             onChange={(v) => onChange({ assembly_width: v })}
@@ -205,7 +207,7 @@ export function FootprintStyleTab({
             step={0.01}
           />
           <NumberRow
-            label="Linienbreite Courtyard"
+            label={translate("Linienbreite Courtyard")}
             value={draft.courtyard_width}
             defaultValue={d.courtyard_width}
             onChange={(v) => onChange({ courtyard_width: v })}
@@ -214,8 +216,8 @@ export function FootprintStyleTab({
             step={0.01}
           />
           <NumberRow
-            label="Courtyard-Raster"
-            help="Der Courtyard wird nach außen auf dieses Raster gerundet."
+            label={translate("Courtyard-Raster")}
+            help={translate("Der Courtyard wird nach außen auf dieses Raster gerundet.")}
             value={draft.courtyard_grid}
             defaultValue={d.courtyard_grid}
             onChange={(v) => onChange({ courtyard_grid: v })}
@@ -224,17 +226,17 @@ export function FootprintStyleTab({
             step={0.01}
           />
           <StyleRow
-            label="Mittelkreuz im Courtyard"
-            help="Kreuz ±0,5 mm im Ursprung, zusätzlich zur Bauteilmitte."
+            label={translate("Mittelkreuz im Courtyard")}
+            help={translate("Kreuz ±0,5 mm im Ursprung, zusätzlich zur Bauteilmitte.")}
             isDefault={draft.center_cross === d.center_cross}
-            defaultText="an"
+            defaultText={translate("an")}
             onReset={() => onChange({ center_cross: d.center_cross })}
           >
             <Switch checked={draft.center_cross} onCheckedChange={(v) => onChange({ center_cross: v })} />
           </StyleRow>
           <NumberRow
-            label="Texthöhe"
-            help=".Designator und .Comment – bei kleinen Bauteilen automatisch kleiner."
+            label={translate("Texthöhe")}
+            help={translate(".Designator und .Comment – bei kleinen Bauteilen automatisch kleiner.")}
             value={draft.text_height}
             defaultValue={d.text_height}
             onChange={(v) => onChange({ text_height: v })}
@@ -243,27 +245,27 @@ export function FootprintStyleTab({
             step={0.1}
           />
           <StyleRow
-            label="Textschrift"
-            help="Strichschrift (Altium „Stroke“) oder TrueType – für .Designator und .Comment; Altium misst TrueType-Höhen mit Ober- und Unterlänge."
+            label={translate("Textschrift")}
+            help={translate("Strichschrift (Altium „Stroke“) oder TrueType – für .Designator und .Comment; Altium misst TrueType-Höhen mit Ober- und Unterlänge.")}
             isDefault={draft.text_font === d.text_font}
-            defaultText="Strichschrift"
+            defaultText={translate("Strichschrift")}
             onReset={() => onChange({ text_font: d.text_font })}
           >
             <SegmentedControl<FootprintStyle['text_font']>
-              aria-label="Textschrift"
+              aria-label={translate("Textschrift")}
               size="sm"
               value={draft.text_font}
               onValueChange={(v) => onChange({ text_font: v })}
               options={[
-                { value: 'stroke', label: 'Strich' },
+                { value: 'stroke', label: translate("Strich") },
                 { value: 'truetype', label: 'TrueType' },
               ]}
             />
           </StyleRow>
           {draft.text_font === 'truetype' && (
             <StyleRow
-              label="TrueType-Schrift"
-              help="Muss auf den Rechnern installiert sein, die die Leiterplatte öffnen."
+              label={translate("TrueType-Schrift")}
+              help={translate("Muss auf den Rechnern installiert sein, die die Leiterplatte öffnen.")}
               isDefault={draft.text_font_name === d.text_font_name}
               defaultText={d.text_font_name}
               onReset={() => onChange({ text_font_name: d.text_font_name })}
@@ -273,7 +275,7 @@ export function FootprintStyleTab({
                 value={draft.text_font_name}
                 onValueChange={(v) => onChange({ text_font_name: v?.trim() || d.text_font_name })}
                 allowCustom
-                searchPlaceholder="Schrift suchen oder eingeben …"
+                searchPlaceholder={translate("Schrift suchen oder eingeben …")}
                 className="w-44"
               />
             </StyleRow>
@@ -282,11 +284,11 @@ export function FootprintStyleTab({
 
         <StyleGroup title="3D">
           <StyleRow
-            label="3D-Körper erzeugen"
-            help="Extrudierte Gehäuse auf der 3D-Lage – für Kollisionsprüfung und 3D-Ansicht in Altium."
+            label={translate("3D-Körper erzeugen")}
+            help={translate("Extrudierte Gehäuse auf der 3D-Lage – für Kollisionsprüfung und 3D-Ansicht in Altium.")}
             pending={pending('generate_3d')}
             isDefault={draft.generate_3d === d.generate_3d}
-            defaultText="an"
+            defaultText={translate("an")}
             onReset={() => onChange({ generate_3d: d.generate_3d })}
           >
             <Switch checked={draft.generate_3d} onCheckedChange={(v) => onChange({ generate_3d: v })} />
@@ -295,7 +297,7 @@ export function FootprintStyleTab({
         <ResetAll
           disabled={(Object.keys(d) as (keyof FootprintStyle)[]).every((k) => k === 'naming' || draft[k] === d[k])}
           onReset={() => onChange({ ...d, naming: draft.naming })}
-          label="Alle Footprint-Werte auf Standard"
+          label={translate("Alle Footprint-Werte auf Standard")}
         />
       </Card>
 
@@ -307,7 +309,7 @@ export function FootprintStyleTab({
 // --------------------------------------------------------------------------- Vorschau
 
 /** Maß mit fest zwei Nachkommastellen („0,60“) – wie die Eingabefelder */
-const mm2 = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const mm2 = (v: number) => v.toLocaleString(getLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 interface CourtyardBox {
   x1: number
@@ -355,6 +357,7 @@ function FootprintStylePreview({
   pendingKeys: (keyof FootprintStyle)[]
   className?: string
 }) {
+  useI18n()
   const [sample, setSample] = useChoicePref<Sample>('pf-hausstil-fp-beispiel', ['0603', 'SOIC-8'], 'SOIC-8')
   const [compare, setCompare] = useState(false)
   const s = SAMPLES[sample]
@@ -384,11 +387,11 @@ function FootprintStylePreview({
   return (
     <Card className={cn('overflow-hidden', className)}>
       <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3">
-        <h2 className="text-ui font-semibold text-fg">Vorschau</h2>
-        {q.isFetching && <Spinner size={12} label="Vorschau wird berechnet" />}
+        <h2 className="text-ui font-semibold text-fg">{translate("Vorschau")}</h2>
+        {q.isFetching && <Spinner size={12} label={translate("Vorschau wird berechnet")} />}
         <div className="ml-auto flex items-center gap-1.5">
           <SegmentedControl<Sample>
-            aria-label="Beispielgehäuse"
+            aria-label={translate("Beispielgehäuse")}
             size="sm"
             value={sample}
             onValueChange={setSample}
@@ -400,7 +403,7 @@ function FootprintStylePreview({
           <IconButton
             size="sm"
             variant={compare ? 'secondary' : 'ghost'}
-            label={compare ? 'Entwurf zeigen' : 'Gespeicherten Stand zeigen'}
+            label={compare ? translate("Entwurf zeigen") : translate("Gespeicherten Stand zeigen")}
             aria-pressed={compare}
             icon={<GitCompareArrows />}
             disabled={!changed}
@@ -415,13 +418,12 @@ function FootprintStylePreview({
           showLegend
           showInfo={false}
           resetKey={`${sample}`}
-          aria-label={`Footprint-Vorschau ${s.label}`}
+          aria-label={translate("Footprint-Vorschau {value1}", { value1: translate(s.label) })}
           className="h-[19rem]"
         />
         {showSaved && (
           <span className="pointer-events-none absolute left-1/2 top-3 -translate-x-1/2 rounded-full border border-line-strong bg-surface/90 px-2.5 py-0.5 text-2xs font-medium text-fg">
-            Gespeicherter Stand
-          </span>
+            {translate("Gespeicherter Stand")}</span>
         )}
       </div>
       <dl className="grid grid-cols-2 gap-x-4 gap-y-2 border-t border-line px-4 py-3 text-xs">
@@ -438,19 +440,17 @@ function FootprintStylePreview({
         {q.isError ? (
           <p className="flex items-start gap-2 text-xs text-danger-text">
             <TriangleAlert aria-hidden className="mt-px size-3.5 shrink-0" />
-            Mit diesen Werten entsteht kein gültiger Footprint – bitte die Toleranzen prüfen.
-          </p>
+            {translate("Mit diesen Werten entsteht kein gültiger Footprint – bitte die Toleranzen prüfen.")}</p>
         ) : issues.length === 0 ? (
           <p className="flex items-center gap-2 text-xs text-success-text">
             <CircleCheck aria-hidden className="size-3.5 shrink-0" />
-            Prüfung bestanden – keine Abstands- oder Lagenprobleme.
-          </p>
+            {translate("Prüfung bestanden – keine Abstands- oder Lagenprobleme.")}</p>
         ) : (
           <ul className="flex flex-col gap-1">
             {issues.slice(0, 3).map((i) => (
               <li key={`${i.code}-${i.message}`} className={cn('flex items-start gap-2 text-xs', i.severity === 'error' ? 'text-danger-text' : 'text-warning-text')}>
                 <TriangleAlert aria-hidden className="mt-px size-3.5 shrink-0" />
-                <span>{i.message}</span>
+                <span>{localizeMessage(i.message)}</span>
               </li>
             ))}
           </ul>
@@ -459,10 +459,10 @@ function FootprintStylePreview({
           <p className="flex items-start gap-2 text-2xs leading-snug text-fg-muted">
             <Hourglass aria-hidden className="mt-px size-3 shrink-0" />
             <span>
-              Exakt nach dem Speichern:{' '}
+              {translate("Exakt nach dem Speichern:")}{' '}
               {pendingKeys.map((k, i) => (
                 <Badge key={k} className={cn('h-4 px-1.5', i > 0 && 'ml-1')}>
-                  {PENDING_LABEL[k] ?? k}
+                  {translate(PENDING_LABEL[k] ?? k)}
                 </Badge>
               ))}
             </span>

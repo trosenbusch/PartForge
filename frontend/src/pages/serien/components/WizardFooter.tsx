@@ -1,3 +1,4 @@
+import { t as tr } from '@/lib/i18n'
 /**
  * Fußleiste des Assistenten (klebt unten im Inhaltsbereich): Zurück, Zusammenfassung der Auswahl, Primäraktion
  * „Weiter …“ (Strg+Enter).
@@ -20,7 +21,7 @@ export interface WizardFooterProps {
   }
 }
 
-export function WizardFooter({ onBack, backLabel = 'Zurück', context, primary }: WizardFooterProps) {
+export function WizardFooter({ onBack, backLabel = tr("Zurück"), context, primary }: WizardFooterProps) {
   return (
     <div className="sticky bottom-0 z-sticky -mx-8 mt-auto border-t border-line bg-[color-mix(in_oklab,var(--pf-bg)_84%,transparent)] py-3 pl-8 pr-[max(2rem,calc(var(--pf-dock-width,0px)+2rem))] backdrop-blur-xl transition-[padding] duration-200">
       <div className="flex min-h-9 items-center gap-3">

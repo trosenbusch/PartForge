@@ -1,12 +1,4 @@
-/**
- * Fortschritt der Datenblatt-Analyse aus einem Job-Schnappschuss.
- *
- * Grundlage ist der **strukturierte Fortschritt** `job.detail` (`partforge/datasheet/extract.py`,
- * `routes_datasheets._analysis_job/_url_job`): `steps`, `step`, `step_label`, `datasheet_id`, `pages_total`,
- * `pages_selected`, `pages_active`, `counters`, `cost_usd`, `budget_usd`, `model_label`. Das deutsche Protokoll ergänzt
- * nur, was `detail` nicht kennt (Ergebniszeile je Schritt, Hinweise, Seiten der beiden Durchgänge, Seiten ohne
- * Textebene, Hersteller) – und ist der Rückfall für Jobs ohne `detail` (ältere Backends, Warteschlange).
- */
+import { t as translate } from '@/lib/i18n'
 import type { DatasheetJobDetail, DatasheetStep } from '@/api/datasheets'
 import { jobDetail } from '@/api/jobs'
 import type { Job, JobLogEntry } from '@/api/system'
@@ -80,13 +72,13 @@ export interface AnalysisProgress {
 
 /** Bezeichnungen wie `extract.STEP_LABELS` im Backend, dazu eine Kurzbeschreibung für ausstehende Schritte */
 const STEP_DEFS: Record<StepKey, { label: string; hint: string }> = {
-  download: { label: 'Datenblatt herunterladen', hint: 'PDF vom Hersteller laden' },
-  read: { label: 'Datenblatt lesen', hint: 'Textebene und Seitenbilder prüfen' },
-  select_pages: { label: 'Seiten auswählen', hint: 'Pinbelegung, Bestellangaben und Zeichnungen finden' },
-  identity: { label: 'Bauteile und Pins', hint: 'Hersteller, Bestellnummern, Parameter, Pintabellen' },
-  geometry: { label: 'Gehäusemaße', hint: 'Maßzeichnungen und empfohlene Lötflächen' },
-  check: { label: 'Prüfung', hint: 'Plausibilität, bei Bedarf Kontrolle mit Seitenbildern' },
-  save: { label: 'Ergebnis speichern', hint: 'Vorschlag für Symbol, Footprint und Bauteile' },
+  download: { get label() { return translate("Datenblatt herunterladen") }, get hint() { return translate("PDF vom Hersteller laden") } },
+  read: { get label() { return translate("Datenblatt lesen") }, get hint() { return translate("Textebene und Seitenbilder prüfen") } },
+  select_pages: { get label() { return translate("Seiten auswählen") }, get hint() { return translate("Pinbelegung, Bestellangaben und Zeichnungen finden") } },
+  identity: { get label() { return translate("Bauteile und Pins") }, get hint() { return translate("Hersteller, Bestellnummern, Parameter, Pintabellen") } },
+  geometry: { get label() { return translate("Gehäusemaße") }, get hint() { return translate("Maßzeichnungen und empfohlene Lötflächen") } },
+  check: { get label() { return translate("Prüfung") }, get hint() { return translate("Plausibilität, bei Bedarf Kontrolle mit Seitenbildern") } },
+  save: { get label() { return translate("Ergebnis speichern") }, get hint() { return translate("Vorschlag für Symbol, Footprint und Bauteile") } },
 }
 
 const ORDER: StepKey[] = ['download', 'read', 'select_pages', 'identity', 'geometry', 'check', 'save']
@@ -143,11 +135,11 @@ function stepFromMessage(message: string): StepKey | null {
 }
 
 const SELECTION_SHORT: Record<string, string> = {
-  heuristic: 'automatisch',
-  'heuristic+triage': 'Vorauswahl durch Claude',
-  manual: 'manuell',
-  all: 'alle Seiten',
-  scan: 'Bildseiten',
+  get heuristic() { return translate("automatisch") },
+  get 'heuristic+triage'() { return translate("Vorauswahl durch Claude") },
+  get manual() { return translate("manuell") },
+  get all() { return translate("alle Seiten") },
+  get scan() { return translate("Bildseiten") },
 }
 
 // --------------------------------------------------------------------------- Protokoll (Ergänzung und Rückfall)
@@ -228,7 +220,7 @@ function parseLog(log: readonly JobLogEntry[]): LogInfo {
       out.imagePages = m[3] ? parsePageList(m[3]) : []
       out.reached = 'select_pages'
     } else if (/^Seiten-Vorauswahl mit/.test(t)) {
-      note('select_pages', 'info', 'Vorauswahl mit dem schnellen Modell')
+      note('select_pages', 'info', translate("Vorauswahl mit dem schnellen Modell"))
       out.reached = 'select_pages'
     } else if (/^Seiten-Vorauswahl übersprungen/.test(t)) {
       note('select_pages', entry.level, t)
@@ -267,7 +259,7 @@ function parseLog(log: readonly JobLogEntry[]): LogInfo {
     } else if ((m = t.match(/^Kontrolle der (.+?) mit hochaufgelösten Seitenbildern \(Seiten ([^)]+)\)/))) {
       out.visionPages = parsePageList(m[2])
       out.visionActive = true
-      note('check', 'info', `Kontrolle der ${m[1]} mit Seitenbildern`)
+      note('check', 'info', translate("Kontrolle der {0} mit Seitenbildern", { "0": String(m[1]) }))
       out.reached = 'check'
     } else if ((m = t.match(/^Nach der Kontrolle: .*; (\d+) Fehler, (\d+) Warnungen/))) {
       out.visionActive = false
@@ -330,20 +322,20 @@ function stepDetail(key: StepKey, ctx: {
     case 'download':
       return info.download?.kb !== undefined ? `${formatNumber(info.download.kb)} kB · ${info.download.name ?? ''}`.trim() : undefined
     case 'read': {
-      if (!ctx.pageCount) return ctx.readUpTo ? `Seite ${ctx.readUpTo} …` : undefined
+      if (!ctx.pageCount) return ctx.readUpTo ? translate("Seite {0} …", { "0": String(ctx.readUpTo) }) : undefined
       const images = info.imagePages.length
       return images
-        ? `${plural(ctx.pageCount, 'Seite', 'Seiten')} · ${formatNumber(images)} ohne Textebene (als Bild gelesen)`
-        : `${plural(ctx.pageCount, 'Seite', 'Seiten')} mit Textebene`
+        ? translate("{0} · {1} ohne Textebene (als Bild gelesen)", { "0": String(plural(ctx.pageCount, translate("Seite"), translate("Seiten"))), "1": String(formatNumber(images)) })
+        : translate("{0} mit Textebene", { "0": String(plural(ctx.pageCount, translate("Seite"), translate("Seiten"))) })
     }
     case 'select_pages': {
       if (!ctx.selected.length) return undefined
       const how = info.selectionMethod ? (SELECTION_SHORT[info.selectionMethod] ?? info.selectionMethod) : null
-      return `${formatNumber(ctx.selected.length)}${ctx.pageCount ? ` von ${formatNumber(ctx.pageCount)}` : ''} Seiten${how ? ` · ${how}` : ''}`
+      return translate("{0}{1} Seiten{2}", { "0": String(formatNumber(ctx.selected.length)), "1": String(ctx.pageCount ? translate(" von {0}", { "0": String(formatNumber(ctx.pageCount)) }) : ''), "2": String(how ? ` · ${how}` : '') })
     }
     case 'identity': {
       const parts: string[] = []
-      if (c.mpns !== undefined) parts.push(plural(c.mpns, 'Bestellnummer', 'Bestellnummern'))
+      if (c.mpns !== undefined) parts.push(plural(c.mpns, translate("Bestellnummer"), translate("Bestellnummern")))
       if (c.pins !== undefined) parts.push(plural(c.pins, 'Pin', 'Pins'))
       if (!parts.length) return info.devicesText
       return info.devicesText ? `${info.devicesText} · ${parts.join(', ')}` : parts.join(', ')
@@ -351,8 +343,8 @@ function stepDetail(key: StepKey, ctx: {
     case 'geometry': {
       if (c.packages === undefined && c.dimensions === undefined) return undefined
       return [
-        c.packages !== undefined ? plural(c.packages, 'Gehäuse', 'Gehäuse') : null,
-        c.dimensions !== undefined ? plural(c.dimensions, 'Maß', 'Maße') : null,
+        c.packages !== undefined ? plural(c.packages, translate("Gehäuse"), translate("Gehäuse")) : null,
+        c.dimensions !== undefined ? plural(c.dimensions, translate("Maß"), translate("Maße")) : null,
       ]
         .filter(Boolean)
         .join(' · ')
@@ -360,16 +352,16 @@ function stepDetail(key: StepKey, ctx: {
     case 'check': {
       const r = info.checkResult
       if (!r) return undefined
-      if (r.afterVision) return r.errors || r.warnings ? `Nach der Kontrolle: ${r.errors} Fehler, ${r.warnings} Warnungen` : 'Kontrolle bestanden'
+      if (r.afterVision) return r.errors || r.warnings ? translate("Nach der Kontrolle: {0} Fehler, {1} Warnungen", { "0": String(r.errors), "1": String(r.warnings) }) : translate("Kontrolle bestanden")
       const parts = [
-        r.errors ? `${r.errors} Fehler` : '',
-        r.warnings ? `${r.warnings} ${r.warnings === 1 ? 'Warnung' : 'Warnungen'}` : '',
-        r.infos ? `${r.infos} ${r.infos === 1 ? 'Hinweis' : 'Hinweise'}` : '',
+        r.errors ? translate("{0} Fehler", { "0": String(r.errors) }) : '',
+        r.warnings ? `${r.warnings} ${r.warnings === 1 ? translate("Warnung") : translate("Warnungen")}` : '',
+        r.infos ? `${r.infos} ${r.infos === 1 ? translate("Hinweis") : translate("Hinweise")}` : '',
       ].filter(Boolean)
-      return parts.length ? parts.join(' · ') : 'Keine Auffälligkeiten'
+      return parts.length ? parts.join(' · ') : translate("Keine Auffälligkeiten")
     }
     case 'save':
-      return info.requests !== undefined ? `${plural(info.requests, 'Anfrage', 'Anfragen')} an Claude` : undefined
+      return info.requests !== undefined ? translate("{0} an Claude", { "0": String(plural(info.requests, translate("Anfrage"), translate("Anfragen"))) }) : undefined
   }
 }
 
@@ -426,7 +418,7 @@ export function analyzeJob(
     else if (running) state = i < ci ? 'done' : i === ci ? 'active' : 'pending'
     else if (job) state = i < ci ? 'done' : i === ci ? (status === 'cancelled' ? 'cancelled' : 'error') : 'pending'
     if (state === 'done' && key === 'check' && info.checkResult?.errors) state = 'warn'
-    const label = i === ci && running && typeof detail.step_label === 'string' && detail.step_label ? detail.step_label : def.label
+    const label = i === ci && running && typeof detail.step_label === 'string' && detail.step_label ? translate(detail.step_label) : def.label
     return {
       key,
       label,

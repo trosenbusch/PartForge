@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 /**
  * Schwebende Speichern-Leiste + Schutz vor Datenverlust:
  * - erscheint, sobald etwas geändert ist („Verwerfen“ / „Speichern“, Strg+S),
@@ -40,6 +41,7 @@ export interface UnsavedChangesProps {
 const defaultShouldBlock = (a: Location, b: Location) => a.pathname !== b.pathname || a.search !== b.search
 
 export function UnsavedChanges({ dirty, saving, onSave, onDiscard, label, invalid, shouldBlock = defaultShouldBlock, root }: UnsavedChangesProps) {
+  const { t } = useI18n()
   const qc = useQueryClient()
   /** Ist noch die Bibliothek geöffnet, zu der der Entwurf gehört? (liest den Cache – auch mitten im Wechsel aktuell) */
   const sameLibrary = () => root === undefined || (qc.getQueryData<WorkspaceInfo | null>(systemKeys.workspace)?.root ?? null) === root
@@ -48,18 +50,18 @@ export function UnsavedChanges({ dirty, saving, onSave, onDiscard, label, invali
 
   // Beim Abbau nach einem Bibliothekswechsel: sagen, dass der Entwurf verworfen wurde
   const libraryName = root === undefined ? null : (qc.getQueryData<WorkspaceInfo | null>(systemKeys.workspace)?.name ?? null)
-  const latest = useRef({ dirty, label, sameLibrary, libraryName })
+  const latest = useRef({ dirty, label, sameLibrary, libraryName, t })
   useEffect(() => {
     // Name nur merken, solange noch die eigene Bibliothek geöffnet ist (beim Abbau steht schon die neue im Cache)
-    latest.current = { dirty, label, sameLibrary, libraryName: sameLibrary() ? libraryName : latest.current.libraryName }
+    latest.current = { dirty, label, sameLibrary, libraryName: sameLibrary() ? libraryName : latest.current.libraryName, t }
   })
   useEffect(
     () => () => {
-      const { dirty: wasDirty, label: what, sameLibrary: stillSame, libraryName: owner } = latest.current
+      const { dirty: wasDirty, label: what, sameLibrary: stillSame, libraryName: owner, t } = latest.current
       if (wasDirty && !stillSame()) {
-        toast.warning('Ungespeicherte Änderungen verworfen', {
+        toast.warning(t("Ungespeicherte Änderungen verworfen"), {
           id: 'settings-draft-discarded',
-          description: `Die Änderungen${what ? ` in „${what}“` : ''} gehörten zur vorher geöffneten Bibliothek${owner ? ` „${owner}“` : ''}.`,
+          description: t("Die Änderungen{0} gehörten zur vorher geöffneten Bibliothek{1}.", { "0": what ? t(" in „{0}“", { "0": what }) : '', "1": owner ? ` „${owner}“` : '' }),
         })
       }
     },
@@ -74,14 +76,14 @@ export function UnsavedChanges({ dirty, saving, onSave, onDiscard, label, invali
   const saveFromHotkey = () => {
     if (saving) return
     if (!dirty) {
-      toast.info('Nichts zu speichern', {
+      toast.info(t("Nichts zu speichern"), {
         id: 'settings-save-hint',
-        description: `${label ? `„${label}“ ist` : 'Alles ist'} bereits gespeichert.`,
+        description: t("{0} bereits gespeichert.", { "0": label ? t("„{0}“ ist", { "0": label }) : t("Alles ist") }),
       })
       return
     }
     if (invalid) {
-      toast.warning('Speichern nicht möglich', { id: 'settings-save-hint', description: invalid })
+      toast.warning(t("Speichern nicht möglich"), { id: 'settings-save-hint', description: invalid })
       return
     }
     void onSave()
@@ -120,8 +122,8 @@ export function UnsavedChanges({ dirty, saving, onSave, onDiscard, label, invali
   const announcement = !dirty
     ? ''
     : invalid
-      ? `Speichern nicht möglich: ${invalid}`
-      : `Ungespeicherte Änderungen${label ? ` in „${label}“` : ''}. Strg+S speichert.`
+      ? t("Speichern nicht möglich: {0}", { "0": invalid })
+      : t("Ungespeicherte Änderungen{0}. Strg+S speichert.", { "0": label ? t(" in „{0}“", { "0": label }) : '' })
 
   const saveBar = (
     <AnimatePresence>
@@ -143,14 +145,12 @@ export function UnsavedChanges({ dirty, saving, onSave, onDiscard, label, invali
                 </span>
               ) : (
                 <>
-                  Ungespeicherte Änderungen
-                  {label && <span className="text-fg-subtle">· {label}</span>}
+                  {t("Ungespeicherte Änderungen")}{label && <span className="text-fg-subtle">· {label}</span>}
                 </>
               )}
             </span>
             <Button size="sm" variant="ghost" onClick={onDiscard} disabled={saving}>
-              Verwerfen
-            </Button>
+              {t("Verwerfen")}</Button>
             <Button
               size="sm"
               variant="primary"
@@ -160,8 +160,7 @@ export function UnsavedChanges({ dirty, saving, onSave, onDiscard, label, invali
               aria-keyshortcuts="Control+S"
               rightIcon={<Kbd hotkey="mod+s" size="xs" tone="inverse" />}
             >
-              Speichern
-            </Button>
+              {t("Speichern")}</Button>
           </div>
         </motion.div>
       )}
@@ -185,28 +184,23 @@ export function UnsavedChanges({ dirty, saving, onSave, onDiscard, label, invali
           <DialogHeader
             tone="accent"
             icon={<Save />}
-            title="Änderungen speichern?"
+            title={t("Änderungen speichern?")}
             description={
               <>
-                {label ? <>„{label}“ hat</> : <>Es gibt</>} ungespeicherte Änderungen. Beim Verlassen ohne Speichern gehen
-                sie verloren.
-              </>
+                {label ? <>„{label}{t("“ hat")}</> : <>{t("Es gibt")}</>}  {t("ungespeicherte Änderungen. Beim Verlassen ohne Speichern gehen sie verloren.")}</>
             }
           />
           {invalid && (
             <div className="px-6 pt-1">
-              <Callout tone="danger" icon={<CircleAlert />} title="Speichern ist gerade nicht möglich">
-                {invalid} Bleiben Sie hier, um das zu korrigieren, oder verwerfen Sie die Änderungen.
-              </Callout>
+              <Callout tone="danger" icon={<CircleAlert />} title={t("Speichern ist gerade nicht möglich")}>
+                {invalid}  {t("Bleiben Sie hier, um das zu korrigieren, oder verwerfen Sie die Änderungen.")}</Callout>
             </div>
           )}
           <DialogFooter className="mt-3">
             <Button variant="ghost" onClick={() => blocker.reset?.()} disabled={proceeding}>
-              Hierbleiben
-            </Button>
+              {t("Hierbleiben")}</Button>
             <Button variant="secondary" onClick={discardAndLeave} disabled={proceeding}>
-              Verwerfen
-            </Button>
+              {t("Verwerfen")}</Button>
             <Button
               variant="primary"
               onClick={() => void saveAndLeave()}
@@ -214,8 +208,7 @@ export function UnsavedChanges({ dirty, saving, onSave, onDiscard, label, invali
               disabled={Boolean(invalid)}
               title={invalid ?? undefined}
             >
-              Speichern
-            </Button>
+              {t("Speichern")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

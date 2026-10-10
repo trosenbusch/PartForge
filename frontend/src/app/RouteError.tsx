@@ -1,9 +1,11 @@
+import { useI18n } from '@/lib/i18n'
 import { Home, RotateCw } from 'lucide-react'
 import { isRouteErrorResponse, useNavigate, useRouteError } from 'react-router'
 import { Button, EmptyState } from '@/components/ui'
 
 /** Fehleranzeige für Render-/Ladefehler einer Route. */
 export function RouteError() {
+  const { t: tr } = useI18n()
   const error = useRouteError()
   const navigate = useNavigate()
   const isChunkError = error instanceof Error && /dynamically imported module|Failed to fetch/i.test(error.message)
@@ -20,20 +22,18 @@ export function RouteError() {
           illustration="forge"
           size="lg"
           titleAs="h2"
-          title={isChunkError ? 'Neue Version verfügbar' : 'Hier ist etwas schiefgelaufen'}
+          title={isChunkError ? tr("Neue Version verfügbar") : tr("Hier ist etwas schiefgelaufen")}
           description={
             isChunkError
-              ? 'Die Oberfläche wurde aktualisiert. Bitte neu laden.'
-              : 'Die Seite konnte nicht angezeigt werden. Die Daten Ihrer Bibliothek sind davon nicht betroffen.'
+              ? tr("Die Oberfläche wurde aktualisiert. Bitte neu laden.")
+              : tr("Die Seite konnte nicht angezeigt werden. Die Daten Ihrer Bibliothek sind davon nicht betroffen.")
           }
           actions={
             <>
               <Button variant="primary" leftIcon={<RotateCw />} onClick={() => window.location.reload()}>
-                Neu laden
-              </Button>
+                {tr("Neu laden")}</Button>
               <Button variant="secondary" leftIcon={<Home />} onClick={() => navigate('/')}>
-                Zur Übersicht
-              </Button>
+                {tr("Zur Übersicht")}</Button>
             </>
           }
         >

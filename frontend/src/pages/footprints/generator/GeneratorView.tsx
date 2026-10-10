@@ -1,3 +1,5 @@
+import { useLocalizedMemo } from '@/components/preview/useLocalizedMemo'
+import { localizeMessage, t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Footprint-Generator: links Eingabe (Familie, Vorlage, Dichte, Maßtabelle, Herstellerempfehlung), Mitte die Bühne
  * (Footprint mit Bemaßung, 3D), rechts das Rechenprotokoll. Schmalere Fenster: Protokoll als Reiter „Berechnung“
@@ -13,7 +15,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Download, Info, LibraryBig, Redo2, TriangleAlert, Undo2, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { ApiError, errorMessage } from '@/api/client'
@@ -93,10 +95,11 @@ export interface GeneratorViewProps {
 }
 
 export function GeneratorView({ families, active, onShowLibrary }: GeneratorViewProps) {
+  useI18n()
   const navigate = useNavigate()
   const workspace = useWorkspace().data
   const style = workspace?.settings.footprint
-  const styleKey = useMemo(() => (style ? JSON.stringify(style) : 'standard'), [style])
+  const styleKey = useLocalizedMemo(() => (style ? JSON.stringify(style) : 'standard'), [style])
   const styleDensity: Density = style?.density ?? 'N'
 
   const s = useGenerator()
@@ -111,7 +114,7 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
 
   const density: Density = s.density ?? styleDensity
 
-  const request = useMemo(
+  const request = useLocalizedMemo(
     () => (family ? buildRequest(family, s.values, density, s.landPattern, s.overrides) : null),
     [family, s.values, density, s.landPattern, s.overrides],
   )
@@ -127,29 +130,29 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
   const pending = requestKey !== JSON.stringify(debounced)
   const updating = preview.isFetching || pending
   const fresh = Boolean(preview.data) && !preview.isPlaceholderData && !updating && !error
-  const calc = useMemo(() => readCalc(shown?.calc), [shown])
-  const issues = useMemo(() => collectIssues(shown, calc), [shown, calc])
+  const calc = useLocalizedMemo(() => readCalc(shown?.calc), [shown])
+  const issues = useLocalizedMemo(() => collectIssues(shown, calc), [shown, calc])
   const counts = issueCounts(issues)
 
   const shownFamily = typeof shown?.spec.generator?.family === 'string' ? shown.spec.generator.family : null
   const resolved =
     shown && family && shownFamily === family.key ? ((shown.spec.generator?.params as Record<string, unknown> | undefined) ?? null) : null
-  const changed = useMemo(() => new Set(changedFromPreset(family, s.preset, s.values)), [family, s.preset, s.values])
+  const changed = useLocalizedMemo(() => new Set(changedFromPreset(family, s.preset, s.values)), [family, s.preset, s.values])
   // Fehlerhafte Parameter: ausdrücklich vom Backend genannt, sonst über die Bezeichnungen im Text
-  const errorParamSet = useMemo<ReadonlySet<string>>(() => {
+  const errorParamSet = useLocalizedMemo<ReadonlySet<string>>(() => {
     if (!error) return new Set()
     const named = errorParams(preview.error)
     return named ? new Set(named) : paramsInMessage(family?.params ?? [], error)
   }, [family, error, preview.error])
 
-  const fallbacks = useMemo(
+  const fallbacks = useLocalizedMemo(
     () => ({
       fab_tolerance: style?.fab_tolerance ?? 0.1,
       placement_tolerance: style?.placement_tolerance ?? 0.05,
       courtyard_excess: calc?.courtyard?.excess ?? null,
       courtyard_grid: style?.courtyard_grid ?? 0.05,
       min_copper_gap: style?.min_copper_gap ?? 0.15,
-      rounding: `Hausstil (${ROUNDING_LABEL[style?.rounding ?? 'kicad'] ?? style?.rounding ?? 'KiCad'})`,
+      rounding: tr("Hausstil ({value0})", { value0: String(tr(ROUNDING_LABEL[style?.rounding ?? 'kicad']) ?? style?.rounding ?? 'KiCad') }),
       drill: calc?.tht[0]?.hole ?? null,
       pad_diameter: calc?.tht[0]?.pad ?? null,
       ep_name: style?.exposed_pad_designator === 'EP' ? 'EP' : 'n + 1',
@@ -158,7 +161,7 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
   )
 
   // Exposed Pad (für die Herstellerempfehlung): größtes Pad mit Bezeichner „EP“ bzw. n+1 in der Mitte
-  const exposedPad = useMemo(() => {
+  const exposedPad = useLocalizedMemo(() => {
     const pads = shown?.spec.pads ?? []
     const center = pads.filter((p) => Math.abs(p.x) < 1e-6 && Math.abs(p.y) < 1e-6 && !p.hole)
     const ep = center.sort((a, b) => b.width * b.height - a.width * a.height)[0]
@@ -210,7 +213,7 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
   const onPick = (f: FootprintFamily, pick: FamilyPick) => {
     const st = useGenerator.getState()
     if (pick.values) {
-      st.loadSnapshot(f, { family: f.key, params: pick.values }, { styleRounding: style?.rounding, notice: pick.note ?? null, label: 'Alias geladen' })
+      st.loadSnapshot(f, { family: f.key, params: pick.values }, { styleRounding: style?.rounding, notice: pick.note ?? null, label: tr('Alias geladen') })
     } else {
       st.selectFamily(f, pick.preset ?? null)
       if (pick.note) st.showNotice(pick.note)
@@ -218,14 +221,14 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
   }
 
   const stepBlockedReason = !shown
-    ? 'Noch keine Vorschau'
+    ? tr('Noch keine Vorschau')
     : error
-      ? 'Erst den Fehler beheben – mit diesen Maßen entsteht kein Footprint'
+      ? tr('Erst den Fehler beheben – mit diesen Maßen entsteht kein Footprint')
       : null
 
   const downloadStep = async () => {
     if (stepBlockedReason || !shown) {
-      toast(stepBlockedReason ?? 'Noch keine Vorschau', { id: 'fp-step-blocked' })
+      toast(stepBlockedReason ?? tr('Noch keine Vorschau'), { id: 'fp-step-blocked' })
       return
     }
     if (busy) return
@@ -238,9 +241,9 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
         load: () => footprintsApi.step(target.request),
         type: FILE_TYPES.step,
       })
-      notifySaveResult(result, { what: 'STEP-Datei', id: 'fp-file' })
+      notifySaveResult(result, { what: tr('STEP-Datei'), id: 'fp-file' })
     } catch (e) {
-      toast.error('STEP-Export fehlgeschlagen', { id: 'fp-file', description: errorMessage(e) })
+      toast.error(tr('STEP-Export fehlgeschlagen'), { id: 'fp-file', description: errorMessage(e) })
     } finally {
       setBusy(null)
     }
@@ -251,12 +254,12 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
     const rec = result.record
     const library = rec?.library ?? result.library
     const pending = rec && rec.status !== 'ok'
-    toast[pending ? 'warning' : 'success'](pending ? `„${name}“ vorgemerkt` : `„${name}“ gespeichert`, {
+    toast[pending ? 'warning' : 'success'](pending ? tr("„{value0}“ vorgemerkt", { value0: String(name) }) : tr("„{value0}“ gespeichert", { value0: String(name) }), {
       id: 'fp-save',
-      description: [library ? `${result.new ? 'Neu in' : 'Ersetzt in'} ${library}` : null, pending ? (rec?.status_message ?? 'Noch nicht in die PcbLib geschrieben.') : null]
+      description: [library ? `${result.new ? tr('Neu in') : tr('Ersetzt in')} ${library}` : null, pending ? (rec?.status_message ?? tr('Noch nicht in die PcbLib geschrieben.')) : null]
         .filter(Boolean)
         .join(' – '),
-      action: { label: 'Anzeigen', onClick: () => onShowLibrary(name) },
+      action: { label: tr('Anzeigen'), onClick: () => onShowLibrary(name) },
     })
   }
 
@@ -268,34 +271,34 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
       // Läuft die Berechnung noch (oder ist sie entprellt), auf das Ergebnis der aktuellen Eingabe warten
       const current = fresh && shown ? shown : await queryClient.fetchQuery(generatorPreviewOptions(request, styleKey))
       if (current.issues.some((i) => i.severity === 'error')) {
-        toast('Die Prüfung meldet Fehler – erst beheben', { id: 'fp-save-blocked' })
+        toast(tr('Die Prüfung meldet Fehler – erst beheben'), { id: 'fp-save-blocked' })
         return
       }
       const spec = current.spec
       specName = spec.name
       // Frischer Probelauf: alle Prüfungen des Backends, Ziel-Bibliothek, neu oder ersetzt, unverändert
       const dry = await footprintsApi.save(spec, { dryRun: true })
-      const library = dry.library ? baseName(dry.library) : 'die Bibliothek'
+      const library = dry.library ? baseName(dry.library) : tr('die Bibliothek')
       if (dry.unchanged) {
-        toast.info(`„${spec.name}“ ist bereits aktuell`, {
+        toast.info(tr("„{value0}“ ist bereits aktuell", { value0: String(spec.name) }), {
           id: 'fp-save',
-          description: `Gleiche Geometrie in ${library} – nichts zu schreiben.`,
-          action: { label: 'Anzeigen', onClick: () => onShowLibrary(spec.name) },
+          description: tr("Gleiche Geometrie in {value0} – nichts zu schreiben.", { value0: String(library) }),
+          action: { label: tr('Anzeigen'), onClick: () => onShowLibrary(spec.name) },
         })
         return
       }
       if (!dry.new) {
         const ok = await confirm({
-          title: `„${spec.name}“ ersetzen?`,
+          title: tr("„{value0}“ ersetzen?", { value0: String(spec.name) }),
           description:
-            `In ${library} liegt bereits ein Footprint mit diesem Namen` +
+            tr("In {value0} liegt bereits ein Footprint mit diesem Namen", { value0: String(library) }) +
             (dry.usage === 1
-              ? ' – ein Bauteil verwendet ihn, sein Footprint ändert sich mit.'
+              ? tr(' – ein Bauteil verwendet ihn, sein Footprint ändert sich mit.')
               : dry.usage
-                ? ` – ${plural(dry.usage, 'Bauteil verwendet', 'Bauteile verwenden')} ihn, ihr Footprint ändert sich mit.`
-                : '. Noch verwendet ihn kein Bauteil.') +
-            ' Er wird durch die neue Geometrie ersetzt (die alte Datei landet in der Sicherung).',
-          confirmLabel: 'Ersetzen',
+                ? tr(" – {value0} ihn, ihr Footprint ändert sich mit.", { value0: String(plural(dry.usage, tr('Bauteil verwendet'), tr('Bauteile verwenden'))) })
+                : tr('. Noch verwendet ihn kein Bauteil.')) +
+            tr(' Er wird durch die neue Geometrie ersetzt (die alte Datei landet in der Sicherung).'),
+          confirmLabel: tr('Ersetzen'),
           destructive: dry.usage > 0,
         })
         if (!ok) return
@@ -312,23 +315,23 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
     } catch (e) {
       if (e instanceof ApiError && e.status === 503) {
         // Registriert („ausstehend“), aber noch nicht in die PcbLib geschrieben
-        toast.warning(`„${specName}“ vorgemerkt – noch nicht geschrieben`, {
+        toast.warning(tr("„{value0}“ vorgemerkt – noch nicht geschrieben", { value0: String(specName) }), {
           id: 'fp-save',
           duration: 12_000,
-          description: `${e.message} Der Footprint ist registriert und wird bei der nächsten Synchronisierung in die PcbLib geschrieben.`,
-          action: { label: 'Synchronisieren', onClick: () => void runCommand('library.sync', { navigate, close: () => {} }) },
+          description: tr("{value0} Der Footprint ist registriert und wird bei der nächsten Synchronisierung in die PcbLib geschrieben.", { value0: String(e.message) }),
+          action: { label: tr('Synchronisieren'), onClick: () => void runCommand('library.sync', { navigate, close: () => {} }) },
         })
       } else if (e instanceof ApiError && e.status === 409) {
         const altium = /altium/i.test(e.message)
-        toast.error('Speichern nicht möglich', {
+        toast.error(tr('Speichern nicht möglich'), {
           id: 'fp-save',
           duration: 12_000,
           description: altium
             ? e.message
-            : `${e.message} Tipp: Ist die PcbLib in Altium Designer geöffnet und geändert, dort speichern oder schließen – dann erneut speichern.`,
+            : tr("{value0} Tipp: Ist die PcbLib in Altium Designer geöffnet und geändert, dort speichern oder schließen – dann erneut speichern.", { value0: String(e.message) }),
         })
       } else {
-        toast.error('Speichern fehlgeschlagen', { id: 'fp-save', description: errorMessage(e) })
+        toast.error(tr('Speichern fehlgeschlagen'), { id: 'fp-save', description: errorMessage(e) })
       }
     } finally {
       setBusy(null)
@@ -337,11 +340,11 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
 
   // Gesperrt nur bei echten Hindernissen – eine laufende Berechnung wird abgewartet (kein Flackern beim Tippen)
   const saveBlockedReason = !shown
-    ? 'Noch keine Vorschau'
+    ? tr('Noch keine Vorschau')
     : error
-      ? 'Erst den Fehler beheben – mit diesen Maßen entsteht kein Footprint'
+      ? tr('Erst den Fehler beheben – mit diesen Maßen entsteht kein Footprint')
       : counts.errors > 0
-        ? 'Die Prüfung meldet Fehler – erst beheben'
+        ? tr('Die Prüfung meldet Fehler – erst beheben')
         : null
   const trySave = () => {
     if (saveBlockedReason) {
@@ -362,7 +365,7 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
       ? [
           {
             id: 'footprints.family',
-            title: 'Gehäusefamilie wählen …',
+            title: tr('Gehäusefamilie wählen …'),
             group: 'Footprints',
             hotkey: 'mod+f',
             keywords: ['familie', 'gehäuse', 'package', 'soic', 'qfn'],
@@ -370,7 +373,7 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
           },
           {
             id: 'footprints.save',
-            title: 'Footprint in Bibliothek speichern',
+            title: tr('Footprint in Bibliothek speichern'),
             subtitle: shown?.spec.name,
             group: 'Footprints',
             icon: LibraryBig,
@@ -379,7 +382,7 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
           },
           {
             id: 'footprints.step',
-            title: 'STEP-Modell herunterladen',
+            title: tr('STEP-Modell herunterladen'),
             subtitle: shown?.spec.name,
             group: 'Footprints',
             icon: Download,
@@ -388,8 +391,8 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
           },
           {
             id: 'footprints.undo',
-            title: 'Rückgängig',
-            subtitle: s.past[s.past.length - 1]?.label ? `${s.past[s.past.length - 1]?.label} · Strg+Z` : 'Strg+Z',
+            title: tr('Rückgängig'),
+            subtitle: s.past[s.past.length - 1]?.label ? tr("{value0} · Strg+Z", { value0: String(s.past[s.past.length - 1]?.label) }) : tr('Strg+Z'),
             group: 'Footprints',
             icon: Undo2,
             when: () => canUndo,
@@ -397,8 +400,8 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
           },
           {
             id: 'footprints.redo',
-            title: 'Wiederholen',
-            subtitle: s.future[s.future.length - 1]?.label ? `${s.future[s.future.length - 1]?.label} · Strg+Y` : 'Strg+Y',
+            title: tr('Wiederholen'),
+            subtitle: s.future[s.future.length - 1]?.label ? tr("{value0} · Strg+Y", { value0: String(s.future[s.future.length - 1]?.label) }) : tr('Strg+Y'),
             group: 'Footprints',
             icon: Redo2,
             when: () => canRedo,
@@ -406,7 +409,7 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
           },
           {
             id: 'footprints.copy-ipc',
-            title: 'IPC-Namen kopieren',
+            title: tr('IPC-Namen kopieren'),
             subtitle: calc?.ipcName ?? undefined,
             group: 'Footprints',
             when: () => Boolean(calc?.ipcName),
@@ -414,15 +417,15 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
               if (!calc?.ipcName) return
               try {
                 await navigator.clipboard.writeText(calc.ipcName)
-                toast.success('IPC-Name kopiert', { description: calc.ipcName })
+                toast.success(tr('IPC-Name kopiert'), { description: calc.ipcName })
               } catch {
-                toast.error('Kopieren nicht möglich')
+                toast.error(tr('Kopieren nicht möglich'))
               }
             },
           },
           ...(['L', 'N', 'M'] as const).map((d) => ({
             id: `footprints.density.${d}`,
-            title: `Dichte ${densityLabel(d)}`,
+            title: tr("Dichte {value0}", { value0: String(densityLabel(d)) }),
             group: 'Footprints',
             keywords: ['dichte', 'density', 'ipc'],
             when: () => density !== d,
@@ -461,7 +464,7 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
     >
       {active && (
         <PageActions>
-          <Tooltip content={stepBlockedReason ?? `${shown?.spec.name ?? 'Footprint'}.step – extrudierte 3D‑Körper`}>
+          <Tooltip content={stepBlockedReason ?? tr("{value0}.step – extrudierte 3D‑Körper", { value0: String(shown?.spec.name ?? 'Footprint') })}>
             <span className="inline-flex">
               <Button
                 variant="secondary"
@@ -470,7 +473,7 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
                 aria-disabled={Boolean(stepBlockedReason) || undefined}
                 onClick={() => void downloadStep()}
               >
-                STEP herunterladen
+                {tr("STEP herunterladen")}
               </Button>
             </span>
           </Tooltip>
@@ -479,9 +482,9 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
               saveBlockedReason ??
               (saveTarget?.state === 'ready' && saveTarget.library
                 ? saveTarget.unchanged
-                  ? `Bereits aktuell in ${baseName(saveTarget.library)}`
-                  : `${saveTarget.isNew ? 'Neu in' : 'Ersetzt in'} ${baseName(saveTarget.library)}`
-                : 'In die Footprint-Bibliothek schreiben')
+                  ? tr("Bereits aktuell in {value0}", { value0: String(baseName(saveTarget.library)) })
+                  : `${saveTarget.isNew ? tr('Neu in') : tr('Ersetzt in')} ${baseName(saveTarget.library)}`
+                : tr('In die Footprint-Bibliothek schreiben'))
             }
             hotkey={saveBlockedReason ? undefined : 'mod+s'}
           >
@@ -494,7 +497,7 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
                 aria-keyshortcuts="Control+S"
                 onClick={trySave}
               >
-                In Bibliothek speichern
+                {tr("In Bibliothek speichern")}
               </Button>
             </span>
           </Tooltip>
@@ -507,7 +510,7 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
         className="@container/input flex min-h-0 flex-col overflow-hidden rounded-card border border-line bg-surface shadow-card"
       >
         <h2 id="fp-input-title" className="sr-only">
-          Eingabe
+          {tr("Eingabe")}
         </h2>
         {/* kein Innenabstand oben: der klebende Tabellenkopf schließt bündig ab */}
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-5 [scrollbar-gutter:stable]">
@@ -555,12 +558,12 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
         calc={shown?.calc}
         loading={!shown && !error}
         updating={updating && Boolean(shown)}
-        error={error}
+        error={error ? localizeMessage(error) : error}
         resetKey={stageResetKey}
         family={family.key}
         tab={stageTab}
         onTabChange={setStageTab}
-        calcPanel={wide ? undefined : <ResultBody data={shown} error={error} saveTarget={saveTarget} />}
+        calcPanel={wide ? undefined : <ResultBody data={shown} error={error ? localizeMessage(error) : error} saveTarget={saveTarget} />}
         calcBadge={
           !wide && issueTotal > 0 ? (
             <span
@@ -570,17 +573,17 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
               )}
             >
               {issueTotal}
-              <span className="sr-only"> {counts.errors ? 'Fehler' : issueTotal === 1 ? 'Warnung' : 'Warnungen'}</span>
+              <span className="sr-only"> {counts.errors ? tr('Fehler') : issueTotal === 1 ? tr('Warnung') : tr('Warnungen')}</span>
             </span>
           ) : undefined
         }
-        readout={wide ? undefined : <ResultReadout data={shown} error={error} onShowIssues={showIssues} />}
+        readout={wide ? undefined : <ResultReadout data={shown} error={error ? localizeMessage(error) : error} onShowIssues={showIssues} />}
         overlay={wide && !error ? <BoardIssueChip counts={counts} onClick={showIssues} /> : undefined}
         className="min-h-0 min-w-0"
       />
 
       {wide && (
-        <ResultPanel data={shown} fetching={updating && !error} error={error} saveTarget={saveTarget} className="min-h-0" />
+        <ResultPanel data={shown} fetching={updating && !error} error={error ? localizeMessage(error) : error} saveTarget={saveTarget} className="min-h-0" />
       )}
     </div>
   )
@@ -588,6 +591,7 @@ export function GeneratorView({ families, active, onShowLibrary }: GeneratorView
 
 /** Warn-/Fehlerzähler auf der (immer dunklen) Leiterplatte – führt zur Prüfung */
 function BoardIssueChip({ counts, onClick }: { counts: { errors: number; warnings: number }; onClick: () => void }) {
+  useI18n()
   if (!counts.errors && !counts.warnings) return null
   const danger = counts.errors > 0
   const n = danger ? counts.errors : counts.warnings
@@ -602,14 +606,15 @@ function BoardIssueChip({ counts, onClick }: { counts: { errors: number; warning
       )}
     >
       <TriangleAlert aria-hidden className={cn('size-3.5', danger ? 'text-danger' : 'text-warning')} />
-      {danger ? `${n} Fehler` : `${n} ${n === 1 ? 'Warnung' : 'Warnungen'}`}
-      <span className="sr-only"> – zur Prüfung</span>
+      {danger ? tr("{value0} Fehler", { value0: String(n) }) : `${n} ${n === 1 ? tr('Warnung') : tr('Warnungen')}`}
+      <span className="sr-only"> {tr("– zur Prüfung")}</span>
     </button>
   )
 }
 
 /** Kurzer Hinweis nach automatischen Wechseln (Vorlage übernommen, Alias aufgelöst …) */
 function NoticeLine() {
+  useI18n()
   const notice = useGenerator((s) => s.notice)
   const dismiss = useGenerator((s) => s.dismissNotice)
   useEffect(() => {
@@ -632,7 +637,7 @@ function NoticeLine() {
             <div className="mt-2 flex items-center gap-2 rounded-control border border-line bg-surface-2/70 px-2.5 py-1.5 text-2xs text-fg-muted">
               <Info aria-hidden className="size-3.5 shrink-0 text-info-text" />
               <span className="min-w-0 flex-1">{notice.text}</span>
-              <button type="button" aria-label="Hinweis schließen" onClick={dismiss} className="rounded-sm text-fg-subtle outline-none hover:text-fg focus-ring">
+              <button type="button" aria-label={tr("Hinweis schließen")} onClick={dismiss} className="rounded-sm text-fg-subtle outline-none hover:text-fg focus-ring">
                 <X className="size-3" />
               </button>
             </div>
@@ -645,18 +650,19 @@ function NoticeLine() {
 
 /** Vorschlag einer passenden Vorlage, wenn Selektoren bei angepassten Werten geändert wurden */
 function SuggestionLine({ family }: { family: FootprintFamily }) {
+  useI18n()
   const suggestion = useGenerator((s) => s.suggestion)
   const preset = findPreset(family, suggestion)
   if (!preset) return null
   return (
     <div className="mt-2 flex items-center gap-2 rounded-control border border-accent/25 bg-accent-soft/60 px-2.5 py-1.5 text-2xs">
       <span className="min-w-0 flex-1 text-fg-muted">
-        Passende Vorlage: <span className="mono font-semibold text-fg">{preset.key}</span>
+        {tr("Passende Vorlage:")}{' '}<span className="mono font-semibold text-fg">{preset.key}</span>
       </span>
       <Button size="xs" variant="secondary" onClick={() => useGenerator.getState().selectPreset(family, preset)}>
-        Übernehmen
+        {tr("Übernehmen")}
       </Button>
-      <IconButton size="xs" label="Vorschlag verwerfen" icon={<X />} onClick={() => useGenerator.setState({ suggestion: null })} />
+      <IconButton size="xs" label={tr("Vorschlag verwerfen")} icon={<X />} onClick={() => useGenerator.setState({ suggestion: null })} />
     </div>
   )
 }

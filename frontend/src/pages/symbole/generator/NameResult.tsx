@@ -1,3 +1,4 @@
+import { localizeMessage, t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Ergebnis des Generators: Symbolname (kopierbar) und was „In Bibliothek speichern“ damit tut – aus dem Probelauf des
  * Backends: neu (Ziel-SchLib), bereits aktuell, aktualisiert ein gespeichertes Symbol (Verwendung) oder ändert seine
@@ -30,24 +31,25 @@ export interface NameResultProps {
 }
 
 function PlanBadge({ entry, plan }: { entry: SymbolEntry | null; plan: SymbolSavePlan | null | undefined }) {
+  useI18n()
   if (plan?.error) {
     return (
       <Badge variant="danger" dot>
-        Nicht speicherbar
+        {tr("Nicht speicherbar")}
       </Badge>
     )
   }
   if (plan?.unchanged) {
     return (
       <Badge variant="success" dot>
-        In der Bibliothek · aktuell
+        {tr("In der Bibliothek · aktuell")}
       </Badge>
     )
   }
   if (entry && plan?.changes.length) {
     return (
       <Badge variant="warning" dot>
-        Pinbelegung ändert sich
+        {tr("Pinbelegung ändert sich")}
       </Badge>
     )
   }
@@ -55,25 +57,26 @@ function PlanBadge({ entry, plan }: { entry: SymbolEntry | null; plan: SymbolSav
     const status = STATUS_LABEL[entry.status] ?? { label: entry.status, tone: 'neutral' as const }
     return (
       <Badge variant={status.tone === 'success' ? 'success' : status.tone === 'danger' ? 'danger' : 'warning'} dot>
-        {status.tone === 'success' ? 'In der Bibliothek' : status.label}
+        {status.tone === 'success' ? tr('In der Bibliothek') : tr(status.label)}
       </Badge>
     )
   }
   return (
     <Badge variant="accent" dot>
-      Neu
+      {tr("Neu")}
     </Badge>
   )
 }
 
 export function NameResult({ name, pending, library, onShowInLibrary, className }: NameResultProps) {
+  useI18n()
   const entry = library.entry
   const plan = library.plan
   const target = plan?.library ?? entry?.library ?? null
   return (
-    <section aria-label="Ergebnis" className={cn('border-t border-line px-5 py-4', className)}>
+    <section aria-label={tr("Ergebnis")} className={cn('border-t border-line px-5 py-4', className)}>
       <div className="mb-2 flex items-center justify-between gap-2">
-        <h3 className="micro-label">Symbolname</h3>
+        <h3 className="micro-label">{tr("Symbolname")}</h3>
         {name && !library.loading && <PlanBadge entry={entry} plan={plan} />}
         {library.loading && <Skeleton className="h-5 w-24 rounded-full" />}
       </div>
@@ -83,41 +86,41 @@ export function NameResult({ name, pending, library, onShowInLibrary, className 
         ) : pending ? (
           <Skeleton className="h-4 w-40" />
         ) : (
-          <span className="flex-1 text-xs text-fg-subtle">– noch kein gültiges Symbol –</span>
+          <span className="flex-1 text-xs text-fg-subtle">{tr("– noch kein gültiges Symbol –")}</span>
         )}
-        <IconButton size="sm" label="Symbolnamen kopieren" icon={<Copy />} disabled={!name} onClick={() => name && void copyText(name, 'Symbolname')} />
+        <IconButton size="sm" label={tr("Symbolnamen kopieren")} icon={<Copy />} disabled={!name} onClick={() => name && void copyText(name, tr('Symbolname'))} />
       </div>
       {name && (
         <div className="mt-2 flex flex-col gap-1.5 text-xs leading-snug text-fg-muted" aria-live="polite">
           {plan?.error ? (
             <p className="flex items-start gap-1.5 text-danger-text">
               <TriangleAlert aria-hidden className="mt-px size-3.5 shrink-0" />
-              <span>{plan.error}</span>
+              <span>{localizeMessage(plan.error)}</span>
             </p>
           ) : (
             <div className="flex min-h-4 flex-col gap-0.5">
               {plan?.checking && !target ? (
                 <span className="flex items-center gap-1.5 text-fg-subtle">
-                  <Spinner size={11} /> Ziel in der Bibliothek wird geprüft …
+                  <Spinner size={11} /> {tr("Ziel in der Bibliothek wird geprüft …")}
                 </span>
               ) : target ? (
                 <>
                   <span>
-                    {entry ? (plan?.unchanged ? 'Gespeichert in' : 'Speichern aktualisiert es in') : 'Speichert neu in'}{' '}
+                    {entry ? (plan?.unchanged ? tr('Gespeichert in') : tr('Speichern aktualisiert es in')) : tr('Speichert neu in')}{' '}
                     <span className="mono text-fg" title={target}>
                       {baseName(target)}
                     </span>
-                    {entry?.status_message && <span className="text-warning-text"> ({entry.status_message})</span>}
+                    {entry?.status_message && <span className="text-warning-text"> ({localizeMessage(entry.status_message)})</span>}
                   </span>
                   {entry && (
                     <span>
                       {entry.usage > 0 ? (
                         <>
-                          Von <span className="font-medium text-fg">{plural(entry.usage, 'Bauteil', 'Bauteilen')}</span> verwendet
-                          {!plan?.unchanged && ' – die Änderung gilt überall'}
+                          {tr('Von {parts} verwendet', { parts: plural(entry.usage, tr('Bauteil'), tr('Bauteilen')) })}
+                          {!plan?.unchanged && tr(' – die Änderung gilt überall')}
                         </>
                       ) : (
-                        'Noch von keinem Bauteil verwendet'
+                        tr('Noch von keinem Bauteil verwendet')
                       )}
                     </span>
                   )}
@@ -132,14 +135,14 @@ export function NameResult({ name, pending, library, onShowInLibrary, className 
                   {c}
                 </li>
               ))}
-              {plan.changes.length > 4 && <li className="text-fg-subtle">… und {plan.changes.length - 4} weitere – Speichern fragt nach</li>}
+              {plan.changes.length > 4 && <li className="text-fg-subtle">{tr("… und")}{' '}{plan.changes.length - 4} {tr("weitere – Speichern fragt nach")}</li>}
             </ul>
           )}
         </div>
       )}
       {entry && onShowInLibrary && (
         <Button size="xs" variant="link" rightIcon={<ArrowRight />} onClick={() => onShowInLibrary(entry.name)} className="mt-1.5 h-auto px-0">
-          In der Bibliothek zeigen
+          {tr("In der Bibliothek zeigen")}
         </Button>
       )}
     </section>

@@ -1,9 +1,4 @@
-/**
- * Nächste Schritte nach dem Import: „Bauteile anlegen …“ je importierter Symbolbibliothek (eine Tabelle gehört in
- * **eine** Kategorie) bzw. für alle – die Tabelle der Symbole geht als vorbereiteter Upload an den Tabellen-Import der
- * Bauteile (`/bauteile`, Router-State `partsUpload`); „An Hausstil angleichen …“ (Stapelbearbeitung mit den importierten
- * Bibliotheken, Router-State `libraries`), Symbole/Footprints ansehen, weitere Quelle importieren.
- */
+import { t, useI18n } from '@/lib/i18n'
 import { CircuitBoard, FolderInput, PaintbrushVertical, RotateCw, Search, Shapes, Signpost, TableProperties, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
@@ -28,28 +23,27 @@ export interface NextStepsProps {
 }
 
 export function NextSteps({ libraries, folder, converted, onReset, onRescan }: NextStepsProps) {
+  useI18n()
   const navigate = useNavigate()
   const schLibs = libraries.filter(isSchLib).sort(compareNatural)
   const footprints = libraries.length - schLibs.length
   return (
     <Card>
-      <CardHeader icon={<Signpost />} title="Wie geht es weiter?" titleAs="h2" />
+      <CardHeader icon={<Signpost />} title={t("Wie geht es weiter?")} titleAs="h2" />
       <CardContent className="flex flex-col gap-5">
         {libraries.length === 0 && (
           <p className="text-xs leading-relaxed text-fg-muted">
-            Es wurde keine Bibliotheksdatei übernommen – die Gründe stehen im Ergebnis. Eine andere Auswahl oder Quelle wählen.
-          </p>
+            {t("Es wurde keine Bibliotheksdatei übernommen – die Gründe stehen im Ergebnis. Eine andere Auswahl oder Quelle wählen.")}</p>
         )}
         {schLibs.length > 0 && <PartsFromSymbols libraries={schLibs} folder={folder} />}
         {libraries.length > 0 && (
           <section aria-labelledby="bibliotheksimport-hausstil" className="flex flex-col gap-2">
             <h3 id="bibliotheksimport-hausstil" className="text-ui font-medium text-fg">
-              Hausstil
-            </h3>
+              {t("Hausstil")}</h3>
             <p className="text-xs leading-relaxed text-fg-muted">
               {converted
-                ? 'Die importierten Bibliotheken wurden schon angeglichen. In der Stapelbearbeitung lässt sich das prüfen oder rückgängig machen.'
-                : 'Schriften, Pinlängen, Lagen und Linienbreiten der importierten Bibliotheken an den Hausstil angleichen – die Stapelbearbeitung prüft zuerst und sichert vorher.'}
+                ? t("Die importierten Bibliotheken wurden schon angeglichen. In der Stapelbearbeitung lässt sich das prüfen oder rückgängig machen.")
+                : t("Schriften, Pinlängen, Lagen und Linienbreiten der importierten Bibliotheken an den Hausstil angleichen – die Stapelbearbeitung prüft zuerst und sichert vorher.")}
             </p>
             <div>
               <Button
@@ -58,7 +52,7 @@ export function NextSteps({ libraries, folder, converted, onReset, onRescan }: N
                 leftIcon={<PaintbrushVertical />}
                 onClick={() => navigate('/stapelbearbeitung', { state: { libraries } })}
               >
-                {converted ? 'In der Stapelbearbeitung ansehen …' : 'An Hausstil angleichen …'}
+                {converted ? t("In der Stapelbearbeitung ansehen …") : t("An Hausstil angleichen …")}
               </Button>
             </div>
           </section>
@@ -68,28 +62,24 @@ export function NextSteps({ libraries, folder, converted, onReset, onRescan }: N
             <Button asChild size="sm" variant="ghost">
               <Link to="/symbole">
                 <Shapes aria-hidden className="size-3.5" />
-                Zu den Symbolen
-              </Link>
+                {t("Zu den Symbolen")}</Link>
             </Button>
           )}
           {footprints > 0 && (
             <Button asChild size="sm" variant="ghost">
               <Link to="/footprints">
                 <CircuitBoard aria-hidden className="size-3.5" />
-                Zu den Footprints
-              </Link>
+                {t("Zu den Footprints")}</Link>
             </Button>
           )}
         </div>
       </CardContent>
       <CardFooter className="flex-wrap justify-between">
         <Button size="sm" variant="secondary" leftIcon={<FolderInput />} onClick={onReset}>
-          Weitere Quelle importieren
-        </Button>
+          {t("Weitere Quelle importieren")}</Button>
         {onRescan && (
           <Button size="sm" variant="ghost" leftIcon={<RotateCw />} onClick={onRescan}>
-            Quelle erneut einlesen
-          </Button>
+            {t("Quelle erneut einlesen")}</Button>
         )}
       </CardFooter>
     </Card>
@@ -98,6 +88,7 @@ export function NextSteps({ libraries, folder, converted, onReset, onRescan }: N
 
 /** „Bauteile anlegen …“: je Symbolbibliothek bzw. alle – Tabelle der Symbole für den Tabellen-Import */
 function PartsFromSymbols({ libraries, folder }: { libraries: string[]; folder: string }) {
+  useI18n()
   const navigate = useNavigate()
   const table = usePartsTable()
   /** Bibliothek, deren Tabelle gerade erstellt wird (`*` = alle) */
@@ -126,12 +117,9 @@ function PartsFromSymbols({ libraries, folder }: { libraries: string[]; folder: 
   return (
     <section aria-labelledby="bibliotheksimport-bauteile" className="flex flex-col gap-2">
       <h3 id="bibliotheksimport-bauteile" className="text-ui font-medium text-fg">
-        Bauteile anlegen
-      </h3>
+        {t("Bauteile anlegen")}</h3>
       <p className="text-xs leading-relaxed text-fg-muted">
-        Aus den importierten Symbolen eine Tabelle mit ihren Parametern und Footprint-Verweisen erstellen – der Tabellen-Import ordnet die
-        Spalten zu. Eine Tabelle kommt in <em className="not-italic text-fg">eine</em> Kategorie: am besten je Bibliothek.
-      </p>
+        {t("Aus den importierten Symbolen eine Tabelle mit ihren Parametern und Footprint-Verweisen erstellen – der Tabellen-Import ordnet die Spalten zu. Eine Tabelle kommt in ")}<em className="not-italic text-fg">{t("eine")}</em> {t(" Kategorie: am besten je Bibliothek.")}</p>
       {libraries.length > 1 && (
         <div>
           <Button
@@ -140,10 +128,9 @@ function PartsFromSymbols({ libraries, folder }: { libraries: string[]; folder: 
             leftIcon={<TableProperties />}
             loading={pending === '*'}
             disabled={pending !== null && pending !== '*'}
-            onClick={() => create(libraries, `Alle Symbole aus „${folder}“`, '*')}
+            onClick={() => create(libraries, t("Alle Symbole aus „{0}“", { "0": String(folder) }), '*')}
           >
-            Alle {formatNumber(libraries.length)} Symbolbibliotheken …
-          </Button>
+            {t("Alle ")}{formatNumber(libraries.length)} {t(" Symbolbibliotheken …")}</Button>
         </div>
       )}
       {libraries.length > LIB_PAGE && (
@@ -155,15 +142,15 @@ function PartsFromSymbols({ libraries, folder }: { libraries: string[]; folder: 
             setQuery(e.target.value)
             setLimit(LIB_PAGE)
           }}
-          placeholder="Bibliothek suchen …"
-          aria-label="Symbolbibliotheken durchsuchen"
+          placeholder={t("Bibliothek suchen …")}
+          aria-label={t("Symbolbibliotheken durchsuchen")}
           prefix={<Search />}
-          suffix={query ? <IconButton size="xs" label="Suche leeren" icon={<X />} onClick={() => setQuery('')} tooltip={false} /> : undefined}
+          suffix={query ? <IconButton size="xs" label={t("Suche leeren")} icon={<X />} onClick={() => setQuery('')} tooltip={false} /> : undefined}
           containerClassName="w-64 max-w-full"
         />
       )}
       {shown.length > 0 ? (
-        <ul className="flex flex-col divide-y divide-line border-y border-line" aria-label="Importierte Symbolbibliotheken">
+        <ul className="flex flex-col divide-y divide-line border-y border-line" aria-label={t("Importierte Symbolbibliotheken")}>
           {shown.map((lib) => {
             const { folder: dir, name } = splitRel(lib)
             return (
@@ -180,23 +167,21 @@ function PartsFromSymbols({ libraries, folder }: { libraries: string[]; folder: 
                   loading={pending === lib}
                   disabled={pending !== null && pending !== lib}
                   onClick={() => create([lib], name, lib)}
-                  aria-label={`Bauteile anlegen – ${name}`}
+                  aria-label={t("Bauteile anlegen – {0}", { "0": String(name) })}
                 >
-                  Bauteile anlegen …
-                </Button>
+                  {t("Bauteile anlegen …")}</Button>
               </li>
             )
           })}
         </ul>
       ) : (
-        <p className="text-xs text-fg-subtle">Keine Bibliothek passt zu „{query.trim()}“.</p>
+        <p className="text-xs text-fg-subtle">{t("Keine Bibliothek passt zu „")}{query.trim()}“.</p>
       )}
       {rest > 0 && (
         <div className="flex items-center gap-3 text-2xs text-fg-subtle">
           <Button size="xs" variant="ghost" onClick={() => setLimit((l) => l + LIB_PAGE * 4)}>
-            {formatNumber(Math.min(rest, LIB_PAGE * 4))} weitere anzeigen
-          </Button>
-          {formatNumber(shown.length)} von {plural(matches.length, 'Bibliothek', 'Bibliotheken')}
+            {formatNumber(Math.min(rest, LIB_PAGE * 4))} {t(" weitere anzeigen")}</Button>
+          {formatNumber(shown.length)} {t(" von ")}{plural(matches.length, t("Bibliothek"), t("Bibliotheken"))}
         </div>
       )}
     </section>

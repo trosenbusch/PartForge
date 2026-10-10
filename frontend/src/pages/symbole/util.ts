@@ -1,3 +1,4 @@
+import { t as tr, getLocale } from '@/components/preview/i18n'
 /** Hilfsfunktionen des Symbole-Moduls (ohne Komponenten – Fast Refresh). */
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -5,14 +6,14 @@ import type { GeneratedSpec, IcPin, IcSide, SymbolEntry, SymbolKindInfo, SymbolP
 import type { PinOrientation } from '@/lib/geometry'
 
 /** Text in die Zwischenablage (mit Rückmeldung) */
-export async function copyText(text: string, what = 'Name'): Promise<void> {
+export async function copyText(text: string, what = tr('Name')): Promise<void> {
   try {
     await navigator.clipboard.writeText(text)
-    toast.success(`${what} kopiert`, { id: 'symbole-copy', description: text })
+    toast.success(tr("{value0} kopiert", { value0: String(what) }), { id: 'symbole-copy', description: text })
   } catch {
-    toast.error('Kopieren nicht möglich', {
+    toast.error(tr('Kopieren nicht möglich'), {
       id: 'symbole-copy',
-      description: 'Die Zwischenablage ist gesperrt. Bitte den Text markieren und mit Strg+C kopieren.',
+      description: tr('Die Zwischenablage ist gesperrt. Bitte den Text markieren und mit Strg+C kopieren.'),
     })
   }
 }
@@ -80,7 +81,7 @@ export function resolvedPinmap(spec: GeneratedSpec | undefined): { pad: string; 
     if (!Array.isArray(pads)) continue
     for (const pad of pads) out.push({ pad: String(pad), fn })
   }
-  return out.sort((a, b) => a.pad.localeCompare(b.pad, 'de', { numeric: true }))
+  return out.sort((a, b) => a.pad.localeCompare(b.pad, getLocale(), { numeric: true }))
 }
 
 /** Körpergröße eines IC-Symbols aus dem Generator-Protokoll (mil) */
@@ -133,16 +134,16 @@ const PREFIX_RE = /^[A-Za-z][A-Za-z0-9_]{0,9}$/
 /** Prüft einen Symbolnamen wie das Backend (ASCII, max. 64 Zeichen); undefined = in Ordnung bzw. leer */
 export function symbolNameError(name: string): string | undefined {
   if (!name) return undefined
-  if (name !== name.trim()) return 'Keine Leerzeichen am Anfang oder Ende.'
-  if (!NAME_RE.test(name)) return 'Erlaubt sind A–Z, a–z, 0–9, Leerzeichen und _ . - + ( ) – höchstens 64 Zeichen (keine Umlaute).'
-  if (name.startsWith('__PF')) return 'Das Präfix __PF ist reserviert.'
+  if (name !== name.trim()) return tr('Keine Leerzeichen am Anfang oder Ende.')
+  if (!NAME_RE.test(name)) return tr('Erlaubt sind A–Z, a–z, 0–9, Leerzeichen und _ . - + ( ) – höchstens 64 Zeichen (keine Umlaute).')
+  if (name.startsWith('__PF')) return tr('Das Präfix __PF ist reserviert.')
   return undefined
 }
 
 /** Prüft ein Bezeichner-Präfix (z. B. „U“, „FB“); undefined = in Ordnung bzw. leer */
 export function prefixError(prefix: string): string | undefined {
   if (!prefix) return undefined
-  return PREFIX_RE.test(prefix) ? undefined : 'Ein Buchstabe, danach Buchstaben, Ziffern oder _ (max. 10).'
+  return PREFIX_RE.test(prefix) ? undefined : tr('Ein Buchstabe, danach Buchstaben, Ziffern oder _ (max. 10).')
 }
 
 export const SOURCE_LABEL: Record<string, string> = {
@@ -204,7 +205,7 @@ export function connectorRequestPins(values: Record<string, unknown>, pins: read
 /** Freien Namen vorschlagen: „Name 2“, „Name 3“ … (max. 64 Zeichen) */
 export function suggestFreeName(base: string, entries: readonly SymbolEntry[] | undefined): string {
   const taken = new Set((entries ?? []).map((e) => e.name.toLowerCase()))
-  const stem = base.replace(/\s+\d+$/, '').trim() || 'Symbol'
+  const stem = base.replace(/\s+\d+$/, '').trim() || tr('Symbol')
   for (let i = 2; i < 1000; i += 1) {
     const candidate = `${stem.slice(0, 60)} ${i}`
     if (!taken.has(candidate.toLowerCase())) return candidate

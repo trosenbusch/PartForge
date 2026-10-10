@@ -1,3 +1,4 @@
+import { t, useI18n } from '@/lib/i18n'
 import { useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { datasheetKeys, useDatasheets, type DatasheetSummary } from '@/api/datasheets'
@@ -40,6 +41,7 @@ export interface LandingViewProps {
  * URL-Import, KI-Status und die bisherigen Datenblätter.
  */
 export function LandingView({ actions, focusUrl = null, focusSearch = null, searchQuery = null }: LandingViewProps) {
+  useI18n()
   const list = useDatasheets()
   const activeMap = useActiveImports((s) => s.jobs)
   const urlEntries = useActiveImports((s) => s.urls)
@@ -66,8 +68,8 @@ export function LandingView({ actions, focusUrl = null, focusSearch = null, sear
 
   const subtitle = list.data
     ? stats.total
-      ? `${plural(stats.total, 'Datenblatt', 'Datenblätter')} · ${plural(stats.committed, 'übernommen', 'übernommen')} · Kosten ${formatUsd(stats.costUsd)}`
-      : 'Teilenummer suchen oder PDF ablegen – Claude schlägt das Bauteil vor'
+      ? t("{0} · {1} · Kosten {2}", { "0": String(plural(stats.total, t("Datenblatt"), t("Datenblätter"))), "1": String(plural(stats.committed, 'übernommen', 'übernommen')), "2": String(formatUsd(stats.costUsd)) })
+      : t("Teilenummer suchen oder PDF ablegen – Claude schlägt das Bauteil vor")
     : undefined
 
   const aiReady = actions.aiReady
@@ -97,11 +99,11 @@ export function LandingView({ actions, focusUrl = null, focusSearch = null, sear
 
   return (
     <PageBody width="wide">
-      <PageTitle title="Datenblatt-Import" subtitle={subtitle} />
+      <PageTitle title={t("Datenblatt-Import")} subtitle={subtitle} />
       <WatchFinished active={activeMap} />
       {/* items-start: Suchergebnisse verlängern nur die linke Spalte, die KI-Karte bleibt kompakt */}
       <div className="grid items-start gap-5 @[46rem]:grid-cols-[minmax(0,1fr)_17.5rem] @[64rem]:grid-cols-[minmax(0,1fr)_21rem]">
-        <section aria-label="Datenblatt hinzufügen" className="@container flex min-w-0 flex-col gap-4">
+        <section aria-label={t("Datenblatt hinzufügen")} className="@container flex min-w-0 flex-col gap-4">
           <DatasheetSearch
             aiReady={aiReady}
             aiStatus={status}
@@ -120,20 +122,20 @@ export function LandingView({ actions, focusUrl = null, focusSearch = null, sear
             busy={actions.busy ?? false}
             disabled={actions.aiLoading}
             maxSize={64 * 1024 * 1024}
-            title={hasList ? 'PDF hierher ziehen' : 'Datenblatt hierher ziehen'}
+            title={hasList ? t("PDF hierher ziehen") : t("Datenblatt hierher ziehen")}
             description={
               aiReady || !status
-                ? 'Claude liest Bestellnummern, Parameter, Pinbelegung und Gehäusemaße. Sie prüfen jede Angabe mit Fundstelle und legen Bauteile, Symbol und Footprint in einem Schritt an.'
+                ? t("Claude liest Bestellnummern, Parameter, Pinbelegung und Gehäusemaße. Sie prüfen jede Angabe mit Fundstelle und legen Bauteile, Symbol und Footprint in einem Schritt an.")
                 : aiOff
-                  ? `Die KI-Analyse ist ausgeschaltet – das PDF wird nur gespeichert. Eingeschaltet (${SETTINGS_PLACE.ai.label}) lässt sich die Analyse jederzeit nachholen.`
-                  : 'Ohne Claude-API-Schlüssel wird das PDF nur gespeichert – die Analyse lässt sich jederzeit nachholen.'
+                  ? t("Die KI-Analyse ist ausgeschaltet – das PDF wird nur gespeichert. Eingeschaltet ({0}) lässt sich die Analyse jederzeit nachholen.", { "0": String(SETTINGS_PLACE.ai.label) })
+                  : t("Ohne Claude-API-Schlüssel wird das PDF nur gespeichert – die Analyse lässt sich jederzeit nachholen.")
             }
             hint={
               aiReady || !status
                 ? hasList
-                  ? 'PDF · bis 64 MB · mehrere möglich'
+                  ? t("PDF · bis 64 MB · mehrere möglich")
                   : undefined
-                : 'PDF · bis 64 MB · wird nur gespeichert'
+                : t("PDF · bis 64 MB · wird nur gespeichert")
             }
             className={hasList ? undefined : '[&>[role=button]]:min-h-[15rem]'}
           />
@@ -169,6 +171,7 @@ export function LandingView({ actions, focusUrl = null, focusSearch = null, sear
 
 /** Beendete Analysen aus der Liste der laufenden entfernen (eine Komponente je Job: SSE/Polling über useJob). */
 function WatchFinished({ active }: { active: Record<string, string> }) {
+  useI18n()
   return (
     <>
       {Object.entries(active).map(([dsId, jobId]) => (

@@ -1,3 +1,4 @@
+import { metadataLabel, t as tr, useI18n } from '@/lib/i18n'
 /**
  * UI-Kit, Bereich „Vorschau und Daten“: Live-Demos der geteilten Komponenten (components/preview, grid, data)
  * mit echten Backend-Daten (Footprint-/Symbol-Generator, Bauteile und Kategorien der geöffneten Bibliothek).
@@ -58,10 +59,11 @@ function DemoSection({ title, description, actions, children }: { title: string;
 // --------------------------------------------------------------------------- Vorschau
 
 function PreviewDemos({ fullscreen3d }: { fullscreen3d: boolean }) {
+  const { t: tr } = useI18n()
   const soic = useFootprintPreview(SOIC8_REQUEST)
   const qfn = useFootprintPreview(QFN16_REQUEST)
   const opamp = useSymbolPreview(OPAMP_DUAL_REQUEST)
-  const ic = useSymbolPreview(DEMO_IC_REQUEST)
+  const ic = useSymbolPreview({ ...DEMO_IC_REQUEST, description: tr(DEMO_IC_REQUEST.description ?? '') })
   const [highlight, setHighlight] = useState<string[]>(['3', '11'])
 
   return (
@@ -69,7 +71,7 @@ function PreviewDemos({ fullscreen3d }: { fullscreen3d: boolean }) {
       <div className="grid grid-cols-1 gap-5 @[64rem]:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <DemoSection
           title="PreviewPanel"
-          description="Symbol, Footprint und 3D in einem Panel – Demo-IC mit QFN-16 (Exposed Pad), Bemaßung aus dem Generator-Protokoll"
+          description={tr("Symbol, Footprint und 3D in einem Panel – Demo-IC mit QFN-16 (Exposed Pad), Bemaßung aus dem Generator-Protokoll")}
         >
           <PreviewPanel
             symbol={ic.data?.spec}
@@ -83,21 +85,21 @@ function PreviewDemos({ fullscreen3d }: { fullscreen3d: boolean }) {
             className="h-[520px]"
           />
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-fg-muted">
-            <span className="micro-label">Hervorheben</span>
+            <span className="micro-label">{tr("Hervorheben")}</span>
             {[['3', '11'], ['1', '2', '15'], ['17'], []].map((h) => (
               <button
-                key={h.join(',') || 'keine'}
+                key={h.join(',') || tr("keine")}
                 type="button"
                 aria-pressed={highlight.join(',') === h.join(',')}
                 onClick={() => setHighlight(h)}
                 className="mono rounded-control border border-line-strong px-2 py-0.5 text-2xs outline-none transition-colors focus-ring hover:bg-surface-2 aria-pressed:border-accent/40 aria-pressed:bg-accent-soft aria-pressed:text-accent-text"
               >
-                {h.length ? h.join(' · ') : 'keine'}
+                {h.length ? h.join(' · ') : tr("keine")}
               </button>
             ))}
           </div>
         </DemoSection>
-        <DemoSection title="Kompakt (Detail-Drawer)" description="Zweifach-OPV (Teile A/B, Versorgung C) mit SOIC-8">
+        <DemoSection title={tr("Kompakt (Detail-Drawer)")} description={tr("Zweifach-OPV (Teile A/B, Versorgung C) mit SOIC-8")}>
           <PreviewPanel
             symbol={opamp.data?.spec}
             footprint={soic.data?.spec}
@@ -109,13 +111,13 @@ function PreviewDemos({ fullscreen3d }: { fullscreen3d: boolean }) {
       </div>
 
       <div className="grid grid-cols-1 gap-5 @[64rem]:grid-cols-3">
-        <DemoSection title="SymbolCanvas" description='theme="altium", Teile A/B/C, Pin-Tooltip'>
+        <DemoSection title="SymbolCanvas" description={tr("theme=\"altium\", Teile A/B/C, Pin-Tooltip")}>
           <SymbolCanvas spec={opamp.data?.spec} theme="altium" className="h-72 rounded-control border border-line" />
         </DemoSection>
-        <DemoSection title="FootprintCanvas" description="SOIC-8 mit Bemaßung (Z/G/X/e), Pad 1 hervorgehoben">
+        <DemoSection title="FootprintCanvas" description={tr("SOIC-8 mit Bemaßung (Z/G/X/e), Pad 1 hervorgehoben")}>
           <FootprintCanvas spec={soic.data?.spec} calc={soic.data?.calc} highlight={['1']} className="h-72 rounded-control" />
         </DemoSection>
-        <DemoSection title="Package3D" description="lazy geladen, offline beleuchtet">
+        <DemoSection title="Package3D" description={tr("lazy geladen, offline beleuchtet")}>
           <Package3D spec={soic.data?.spec} className="h-72 rounded-control" />
         </DemoSection>
       </div>
@@ -134,7 +136,7 @@ const FIELD_COLUMN_TYPE: Record<string, string | string[] | undefined> = {
 }
 
 /** Spalten aus den Felddefinitionen der Kategorie (Beispiel für Seiten) */
-function columnsFor(category: CategoryDef | undefined, loaders: { symbol: LoaderFn; footprint: LoaderFn }): ColDef<PartRow>[] {
+function columnsFor(category: CategoryDef | undefined, loaders: { symbol: LoaderFn; footprint: LoaderFn }, translate = tr): ColDef<PartRow>[] {
   const fields = category?.fields ?? []
   const wanted = [
     'Part Number',
@@ -156,7 +158,7 @@ function columnsFor(category: CategoryDef | undefined, loaders: { symbol: Loader
     seen.add(column)
     const f = fields.find((x) => x.column === column)
     if (!f && fields.length) continue
-    const col: ColDef<PartRow> = { field: column, headerName: f?.label ?? column, colId: column }
+    const col: ColDef<PartRow> = { field: column, headerName: metadataLabel(f?.label ?? column, translate), colId: column }
     if (column === 'Part Number') Object.assign(col, { type: 'mono', pinned: 'left', minWidth: 190 })
     else if (column === 'Value') Object.assign(col, { type: 'quantity', width: 110 })
     else if (column === 'Package') Object.assign(col, { type: 'badge', cellRendererParams: { mono: true }, width: 110 })
@@ -175,6 +177,7 @@ function columnsFor(category: CategoryDef | undefined, loaders: { symbol: Loader
 type LoaderFn = (ref: string, row: PartRow | undefined, signal: AbortSignal) => Promise<RefPreview | null>
 
 function GridDemo() {
+  const { t: tr } = useI18n()
   const workspace = useWorkspace()
   const hasWorkspace = Boolean(workspace.data)
   const categories = useCategories()
@@ -213,46 +216,45 @@ function GridDemo() {
     }),
     [table],
   )
-  const columns = useMemo(() => columnsFor(category, loaders), [category, loaders])
+  const columns = useMemo(() => columnsFor(category, loaders, tr), [category, loaders, tr])
   const rows = mode === 'leer' || !hasWorkspace ? [] : (parts.data?.rows as PartRow[] | undefined)
 
   return (
     <DemoSection
       title="DataGrid"
-      description="AG Grid mit Theme „Forge“: Mengen-, Status-, Badge-, Link- und Verweis-Zellen (Vorschau beim Überfahren), Spaltenbreiten werden gespeichert"
+      description={tr("AG Grid mit Theme „Forge“: Mengen-, Status-, Badge-, Link- und Verweis-Zellen (Vorschau beim Überfahren), Spaltenbreiten werden gespeichert")}
       actions={
         <div className="flex items-center gap-2">
           <SegmentedControl
             size="sm"
-            aria-label="Kategorie"
+            aria-label={tr("Kategorie")}
             value={table}
             onValueChange={setTable}
             options={[
-              { value: 'Resistors', label: 'Widerstände' },
-              { value: 'Capacitors', label: 'Kondensatoren' },
+              { value: 'Resistors', label: tr("Widerstände") },
+              { value: 'Capacitors', label: tr("Kondensatoren") },
             ]}
           />
           <SegmentedControl
             size="sm"
-            aria-label="Zustand"
+            aria-label={tr("Zustand")}
             value={mode}
             onValueChange={setMode}
             options={[
-              { value: 'daten', label: 'Daten' },
-              { value: 'laden', label: 'Lädt' },
-              { value: 'leer', label: 'Leer' },
+              { value: 'daten', label: tr("Daten") },
+              { value: 'laden', label: tr("Lädt") },
+              { value: 'leer', label: tr("Leer") },
             ]}
           />
         </div>
       }
     >
       {!hasWorkspace && (
-        <Callout tone="info" title="Keine Bibliothek geöffnet" className="mb-3">
-          Die Tabelle zeigt Bauteile der geöffneten Bibliothek – bitte eine Bibliothek öffnen oder anlegen.
-        </Callout>
+        <Callout tone="info" title={tr("Keine Bibliothek geöffnet")} className="mb-3">
+          {tr("Die Tabelle zeigt Bauteile der geöffneten Bibliothek – bitte eine Bibliothek öffnen oder anlegen.")}</Callout>
       )}
       <DataGrid<PartRow>
-        aria-label={`Bauteile – ${category?.label ?? table}`}
+        aria-label={tr("Bauteile – {v0}", { v0: metadataLabel(category?.label ?? table, tr) })}
         rowData={rows}
         columnDefs={columns}
         getRowId={(r) => String(r['Part Number'])}
@@ -260,14 +262,14 @@ function GridDemo() {
         persistKey={`uikit:${table}`}
         loading={mode === 'laden' || (hasWorkspace && parts.isLoading)}
         refreshing={parts.isFetching && !parts.isLoading}
-        loadingText="Bauteile werden geladen …"
+        loadingText={tr("Bauteile werden geladen …")}
         emptyState={{
-          title: 'Noch keine Bauteile',
-          description: 'Erstes Bauteil anlegen oder eine Serie importieren – die Tabelle füllt sich sofort.',
+          title: tr("Noch keine Bauteile"),
+          description: tr("Erstes Bauteil anlegen oder eine Serie importieren – die Tabelle füllt sich sofort."),
           illustration: 'no-parts',
         }}
-        onRowActivated={(r) => toast(`Geöffnet: ${String(r['Part Number'])}`)}
-        onSelectionChange={(sel) => sel.length > 1 && toast(`${formatNumber(sel.length)} Bauteile ausgewählt`, { id: 'uikit-grid-sel' })}
+        onRowActivated={(r) => toast(tr("Geöffnet: {v0}", { v0: String(r['Part Number']) }))}
+        onSelectionChange={(sel) => sel.length > 1 && toast(tr("{v0} Bauteile ausgewählt", { v0: formatNumber(sel.length) }), { id: 'uikit-grid-sel' })}
         className="h-[268px]"
       />
     </DemoSection>
@@ -287,6 +289,7 @@ const FAMILY_ICON: Record<string, string> = {
 }
 
 function FootprintBrowser() {
+  const { t: tr } = useI18n()
   const families = useQuery({
     queryKey: ['footprints', 'families'],
     queryFn: ({ signal }) => api.get<FamilyInfo[]>('/api/footprints/families', { signal }),
@@ -299,15 +302,15 @@ function FootprintBrowser() {
     () =>
       (families.data ?? []).map((f) => ({
         id: f.key,
-        label: f.label,
-        group: f.group,
+        label: tr(f.label),
+        group: tr(f.group),
         count: f.presets.length,
         icon: FAMILY_ICON[f.group] ?? 'package',
         keywords: f.presets.map((p) => p.key).join(' '),
       })),
-    [families.data],
+    [families.data, tr],
   )
-  const groupOrder = useMemo(() => [...new Set((families.data ?? []).map((f) => f.group))], [families.data])
+  const groupOrder = useMemo(() => [...new Set((families.data ?? []).map((f) => tr(f.group)))], [families.data, tr])
   const presets = useMemo(() => {
     const list = (families.data ?? []).filter((f) => !family || f.key === family)
     return list.flatMap((f) => f.presets.map((p) => ({ family: f, preset: p })))
@@ -317,7 +320,7 @@ function FootprintBrowser() {
   return (
     <DemoSection
       title="SplitPane · CategoryTree · VirtualGallery"
-      description="Footprint-Generator: Gehäusefamilien als Baum (Suche, Tastatur), Vorlagen als virtualisierte Galerie mit nachgeladenen Vorschaubildern"
+      description={tr("Footprint-Generator: Gehäusefamilien als Baum (Suche, Tastatur), Vorlagen als virtualisierte Galerie mit nachgeladenen Vorschaubildern")}
     >
       <div className="h-[470px] overflow-hidden rounded-card border border-line bg-surface">
         <SplitPane
@@ -325,24 +328,24 @@ function FootprintBrowser() {
           defaultSize={268}
           minSize={210}
           maxSize={380}
-          label="Breite des Baums"
+          label={tr("Breite des Baums")}
           collapsible
           start={
             <CategoryTree
               items={items}
               value={family}
               onValueChange={(id) => setFamily(id)}
-              allItem={{ label: 'Alle Gehäuse', count: total }}
+              allItem={{ label: tr("Alle Gehäuse"), count: total }}
               groupOrder={groupOrder}
               loading={families.isLoading}
               persistKey="uikit.familien"
-              aria-label="Gehäusefamilien"
+              aria-label={tr("Gehäusefamilien")}
               className="h-full p-3"
             />
           }
           end={
             <VirtualGallery
-              aria-label="Gehäusevorlagen"
+              aria-label={tr("Gehäusevorlagen")}
               items={presets}
               getKey={(x) => `${x.family.key}:${x.preset.key}`}
               minItemWidth={172}
@@ -351,7 +354,7 @@ function FootprintBrowser() {
               padding={14}
               selectedKey={selected}
               onSelect={(x) => setSelected(`${x.family.key}:${x.preset.key}`)}
-              onActivate={(x) => toast(`Vorlage „${x.preset.key}“ öffnen`, { description: x.preset.label })}
+              onActivate={(x) => toast(tr("Vorlage „{v0}“ öffnen", { v0: x.preset.key }), { description: tr(x.preset.label) })}
               className="h-full"
               renderItem={(x, s) => (
                 <GalleryCard
@@ -359,11 +362,11 @@ function FootprintBrowser() {
                   selected={s.selected}
                   active={s.active}
                   title={x.preset.key}
-                  meta={x.preset.label}
+                  meta={tr(x.preset.label)}
                   thumbnail={
                     <LazyThumbnail
                       queryKey={['footprints', 'preset-thumb', x.family.key, x.preset.key]}
-                      alt={`Footprint ${x.preset.key}`}
+                      alt={tr("Footprint {v0}", { v0: x.preset.key })}
                       loadSvg={async (signal) => {
                         const req: FootprintRequest = { family: x.family.key, params: x.preset.params, density: 'N', with_3d: false }
                         const p = await api.post<FootprintPreviewData>('/api/footprints/preview', req, { signal })
@@ -382,22 +385,23 @@ function FootprintBrowser() {
 }
 
 function CategoriesAndDrops() {
+  const { t: tr } = useI18n()
   const workspace = useWorkspace()
   const tree = useCategoryTreeItems()
   const [category, setCategory] = useState<string>('Resistors')
   const onFiles = (files: File[]) =>
-    toast.success(files.length === 1 ? `„${files[0].name}“ übernommen` : `${files.length} Dateien übernommen`, {
-      description: 'Demo – es wird nichts hochgeladen.',
+    toast.success(files.length === 1 ? tr("„{v0}“ übernommen", { v0: files[0].name }) : tr("{v0} Dateien übernommen", { v0: files.length }), {
+      description: tr("Demo – es wird nichts hochgeladen."),
     })
   return (
     <div className="grid grid-cols-1 gap-5 @[64rem]:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-      <DemoSection title="CategoryTree" description="Kategorien der Bibliothek mit Symbol, Farbe und Zähler">
+      <DemoSection title="CategoryTree" description={tr("Kategorien der Bibliothek mit Symbol, Farbe und Zähler")}>
         {workspace.data ? (
           <CategoryTree
             items={tree.items}
             value={category}
             onValueChange={setCategory}
-            allItem={{ label: 'Alle Bauteile', count: tree.total }}
+            allItem={{ label: tr("Alle Bauteile"), count: tree.total }}
             groupOrder={CATEGORY_GROUP_ORDER}
             loading={tree.isLoading}
             persistKey="uikit.kategorien"
@@ -406,11 +410,10 @@ function CategoriesAndDrops() {
         ) : (
           <div className="flex h-[392px] flex-col items-center justify-center gap-2 text-center text-ui text-fg-subtle">
             <Database aria-hidden className="size-5" />
-            Keine Bibliothek geöffnet
-          </div>
+            {tr("Keine Bibliothek geöffnet")}</div>
         )}
       </DemoSection>
-      <DemoSection title="FileDropZone" description="Datenblatt (KI), Tabelle (CSV/XLSX) und kompakt – Typprüfung mit deutschen Hinweisen">
+      <DemoSection title="FileDropZone" description={tr("Datenblatt (KI), Tabelle (CSV/XLSX) und kompakt – Typprüfung mit deutschen Hinweisen")}>
         <div className="grid grid-cols-1 gap-4 @[48rem]:grid-cols-2">
           <FileDropZone variant="pdf" size="md" onFiles={onFiles} className="@[48rem]:row-span-2" />
           <FileDropZone variant="table" size="md" multiple={false} onFiles={onFiles} />
@@ -451,6 +454,7 @@ function renderLocal(template: string, values: PartRow): string {
 }
 
 function TemplateDemo() {
+  const { t: tr } = useI18n()
   const categories = useCategories()
   const workspace = useWorkspace()
   const sample = useQuery({
@@ -460,8 +464,8 @@ function TemplateDemo() {
   })
   const category = categories.data?.find((c) => c.table === 'Resistors')
   const fields: TemplateField[] = useMemo(
-    () => (category?.fields ?? []).map((f) => ({ name: f.column, label: f.label, kind: f.kind, unit: f.unit })),
-    [category],
+    () => (category?.fields ?? []).map((f) => ({ name: f.column, label: metadataLabel(f.label, tr), kind: f.kind, unit: f.unit })),
+    [category, tr],
   )
   const [template, setTemplate] = useState(category?.description_template ?? 'RES {Size} {Resistance} {Tolerance} {Power}')
   const [comment, setComment] = useState('{Resistance:rkm}')
@@ -472,11 +476,11 @@ function TemplateDemo() {
   return (
     <DemoSection
       title="TemplateTokenInput"
-      description="Vorlagen für Beschreibung und Kommentar: Platzhalter als Chips, „{“ öffnet die Felder, „:“ die Formate, Strg+Leertaste fügt ein"
+      description={tr("Vorlagen für Beschreibung und Kommentar: Platzhalter als Chips, „{“ öffnet die Felder, „:“ die Formate, Strg+Leertaste fügt ein")}
       actions={values['Part Number'] ? <Badge variant="outline" className="mono">{String(values['Part Number'])}</Badge> : undefined}
     >
       <div className="grid grid-cols-1 gap-5 @[48rem]:grid-cols-2">
-        <Field label="Beschreibung (Vorlage)" help="Felder der Kategorie „Widerstände“; unbekannte Felder werden rot markiert">
+        <Field label={tr("Beschreibung (Vorlage)")} help={tr("Felder der Kategorie „Widerstände“; unbekannte Felder werden rot markiert")}>
           <TemplateTokenInput
             value={template}
             onValueChange={setTemplate}
@@ -485,7 +489,7 @@ function TemplateDemo() {
             onPreviewRequest={(t) => setPreview(renderLocal(t, values))}
           />
         </Field>
-        <Field label="Kommentar (Vorlage)" help="Format „rkm“: 4k7, 100n, 6V3">
+        <Field label={tr("Kommentar (Vorlage)")} help={tr("Format „rkm“: 4k7, 100n, 6V3")}>
           <TemplateTokenInput
             value={comment}
             onValueChange={setComment}

@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { Check, ChevronRight } from 'lucide-react'
 import { ContextMenu as Menu } from 'radix-ui'
 import type { ComponentProps, ReactNode } from 'react'
@@ -19,6 +20,7 @@ export const ContextMenuGroup = Menu.Group
 export const ContextMenuSub = Menu.Sub
 
 export function ContextMenuContent({ className, collisionPadding = 10, ...props }: ComponentProps<typeof Menu.Content>) {
+  useI18n()
   return (
     <Menu.Portal>
       <Menu.Content collisionPadding={collisionPadding} className={cn(menuContentClass, className)} {...props} />
@@ -33,6 +35,7 @@ export interface ContextMenuItemProps extends ComponentProps<typeof Menu.Item> {
 }
 
 export function ContextMenuItem({ className, icon, hotkey, destructive, children, ...props }: ContextMenuItemProps) {
+  useI18n()
   return (
     <Menu.Item className={cn(menuItemClass, destructive && menuItemDangerClass, className)} {...props}>
       {icon}
@@ -43,6 +46,7 @@ export function ContextMenuItem({ className, icon, hotkey, destructive, children
 }
 
 export function ContextMenuCheckboxItem({ className, children, ...props }: ComponentProps<typeof Menu.CheckboxItem>) {
+  useI18n()
   return (
     <Menu.CheckboxItem className={cn(menuItemClass, className)} {...props}>
       <span className="flex-1 truncate">{children}</span>
@@ -54,10 +58,12 @@ export function ContextMenuCheckboxItem({ className, children, ...props }: Compo
 }
 
 export function ContextMenuLabel({ className, ...props }: ComponentProps<typeof Menu.Label>) {
+  useI18n()
   return <Menu.Label className={cn(menuLabelClass, className)} {...props} />
 }
 
 export function ContextMenuSeparator({ className, ...props }: ComponentProps<typeof Menu.Separator>) {
+  useI18n()
   return <Menu.Separator className={cn(menuSeparatorClass, className)} {...props} />
 }
 
@@ -67,6 +73,7 @@ export function ContextMenuSubTrigger({
   children,
   ...props
 }: ComponentProps<typeof Menu.SubTrigger> & { icon?: ReactNode }) {
+  useI18n()
   return (
     <Menu.SubTrigger className={cn(menuItemClass, className)} {...props}>
       {icon}
@@ -77,6 +84,7 @@ export function ContextMenuSubTrigger({
 }
 
 export function ContextMenuSubContent({ className, ...props }: ComponentProps<typeof Menu.SubContent>) {
+  useI18n()
   return (
     <Menu.Portal>
       <Menu.SubContent className={cn(menuContentClass, className)} {...props} />

@@ -1,3 +1,5 @@
+import { useLocalizedMemo } from '@/components/preview/useLocalizedMemo'
+import { localizeMessage, t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Vorschau-Panel „Symbol | Footprint | 3D“ mit Werkzeugleiste (Einpassen, Zoom, Lagen, Bemaßung, Altium-Ansicht,
  * automatische Drehung, Vollbild). Für Detail-Drawer, Generatoren und den Datenblatt-Import.
@@ -20,7 +22,7 @@ import {
   Square,
   Component as SymbolIcon,
 } from 'lucide-react'
-import { useMemo, useRef, useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -126,6 +128,7 @@ function ViewState({
   empty: ReactNode
   board?: boolean
 }) {
+  useI18n()
   if (!hasContent && loading) {
     return (
       <div className={cn('absolute inset-0 flex items-center justify-center', board ? 'bg-canvas' : 'bg-bg')}>
@@ -137,7 +140,7 @@ function ViewState({
           )}
         >
           <Spinner size={14} tone="accent" />
-          Vorschau wird berechnet …
+          {tr("Vorschau wird berechnet …")}
         </div>
       </div>
     )
@@ -157,7 +160,7 @@ function ViewState({
       {loading && hasContent && (
         <div className="pointer-events-none absolute right-3 top-12 z-20 flex items-center gap-1.5 rounded-full border border-line-strong bg-surface/90 px-2.5 py-1 text-2xs text-fg-muted shadow-raised backdrop-blur">
           <Spinner size={12} tone="accent" />
-          aktualisiert …
+          {tr("aktualisiert …")}
         </div>
       )}
       {error && (
@@ -165,8 +168,8 @@ function ViewState({
           <div role="alert" className="flex max-w-md items-start gap-2.5 rounded-card border border-danger/30 bg-surface px-4 py-3 text-ui shadow-raised">
             <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-danger-text" />
             <div>
-              <div className="font-semibold text-fg">Vorschau nicht möglich</div>
-              <p className="mt-0.5 text-xs leading-relaxed text-fg-muted">{error}</p>
+              <div className="font-semibold text-fg">{tr("Vorschau nicht möglich")}</div>
+              <p className="mt-0.5 text-xs leading-relaxed text-fg-muted">{localizeMessage(error)}</p>
             </div>
           </div>
         </div>
@@ -199,8 +202,9 @@ export function PreviewPanel({
   allowLayoutSwitch = false,
   className,
 }: PreviewPanelProps) {
+  useI18n()
   const prefs = usePreviewPrefs()
-  const available: PreviewTab[] = useMemo(() => {
+  const available: PreviewTab[] = useLocalizedMemo(() => {
     const all: PreviewTab[] = ['symbol', 'footprint', '3d']
     if (!hideEmptyTabs) return all
     return all.filter((t) =>
@@ -231,7 +235,7 @@ export function PreviewPanel({
   const threeRef = useRef<CanvasHandle>(null)
   const activeRef = tab === 'symbol' ? symbolRef : tab === 'footprint' ? footprintRef : threeRef
 
-  const presentLayers = useMemo(() => (footprint ? footprintLayers(footprint) : []), [footprint])
+  const presentLayers = useLocalizedMemo(() => (footprint ? footprintLayers(footprint) : []), [footprint])
   const layerVisible = (l: CanvasLayer) => prefs.layers[l] ?? DEFAULT_LAYER_VISIBILITY[l]
   const hasCalc = Boolean(calc)
 
@@ -254,7 +258,7 @@ export function PreviewPanel({
         hasContent={Boolean(symbol)}
         loading={perTab(loading, 'symbol')}
         error={perTab(error, 'symbol')}
-        empty={emptyText?.symbol ?? 'Kein Symbol zugeordnet'}
+        empty={emptyText?.symbol ?? tr('Kein Symbol zugeordnet')}
       />
     </div>
   )
@@ -281,7 +285,7 @@ export function PreviewPanel({
         hasContent={Boolean(footprint)}
         loading={perTab(loading, 'footprint')}
         error={perTab(error, 'footprint')}
-        empty={emptyText?.footprint ?? 'Kein Footprint zugeordnet'}
+        empty={emptyText?.footprint ?? tr('Kein Footprint zugeordnet')}
         board
       />
     </div>
@@ -302,7 +306,7 @@ export function PreviewPanel({
         hasContent={Boolean(footprint)}
         loading={perTab(loading, '3d') ?? perTab(loading, 'footprint')}
         error={perTab(error, '3d') ?? perTab(error, 'footprint')}
-        empty={emptyText?.['3d'] ?? 'Kein Footprint zugeordnet'}
+        empty={emptyText?.['3d'] ?? tr('Kein Footprint zugeordnet')}
         board
       />
     </div>
@@ -318,10 +322,10 @@ export function PreviewPanel({
   const toolbar = (
     <div className="ml-auto flex items-center gap-0.5">
       {showSymbolTools && (
-        <Tooltip content={prefs.altium ? 'PartForge-Darstellung' : 'Wie in Altium Designer (weißes Blatt)'}>
+        <Tooltip content={prefs.altium ? tr('PartForge-Darstellung') : tr('Wie in Altium Designer (weißes Blatt)')}>
           <button
             type="button"
-            aria-label="Altium-Ansicht"
+            aria-label={tr("Altium-Ansicht")}
             aria-pressed={prefs.altium}
             onClick={() => prefs.set({ altium: !prefs.altium })}
             className={cn(
@@ -330,26 +334,26 @@ export function PreviewPanel({
             )}
           >
             <Square aria-hidden className={cn('size-3.5', prefs.altium ? 'fill-[#FFFFB0] text-[#800000]' : '')} />
-            <span className="hidden whitespace-nowrap @[34rem]:inline">Altium-Ansicht</span>
+            <span className="hidden whitespace-nowrap @[34rem]:inline">{tr("Altium-Ansicht")}</span>
           </button>
         </Tooltip>
       )}
       {showFootprintTools && presentLayers.length > 0 && (
         <DropdownMenu>
-          <Tooltip content="Lagen ein- und ausblenden">
+          <Tooltip content={tr("Lagen ein- und ausblenden")}>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                aria-label="Lagen"
+                aria-label={tr("Lagen")}
                 className="flex h-7 items-center gap-1.5 rounded-control px-2 text-xs font-medium text-fg-muted outline-none transition-colors focus-ring hover:bg-surface-2 hover:text-fg data-[state=open]:bg-surface-2 data-[state=open]:text-fg"
               >
                 <Layers aria-hidden className="size-3.5" />
-                <span className="hidden @[34rem]:inline">Lagen</span>
+                <span className="hidden @[34rem]:inline">{tr("Lagen")}</span>
               </button>
             </DropdownMenuTrigger>
           </Tooltip>
           <DropdownMenuContent align="end" className="min-w-60">
-            <DropdownMenuLabel>Lagen</DropdownMenuLabel>
+            <DropdownMenuLabel>{tr("Lagen")}</DropdownMenuLabel>
             {presentLayers.map((l) => (
               <DropdownMenuCheckboxItem
                 key={l}
@@ -359,7 +363,7 @@ export function PreviewPanel({
               >
                 <span className="flex items-center gap-2">
                   <span aria-hidden className="size-2.5 rounded-[3px]" style={{ background: layerColor(l) }} />
-                  {LAYERS[l].label}
+                  {tr(LAYERS[l].label)}
                   <span className="text-2xs text-fg-subtle">{LAYERS[l].altium}</span>
                 </span>
               </DropdownMenuCheckboxItem>
@@ -370,7 +374,7 @@ export function PreviewPanel({
               onCheckedChange={(on) => prefs.set({ padNumbers: on === true })}
               onSelect={(e) => e.preventDefault()}
             >
-              Pad-Nummern
+              {tr("Pad-Nummern")}
             </DropdownMenuCheckboxItem>
             {hasCalc && (
               <DropdownMenuCheckboxItem
@@ -378,7 +382,7 @@ export function PreviewPanel({
                 onCheckedChange={(on) => prefs.set({ dimensions: on === true })}
                 onSelect={(e) => e.preventDefault()}
               >
-                Bemaßung (IPC‑7351)
+                {tr("Bemaßung (IPC‑7351)")}
               </DropdownMenuCheckboxItem>
             )}
           </DropdownMenuContent>
@@ -387,7 +391,7 @@ export function PreviewPanel({
       {showFootprintTools && hasCalc && (
         <IconButton
           size="sm"
-          label={prefs.dimensions ? 'Bemaßung ausblenden' : 'Bemaßung einblenden'}
+          label={prefs.dimensions ? tr('Bemaßung ausblenden') : tr('Bemaßung einblenden')}
           icon={<Ruler />}
           aria-pressed={prefs.dimensions}
           className={toolbarToggle(prefs.dimensions)}
@@ -398,14 +402,14 @@ export function PreviewPanel({
         <>
           <IconButton
             size="sm"
-            label={prefs.autoRotate ? 'Drehung anhalten' : 'Automatisch drehen'}
+            label={prefs.autoRotate ? tr('Drehung anhalten') : tr('Automatisch drehen')}
             icon={<Rotate3d />}
             aria-pressed={prefs.autoRotate}
             className={toolbarToggle(prefs.autoRotate)}
             onClick={() => prefs.set({ autoRotate: !prefs.autoRotate })}
           />
           {layout === 'tabs' && (
-            <IconButton size="sm" label="Ansicht zurücksetzen" icon={<RotateCcw />} onClick={() => threeRef.current?.fit()} />
+            <IconButton size="sm" label={tr("Ansicht zurücksetzen")} icon={<RotateCcw />} onClick={() => threeRef.current?.fit()} />
           )}
         </>
       )}
@@ -413,16 +417,16 @@ export function PreviewPanel({
         <>
           <span aria-hidden className="mx-1 h-4 w-px bg-line-strong" />
           <div className="hidden items-center gap-0.5 @[30rem]:flex">
-            <IconButton size="sm" label="Verkleinern" icon={<Minus />} onClick={() => activeRef.current?.zoomOut()} />
+            <IconButton size="sm" label={tr("Verkleinern")} icon={<Minus />} onClick={() => activeRef.current?.zoomOut()} />
             {tab !== '3d' && (
               <span className="mono w-10 text-center text-2xs text-fg-muted tabular-nums" aria-hidden>
                 {Math.round(zoom * 100)} %
               </span>
             )}
-            <IconButton size="sm" label="Vergrößern" icon={<Plus />} onClick={() => activeRef.current?.zoomIn()} />
+            <IconButton size="sm" label={tr("Vergrößern")} icon={<Plus />} onClick={() => activeRef.current?.zoomIn()} />
           </div>
           {tab !== '3d' && (
-            <IconButton size="sm" label="Einpassen" icon={<Scan />} onClick={() => activeRef.current?.fit()} />
+            <IconButton size="sm" label={tr("Einpassen")} icon={<Scan />} onClick={() => activeRef.current?.fit()} />
           )}
         </>
       )}
@@ -431,12 +435,12 @@ export function PreviewPanel({
           <span aria-hidden className="mx-1 h-4 w-px bg-line-strong" />
           <SegmentedControl
             size="sm"
-            aria-label="Anordnung"
+            aria-label={tr("Anordnung")}
             value={layout}
             onValueChange={(v) => setInnerLayout(v)}
             options={[
-              { value: 'tabs', label: 'Einzeln' },
-              { value: 'split', icon: <Columns3 />, label: 'Nebeneinander' },
+              { value: 'tabs', label: tr('Einzeln') },
+              { value: 'split', icon: <Columns3 />, label: tr('Nebeneinander') },
             ]}
           />
         </>
@@ -448,7 +452,7 @@ export function PreviewPanel({
         </>
       )}
       {allowFullscreen && (
-        <IconButton size="sm" label="Vollbild" icon={<Maximize2 />} onClick={() => setFullscreen(true)} />
+        <IconButton size="sm" label={tr("Vollbild")} icon={<Maximize2 />} onClick={() => setFullscreen(true)} />
       )}
     </div>
   )
@@ -461,7 +465,7 @@ export function PreviewPanel({
             <header className="flex h-8 shrink-0 items-center gap-2 border-b border-line px-3 text-fg-subtle [&_svg]:size-3.5">
               {TAB_ICON[t]}
               <h3 id={`pv-${t}`} className="micro-label">
-                {TAB_LABEL[t]}
+                {tr(TAB_LABEL[t])}
               </h3>
             </header>
             <div className="relative min-h-0 flex-1">
@@ -475,7 +479,7 @@ export function PreviewPanel({
         {available.map((t) => (
           <TabsContent key={t} value={t} className="relative min-h-0 flex-1 data-[state=inactive]:hidden" tabIndex={-1}>
             {fullscreen ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-bg text-ui text-fg-subtle">Im Vollbild geöffnet</div>
+              <div className="absolute inset-0 flex items-center justify-center bg-bg text-ui text-fg-subtle">{tr("Im Vollbild geöffnet")}</div>
             ) : t === 'symbol' ? (
               symbolView(false)
             ) : t === 'footprint' ? (
@@ -488,22 +492,22 @@ export function PreviewPanel({
       </>
     )
 
-  const dialogTitle = title ?? ([symbol?.name, footprint?.name].filter(Boolean).join(' · ') || 'Vorschau')
+  const dialogTitle = title ?? ([symbol?.name, footprint?.name].filter(Boolean).join(' · ') || tr('Vorschau'))
 
   return (
     <div className={cn('@container flex min-h-[280px] flex-col overflow-hidden rounded-card border border-line bg-surface shadow-card', className)}>
       <Tabs value={tab} onValueChange={(v) => setTab(v as PreviewTab)} variant="pill" className="min-h-0 flex-1">
         <div className="flex h-11 shrink-0 items-center gap-2 border-b border-line px-2">
           {layout === 'tabs' ? (
-            <TabsList aria-label="Vorschau">
+            <TabsList aria-label={tr("Vorschau")}>
               {available.map((t) => (
                 <TabsTrigger key={t} value={t} icon={TAB_ICON[t]} className="h-7 px-2.5 text-xs [&_svg]:size-3.5">
-                  {TAB_LABEL[t]}
+                  {tr(TAB_LABEL[t])}
                 </TabsTrigger>
               ))}
             </TabsList>
           ) : (
-            <span className="px-1.5 text-xs font-semibold text-fg">Alle Ansichten</span>
+            <span className="px-1.5 text-xs font-semibold text-fg">{tr("Alle Ansichten")}</span>
           )}
           {toolbar}
         </div>

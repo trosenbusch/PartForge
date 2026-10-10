@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { Slider as SliderPrimitive } from 'radix-ui'
 import type { KeyboardEvent } from 'react'
 import { cn } from '@/lib/cn'
@@ -57,6 +58,7 @@ export function Slider({
   className,
   'aria-label': ariaLabel,
 }: SliderProps) {
+  useI18n()
   const isLog = scale === 'log'
   const safeMin = isLog ? Math.max(min, Number.MIN_VALUE) : min
   const lmin = Math.log(safeMin)

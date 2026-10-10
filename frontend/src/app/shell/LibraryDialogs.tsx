@@ -1,3 +1,6 @@
+import { localizeMessage } from '@/lib/i18n'
+import { useI18n } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { AnimatePresence, motion } from 'motion/react'
 import {
   ArrowRight,
@@ -88,12 +91,12 @@ function findDblibClash(file: string, taken: DbLibNameUse[], open: WorkspaceInfo
   const key = file.toLowerCase()
   const hits = taken.filter((t) => t.file_name.toLowerCase() === key)
   const installed = hits.find((t) => t.installed)
-  if (installed) return `„${file}“ ist in Altium bereits installiert (${installed.path}).`
+  if (installed) return tr("„{0}“ ist in Altium bereits installiert ({1}).", { "0": String(file), "1": String(installed.path) })
   if (open && baseName(open.dblib_path).toLowerCase() === key) {
-    return `Die geöffnete Bibliothek „${open.name}“ verwendet schon „${file}“.`
+    return tr("Die geöffnete Bibliothek „{0}“ verwendet schon „{1}“.", { "0": String(open.name), "1": String(file) })
   }
   const other = hits[0]
-  if (other) return `„${file}“ gibt es schon in der Bibliothek ${other.library ? `„${baseName(other.library)}“` : ''} (${other.path}).`
+  if (other) return tr("„{0}“ gibt es schon in der Bibliothek {1} ({2}).", { "0": String(file), "1": String(other.library ? `„${baseName(other.library)}“` : ''), "2": String(other.path) })
   return null
 }
 
@@ -106,7 +109,7 @@ function withBreaks(name: string): ReactNode[] {
 function folderNameFor(name: string): string {
   // oxlint-disable-next-line no-control-regex -- Steuerzeichen sind in Windows-Ordnernamen verboten
   const text = name.replace(/[<>:"/\\|?*\u0000-\u001f]+/g, ' ').trim().replace(/\.+$/, '').replace(/\s+/g, ' ')
-  return text.slice(0, 80) || DEFAULT_NAME
+  return text.slice(0, 80) || tr(DEFAULT_NAME)
 }
 
 /** Wert nach einer Pause (Tippen) übernehmen */
@@ -159,6 +162,7 @@ function isFolderConflict(error: unknown): error is ApiError {
 
 /** Beide Bibliotheks-Dialoge; gesteuert über useUi().libraryDialog. Einmal in der App rendern. */
 export function LibraryDialogs() {
+  useI18n()
   const dialog = useUi((s) => s.libraryDialog)
   const setDialog = useUi((s) => s.setLibraryDialog)
   return (
@@ -179,12 +183,12 @@ export function LibraryDialogs() {
 
 /** Ein Fehler, der vorübergehend ist (Bibliotheks-Job hält die Bibliothek): Hinweis mit „Erneut versuchen“. */
 function BusyCallout({ error, onRetry, retrying }: { error: ApiError; onRetry: () => void; retrying: boolean }) {
+  const { t: tr } = useI18n()
   return (
-    <Callout tone="warning" urgent title="Gerade beschäftigt">
+    <Callout tone="warning" urgent title={tr("Gerade beschäftigt")}>
       <span className="block">{error.message}</span>
       <Button size="sm" variant="secondary" leftIcon={<RotateCw />} loading={retrying} onClick={onRetry} className="mt-2.5">
-        Erneut versuchen
-      </Button>
+        {tr("Erneut versuchen")}</Button>
     </Callout>
   )
 }
@@ -193,6 +197,7 @@ function BusyCallout({ error, onRetry, retrying }: { error: ApiError; onRetry: (
 
 /** Formular → nach dem Anlegen mit Beispielen: Erfolgsansicht mit dem Fortschritt von „Bibliotheken schreiben“. */
 function CreateLibraryFlow() {
+  useI18n()
   const [created, setCreated] = useState<CreatedWorkspace | null>(null)
   return (
     <AnimatePresence mode="wait" initial={false}>
@@ -216,12 +221,13 @@ function CreateLibraryFlow() {
 }
 
 function CreateLibraryForm({ onCreated }: { onCreated: (info: CreatedWorkspace) => void }) {
+  const { t: tr } = useI18n()
   const navigate = useNavigate()
   const preset = useUi((s) => s.libraryDialogPath)
   const setDialog = useUi((s) => s.setLibraryDialog)
   const create = useCreateWorkspace()
   const current = useWorkspace().data
-  const [name, setName] = useState(DEFAULT_NAME)
+  const [name, setName] = useState(() => tr(DEFAULT_NAME))
   /** eigener Ordner (`null` = Vorschlag, folgt dem Namen) */
   const [ownPath, setOwnPath] = useState<string | null>(preset)
   /** eigener DbLib-Name ohne Endung (`null` = Vorschlag, folgt dem Namen) */
@@ -238,16 +244,16 @@ function CreateLibraryForm({ onCreated }: { onCreated: (info: CreatedWorkspace) 
 
   const pathError =
     submitted && !trimmedPath
-      ? `Bitte einen Ordner angeben, z. B. ${EXAMPLE_PATH}`
+      ? tr("Bitte einen Ordner angeben, z. B. {0}", { "0": tr(EXAMPLE_PATH) })
       : submitted && !isAbsoluteWindowsPath(trimmedPath)
-        ? `Bitte einen vollständigen Pfad angeben, z. B. ${EXAMPLE_PATH}`
+        ? tr("Bitte einen vollständigen Pfad angeben, z. B. {0}", { "0": tr(EXAMPLE_PATH) })
         : null
   const dblibError = !dblibName
     ? submitted
-      ? 'Bitte einen Namen für die DbLib-Datei angeben.'
+      ? tr("Bitte einen Namen für die DbLib-Datei angeben.")
       : null
     : BAD_FILE_CHARS.test(dblibName)
-      ? 'Der Name enthält Zeichen, die Windows in Dateinamen nicht erlaubt (< > : " / \\ | ? *).'
+      ? tr("Der Name enthält Zeichen, die Windows in Dateinamen nicht erlaubt (< > : \" / \\ | ? *).")
       : null
   // Altium unterscheidet Datenbankbibliotheken nur am Dateinamen – eine zweite „PartForge.DbLib“ kollidiert: bekannte
   // DbLibs (installiert bzw. anderer Bibliotheken, vom Backend) und – auch ohne diese Liste – die der geöffneten Bibliothek
@@ -280,10 +286,10 @@ function CreateLibraryForm({ onCreated }: { onCreated: (info: CreatedWorkspace) 
             return
           }
           const warning = info.warnings?.[0]
-          if (warning) toast.warning(`Bibliothek „${info.name}“ angelegt`, { description: warning, duration: 12_000 })
+          if (warning) toast.warning(tr("Bibliothek „{0}“ angelegt", { "0": String(info.name) }), { description: localizeMessage(warning), duration: 12_000 })
           else {
-            toast.success(`Bibliothek „${info.name}“ angelegt`, {
-              description: info.examples_error ?? (examples ? 'Mit Beispielinhalten – viel Spaß beim Schmieden!' : shortenPath(info.root, 56)),
+            toast.success(tr("Bibliothek „{0}“ angelegt", { "0": String(info.name) }), {
+              description: info.examples_error ?? (examples ? tr("Mit Beispielinhalten – viel Spaß beim Schmieden!") : shortenPath(info.root, 56)),
             })
           }
           setDialog(null)
@@ -300,73 +306,70 @@ function CreateLibraryForm({ onCreated }: { onCreated: (info: CreatedWorkspace) 
   }
 
   const structure = [
-    { icon: Database, name: 'PartForge.sqlite', hint: 'Datenbank (ODBC)' },
-    { icon: FileCode2, name: dblibName ? dblibFile : `…${DBLIB_EXT}`, hint: 'Altium-Datenbankbibliothek' },
-    { icon: Folder, name: 'Symbols\\', hint: 'Schaltplansymbole (.SchLib)' },
+    { icon: Database, name: 'PartForge.sqlite', hint: tr("Datenbank (ODBC)") },
+    { icon: FileCode2, name: dblibName ? dblibFile : `…${DBLIB_EXT}`, hint: tr("Altium-Datenbankbibliothek") },
+    { icon: Folder, name: 'Symbols\\', hint: tr("Schaltplansymbole (.SchLib)") },
     { icon: Folder, name: 'Footprints\\', hint: 'Footprints (.PcbLib)' },
-    { icon: Folder, name: '3D\\', hint: 'STEP-Modelle' },
-    { icon: Folder, name: 'Datasheets\\', hint: 'Datenblätter (PDF)' },
+    { icon: Folder, name: '3D\\', hint: tr("STEP-Modelle") },
+    { icon: Folder, name: 'Datasheets\\', hint: tr("Datenblätter (PDF)") },
   ]
 
   return (
     <form onSubmit={submit} className="flex min-h-0 flex-col">
       <DialogHeader
         icon={<FolderPlus />}
-        title="Neue Bibliothek anlegen"
-        description="Ein Bibliotheksordner enthält Datenbank, DbLib-Datei, Symbole, Footprints, 3D-Modelle und Datenblätter – vollständig und verschiebbar."
+        title={tr("Neue Bibliothek anlegen")}
+        description={tr("Ein Bibliotheksordner enthält Datenbank, DbLib-Datei, Symbole, Footprints, 3D-Modelle und Datenblätter – vollständig und verschiebbar.")}
       />
       <DialogBody className="grid grid-cols-[minmax(0,1fr)_220px] gap-6">
         <div className="flex flex-col gap-4">
-          <Field label="Name" required help="Name der Bibliothek in PartForge – Ordner und DbLib-Datei heißen standardmäßig genauso.">
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="z. B. Firmenbibliothek" />
+          <Field label="Name" required help={tr("Name der Bibliothek in PartForge – Ordner und DbLib-Datei heißen standardmäßig genauso.")}>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={tr("z. B. Firmenbibliothek")} />
           </Field>
           <Field
-            label="Ordner"
+            label={tr("Ordner")}
             required
             error={pathError ?? (conflict ? conflict.message : undefined)}
-            help="Der Ordner wird bei Bedarf erstellt. Pfad z. B. aus dem Explorer kopieren."
+            help={tr("Der Ordner wird bei Bedarf erstellt. Pfad z. B. aus dem Explorer kopieren.")}
           >
             <PathInput
               value={path}
               onValueChange={setOwnPath}
               prefix={<FolderOpen />}
-              placeholder={`z. B. ${EXAMPLE_PATH}`}
+              placeholder={tr("z. B. {0}", { "0": tr(EXAMPLE_PATH) })}
               browse="folder"
             />
           </Field>
           {conflict && (
             <div className="-mt-1 flex items-center gap-2">
               <Button size="sm" variant="secondary" onClick={() => setDialog('open', trimmedPath)}>
-                Stattdessen diese Bibliothek öffnen
-              </Button>
+                {tr("Stattdessen diese Bibliothek öffnen")}</Button>
             </div>
           )}
           <Field
-            label="DbLib-Datei"
+            label={tr("DbLib-Datei")}
             required
             error={dblibError ?? undefined}
-            help="Altium unterscheidet Datenbankbibliotheken am Dateinamen – jede Bibliothek braucht einen eigenen."
+            help={tr("Altium unterscheidet Datenbankbibliotheken am Dateinamen – jede Bibliothek braucht einen eigenen.")}
           >
             <Input
               value={dblib}
               onChange={(e) => setOwnDblib(e.target.value)}
               mono
               suffix={<span className="mono">{DBLIB_EXT}</span>}
-              placeholder="z. B. Firmenbibliothek"
+              placeholder={tr("z. B. Firmenbibliothek")}
             />
           </Field>
           {clash && !dblibError && (
-            <Callout tone="warning" className="-mt-1 text-xs" title="Gleichnamige DbLib">
-              {clash} Altium findet Bauteile nur über den Dateinamen der DbLib – sind beide installiert, gewinnt die zuerst
-              installierte. Bitte einen anderen Namen wählen.
-            </Callout>
+            <Callout tone="warning" className="-mt-1 text-xs" title={tr("Gleichnamige DbLib")}>
+              {clash} {tr(" Altium findet Bauteile nur über den Dateinamen der DbLib – sind beide installiert, gewinnt die zuerst installierte. Bitte einen anderen Namen wählen.")}</Callout>
           )}
           <div className="rounded-card border border-line bg-surface-2/50 p-3.5">
             <Switch
               checked={examples}
               onCheckedChange={setExamples}
-              label="Beispielinhalte anlegen"
-              description="Typische Bauteile (Widerstände, Kondensatoren, Dioden, ICs) mit fertigen Symbolen und Footprints – ideal zum Kennenlernen."
+              label={tr("Beispielinhalte anlegen")}
+              description={tr("Typische Bauteile (Widerstände, Kondensatoren, Dioden, ICs) mit fertigen Symbolen und Footprints – ideal zum Kennenlernen.")}
             />
           </div>
           {busy && <BusyCallout error={busy} onRetry={() => void run()} retrying={create.isPending} />}
@@ -379,7 +382,7 @@ function CreateLibraryForm({ onCreated }: { onCreated: (info: CreatedWorkspace) 
 
         {/* Vorschau der Ordnerstruktur */}
         <div className="flex flex-col gap-2">
-          <div className="micro-label">Wird angelegt</div>
+          <div className="micro-label">{tr("Wird angelegt")}</div>
           <div className="rounded-card border border-line bg-bg/60 p-3">
             <div className="mono mb-2 flex items-center gap-1.5 text-2xs text-fg" title={trimmedPath || undefined}>
               <FolderOpen aria-hidden className="size-3.5 shrink-0 text-accent" />
@@ -408,14 +411,11 @@ function CreateLibraryForm({ onCreated }: { onCreated: (info: CreatedWorkspace) 
       <DialogFooter>
         <span className="mr-auto flex items-center gap-1.5 text-2xs text-fg-subtle">
           <Info aria-hidden className="size-3.5" />
-          Altium greift später per ODBC auf die Datenbank zu.
-        </span>
+          {tr("Altium greift später per ODBC auf die Datenbank zu.")}</span>
         <Button variant="ghost" onClick={() => setDialog(null)}>
-          Abbrechen
-        </Button>
+          {tr("Abbrechen")}</Button>
         <Button type="submit" variant="primary" loading={create.isPending} leftIcon={<FolderPlus />}>
-          Bibliothek anlegen
-        </Button>
+          {tr("Bibliothek anlegen")}</Button>
       </DialogFooter>
     </form>
   )
@@ -441,12 +441,13 @@ function writeSummary(result: LibraryWriteResult | null | undefined): string {
   const sym = result?.symbols?.ok ?? 0
   const fp = result?.footprints?.ok ?? 0
   const files = result?.libraries?.length ?? 0
-  const parts = [sym ? plural(sym, 'Symbol', 'Symbole') : null, fp ? plural(fp, 'Footprint', 'Footprints') : null].filter(Boolean)
-  if (!parts.length) return 'Alle Symbole und Footprints sind bereits in den Bibliotheksdateien.'
-  return `${parts.join(' und ')}${files ? ` in ${plural(files, 'Bibliotheksdatei', 'Bibliotheksdateien')}` : ''} geschrieben.`
+  const parts = [sym ? plural(sym, 'Symbol', tr("Symbole")) : null, fp ? plural(fp, 'Footprint', 'Footprints') : null].filter(Boolean)
+  if (!parts.length) return tr("Alle Symbole und Footprints sind bereits in den Bibliotheksdateien.")
+  return tr("{0}{1} geschrieben.", { "0": String(parts.join(' und ')), "1": String(files ? ` in ${plural(files, tr("Bibliotheksdatei"), tr("Bibliotheksdateien"))}` : '') })
 }
 
 function LibraryCreated({ info }: { info: CreatedWorkspace }) {
+  const { t: tr } = useI18n()
   const navigate = useNavigate()
   const setDialog = useUi((s) => s.setLibraryDialog)
   const initial = info.job ?? null
@@ -469,8 +470,8 @@ function LibraryCreated({ info }: { info: CreatedWorkspace }) {
   }
   const stats = examples && examples.parts + examples.symbols + examples.footprints > 0
     ? [
-        { label: 'Bauteile', value: examples.parts },
-        { label: 'Symbole', value: examples.symbols },
+        { label: tr("Bauteile"), value: examples.parts },
+        { label: tr("Symbole"), value: examples.symbols },
         { label: 'Footprints', value: examples.footprints },
       ]
     : []
@@ -480,7 +481,7 @@ function LibraryCreated({ info }: { info: CreatedWorkspace }) {
       <DialogHeader
         tone="success"
         icon={<CircleCheck />}
-        title={`Bibliothek „${info.name}“ angelegt`}
+        title={tr("Bibliothek „{0}“ angelegt", { "0": String(info.name) })}
         description={
           <span className="mono block truncate text-xs text-fg-subtle" title={info.root}>
             {info.root}
@@ -499,19 +500,18 @@ function LibraryCreated({ info }: { info: CreatedWorkspace }) {
                 transition={{ delay: 0.06 + i * 0.04 }}
               >
                 <span className="mono text-h3 font-semibold leading-7 tracking-[-0.02em] text-fg">{formatNumber(s.value)}</span>
-                <span className="text-xs text-fg-muted">Beispiel-{s.label}</span>
+                <span className="text-xs text-fg-muted">{tr("Beispiel-")}{s.label}</span>
               </motion.div>
             ))}
           </div>
         )}
         {info.examples_error && (
-          <Callout tone="warning" title="Beispielinhalte unvollständig">
-            {info.examples_error} Die Bibliothek ist trotzdem angelegt und nutzbar.
-          </Callout>
+          <Callout tone="warning" title={tr("Beispielinhalte unvollständig")}>
+            {localizeMessage(info.examples_error)} {tr(" Die Bibliothek ist trotzdem angelegt und nutzbar.")}</Callout>
         )}
         {(info.warnings ?? []).map((warning) => (
           <Callout key={warning} tone="warning">
-            {warning}
+            {localizeMessage(warning)}
           </Callout>
         ))}
         <OdbcDriverNote onTest={() => goTo(ALTIUM_PATH, { state: altiumActionState('odbc') })} />
@@ -520,7 +520,7 @@ function LibraryCreated({ info }: { info: CreatedWorkspace }) {
           <section aria-labelledby="pf-libwrite-title" className="rounded-card border border-line bg-surface-2/40 p-4">
             <div className="mb-2.5 flex items-center gap-2">
               <span id="pf-libwrite-title" className="micro-label">
-                {job.title}
+                {localizeMessage(job.title)}
               </span>
               <span className="ml-auto text-xs tabular-nums text-fg-muted" aria-hidden>
                 {finished ? '' : formatPercent(job.progress)}
@@ -534,11 +534,11 @@ function LibraryCreated({ info }: { info: CreatedWorkspace }) {
                     indeterminate={job.progress <= 0}
                     live
                     size="sm"
-                    label={`${job.title}: ${formatPercent(job.progress)}`}
+                    label={`${localizeMessage(job.title)}: ${formatPercent(job.progress)}`}
                     hideLabel
                   />
                   <p className="mt-2 truncate text-xs text-fg-muted" aria-live="polite">
-                    {job.message || 'Symbole und Footprints werden in die Bibliotheksdateien geschrieben …'}
+                    {localizeMessage(job.message || '') || tr("Symbole und Footprints werden in die Bibliotheksdateien geschrieben …")}
                   </p>
                 </motion.div>
               ) : (
@@ -561,15 +561,15 @@ function LibraryCreated({ info }: { info: CreatedWorkspace }) {
                       {outcome?.tone === 'success'
                         ? writeSummary(job.result)
                         : outcome?.tone === 'info'
-                          ? 'Abgebrochen – noch nicht geschriebene Symbole und Footprints bleiben vorgemerkt.'
+                          ? tr("Abgebrochen – noch nicht geschriebene Symbole und Footprints bleiben vorgemerkt.")
                           : // voller Text (Toasts kürzen auf 200 Zeichen – hier ist Platz)
                             (outcome?.problem ?? outcome?.description)}
                     </p>
                     {outcome && outcome.tone !== 'success' && (
                       <p className="mt-1 text-xs text-fg-muted">
                         {needsWriter
-                          ? `Ist der ${WRITER} eingetragen (oder Altium Designer gestartet), schreibt „Bibliotheksdateien synchronisieren“ auf der Altium-Seite alles Vorgemerkte.`
-                          : 'Nachholen jederzeit über Altium › „Bibliotheksdateien synchronisieren“ (auch in der Befehlspalette).'}
+                          ? tr("Ist der {0} eingetragen (oder Altium Designer gestartet), schreibt „Bibliotheksdateien synchronisieren“ auf der Altium-Seite alles Vorgemerkte.", { "0": tr(WRITER) })
+                          : tr("Nachholen jederzeit über Altium › „Bibliotheksdateien synchronisieren“ (auch in der Befehlspalette).")}
                       </p>
                     )}
                     {needsWriter && (
@@ -580,7 +580,7 @@ function LibraryCreated({ info }: { info: CreatedWorkspace }) {
                         className="mt-2.5"
                         onClick={() => goTo(SETTINGS_PLACE.writer.to)}
                       >
-                        {WRITER} einrichten
+                        {tr("{0} einrichten", { 0: tr(WRITER) })}
                       </Button>
                     )}
                   </div>
@@ -594,12 +594,10 @@ function LibraryCreated({ info }: { info: CreatedWorkspace }) {
         {!finished && (
           <span className="mr-auto flex items-center gap-1.5 text-2xs text-fg-subtle">
             <Info aria-hidden className="size-3.5" />
-            Läuft im Hintergrund weiter, auch wenn Sie schließen.
-          </span>
+            {tr("Läuft im Hintergrund weiter, auch wenn Sie schließen.")}</span>
         )}
         <Button variant="primary" rightIcon={<ArrowRight />} onClick={close}>
-          Zur Übersicht
-        </Button>
+          {tr("Zur Übersicht")}</Button>
       </DialogFooter>
     </>
   )
@@ -614,6 +612,7 @@ const SQLITE_ODBC_DOWNLOAD = 'http://www.ch-werner.de/sqliteodbc/'
  * Download (Bezugsquelle des Backends) und „ODBC testen“ (Altium-Seite: Bericht mit Hilfe zum Treiber).
  */
 function OdbcDriverNote({ onTest }: { onTest: () => void }) {
+  const { t: tr } = useI18n()
   const odbc = odbcDriverStatus(useAltiumStatus().data)
   if (!odbc || odbc.installed !== false) return null
   const sqlite = odbc.kind ? odbc.kind === 'sqlite' : /sqlite/i.test(odbc.driver)
@@ -625,12 +624,9 @@ function OdbcDriverNote({ onTest }: { onTest: () => void }) {
     // keine gültige Adresse – dann der Text selbst
   }
   return (
-    <Callout tone="warning" title={`Altium braucht noch den ODBC-Treiber „${odbc.driver}“`}>
-      Altium liest die Bibliothek über ODBC – ohne den 64-Bit-Treiber findet Altium keine Bauteile, auch wenn die
-      Bibliothek fertig ist.{' '}
-      {sqlite ? 'Den SQLite-ODBC-Treiber installieren (sqliteodbc_w64.exe)' : 'Den 64-Bit-Treiber psqlODBC installieren'},
-      danach „ODBC testen“.
-      <span className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
+    <Callout tone="warning" title={tr("Altium braucht noch den ODBC-Treiber „{0}“", { "0": String(odbc.driver) })}>
+      {tr("Altium liest die Bibliothek über ODBC – ohne den 64-Bit-Treiber findet Altium keine Bauteile, auch wenn die Bibliothek fertig ist.")}{' '}
+      {sqlite ? tr("Den SQLite-ODBC-Treiber installieren (sqliteodbc_w64.exe)") : tr("Den 64-Bit-Treiber psqlODBC installieren")}{tr(", danach „ODBC testen“.")}<span className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
         {href && (
           <a
             href={href}
@@ -638,20 +634,20 @@ function OdbcDriverNote({ onTest }: { onTest: () => void }) {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 rounded-sm font-medium text-accent-text underline-offset-2 outline-none hover:underline focus-ring"
           >
-            {sqlite ? 'SQLite-ODBC-Treiber' : 'ODBC-Treiber'} herunterladen{host ? ` (${host})` : ''}
+            {sqlite ? tr("SQLite-ODBC-Treiber") : tr("ODBC-Treiber")} herunterladen{host ? ` (${host})` : ''}
             <ExternalLink aria-hidden className="size-3" />
-            <span className="sr-only"> (öffnet im Browser)</span>
+            <span className="sr-only"> {tr(" (öffnet im Browser)")}</span>
           </a>
         )}
         <Button variant="link" size="xs" rightIcon={<ArrowRight />} onClick={onTest}>
-          ODBC testen
-        </Button>
+          {tr("ODBC testen")}</Button>
       </span>
     </Callout>
   )
 }
 
 function JobOutcomeIcon({ tone }: { tone: 'success' | 'warning' | 'error' | 'info' }) {
+  useI18n()
   const cls = 'mt-0.5 size-4 shrink-0'
   if (tone === 'success') return <Check aria-hidden className={cn(cls, 'text-success')} />
   if (tone === 'warning') return <TriangleAlert aria-hidden className={cn(cls, 'text-warning')} />
@@ -662,6 +658,7 @@ function JobOutcomeIcon({ tone }: { tone: 'success' | 'warning' | 'error' | 'inf
 // --------------------------------------------------------------------------- Bibliothek öffnen
 
 function OpenLibraryForm() {
+  const { t: tr } = useI18n()
   const navigate = useNavigate()
   const preset = useUi((s) => s.libraryDialogPath)
   const setDialog = useUi((s) => s.setLibraryDialog)
@@ -685,7 +682,7 @@ function OpenLibraryForm() {
     setLastTarget(trimmed)
     open.mutate(trimmed, {
       onSuccess: (info) => {
-        toast.success(`„${info.name}“ geöffnet`, { description: note ?? shortenPath(info.root, 56) })
+        toast.success(tr("„{0}“ geöffnet", { "0": String(info.name) }), { description: note ?? shortenPath(info.root, 56) })
         setDialog(null)
         navigate('/')
       },
@@ -694,8 +691,8 @@ function OpenLibraryForm() {
 
   const fieldError = missing
     ? hasRecent
-      ? 'Bitte den Ordner einer Bibliothek angeben – oder unten eine zuletzt verwendete wählen.'
-      : 'Bitte den Ordner einer Bibliothek angeben.'
+      ? tr("Bitte den Ordner einer Bibliothek angeben – oder unten eine zuletzt verwendete wählen.")
+      : tr("Bitte den Ordner einer Bibliothek angeben.")
     : notFound?.message
 
   return (
@@ -712,14 +709,14 @@ function OpenLibraryForm() {
     >
       <DialogHeader
         icon={<FolderOpen />}
-        title="Bibliothek öffnen"
-        description="Ordner einer bestehenden PartForge-Bibliothek (enthält partforge.json)."
+        title={tr("Bibliothek öffnen")}
+        description={tr("Ordner einer bestehenden PartForge-Bibliothek (enthält partforge.json).")}
       />
       <DialogBody className="flex flex-col gap-4">
-        <Field label="Ordner" required error={fieldError}>
+        <Field label={tr("Ordner")} required error={fieldError}>
           <PathInput
             value={path}
-            placeholder={`z. B. ${EXAMPLE_PATH}`}
+            placeholder={tr("z. B. {0}", { "0": tr(EXAMPLE_PATH) })}
             onValueChange={(v) => {
               setPath(v)
               if (v.trim()) setMissing(false)
@@ -736,8 +733,7 @@ function OpenLibraryForm() {
               leftIcon={<FolderPlus />}
               onClick={() => setDialog('create', lastTarget ?? path.trim())}
             >
-              Hier eine neue Bibliothek anlegen
-            </Button>
+              {tr("Hier eine neue Bibliothek anlegen")}</Button>
           </div>
         )}
         {busy && (
@@ -750,7 +746,7 @@ function OpenLibraryForm() {
         )}
         {(recent.data?.length ?? 0) > 0 && (
           <div className="flex flex-col gap-1.5">
-            <div className="micro-label">Zuletzt verwendet</div>
+            <div className="micro-label">{tr("Zuletzt verwendet")}</div>
             <div className="flex max-h-56 flex-col gap-1 overflow-y-auto">
               {recent.data?.map((r) => (
                 <button
@@ -768,7 +764,7 @@ function OpenLibraryForm() {
                     <span className="block truncate text-ui font-medium text-fg">{r.name ?? baseName(r.path)}</span>
                     <span className="mono block truncate text-2xs text-fg-subtle">{r.path}</span>
                   </span>
-                  {!r.exists && <span className="shrink-0 text-2xs text-warning-text">nicht gefunden</span>}
+                  {!r.exists && <span className="shrink-0 text-2xs text-warning-text">{tr("nicht gefunden")}</span>}
                 </button>
               ))}
             </div>
@@ -777,11 +773,9 @@ function OpenLibraryForm() {
       </DialogBody>
       <DialogFooter>
         <Button variant="ghost" onClick={() => setDialog(null)}>
-          Abbrechen
-        </Button>
+          {tr("Abbrechen")}</Button>
         <Button type="submit" variant="primary" loading={open.isPending} leftIcon={<FolderOpen />}>
-          Öffnen
-        </Button>
+          {tr("Öffnen")}</Button>
       </DialogFooter>
     </form>
   )

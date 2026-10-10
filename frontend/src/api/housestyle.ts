@@ -1,16 +1,5 @@
-/**
- * Stapelbearbeitung: Symbole und Footprints an den Hausstil angleichen (Backend `partforge/altium/conform.py`,
- * `housestyle.py`, Routen `routes_housestyle.py`) und „Hausstil aus Beispielbibliothek übernehmen“ (`learnstyle.py`).
- *
- *   const rules = useHousestyleRules()                 // zuletzt in dieser Bibliothek verwendete Regeln (sonst Standard)
- *   const { job } = await housestyleApi.check({ selection, rules })   // Job „Hausstil prüfen“ → ConformReport
- *   const { job } = await housestyleApi.apply({ selection, rules })   // Job libraries.conform → ConformApplyResult
- *   const undo = useHousestyleUndo()                   // letzte Stapelbearbeitung, die sich rückgängig machen lässt
- *   const proposal = await housestyleApi.learn([pfad]) // Vorschlag für den Hausstil aus einer Beispielbibliothek
- *
- * Alles verlustfrei auf Datensatzebene: was eine Regel nicht betrifft, bleibt Byte für Byte erhalten; Namen ändern sich
- * nie. Jede Datei wird vorher nach `Backups\lib` gesichert.
- */
+import { useI18n } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { api } from './client'
 import type { Job } from './system'
@@ -98,37 +87,37 @@ export interface ConformUndoResult {
 
 /** Regeln mit deutscher Bezeichnung (wie `conform.RULE_LABELS`) */
 export const RULE_LABELS: Record<string, string> = {
-  fonts: 'Schriften',
-  pin_length: 'Pinlängen',
-  prefix: 'Bezeichner-Präfix',
-  colors: 'Farben',
-  layers: 'Lagen',
-  widths: 'Linienbreiten',
-  texts: 'Texte',
-  add_texts: 'Fehlende Texte',
-  add_center: 'Bauteilmitte',
-  header: 'Lagen-Kopf',
+  get fonts() { return tr("Schriften") },
+  get pin_length() { return tr("Pinlängen") },
+  get prefix() { return tr("Bezeichner-Präfix") },
+  get colors() { return tr("Farben") },
+  get layers() { return tr("Lagen") },
+  get widths() { return tr("Linienbreiten") },
+  get texts() { return tr("Texte") },
+  get add_texts() { return tr("Fehlende Texte") },
+  get add_center() { return tr("Bauteilmitte") },
+  get header() { return tr("Lagen-Kopf") },
 }
 
 /** Rollen der Footprint-Lagen (wie `conform.ROLE_LABELS`) */
 export const ROLE_LABELS: Record<LayerRoleName, string> = {
-  silkscreen: 'Bestückungsdruck',
-  assembly: 'Bestückungszeichnung',
-  designator: 'Bezeichner',
-  comment: 'Wert',
+  get silkscreen() { return tr("Bestückungsdruck") },
+  get assembly() { return tr("Bestückungszeichnung") },
+  get designator() { return tr("Bezeichner") },
+  get comment() { return tr("Wert") },
   courtyard: 'Courtyard',
-  component_center: 'Bauteilmitte',
-  component_outline: 'Bauteilumriss',
-  body3d: '3D-Körper',
-  keep: 'unverändert',
+  get component_center() { return tr("Bauteilmitte") },
+  get component_outline() { return tr("Bauteilumriss") },
+  get body3d() { return tr("3D-Körper") },
+  get keep() { return tr("unverändert") },
 }
 
 /** Woher die Rolle einer Quell-Lage stammt */
 export const ROLE_REASON_LABELS: Record<ConformLayerRole['reason'], string> = {
   kind: 'Lagentyp',
   name: 'Lagenname',
-  content: 'Inhalt',
-  manual: 'von Hand',
+  get content() { return tr("Inhalt") },
+  get manual() { return tr("von Hand") },
   default: '–',
 }
 
@@ -182,8 +171,9 @@ export function useHousestyleUndo(enabled = true) {
 
 /** Hausstil aus Beispielbibliotheken ableiten (nur Vorschlag – gespeichert wird über die Einstellungen) */
 export function useLearnStyle() {
+  const { t: tr } = useI18n()
   return useMutation({
     mutationFn: (paths: string[]) => housestyleApi.learn(paths),
-    meta: { errorTitle: 'Beispielbibliothek konnte nicht ausgewertet werden' },
+    meta: { errorTitle: tr("Beispielbibliothek konnte nicht ausgewertet werden") },
   })
 }

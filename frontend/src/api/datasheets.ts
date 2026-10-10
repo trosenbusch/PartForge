@@ -1,23 +1,4 @@
-/**
- * Datenblatt-Import (Claude): Upload, URL-Import, Datenblattsuche, Seitenbilder, Kostenschätzung, Analyse-Job,
- * Extraktion (lesen/korrigieren), Vorschlag (Trockenlauf) und Übernahme (Job) sowie KI-Status und Verbindungstest.
- *
- *   const list = useDatasheets()                          // GET  /api/datasheets
- *   const ds = useDatasheet(id)                           // GET  /api/datasheets/{id}
- *   const ex = useExtraction(id)                          // GET  /api/datasheets/{id}/extraction
- *   const pr = useProposal(id, choices)                   // POST /api/datasheets/{id}/proposal (entprellt aufrufen)
- *   const est = useCostEstimate(id, { vision: 'auto' })   // POST /api/datasheets/{id}/estimate (keine Claude-Anfrage)
- *   const { job } = await datasheetsApi.extract(id, opts) // POST /api/datasheets/{id}/extract → Job
- *   const { job } = await datasheetsApi.find({ query })   // POST /api/datasheets/find → Job „datasheet-find“
- *   const src = usePackageSources(id, 'RGY')              // GET  /api/datasheets/{id}/package-sources (Gehäuse anderer
- *   const merge = useMergePackage()                       //      Datenblätter) · POST …/merge-package · …/unmerge-package
- *   <img src={datasheetPageUrl(id, 3, 40)} />             // Seitenbild (PNG, serverseitig gecacht)
- *
- * Kosten: Jede bezahlte Claude-Anfrage steht in `runs` (auch fehlgeschlagene), `cost_usd` ist die Summe je
- * Datenblatt. Der Schlüssel verlässt das Backend nie – `/api/ai/status` meldet nur, ob und woher er kommt
- * (`key_source` = env | stored | file | replay). Ist Claude nicht nutzbar, antworten die KI-Endpunkte mit 503
- * `{ code, message }` (`AiErrorCode`) – einordnen mit `classifyAiError` aus `@/api/system`.
- */
+import { useI18n } from '@/lib/i18n'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type DownloadResult } from './client'
 import type { AiProblemCode, Job } from './system'
@@ -435,13 +416,14 @@ export function useLibraryFootprintNames(enabled = true) {
  * Vorschlag, Detail und Liste laden danach neu.
  */
 export function useSaveExtraction(id: string) {
+  const { t: tr } = useI18n()
   const qc = useQueryClient()
   const mutationKey = ['datasheets', 'save-extraction', id] as const
   return useMutation({
     mutationKey,
     scope: { id: `datasheets:save-extraction:${id}` },
     mutationFn: (data: ExtractionData) => datasheetsApi.saveExtraction(id, data),
-    meta: { errorTitle: 'Korrektur konnte nicht gespeichert werden' },
+    meta: { errorTitle: tr("Korrektur konnte nicht gespeichert werden") },
     onSuccess: (out) => {
       if (qc.isMutating({ mutationKey }) <= 1) qc.setQueryData(datasheetKeys.extraction(id), out)
       void qc.invalidateQueries({ queryKey: datasheetKeys.proposalAll(id) })
@@ -486,28 +468,31 @@ function afterPackageChange(qc: ReturnType<typeof useQueryClient>, id: string, o
 
 /** Gehäuse aus einem anderen Datenblatt übernehmen – `id` ist das Datenblatt, das die Maße bekommt. */
 export function useMergePackage() {
+  const { t: tr } = useI18n()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, ...input }: MergePackageInput & { id: string }) => datasheetsApi.mergePackage(id, input),
-    meta: { errorTitle: 'Gehäuse konnte nicht übernommen werden' },
+    meta: { errorTitle: tr("Gehäuse konnte nicht übernommen werden") },
     onSuccess: (out, { id }) => afterPackageChange(qc, id, out),
   })
 }
 
 export function useUnmergePackage(id: string) {
+  const { t: tr } = useI18n()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (pkg: string) => datasheetsApi.unmergePackage(id, pkg),
-    meta: { errorTitle: 'Übernahme konnte nicht aufgehoben werden' },
+    meta: { errorTitle: tr("Übernahme konnte nicht aufgehoben werden") },
     onSuccess: (out) => afterPackageChange(qc, id, out),
   })
 }
 
 export function useDeleteDatasheet() {
+  const { t: tr } = useI18n()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, deleteFile = true }: { id: string; deleteFile?: boolean }) => datasheetsApi.remove(id, deleteFile),
-    meta: { errorTitle: 'Datenblatt konnte nicht gelöscht werden' },
+    meta: { errorTitle: tr("Datenblatt konnte nicht gelöscht werden") },
     onSuccess: (_out, { id }) => {
       qc.removeQueries({ queryKey: datasheetKeys.detail(id) })
       qc.removeQueries({ queryKey: datasheetKeys.extraction(id) })

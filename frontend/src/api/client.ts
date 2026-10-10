@@ -1,12 +1,4 @@
-/**
- * Fetch-Wrapper für das PartForge-Backend.
- *
- * - Sitzungstoken aus <meta name="partforge-token"> (vom Backend injiziert), im Vite-Dev-Server „dev“.
- * - JSON rein/raus, Query-Parameter, AbortSignal, FormData-Uploads.
- * - Fehler werden als {@link ApiError} geworfen; `message` enthält den deutschen `detail`-Text des Backends.
- * - Globale Hooks für 401 (Sitzung ungültig) und 409 (Konflikt, z. B. keine Bibliothek geöffnet).
- */
-
+import { t as tr, localizeMessage } from '@/lib/i18n'
 export const TOKEN_HEADER = 'X-PartForge-Token'
 
 function readToken(): string {
@@ -94,10 +86,10 @@ export function isApiError(error: unknown): error is ApiError {
 }
 
 /** Fehlertext für die Oberfläche (beliebiger Fehler). */
-export function errorMessage(error: unknown, fallback = 'Unbekannter Fehler'): string {
-  if (error instanceof ApiError) return error.message
-  if (error instanceof Error && error.message) return error.message
-  if (typeof error === 'string') return error
+export function errorMessage(error: unknown, fallback = tr("Unbekannter Fehler")): string {
+  if (error instanceof ApiError) return cleanErrorText(error.message)
+  if (error instanceof Error && error.message) return cleanErrorText(error.message)
+  if (typeof error === 'string') return cleanErrorText(error)
   return fallback
 }
 
@@ -107,19 +99,19 @@ const ERROR_CLASS_PREFIX =
 
 /** Deutsche Texte der häufigsten Betriebssystemfehler (`errno`) in Python-Meldungen „[Errno 13] Permission denied: '…'“ */
 const ERRNO_TEXT: Record<number, string> = {
-  2: 'Datei oder Ordner nicht gefunden',
-  5: 'Zugriff verweigert',
-  13: 'Zugriff verweigert – die Datei ist von einem anderen Programm geöffnet oder schreibgeschützt',
-  17: 'Datei oder Ordner gibt es bereits',
-  20: 'Kein Ordner',
-  21: 'Ist ein Ordner',
-  22: 'Ungültiger Name oder Pfad',
-  24: 'Zu viele geöffnete Dateien',
-  28: 'Kein Speicherplatz mehr auf dem Datenträger',
-  30: 'Datenträger ist schreibgeschützt',
-  32: 'Die Datei wird von einem anderen Programm verwendet',
-  36: 'Dateiname zu lang',
-  39: 'Ordner ist nicht leer',
+  get 2() { return tr("Datei oder Ordner nicht gefunden") },
+  get 5() { return tr("Zugriff verweigert") },
+  get 13() { return tr("Zugriff verweigert – die Datei ist von einem anderen Programm geöffnet oder schreibgeschützt") },
+  get 17() { return tr("Datei oder Ordner gibt es bereits") },
+  get 20() { return tr("Kein Ordner") },
+  get 21() { return tr("Ist ein Ordner") },
+  get 22() { return tr("Ungültiger Name oder Pfad") },
+  get 24() { return tr("Zu viele geöffnete Dateien") },
+  get 28() { return tr("Kein Speicherplatz mehr auf dem Datenträger") },
+  get 30() { return tr("Datenträger ist schreibgeschützt") },
+  get 32() { return tr("Die Datei wird von einem anderen Programm verwendet") },
+  get 36() { return tr("Dateiname zu lang") },
+  get 39() { return tr("Ordner ist nicht leer") },
 }
 
 /** Pfad aus einer Python-Darstellung ('C:\\\\Projekte\\\\x') lesbar machen: einfache Backslashes, ohne Anführungszeichen */
@@ -156,23 +148,23 @@ function cleanOsErrors(text: string): string {
  * Jobs/Fremdfehler tragen das noch. „Interner Fehler (KeyError): …“ bleibt (Hinweis für Fehlerberichte).
  */
 export function cleanErrorText(text: string): string {
-  return cleanOsErrors(text.replace(ERROR_CLASS_PREFIX, ''))
+  return localizeMessage(cleanOsErrors(text.replace(ERROR_CLASS_PREFIX, '')))
 }
 
 const STATUS_TEXT: Record<number, string> = {
-  0: 'Das PartForge-Backend ist nicht erreichbar. Läuft die Anwendung noch?',
-  408: 'Zeitüberschreitung: Das Backend hat nicht rechtzeitig geantwortet. Bitte erneut versuchen.',
-  400: 'Ungültige Anfrage.',
-  401: 'Die Sitzung ist ungültig. Bitte PartForge neu starten.',
-  403: 'Keine Berechtigung für diese Aktion.',
-  404: 'Nicht gefunden.',
-  409: 'Die Aktion steht im Konflikt mit dem aktuellen Zustand.',
-  413: 'Die Datei ist zu groß.',
-  422: 'Ungültige Eingabe.',
-  500: 'Interner Fehler im Backend. Details stehen im Protokoll (partforge.log).',
-  502: 'Das Backend antwortet nicht.',
-  503: 'Der Dienst ist vorübergehend nicht verfügbar.',
-  504: 'Zeitüberschreitung beim Backend.',
+  get 0() { return tr("Das PartForge-Backend ist nicht erreichbar. Läuft die Anwendung noch?") },
+  get 408() { return tr("Zeitüberschreitung: Das Backend hat nicht rechtzeitig geantwortet. Bitte erneut versuchen.") },
+  get 400() { return tr("Ungültige Anfrage.") },
+  get 401() { return tr("Die Sitzung ist ungültig. Bitte PartForge neu starten.") },
+  get 403() { return tr("Keine Berechtigung für diese Aktion.") },
+  get 404() { return tr("Nicht gefunden.") },
+  get 409() { return tr("Die Aktion steht im Konflikt mit dem aktuellen Zustand.") },
+  get 413() { return tr("Die Datei ist zu groß.") },
+  get 422() { return tr("Ungültige Eingabe.") },
+  get 500() { return tr("Interner Fehler im Backend. Details stehen im Protokoll (partforge.log).") },
+  get 502() { return tr("Das Backend antwortet nicht.") },
+  get 503() { return tr("Der Dienst ist vorübergehend nicht verfügbar.") },
+  get 504() { return tr("Zeitüberschreitung beim Backend.") },
 }
 
 const PYDANTIC_MESSAGES: [RegExp, string][] = [
@@ -187,7 +179,7 @@ const PYDANTIC_MESSAGES: [RegExp, string][] = [
 
 function translatePydantic(msg: string): string {
   for (const [re, de] of PYDANTIC_MESSAGES) {
-    if (re.test(msg)) return msg.replace(re, de)
+    if (re.test(msg)) return msg.replace(re, tr(de))
   }
   return msg
 }
@@ -211,7 +203,7 @@ export function detailToMessage(detail: unknown, status: number): string {
     if (typeof rec.message === 'string') return rec.message
     if (typeof rec.detail === 'string') return rec.detail
   }
-  return STATUS_TEXT[status] ?? `Fehler ${status}`
+  return STATUS_TEXT[status] ?? tr("Fehler {0}", { "0": String(status) })
 }
 
 // --------------------------------------------------------------------------- globale Hooks

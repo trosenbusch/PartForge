@@ -1,3 +1,4 @@
+import { t as tr } from '@/lib/i18n'
 /**
  * Aufbau einer Teilenummer: „CRCW0603 10K0 F K EA“ → Segmente mit Bedeutung (Baugröße, Wert, Toleranz …).
  * Die Karten bekommen die Segmente vom Backend (`TemplateSummary.example.segments`); hier entstehen sie für gelesene
@@ -30,7 +31,7 @@ const SHORT: Record<string, string> = {
 
 /** Kurzform einer Variablenbezeichnung */
 export function shortLabel(name: string, label: string): string {
-  if (SHORT[name]) return SHORT[name]
+  if (SHORT[name]) return tr(SHORT[name])
   return label.length > 7 ? `${label.slice(0, 5)}.` : label
 }
 
@@ -51,16 +52,16 @@ export function splitMpn(t: SeriesTemplate, d: Pick<DecodedMpn, 'mpn' | 'size' |
   const describe = (name: string, text: string): MpnSegment => {
     if (name === 'size') {
       const info = d.size ? sizeInfo(t, d.size) : null
-      return { text, kind: 'size', name, label: 'Baugröße', short: 'Größe', meaning: info ? info.label : d.size }
+      return { text, kind: 'size', name, label: tr("Baugröße"), short: tr("Größe"), meaning: info ? info.label : d.size }
     }
     const v = variable(t, name)
     const o = v ? findOptionByCode(v, text, d.size ?? null) : undefined
-    const label = v?.label ?? name
-    return { text, kind: 'code', name, label, short: shortLabel(name, label), meaning: o ? optionText(o) : null }
+    const label = tr(v?.label ?? name)
+    return { text, kind: 'code', name, label, short: shortLabel(name, label), meaning: o ? optionText(o, t.builtin) : null }
   }
   const expected = (seg: (typeof segments)[number]): { text: string; seg: MpnSegment } => {
     if (seg.literal !== undefined) {
-      return { text: seg.literal, seg: { text: seg.literal, kind: 'literal', name: null, label: 'fest', short: '', meaning: null } }
+      return { text: seg.literal, seg: { text: seg.literal, kind: 'literal', name: null, label: tr("fest"), short: '', meaning: null } }
     }
     const name = seg.variable ?? ''
     const text = name === 'size' ? sizeCode(t, d.size ?? null) : (d.codes[name] ?? '')
@@ -89,8 +90,8 @@ export function splitMpn(t: SeriesTemplate, d: Pick<DecodedMpn, 'mpn' | 'size' |
     text: valueText,
     kind: 'value',
     name: 'value',
-    label: d.jumper ? 'Brücke' : valueLabelFor(t),
-    short: d.jumper ? 'Brücke' : 'Wert',
+    label: d.jumper ? tr("Brücke") : valueLabelFor(t),
+    short: d.jumper ? tr("Brücke") : tr("Wert"),
     meaning: d.jumper ? '0 Ω' : d.value_text ? formatQuantityText(d.value_text) : null,
   }
   return [...left, value, ...right].filter((s) => s.text.length > 0)

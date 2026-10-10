@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import type { ReactNode } from 'react'
 import { Tooltip } from '@/components/ui'
 import { cn } from '@/lib/cn'
@@ -23,6 +24,7 @@ export function TipButton({
   side?: 'top' | 'right' | 'bottom' | 'left'
   navItem?: boolean
 }) {
+  useI18n()
   return (
     <Tooltip content={tip} side={side}>
       <button

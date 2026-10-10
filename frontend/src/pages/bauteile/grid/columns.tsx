@@ -1,3 +1,4 @@
+import { metadataLabel, t } from '@/lib/i18n'
 /**
  * Spalten der Bauteiltabelle aus den Felddefinitionen der Kategorie: Beschriftung, Breite, Darstellung je Feldart
  * (Messwerte rechtsbündig in Mono, Auswahlwerte als Badge, Links, Symbol-/Footprint-Verweise mit Vorschau,
@@ -73,7 +74,7 @@ function rendererFor(field: FieldDef, ctx: ColumnContext): Pick<ColDef<PartRow>,
           !p.value ? emptyText(p) : isUnreadable(field, String(p.value)) ? String(p.value) : formatQuantityText(String(p.value)),
       }
     case 'enum':
-      return only(EnumBadgeCell, { mono: isMono(field) || col === 'Size' })
+      return only(EnumBadgeCell, { mono: isMono(field) || col === 'Size', labels: Object.fromEntries(field.options.map((value) => [value, metadataLabel(value)])) })
     case 'bool':
       return only(BoolCell)
     case 'url':
@@ -88,15 +89,15 @@ function rendererFor(field: FieldDef, ctx: ColumnContext): Pick<ColDef<PartRow>,
 }
 
 function headerTooltip(field: FieldDef): string {
-  const parts = [field.label]
-  if (field.column !== field.label) parts.push(`Altium-Parameter „${field.column}“`)
-  parts.push(field.unit ? `${KIND_LABEL[field.kind]} in ${field.unit}` : KIND_LABEL[field.kind])
-  if (field.required) parts.push('Pflichtfeld')
-  if (field.help) parts.push(field.help)
+  const parts = [metadataLabel(field.label, t)]
+  if (field.column !== field.label) parts.push(t("Altium-Parameter „{1}“", { 1: field.column }))
+  parts.push(field.unit ? t("{1} in {2}", { 1: KIND_LABEL[field.kind], 2: field.unit }) : KIND_LABEL[field.kind])
+  if (field.required) parts.push(t("Pflichtfeld"))
+  if (field.help) parts.push(metadataLabel(field.help, t))
   return parts.join(' · ')
 }
 
-export function buildColumnDefs(category: CategoryDef, ctx: ColumnContext): ColDef<PartRow>[] {
+export function buildColumnDefs(category: CategoryDef, ctx: ColumnContext, translate = t): ColDef<PartRow>[] {
   return columnOrder(category).map((field) => {
     const col = field.column
     const numeric = field.kind === 'quantity' || field.kind === 'int'
@@ -110,7 +111,7 @@ export function buildColumnDefs(category: CategoryDef, ctx: ColumnContext): ColD
     const key = (p: CellClassParams<PartRow>) => (p.data ? String(p.data[PN] ?? '') : '')
     const def: ColDef<PartRow> = {
       colId: col,
-      headerName: field.label,
+      headerName: metadataLabel(field.label, translate),
       headerTooltip: headerTooltip(field),
       valueGetter: (p) => (p.data ? (p.data[col] ?? null) : undefined),
       valueSetter: (p) => {
@@ -148,9 +149,9 @@ export function buildColumnDefs(category: CategoryDef, ctx: ColumnContext): ColD
       tooltip: (p) => {
         if (!p.data) return undefined
         const err = ctx.cellError(String(p.data[PN] ?? ''), col)
-        if (err) return `Nicht gespeichert: ${err}`
+        if (err) return t("Nicht gespeichert: {1}", { 1: err })
         if (typeof p.value === 'string' && isUnreadable(field, p.value)) {
-          return `„${p.value}“ ist als ${KIND_LABEL[field.kind]}${field.unit ? ` in ${field.unit}` : ''} nicht lesbar – zählt beim Sortieren und Filtern nicht. F2 bearbeitet.`
+          return t("„{1}“ ist als {2}{3} nicht lesbar – zählt beim Sortieren und Filtern nicht. F2 bearbeitet.", { 1: p.value, 2: KIND_LABEL[field.kind], 3: field.unit ? t(" in {1}", { 1: field.unit }) : '' })
         }
         // lange Texte (Beschreibung) vollständig zeigen
         const v = p.value === null || p.value === undefined ? '' : String(p.value)

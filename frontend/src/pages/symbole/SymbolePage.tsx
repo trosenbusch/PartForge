@@ -1,3 +1,4 @@
+import { t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Modul „Symbole“ (/symbole): Ansichten „Generator“ (Standard) und „Bibliothek“.
  *
@@ -33,6 +34,7 @@ const fold = (s: string) =>
     .replace(/[̀-ͯ]/g, '')
 
 export default function SymbolePage() {
+  useI18n()
   const [params, setParams] = useSearchParams()
   const view: View = params.get('ansicht') === 'bibliothek' ? 'library' : 'generator'
   const { resolvedTheme } = useTheme()
@@ -74,9 +76,9 @@ export default function SymbolePage() {
     const hit = kindList?.find((k) => k.key === art || fold(k.label) === fold(art))
     if (hit) useGenerator.getState().setKind(hit.key)
     else {
-      toast.warning('Symboltyp nicht gefunden', {
+      toast.warning(tr('Symboltyp nicht gefunden'), {
         id: 'symbole-art',
-        description: `„${art}“ gibt es nicht – der Generator bleibt beim bisherigen Typ. Typen lassen sich links durchsuchen.`,
+        description: tr("„{value0}“ gibt es nicht – der Generator bleibt beim bisherigen Typ. Typen lassen sich links durchsuchen.", { value0: String(art) }),
       })
     }
     setParams(
@@ -93,9 +95,9 @@ export default function SymbolePage() {
   // Strg+S in der Bibliothek: nichts zu speichern (Hinweis). Im Generator speichert der Befehl „symbols.save“;
   // den Browser-Dialog „Seite speichern unter“ fängt die Shell immer ab.
   const nothingToSave = () => {
-    toast.info('Nichts zu speichern', {
+    toast.info(tr('Nichts zu speichern'), {
       id: 'symbole-save',
-      description: 'Die Bibliothek ist immer aktuell. Neue und geänderte Symbole speichert der Generator (Strg+S).',
+      description: tr('Die Bibliothek ist immer aktuell. Neue und geänderte Symbole speichert der Generator (Strg+S).'),
     })
   }
   useSaveHandler(nothingToSave, { enabled: view === 'library', saveAs: nothingToSave })
@@ -103,7 +105,7 @@ export default function SymbolePage() {
   const onEdit = useCallback(
     (result: OpenResult) => {
       setView('generator')
-      if (result.note) toast.info(result.noteTitle ?? 'Im Generator geöffnet', { id: 'symbole-edit', description: result.note })
+      if (result.note) toast.info(result.noteTitle ?? tr('Im Generator geöffnet'), { id: 'symbole-edit', description: result.note })
     },
     [setView],
   )
@@ -111,8 +113,8 @@ export default function SymbolePage() {
   useRegisterCommands([
     {
       id: 'symbols.view.generator',
-      title: 'Symbol-Generator',
-      subtitle: 'Standardsymbole und IC-Symbole erzeugen',
+      title: tr('Symbol-Generator'),
+      subtitle: tr('Standardsymbole und IC-Symbole erzeugen'),
       group: 'Navigation',
       icon: Hammer,
       keywords: ['symbole', 'generator', 'erzeugen'],
@@ -120,8 +122,8 @@ export default function SymbolePage() {
     },
     {
       id: 'symbols.view.library',
-      title: 'Symbolbibliothek',
-      subtitle: 'Gespeicherte Symbole durchsuchen',
+      title: tr('Symbolbibliothek'),
+      subtitle: tr('Gespeicherte Symbole durchsuchen'),
       group: 'Navigation',
       icon: Library,
       keywords: ['symbole', 'bibliothek', 'schlib'],
@@ -137,13 +139,13 @@ export default function SymbolePage() {
       const terms = fold(q).split(/\s+/).filter(Boolean)
       return (kinds.data ?? [])
         .filter((k) => {
-          const hay = fold([k.label, k.key, k.default_name, k.group].join(' '))
+          const hay = fold([k.label, tr(k.label), k.key, k.default_name, k.group, tr(k.group)].join(' '))
           return terms.every((t) => hay.includes(t))
         })
         .slice(0, 6)
         .map((k) => ({
           id: `symbol-kind-${k.key}`,
-          title: k.label,
+          title: tr(k.label),
           mono: false,
           subtitle: k.default_name,
           meta: k.group,
@@ -157,15 +159,15 @@ export default function SymbolePage() {
   const kindLabel = kinds.data?.find((k) => k.key === kindKey)?.label
   let subtitle: string | undefined
   if (view === 'library') {
-    if (libCount !== undefined) subtitle = `${plural(libCount, 'Symbol', 'Symbole')} in der Bibliothek`
-    else if (library.error) subtitle = 'Bibliothek nicht geladen'
-    else subtitle = 'Bibliothek wird geladen …'
-  } else if (kindLabel) subtitle = `Symboltyp: ${kindLabel}`
+    if (libCount !== undefined) subtitle = tr("{value0} in der Bibliothek", { value0: String(plural(libCount, tr('Symbol'), tr('Symbole'))) })
+    else if (library.error) subtitle = tr('Bibliothek nicht geladen')
+    else subtitle = tr('Bibliothek wird geladen …')
+  } else if (kindLabel) subtitle = tr("Symboltyp: {value0}", { value0: tr(kindLabel) })
 
   const styleSummary = style
     ? [
-        `Raster ${style.grid} mil`,
-        `Pins ${style.ic_pin_length}/${style.discrete_pin_length} mil`,
+        tr("Raster {value0} mil", { value0: String(style.grid) }),
+        tr("Pins {value0}/{value1} mil", { value0: String(style.ic_pin_length), value1: String(style.discrete_pin_length) }),
         style.resistor_style === 'ansi' ? 'ANSI' : 'IEC',
         `Diode 1 = ${style.diode_pin1 === 'anode' ? 'A' : 'K'}`,
       ]
@@ -173,7 +175,7 @@ export default function SymbolePage() {
 
   return (
     <PageBody width="full" flush>
-      <PageTitle title={view === 'library' ? 'Symbolbibliothek' : 'Symbol-Generator'} subtitle={subtitle} />
+      <PageTitle title={view === 'library' ? tr('Symbolbibliothek') : tr('Symbol-Generator')} subtitle={subtitle} />
       <div ref={rootRef} className="flex h-[calc(100dvh-3.5rem)] min-h-0 flex-col">
         <Tabs value={view} onValueChange={(v) => setView(v as View)} className="min-h-0 flex-1">
           <div className="flex h-11 shrink-0 items-center gap-2 border-y border-line bg-[color-mix(in_oklab,var(--pf-bg-elev)_75%,transparent)] px-4">
@@ -181,29 +183,27 @@ export default function SymbolePage() {
               {view === 'generator' && (
                 <IconButton
                   size="sm"
-                  label={kindsCollapsed ? 'Symboltypen einblenden' : 'Symboltypen ausblenden'}
+                  label={kindsCollapsed ? tr('Symboltypen einblenden') : tr('Symboltypen ausblenden')}
                   icon={kindsCollapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
                   aria-expanded={!kindsCollapsed}
                   onClick={() => setKindsCollapsed(!kindsCollapsed)}
                 />
               )}
             </span>
-            <TabsList aria-label="Ansicht" className="h-11 border-b-0">
+            <TabsList aria-label={tr("Ansicht")} className="h-11 border-b-0">
               <TabsTrigger value="generator" icon={<Hammer />} className="h-11">
-                Generator
+                {tr("Generator")}
               </TabsTrigger>
               <TabsTrigger value="library" icon={<Library />} count={libCount !== undefined ? formatNumber(libCount) : undefined} className="h-11">
-                Bibliothek
+                {tr("Bibliothek")}
               </TabsTrigger>
             </TabsList>
             {view === 'generator' && styleSummary && (
               <Tooltip
                 content={
                   <span>
-                    Hausstil der Bibliothek: Raster {style?.grid} mil, Pinlänge IC {style?.ic_pin_length} mil und diskret{' '}
-                    {style?.discrete_pin_length} mil, Widerstand {style?.resistor_style === 'ansi' ? 'ANSI (Zickzack)' : 'IEC (Rechteck)'}.
-                    Ändern unter Einstellungen › Hausstil; Diode Pin 1 = {style?.diode_pin1 === 'anode' ? 'Anode' : 'Kathode'} unter
-                    Einstellungen › Namensregeln.
+                    {tr("Hausstil der Bibliothek: Raster")}{' '}{style?.grid} {tr("mil, Pinlänge IC")}{' '}{style?.ic_pin_length} {tr("mil und diskret")}{' '}
+                    {style?.discrete_pin_length} {tr("mil, Widerstand")}{' '}{style?.resistor_style === 'ansi' ? tr('ANSI (Zickzack)') : tr('IEC (Rechteck)')}{tr(". Ändern unter Einstellungen › Hausstil; Diode Pin 1 =")}{' '}{style?.diode_pin1 === 'anode' ? tr('Anode') : tr('Kathode')} {tr("unter Einstellungen › Namensregeln.")}
                   </span>
                 }
                 side="bottom"
@@ -213,7 +213,7 @@ export default function SymbolePage() {
                   className="ml-auto flex h-7 min-w-0 items-center gap-1.5 rounded-control px-2 text-2xs text-fg-subtle outline-none transition-colors hover:bg-surface-2 hover:text-fg-muted focus-ring"
                 >
                   <PenTool aria-hidden className="size-3.5 shrink-0" />
-                  <span className="font-medium text-fg-muted">Hausstil</span>
+                  <span className="font-medium text-fg-muted">{tr("Hausstil")}</span>
                   <span className="mono hidden truncate @[56rem]:inline">{styleSummary.join(' · ')}</span>
                 </Link>
               </Tooltip>

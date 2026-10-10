@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { useId } from 'react'
 import { cn } from '@/lib/cn'
 
@@ -24,6 +25,7 @@ export function Sparkline({
   area = true,
   className,
 }: SparklineProps) {
+  useI18n()
   const id = useId().replace(/:/g, '')
   const vbWidth = fluid ? 200 : width
   const values = data.length > 1 ? data : [data[0] ?? 0, data[0] ?? 0]

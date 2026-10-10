@@ -1,3 +1,4 @@
+import { t as translate, useI18n } from '@/lib/i18n'
 /** Auswahl von Kategoriesymbol und -farbe (Radiogruppen mit Pfeiltasten) sowie die farbige Symbolkachel. */
 import { Check, Pipette } from 'lucide-react'
 import { useRef, type CSSProperties, type KeyboardEvent, type RefObject } from 'react'
@@ -24,6 +25,7 @@ export function CategoryTile({
   size?: 'sm' | 'md' | 'lg'
   className?: string
 }) {
+  useI18n()
   const c = color && HEX_COLOR.test(color) ? color : '#94A3B8'
   return (
     <span
@@ -85,6 +87,7 @@ export function IconPicker({
   color?: string
   className?: string
 }) {
+  useI18n()
   const selected = CATEGORY_ICON_CHOICES.findIndex((c) => sameIcon(value, c.name))
   const ref = useRef<HTMLDivElement>(null)
   const grid = useGridKeys(ref, CATEGORY_ICON_CHOICES, selected, (c) => onChange(c.name))
@@ -92,18 +95,18 @@ export function IconPicker({
     <div
       ref={ref}
       role="radiogroup"
-      aria-label="Symbol der Kategorie"
+      aria-label={translate("Symbol der Kategorie")}
       className={cn('grid grid-cols-[repeat(auto-fill,minmax(2.125rem,1fr))] gap-1', className)}
     >
       {CATEGORY_ICON_CHOICES.map((c, i) => {
         const active = i === selected
         return (
-          <Tooltip key={c.name} content={c.label} delayDuration={300}>
+          <Tooltip key={c.name} content={translate(c.label)} delayDuration={300}>
             <button
               type="button"
               role="radio"
               aria-checked={active}
-              aria-label={c.label}
+              aria-label={translate(c.label)}
               tabIndex={grid.tabIndexOf(i)}
               onClick={() => onChange(c.name)}
               onKeyDown={(e) => grid.onKeyDown(e, i)}
@@ -140,6 +143,7 @@ function checkColor(hex: string): string {
 }
 
 export function ColorPicker({ value, onChange, className }: { value: string; onChange: (color: string) => void; className?: string }) {
+  useI18n()
   const upper = value.toUpperCase()
   const selected = CATEGORY_COLORS.findIndex((c) => c.value.toUpperCase() === upper)
   const custom = selected < 0 && HEX_COLOR.test(value)
@@ -147,16 +151,16 @@ export function ColorPicker({ value, onChange, className }: { value: string; onC
   const grid = useGridKeys(ref, CATEGORY_COLORS, selected, (c) => onChange(c.value))
   return (
     <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
-      <div ref={ref} role="radiogroup" aria-label="Farbe der Kategorie" className="flex flex-wrap gap-1.5">
+      <div ref={ref} role="radiogroup" aria-label={translate("Farbe der Kategorie")} className="flex flex-wrap gap-1.5">
         {CATEGORY_COLORS.map((c, i) => {
           const active = i === selected
           return (
-            <Tooltip key={c.value} content={`${c.label} · ${c.value}`} delayDuration={300}>
+            <Tooltip key={c.value} content={`${translate(c.label)} · ${c.value}`} delayDuration={300}>
               <button
                 type="button"
                 role="radio"
                 aria-checked={active}
-                aria-label={c.label}
+                aria-label={translate(c.label)}
                 tabIndex={grid.tabIndexOf(custom ? -1 : i)}
                 onClick={() => onChange(c.value)}
                 onKeyDown={(e) => grid.onKeyDown(e, i)}
@@ -172,7 +176,7 @@ export function ColorPicker({ value, onChange, className }: { value: string; onC
           )
         })}
       </div>
-      <Tooltip content="Eigene Farbe wählen">
+      <Tooltip content={translate("Eigene Farbe wählen")}>
         <label
           className={cn(
             'relative flex size-6 cursor-pointer items-center justify-center rounded-full border border-dashed border-line-control text-fg-subtle transition-colors focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent hover:text-fg',
@@ -183,7 +187,7 @@ export function ColorPicker({ value, onChange, className }: { value: string; onC
           {custom ? <Check aria-hidden className="size-3.5" style={{ color: checkColor(value) }} strokeWidth={3} /> : <Pipette aria-hidden className="size-3" />}
           <input
             type="color"
-            aria-label="Eigene Farbe"
+            aria-label={translate("Eigene Farbe")}
             value={HEX_COLOR.test(value) ? value : '#94A3B8'}
             onChange={(e) => onChange(e.target.value.toUpperCase())}
             className="absolute inset-0 cursor-pointer opacity-0"

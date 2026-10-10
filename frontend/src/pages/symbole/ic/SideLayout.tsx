@@ -1,3 +1,5 @@
+import { useLocalizedMemo } from '@/components/preview/useLocalizedMemo'
+import { t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Seiten-Editor des IC-Symbols: Körper in der Mitte, Pins als Chips an den vier Seiten – so, wie der Generator sie
  * platziert (automatisch platzierte Pins stehen an ihrer berechneten Seite). Chips per Drag & Drop auf eine andere
@@ -8,7 +10,7 @@
  * später auf der Seite; Enter öffnet das Menü (↑/↓ wählen, Enter übernimmt).
  */
 import { EyeOff, Pin, Wand } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent, type ReactNode } from 'react'
 import type { GeneratedSpec, IcSide } from '@/api/symbols'
 import { Popover, PopoverContent, PopoverTrigger, SegmentedControl } from '@/components/ui'
 import { cn } from '@/lib/cn'
@@ -91,12 +93,13 @@ function PinChip({
   onFocusChip: (id: string) => void
   onShowInTable: (id: string) => void
 }) {
+  useI18n()
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const { row, explicit } = item
   const d = row.designator.trim() || '?'
   const typeLabel = ELECTRICAL_OPTIONS.find((o) => o.value === row.electrical)?.label ?? row.electrical
-  const where = explicit ? `Seite festgelegt: ${SIDE_LABEL[row.side as IcSide]}` : `automatisch${item.side ? `, ${SIDE_LABEL[item.side].toLowerCase()}` : ''}`
+  const where = explicit ? tr("Seite festgelegt: {value0}", { value0: String(tr(SIDE_LABEL[row.side as IcSide])) }) : tr("automatisch{value0}", { value0: String(item.side ? `, ${tr(SIDE_LABEL[item.side]).toLowerCase()}` : '') })
   const vertical = zone === 'left' || zone === 'right' || zone === 'auto'
 
   const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
@@ -142,7 +145,7 @@ function PinChip({
           type="button"
           data-chip={row.id}
           draggable
-          aria-label={`Pin ${d}${row.name ? ` ${spokenPinName(row.name)}` : ''}, ${typeLabel}, ${where}${row.hidden ? ', verborgen' : ''}`}
+          aria-label={tr("Pin {value0}{value1}, {value2}, {value3}{value4}", { value0: String(d), value1: String(row.name ? ` ${spokenPinName(row.name)}` : ''), value2: String(typeLabel), value3: String(where), value4: String(row.hidden ? tr(', verborgen') : '') })}
           aria-keyshortcuts="L R O U A Alt+ArrowUp Alt+ArrowDown"
           onDragStart={(e) => onDragStart(row.id, e)}
           onDragEnd={onDragEnd}
@@ -187,7 +190,7 @@ function PinChip({
           <span className="mono text-xs font-semibold text-fg">{d}</span>
           <OverbarName value={row.name} className="mono truncate text-xs text-fg-muted" />
         </div>
-        <div ref={menuRef} role="menu" aria-label={`Seite für Pin ${d}`} className="flex flex-col">
+        <div ref={menuRef} role="menu" aria-label={tr("Seite für Pin {value0}", { value0: String(d) })} className="flex flex-col">
           {MENU_ORDER.map(({ zone: z, key }) => {
             const checked = z === 'auto' ? !explicit : row.side === z
             return (
@@ -211,8 +214,8 @@ function PinChip({
                   {checked && <span className="size-1.5 rounded-full bg-accent" />}
                 </span>
                 <span className="flex-1">
-                  {ZONE_LABEL[z]}
-                  {z === 'auto' && !explicit && item.side && <span className="text-fg-subtle"> · {SIDE_LABEL[item.side].toLowerCase()}</span>}
+                  {tr(ZONE_LABEL[z])}
+                  {z === 'auto' && !explicit && item.side && <span className="text-fg-subtle"> · {tr(SIDE_LABEL[item.side]).toLowerCase()}</span>}
                 </span>
                 <kbd aria-hidden className="rounded-sm border border-line-strong px-1 font-sans text-2xs text-fg-subtle">
                   {key}
@@ -231,7 +234,7 @@ function PinChip({
             }}
             className="flex h-8 w-full items-center rounded-control px-2 text-left text-ui text-fg-muted outline-none transition-colors hover:bg-surface-3 hover:text-fg focus-visible:bg-surface-3 focus-visible:text-fg"
           >
-            In der Pinliste zeigen
+            {tr("In der Pinliste zeigen")}
           </button>
         </div>
       </PopoverContent>
@@ -240,6 +243,7 @@ function PinChip({
 }
 
 export function SideLayout({ pins, spec, part, onPartChange, hoverDesignator, onHover, onSetSide, onPlace, onShowInTable, stale }: SideLayoutProps) {
+  useI18n()
   const [dragId, setDragId] = useState<string | null>(null)
   const [over, setOver] = useState<Zone | null>(null)
   const [mark, setMark] = useState<{ id: string; where: 'before' | 'after' } | null>(null)
@@ -250,7 +254,7 @@ export function SideLayout({ pins, spec, part, onPartChange, hoverDesignator, on
   const partCount = Math.max(1, spec?.part_count ?? 1)
   const current = Math.min(part, partCount)
 
-  const zones = useMemo(() => {
+  const zones = useLocalizedMemo(() => {
     const bySpec = new Map((spec?.pins ?? []).map((p) => [p.designator, p]))
     const out: Record<Zone, Placed[]> = { left: [], right: [], top: [], bottom: [], auto: [] }
     for (const row of pins) {
@@ -296,13 +300,13 @@ export function SideLayout({ pins, spec, part, onPartChange, hoverDesignator, on
     refocusRef.current = { id, until: now() + REFOCUS_MS }
   }
 
-  const describe = (row: PinRow) => `Pin ${row.designator}${row.name ? ` ${displayText(row.name)}` : ''}`
+  const describe = (row: PinRow) => tr("Pin {value0}{value1}", { value0: String(row.designator), value1: String(row.name ? ` ${displayText(row.name)}` : '') })
 
   const moveTo = (id: string, side: IcSide | null, viaKeyboard: boolean) => {
     const row = pins.find((p) => p.id === id)
     if (!row) return
     if (row.side !== side) onSetSide([id], side)
-    setAnnounce(`${describe(row)}: ${side ? SIDE_LABEL[side] : 'automatisch'}`)
+    setAnnounce(`${describe(row)}: ${side ? tr(SIDE_LABEL[side]) : tr('automatisch')}`)
     if (viaKeyboard) keepFocus(id)
   }
 
@@ -313,11 +317,11 @@ export function SideLayout({ pins, spec, part, onPartChange, hoverDesignator, on
     const i = list.findIndex((p) => p.row.id === item.row.id)
     const neighbour = list[i + delta]
     if (!neighbour || !sameBlock(item, neighbour)) {
-      setAnnounce(`${describe(item.row)}: ${delta < 0 ? 'schon zuoberst' : 'schon zuunterst'} in seiner Gruppe`)
+      setAnnounce(tr("{value0}: {value1} in seiner Gruppe", { value0: String(describe(item.row)), value1: String(delta < 0 ? tr('schon zuoberst') : tr('schon zuunterst')) }))
       return
     }
     onPlace(item.row.id, neighbour.row.id, delta < 0 ? 'before' : 'after', zone)
-    setAnnounce(`${describe(item.row)} ${delta < 0 ? 'vor' : 'hinter'} ${describe(neighbour.row)}`)
+    setAnnounce(`${describe(item.row)} ${delta < 0 ? tr('vor') : tr('hinter')} ${describe(neighbour.row)}`)
     keepFocus(item.row.id)
   }
 
@@ -346,7 +350,7 @@ export function SideLayout({ pins, spec, part, onPartChange, hoverDesignator, on
     },
   })
 
-  const dragged = useMemo(() => {
+  const dragged = useLocalizedMemo(() => {
     if (!dragId) return null
     for (const list of Object.values(zones)) {
       const hit = list.find((p) => p.row.id === dragId)
@@ -381,7 +385,7 @@ export function SideLayout({ pins, spec, part, onPartChange, hoverDesignator, on
     e.stopPropagation()
     endDrag()
     onPlace(dragged.row.id, target.row.id, where, zone)
-    setAnnounce(`${describe(dragged.row)} ${where === 'before' ? 'vor' : 'hinter'} ${describe(target.row)}`)
+    setAnnounce(`${describe(dragged.row)} ${where === 'before' ? tr('vor') : tr('hinter')} ${describe(target.row)}`)
   }
 
   const chip = (it: Placed, zone: Zone) => (
@@ -416,7 +420,7 @@ export function SideLayout({ pins, spec, part, onPartChange, hoverDesignator, on
     return (
       <div
         role="group"
-        aria-label={`${ZONE_LABEL[zone]}: ${plural(count, 'Pin', 'Pins')}`}
+        aria-label={`${tr(ZONE_LABEL[zone])}: ${plural(count, tr('Pin'), tr('Pins'))}`}
         data-zone={zone}
         {...dropHandlers(zone)}
         className={cn(
@@ -437,12 +441,12 @@ export function SideLayout({ pins, spec, part, onPartChange, hoverDesignator, on
   const header = (zone: Zone, align: 'start' | 'end' | 'center') => (
     <>
       <div className={cn('mb-1.5 flex items-center gap-1.5 px-0.5', align === 'end' ? 'justify-end' : align === 'center' ? 'justify-center' : 'justify-start')}>
-        <span className="micro-label">{ZONE_LABEL[zone]}</span>
+        <span className="micro-label">{tr(ZONE_LABEL[zone])}</span>
         <span className="text-2xs tabular-nums text-fg-subtle">{formatNumber(zones[zone].length)}</span>
       </div>
       {zones[zone].length === 0 && (
         <p className={cn('px-0.5 text-2xs text-fg-subtle', align === 'end' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left')}>
-          {dragId ? 'Hier ablegen' : 'leer – Pins hierher ziehen'}
+          {dragId ? tr('Hier ablegen') : tr('leer – Pins hierher ziehen')}
         </p>
       )}
     </>
@@ -459,13 +463,13 @@ export function SideLayout({ pins, spec, part, onPartChange, hoverDesignator, on
         <div className="flex items-center gap-3">
           <SegmentedControl
             size="sm"
-            aria-label="Teil des Symbols"
+            aria-label={tr("Teil des Symbols")}
             value={String(current)}
             onValueChange={(v) => onPartChange(Number(v))}
             options={Array.from({ length: partCount }, (_, i) => ({ value: String(i + 1), label: <span className="mono">{partLetter(i + 1)}</span> }))}
           />
           <span className="text-xs text-fg-muted">
-            Teil {partLetter(current)} von {formatNumber(partCount)} – Pins mit Teil 0 erscheinen in jedem Teil.
+            {tr("Teil")}{' '}{partLetter(current)} {tr("von")}{' '}{formatNumber(partCount)} {tr("– Pins mit Teil 0 erscheinen in jedem Teil.")}
           </span>
         </div>
       )}
@@ -482,7 +486,7 @@ export function SideLayout({ pins, spec, part, onPartChange, hoverDesignator, on
           <span className="mono text-ui font-semibold text-fg">{designator}</span>
           <span className="mono max-w-full truncate text-xs text-fg-muted">{spec?.name ?? '–'}</span>
           <span className="mt-1 text-2xs text-fg-subtle">
-            {plural(total, 'Pin', 'Pins')} · {formatNumber(fixed)} festgelegt
+            {plural(total, tr('Pin'), tr('Pins'))} · {formatNumber(fixed)} {tr("festgelegt")}
           </span>
           {body && (
             <span className="mono text-2xs text-fg-subtle">
@@ -500,8 +504,8 @@ export function SideLayout({ pins, spec, part, onPartChange, hoverDesignator, on
           <Wand aria-hidden className="size-3.5 shrink-0 text-fg-subtle" />
           <span className="text-xs text-fg-muted">
             {zones.auto.length
-              ? 'Wird platziert …'
-              : 'Hierher ziehen (oder Taste A), um die Seite wieder automatisch bestimmen zu lassen.'}
+              ? tr('Wird platziert …')
+              : tr('Hierher ziehen (oder Taste A), um die Seite wieder automatisch bestimmen zu lassen.')}
           </span>
           {zones.auto.map((p) => chip(p, 'auto'))}
         </div>,
@@ -510,13 +514,13 @@ export function SideLayout({ pins, spec, part, onPartChange, hoverDesignator, on
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-2xs text-fg-subtle">
         <span className="flex items-center gap-1">
-          <Pin aria-hidden className="size-3 rotate-45 text-accent-text" /> Seite festgelegt
+          <Pin aria-hidden className="size-3 rotate-45 text-accent-text" /> {tr("Seite festgelegt")}
         </span>
-        <span>ohne Nadel: automatisch platziert</span>
+        <span>{tr("ohne Nadel: automatisch platziert")}</span>
         <span className="flex items-center gap-1">
-          <EyeOff aria-hidden className="size-3" /> verborgen
+          <EyeOff aria-hidden className="size-3" /> {tr("verborgen")}
         </span>
-        <span className="ml-auto">Ziehen oder Chip fokussieren: L, R, O, U, A wechseln die Seite, Alt+↑/↓ sortiert innerhalb der Gruppe</span>
+        <span className="ml-auto">{tr("Ziehen oder Chip fokussieren: L, R, O, U, A wechseln die Seite, Alt+↑/↓ sortiert innerhalb der Gruppe")}</span>
       </div>
       <div className="sr-only" aria-live="polite">
         {announce}

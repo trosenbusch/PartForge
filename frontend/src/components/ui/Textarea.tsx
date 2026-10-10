@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import type { ComponentProps } from 'react'
 import { cn } from '@/lib/cn'
 import { useFieldContext } from './fieldContext'
@@ -10,6 +11,7 @@ export interface TextareaProps extends ComponentProps<'textarea'> {
 }
 
 export function Textarea({ className, invalid, mono, autoResize, disabled, id, rows = 3, ...props }: TextareaProps) {
+  useI18n()
   const field = useFieldContext()
   const isInvalid = invalid ?? field?.invalid ?? false
   return (

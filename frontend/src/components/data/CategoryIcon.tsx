@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 /**
  * Kategorie-Symbol aus dem Lucide-Namen der Datenbank (`CategoryDef.icon`, z. B. „cpu“, „triangle-right“).
  * Bewusst eine feste Auswahl (statt aller ~1.600 Lucide-Icons im Bundle); Unbekanntes → „box“.
@@ -95,6 +96,7 @@ export interface CategoryIconProps {
 
 /** Symbol einer Kategorie (dekorativ) */
 export function CategoryIcon({ name, color, className }: CategoryIconProps) {
+  useI18n()
   const Icon = (name && ICONS[name]) || Box
   return <Icon aria-hidden className={cn('size-4 shrink-0', className)} style={color ? { color } : undefined} />
 }

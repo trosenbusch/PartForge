@@ -1,3 +1,4 @@
+import { t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Bausteine für Overlays auf den Vorschau-Leinwänden: Tooltip am Objekt, schwebende Zoom-Steuerung, Infozeilen.
  * „board“-Ton = immer dunkel (Leiterplatte und 3D sind in beiden Themes dunkel), „app“ = folgt dem Theme.
@@ -70,6 +71,7 @@ export interface CanvasZoomControlsProps {
 
 /** Schwebende Zoom-Steuerung (für Leinwände ohne PreviewPanel-Werkzeugleiste) */
 export function CanvasZoomControls({ onZoomIn, onZoomOut, onFit, zoom, tone = 'app', className }: CanvasZoomControlsProps) {
+  useI18n()
   const btn = cn(
     'flex size-7 items-center justify-center rounded-[6px] outline-none transition-colors focus-ring [&_svg]:size-3.5',
     tone === 'board' ? 'hover:bg-white/10' : 'hover:bg-surface-3',
@@ -77,10 +79,10 @@ export function CanvasZoomControls({ onZoomIn, onZoomOut, onFit, zoom, tone = 'a
   return (
     <div
       role="toolbar"
-      aria-label="Ansicht"
+      aria-label={tr("Ansicht")}
       className={cn('absolute bottom-3 right-3 z-10 flex items-center gap-0.5 rounded-control p-0.5', CHROME_SURFACE[tone], className)}
     >
-      <button type="button" className={btn} onClick={onZoomOut} aria-label="Verkleinern" title="Verkleinern (−)">
+      <button type="button" className={btn} onClick={onZoomOut} aria-label={tr("Verkleinern")} title={tr("Verkleinern (−)")}>
         <Minus />
       </button>
       {zoom !== undefined && (
@@ -88,10 +90,10 @@ export function CanvasZoomControls({ onZoomIn, onZoomOut, onFit, zoom, tone = 'a
           {Math.round(zoom * 100)} %
         </span>
       )}
-      <button type="button" className={btn} onClick={onZoomIn} aria-label="Vergrößern" title="Vergrößern (+)">
+      <button type="button" className={btn} onClick={onZoomIn} aria-label={tr("Vergrößern")} title={tr("Vergrößern (+)")}>
         <Plus />
       </button>
-      <button type="button" className={btn} onClick={onFit} aria-label="Einpassen" title="Einpassen (0)">
+      <button type="button" className={btn} onClick={onFit} aria-label={tr("Einpassen")} title={tr("Einpassen (0)")}>
         <Scan />
       </button>
     </div>

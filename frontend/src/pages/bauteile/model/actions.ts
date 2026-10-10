@@ -1,3 +1,4 @@
+import { metadataLabel, localizeMessage, t } from '@/lib/i18n'
 /**
  * Aktionen auf mehreren Bauteilen: alle Treffer einer Abfrage holen bzw. zählen, Löschen mit Bestätigung
  * (Sicherungshinweis, „Rückgängig“ holt die gelöschten Bauteile aus der Änderungshistorie zurück) – für ausgewählte
@@ -38,29 +39,29 @@ export type DeleteTarget = { rows: PartRow[] } | { search: string; filters: Part
 
 /** Gelöschte Bauteile aus der Änderungshistorie zurückholen (alle Werte, ursprüngliches Anlagedatum) */
 export async function restoreParts(qc: QueryClient, table: string, partNumbers: string[]): Promise<string[]> {
-  const id = toast.loading(`${plural(partNumbers.length, 'Bauteil wird', 'Bauteile werden')} wiederhergestellt …`)
+  const id = toast.loading(t("{1} wiederhergestellt …", { 1: plural(partNumbers.length, t("Bauteil wird"), t("Bauteile werden")) }))
   try {
     const res = await partsApi.restore(table, partNumbers)
     invalidateParts(qc, table)
-    const conflicts = Object.values(res.conflicts)
-    const problems = [...conflicts, ...res.not_found.map((pn) => `${pn}: keine Löschung in der Änderungshistorie`)]
+    const conflicts = Object.values(res.conflicts).map(localizeMessage)
+    const problems = [...conflicts, ...res.not_found.map((pn) => t("{1}: keine Löschung in der Änderungshistorie", { 1: pn }))]
     if (!res.restored.length) {
-      toast.error('Nichts wiederhergestellt', { id, description: problems[0] ?? 'Die Bauteile sind nicht mehr in der Änderungshistorie.' })
+      toast.error(t("Nichts wiederhergestellt"), { id, description: problems[0] ?? t("Die Bauteile sind nicht mehr in der Änderungshistorie.") })
     } else if (problems.length) {
-      toast.warning(`${formatNumber(res.restored.length)} von ${formatNumber(partNumbers.length)} wiederhergestellt`, {
+      toast.warning(t("{1} von {2} wiederhergestellt", { 1: formatNumber(res.restored.length), 2: formatNumber(partNumbers.length) }), {
         id,
         description: problems.slice(0, 2).join(' · '),
         duration: 9000,
       })
     } else {
-      toast.success(res.restored.length === 1 ? `„${res.restored[0]}“ wiederhergestellt` : `${plural(res.restored.length, 'Bauteil', 'Bauteile')} wiederhergestellt`, {
+      toast.success(res.restored.length === 1 ? t("„{1}“ wiederhergestellt", { 1: res.restored[0] }) : t("{1} wiederhergestellt", { 1: plural(res.restored.length, t("Bauteil"), t("Bauteile")) }), {
         id,
-        description: res.warnings[0],
+        description: res.warnings[0] ? localizeMessage(res.warnings[0]) : undefined,
       })
     }
     return res.restored
   } catch (err) {
-    toast.error('Wiederherstellen fehlgeschlagen', { id, description: errorMessage(err) })
+    toast.error(t("Wiederherstellen fehlgeschlagen"), { id, description: errorMessage(err) })
     return []
   }
 }
@@ -77,14 +78,14 @@ function deleteDescription(label: string, count: number, sample: string[], note?
       createElement(
         'span',
         { className: 'mono block text-xs text-fg' },
-        sample.join(', ') + (count > sample.length ? ` … und ${formatNumber(count - sample.length)} weitere` : ''),
+        sample.join(', ') + (count > sample.length ? t(" … und {1} weitere", { 1: formatNumber(count - sample.length) }) : ''),
       ),
     createElement(
       'span',
       { className: 'block' },
       many
-        ? `Aus „${label}“. Vorher legt PartForge automatisch eine Sicherung der Datenbank an (Ordner „Backups“); direkt danach nimmt „Rückgängig“ das Löschen zurück.`
-        : `Aus „${label}“. Direkt danach lässt sich das Löschen mit „Rückgängig“ zurücknehmen.`,
+        ? t("Aus „{1}“. Vorher legt PartForge automatisch eine Sicherung der Datenbank an (Ordner „Backups“); direkt danach nimmt „Rückgängig“ das Löschen zurück.", { 1: metadataLabel(label, t) })
+        : t("Aus „{1}“. Direkt danach lässt sich das Löschen mit „Rückgängig“ zurücknehmen.", { 1: metadataLabel(label, t) }),
     ),
   )
 }
@@ -110,11 +111,11 @@ export async function confirmAndDelete(qc: QueryClient, table: string, label: st
       sample = res.part_numbers
       selection = { search: target.search, filters: target.filters, expectedCount: res.count }
     } catch (err) {
-      toast.error('Treffer konnten nicht gezählt werden', { description: errorMessage(err) })
+      toast.error(t("Treffer konnten nicht gezählt werden"), { description: errorMessage(err) })
       return []
     }
     if (!count) {
-      toast.info('Keine Treffer mehr', { description: 'Zu Suche und Filtern passt kein Bauteil – es wurde nichts gelöscht.' })
+      toast.info(t("Keine Treffer mehr"), { description: t("Zu Suche und Filtern passt kein Bauteil – es wurde nichts gelöscht.") })
       return []
     }
   }
@@ -122,9 +123,9 @@ export async function confirmAndDelete(qc: QueryClient, table: string, label: st
   let note: string | undefined
   for (;;) {
     const ok = await confirm({
-      title: count === 1 && sample[0] ? `„${sample[0]}“ löschen?` : `${plural(count, 'Bauteil', 'Bauteile')} löschen?`,
+      title: count === 1 && sample[0] ? t("„{1}“ löschen?", { 1: sample[0] }) : t("{1} löschen?", { 1: plural(count, t("Bauteil"), t("Bauteile")) }),
       description: deleteDescription(label, count, sample, note),
-      confirmLabel: count === 1 ? 'Löschen' : `${formatNumber(count)} löschen`,
+      confirmLabel: count === 1 ? t("Löschen") : t("{1} löschen", { 1: formatNumber(count) }),
       destructive: true,
     })
     if (!ok) return []
@@ -132,18 +133,18 @@ export async function confirmAndDelete(qc: QueryClient, table: string, label: st
       const res = await partsApi.remove(table, selection)
       const deleted = res.part_numbers
       invalidateParts(qc, table, { skipPns: deleted })
-      toast.success(res.deleted === 1 ? `„${deleted[0] ?? sample[0]}“ gelöscht` : `${plural(res.deleted, 'Bauteil', 'Bauteile')} gelöscht`, {
+      toast.success(res.deleted === 1 ? t("„{1}“ gelöscht", { 1: deleted[0] ?? sample[0] }) : t("{1} gelöscht", { 1: plural(res.deleted, t("Bauteil"), t("Bauteile")) }), {
         // eigene ID je Löschen: ein zweites Löschen ersetzt nie das „Rückgängig“ des ersten
         id: `deleted:${table}:${++deleteToastCounter}`,
         // Dateiname ist lang (Zeitstempel + Anlass) und bricht im Toast unschön um – der Ordner genügt.
         // Später geht es auch ohne Toast: Übersicht › Letzte Änderungen bzw. die Adresse des Bauteils
         // (`?pn=` zeigt „Bauteil gelöscht“ mit „Wiederherstellen“)
         description: res.backup
-          ? 'Vorher gesichert im Ordner „Backups“. Später wiederherstellen: Übersicht › Letzte Änderungen.'
-          : 'Später wiederherstellen: Übersicht › Letzte Änderungen.',
+          ? t("Vorher gesichert im Ordner „Backups“. Später wiederherstellen: Übersicht › Letzte Änderungen.")
+          : t("Später wiederherstellen: Übersicht › Letzte Änderungen."),
         // länger als üblich: Rückgängig soll in Ruhe erreichbar sein (der Zeitgeber pausiert beim Überfahren)
         duration: 30_000,
-        action: deleted.length ? { label: 'Rückgängig', onClick: () => void restoreParts(qc, table, deleted) } : undefined,
+        action: deleted.length ? { label: t("Rückgängig"), onClick: () => void restoreParts(qc, table, deleted) } : undefined,
       })
       return deleted
     } catch (err) {
@@ -151,7 +152,7 @@ export async function confirmAndDelete(qc: QueryClient, table: string, label: st
       if (changed && 'expectedCount' in selection) {
         // Treffer haben sich geändert (jemand hat Bauteile angelegt oder geändert): mit der neuen Zahl erneut fragen
         selection = { ...selection, expectedCount: changed.count }
-        note = `Die Treffer haben sich geändert: jetzt ${plural(changed.count, 'Bauteil', 'Bauteile')} statt ${formatNumber(changed.expected)}.`
+        note = t("Die Treffer haben sich geändert: jetzt {1} statt {2}.", { 1: plural(changed.count, t("Bauteil"), t("Bauteile")), 2: formatNumber(changed.expected) })
         count = changed.count
         try {
           sample = (await partsApi.count(table, { search: selection.search, filters: selection.filters, sample: PREVIEW_PNS })).part_numbers
@@ -159,12 +160,12 @@ export async function confirmAndDelete(qc: QueryClient, table: string, label: st
           // Stichprobe ist nur Anzeige
         }
         if (!count) {
-          toast.info('Keine Treffer mehr', { description: 'Es wurde nichts gelöscht.' })
+          toast.info(t("Keine Treffer mehr"), { description: t("Es wurde nichts gelöscht.") })
           return []
         }
         continue
       }
-      toast.error('Löschen fehlgeschlagen', { description: errorMessage(err) })
+      toast.error(t("Löschen fehlgeschlagen"), { description: errorMessage(err) })
       return []
     }
   }

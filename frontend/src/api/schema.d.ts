@@ -2884,6 +2884,12 @@ export interface components {
             /** Recent Workspaces */
             recent_workspaces?: string[];
             /**
+             * Language
+             * @default en
+             * @enum {string}
+             */
+            language: "en" | "de";
+            /**
              * Theme
              * @default dark
              * @enum {string}

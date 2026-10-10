@@ -1,3 +1,4 @@
+import { localizeMessage, t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Live-Vorschau des Generators: SymbolCanvas mit Teil-Reitern, Altium-Ansicht, verborgenen Pins, Zoom, Vollbild,
  * Status („berechnet …“), Fehlerkarte und Hinweisen des Generators. Die letzte gültige Vorschau bleibt sichtbar.
@@ -78,6 +79,7 @@ export function PreviewStage({
   footer,
   className,
 }: PreviewStageProps) {
+  useI18n()
   const prefs = usePreviewPrefs()
   const canvasRef = useRef<CanvasHandle>(null)
   const fullRef = useRef<CanvasHandle>(null)
@@ -109,17 +111,17 @@ export function PreviewStage({
   const status = fetching ? (
     <span className="flex items-center gap-1.5 text-2xs text-fg-muted">
       <Spinner size={11} tone="accent" />
-      berechnet …
+      {tr("berechnet …")}
     </span>
   ) : error ? (
     <span className="flex items-center gap-1.5 text-2xs text-danger-text">
       <span aria-hidden className="size-1.5 rounded-full bg-danger" />
-      Fehler
+      {tr("Fehler")}
     </span>
   ) : spec ? (
     <span className="flex items-center gap-1.5 text-2xs text-fg-subtle">
       <span aria-hidden className="size-1.5 rounded-full bg-success shadow-[0_0_6px_var(--pf-success)]" />
-      aktuell
+      {tr("aktuell")}
     </span>
   ) : null
 
@@ -129,38 +131,38 @@ export function PreviewStage({
         <ToggleButton
           pressed={showHidden}
           onClick={() => setShowHidden((v) => !v)}
-          label="Verborgene Pins"
-          tooltip={showHidden ? 'Verborgene Pins ausblenden' : 'Verborgene Pins gestrichelt zeigen'}
+          label={tr("Verborgene Pins")}
+          tooltip={showHidden ? tr('Verborgene Pins ausblenden') : tr('Verborgene Pins gestrichelt zeigen')}
           icon={showHidden ? <Eye /> : <EyeOff />}
         />
       )}
       <ToggleButton
         pressed={prefs.altium}
         onClick={() => prefs.set({ altium: !prefs.altium })}
-        label="Altium-Ansicht"
-        tooltip={prefs.altium ? 'PartForge-Darstellung' : 'Wie in Altium Designer (weißes Blatt)'}
+        label={tr("Altium-Ansicht")}
+        tooltip={prefs.altium ? tr('PartForge-Darstellung') : tr('Wie in Altium Designer (weißes Blatt)')}
         icon={<Square className={cn(prefs.altium && 'fill-altium-body text-altium-line')} />}
       />
     </>
   )
 
   return (
-    <section aria-label="Vorschau" className={cn('@container flex h-full min-h-0 flex-col bg-surface', className)}>
+    <section aria-label={tr("Vorschau")} className={cn('@container flex h-full min-h-0 flex-col bg-surface', className)}>
       <header className="flex h-11 shrink-0 items-center gap-2 border-b border-line px-3">
-        <h2 className="text-xs font-semibold text-fg">Vorschau</h2>
+        <h2 className="text-xs font-semibold text-fg">{tr("Vorschau")}</h2>
         {status}
         <div className="ml-auto flex items-center gap-0.5">
           {tools}
           <span aria-hidden className="mx-1 h-4 w-px bg-line-strong" />
           <div className="hidden items-center gap-0.5 @[24rem]:flex">
-            <IconButton size="sm" label="Verkleinern" icon={<Minus />} onClick={() => canvasRef.current?.zoomOut()} disabled={!spec} />
+            <IconButton size="sm" label={tr("Verkleinern")} icon={<Minus />} onClick={() => canvasRef.current?.zoomOut()} disabled={!spec} />
             <span className="mono w-10 text-center text-2xs tabular-nums text-fg-muted" aria-hidden>
               {Math.round(zoom * 100)} %
             </span>
-            <IconButton size="sm" label="Vergrößern" icon={<Plus />} onClick={() => canvasRef.current?.zoomIn()} disabled={!spec} />
+            <IconButton size="sm" label={tr("Vergrößern")} icon={<Plus />} onClick={() => canvasRef.current?.zoomIn()} disabled={!spec} />
           </div>
-          <IconButton size="sm" label="Einpassen" icon={<Scan />} onClick={() => canvasRef.current?.fit()} disabled={!spec} />
-          <IconButton size="sm" label="Vollbild" icon={<Maximize2 />} onClick={() => setFullscreen(true)} disabled={!spec} />
+          <IconButton size="sm" label={tr("Einpassen")} icon={<Scan />} onClick={() => canvasRef.current?.fit()} disabled={!spec} />
+          <IconButton size="sm" label={tr("Vollbild")} icon={<Maximize2 />} onClick={() => setFullscreen(true)} disabled={!spec} />
         </div>
       </header>
 
@@ -168,12 +170,12 @@ export function PreviewStage({
         <div className="shrink-0 border-b border-line bg-[color-mix(in_oklab,var(--pf-warning)_6%,var(--pf-surface))] px-3 py-2" role="status">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-warning-text">
             <TriangleAlert aria-hidden className="size-3.5" />
-            {warnings.length === 1 ? 'Hinweis des Generators' : `${warnings.length} Hinweise des Generators`}
+            {warnings.length === 1 ? tr('Hinweis des Generators') : tr("{value0} Hinweise des Generators", { value0: String(warnings.length) })}
           </div>
           <ul className="mt-1 max-h-24 space-y-0.5 overflow-y-auto pl-5 text-xs leading-snug text-fg-muted">
             {warnings.map((w) => (
               <li key={w} className="list-disc marker:text-fg-subtle">
-                {w}
+                {localizeMessage(w)}
               </li>
             ))}
           </ul>
@@ -186,7 +188,7 @@ export function PreviewStage({
           <div className="absolute inset-0 flex items-center justify-center bg-bg">
             <div className="flex items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-1.5 text-xs text-fg-muted">
               <Spinner size={14} tone="accent" />
-              Vorschau wird berechnet …
+              {tr("Vorschau wird berechnet …")}
             </div>
           </div>
         )}
@@ -201,9 +203,9 @@ export function PreviewStage({
             <div role="alert" className="flex max-w-sm items-start gap-2.5 rounded-card border border-danger/30 bg-surface px-4 py-3 shadow-raised">
               <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-danger-text" />
               <div className="min-w-0">
-                <div className="text-ui font-semibold text-fg">Vorschau nicht möglich</div>
-                <p className="mt-0.5 text-xs leading-relaxed text-fg-muted">{error}</p>
-                {spec && <p className="mt-1.5 text-2xs text-fg-subtle">Darunter: die letzte gültige Vorschau.</p>}
+                <div className="text-ui font-semibold text-fg">{tr("Vorschau nicht möglich")}</div>
+                <p className="mt-0.5 text-xs leading-relaxed text-fg-muted">{localizeMessage(error)}</p>
+                {spec && <p className="mt-1.5 text-2xs text-fg-subtle">{tr("Darunter: die letzte gültige Vorschau.")}</p>}
               </div>
             </div>
           </div>
@@ -225,11 +227,11 @@ export function PreviewStage({
             }
           }}
         >
-          <DialogHeader title={spec?.name ?? 'Vorschau'} />
+          <DialogHeader title={spec?.name ?? tr('Vorschau')} />
           <div className="flex items-center justify-end gap-0.5 px-6 pb-2">
             {tools}
             <span aria-hidden className="mx-1 h-4 w-px bg-line-strong" />
-            <IconButton size="sm" label="Einpassen" icon={<Scan />} onClick={() => fullRef.current?.fit()} />
+            <IconButton size="sm" label={tr("Einpassen")} icon={<Scan />} onClick={() => fullRef.current?.fit()} />
           </div>
           <div ref={fullWrapRef} className="relative mx-6 mb-6 min-h-0 flex-1 overflow-hidden rounded-card border border-line">
             {fullscreen && <SymbolCanvas ref={fullRef} {...canvasProps} controls />}

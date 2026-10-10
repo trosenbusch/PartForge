@@ -1,3 +1,4 @@
+import { t, useI18n } from '@/lib/i18n'
 import { ArrowRight, ChevronDown, CircleAlert, Info, ListOrdered } from 'lucide-react'
 import { useMemo } from 'react'
 import type { PackageData, VariantProposal } from '@/api/datasheets'
@@ -25,19 +26,20 @@ import { sectionIssues } from '../issues'
 import { Section } from './Section'
 
 function StatusBadge({ item, mode }: { item: VariantProposal | undefined; mode: 'skip' | 'update' }) {
-  if (!item) return <span className="text-2xs text-fg-subtle">nicht gewählt</span>
+  useI18n()
+  if (!item) return <span className="text-2xs text-fg-subtle">{t("nicht gewählt")}</span>
   const errors = Object.entries(item.errors)
   if (item.status === 'conflict') {
     return (
-      <TipButton navItem tip={`Teilenummer schon in „${item.existing_table ?? 'anderer Kategorie'}“ vergeben – wird nicht angelegt.`}>
-        <Badge variant="danger">Konflikt</Badge>
+      <TipButton navItem tip={t("Teilenummer schon in „{0}“ vergeben – wird nicht angelegt.", { "0": String(item.existing_table ?? t("anderer Kategorie")) })}>
+        <Badge variant="danger">{t("Konflikt")}</Badge>
       </TipButton>
     )
   }
   if (item.status === 'exists') {
     return (
-      <TipButton navItem tip={`${item.part_number ?? item.mpn} ist schon in „${item.existing_table ?? 'der Bibliothek'}“.`}>
-        <Badge variant={mode === 'update' ? 'info' : 'neutral'}>{mode === 'update' ? 'wird aktualisiert' : 'vorhanden'}</Badge>
+      <TipButton navItem tip={t("{0} ist schon in „{1}“.", { "0": String(item.part_number ?? item.mpn), "1": String(item.existing_table ?? t("der Bibliothek")) })}>
+        <Badge variant={mode === 'update' ? 'info' : 'neutral'}>{mode === 'update' ? t("wird aktualisiert") : t("vorhanden")}</Badge>
       </TipButton>
     )
   }
@@ -46,12 +48,11 @@ function StatusBadge({ item, mode }: { item: VariantProposal | undefined; mode: 
       <TipButton navItem tip={errors.map(([k, v]) => `${k}: ${v}`).join(' · ')}>
         <Badge variant="danger">
           <CircleAlert />
-          Fehler
-        </Badge>
+          {t("Fehler")}</Badge>
       </TipButton>
     )
   }
-  return <Badge variant="success">neu</Badge>
+  return <Badge variant="success">{t("neu")}</Badge>
 }
 
 /**
@@ -69,6 +70,7 @@ function PackageCell({
   packages: readonly PackageData[]
   onChange: (code: string) => void
 }) {
+  useI18n()
   const pkg = packages.find((p) => p.code === value)
   if (packages.length <= 1) {
     return (
@@ -84,7 +86,7 @@ function PackageCell({
           type="button"
           tabIndex={-1}
           data-nav-item=""
-          aria-label={`Gehäuse von ${mpn}: ${pkg ? packageLabel(pkg) : value || 'keins'} – ändern`}
+          aria-label={t("Gehäuse von {0}: {1} – ändern", { "0": String(mpn), "1": String(pkg ? packageLabel(pkg) : value || t("keins")) })}
           className={cn(
             'mono inline-flex h-6 items-center gap-0.5 whitespace-nowrap rounded-md border border-transparent px-1.5 text-2xs text-fg-muted outline-none transition-colors',
             'hover:border-line-strong hover:bg-control hover:text-fg focus-ring data-[state=open]:border-line-strong data-[state=open]:bg-control data-[state=open]:text-fg',
@@ -95,7 +97,7 @@ function PackageCell({
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-52">
-        <DropdownMenuLabel>Gehäuse von {mpn}</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("Gehäuse von ")}{mpn}</DropdownMenuLabel>
         <DropdownMenuRadioGroup value={value} onValueChange={onChange}>
           {packages.map((p) => (
             <DropdownMenuRadioItem key={p.code} value={p.code}>
@@ -118,6 +120,7 @@ function PackageCell({
  * Breite der Nummer, Temperatur bricht stattdessen um und die Verpackung kürzt (voller Text im Tooltip).
  */
 export function VariantsSection() {
+  useI18n()
   const { extraction, device, deviceIndex, proposal, choices, setChoices, edit } = useReview()
   const setPreviewPackage = useReviewUi((s) => s.setPreviewPackage)
   const variants = device.variants
@@ -156,7 +159,7 @@ export function VariantsSection() {
   return (
     <Section
       id="varianten"
-      title="Bestellvarianten"
+      title={t("Bestellvarianten")}
       icon={<ListOrdered />}
       count={all.length ? `${formatNumber(selected.size)} / ${formatNumber(all.length)}` : undefined}
       issues={issues}
@@ -164,63 +167,55 @@ export function VariantsSection() {
       {anyExists && (
         <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-card border border-line bg-surface px-3 py-2">
           <div className="min-w-0 flex-1 text-xs leading-snug">
-            <div className="font-medium text-fg">Vorhandene Bauteile</div>
+            <div className="font-medium text-fg">{t("Vorhandene Bauteile")}</div>
             <div className="text-fg-subtle">
               {choices.mode === 'skip'
-                ? 'bleiben unverändert – nur neue Bestellnummern werden angelegt'
-                : 'werden mit den Werten aus dem Datenblatt aktualisiert (Freigabe und eigene Links bleiben)'}
+                ? t("bleiben unverändert – nur neue Bestellnummern werden angelegt")
+                : t("werden mit den Werten aus dem Datenblatt aktualisiert (Freigabe und eigene Links bleiben)")}
             </div>
           </div>
           <SegmentedControl
             size="sm"
-            aria-label="Vorhandene Bauteile"
+            aria-label={t("Vorhandene Bauteile")}
             value={choices.mode}
             onValueChange={(mode) => setChoices((c) => ({ ...c, mode }))}
             options={[
-              { value: 'skip', label: 'Überspringen' },
-              { value: 'update', label: 'Aktualisieren' },
+              { value: 'skip', label: t("Überspringen") },
+              { value: 'update', label: t("Aktualisieren") },
             ]}
           />
         </div>
       )}
       {variants.length === 0 ? (
         <p className="rounded-card border border-dashed border-line-strong px-3 py-2.5 text-xs leading-relaxed text-fg-muted">
-          Im Datenblatt stehen keine Bestellnummern – angelegt wird{' '}
-          <span className="mono text-fg">{proposal?.variants[0]?.mpn ?? device.base_part}</span>. Die Hersteller-Teilenummer lässt sich
-          später in der Bauteiltabelle ergänzen.
-        </p>
+          {t("Im Datenblatt stehen keine Bestellnummern – angelegt wird")}{' '}
+          <span className="mono text-fg">{proposal?.variants[0]?.mpn ?? device.base_part}</span>{t(". Die Hersteller-Teilenummer lässt sich später in der Bauteiltabelle ergänzen.")}</p>
       ) : (
         <div className="group/variants">
           {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Pfeiltasten zwischen den Bedienelementen einer Zeile (ein Tab-Stopp je Zeile) */}
           <table className="w-full border-separate border-spacing-0 text-xs" onKeyDown={rowNavigationKeyDown}>
             <caption className="sr-only">
-              Bestellvarianten nach Gehäuse. Je Zeile ein Tab-Stopp; Hinweis, Status, Gehäuse und Fundstelle mit den Pfeiltasten
-              links und rechts, andere Zeilen mit auf und ab.
-            </caption>
+              {t("Bestellvarianten nach Gehäuse. Je Zeile ein Tab-Stopp; Hinweis, Status, Gehäuse und Fundstelle mit den Pfeiltasten links und rechts, andere Zeilen mit auf und ab.")}</caption>
             <thead>
               <tr className="text-left text-2xs font-semibold uppercase tracking-[0.06em] text-fg-subtle">
                 <th scope="col" className="w-7 pb-1.5 pl-1 font-semibold">
                   <Checkbox
-                    aria-label="Alle Bestellnummern auswählen"
+                    aria-label={t("Alle Bestellnummern auswählen")}
                     checked={allState}
                     onCheckedChange={(v) => setSelected(v === true ? new Set(all) : new Set())}
                   />
                 </th>
                 <th scope="col" className="pb-1.5 font-semibold">
-                  Bestellnummer
-                </th>
+                  {t("Bestellnummer")}</th>
                 <th scope="col" className="hidden pb-1.5 font-semibold @[30rem]:table-cell">
-                  Temperatur
-                </th>
+                  {t("Temperatur")}</th>
                 <th scope="col" className="hidden pb-1.5 font-semibold @[38rem]:table-cell">
-                  Verpackung
-                </th>
+                  {t("Verpackung")}</th>
                 <th scope="col" className="pb-1.5 font-semibold">
                   Status
                 </th>
                 <th scope="col" className="w-0 whitespace-nowrap pb-1.5 pr-1 text-right font-semibold">
-                  Gehäuse
-                </th>
+                  {t("Gehäuse")}</th>
               </tr>
             </thead>
             {groups.map((g) => {
@@ -236,7 +231,7 @@ export function VariantsSection() {
                 )[0] ?? []
               const on = mpns.filter((m) => selected.has(m)).length
               const groupState = on === mpns.length ? true : on === 0 ? false : 'indeterminate'
-              const groupName = packageLabel(pkg, g.code || 'ohne Gehäuse')
+              const groupName = packageLabel(pkg, g.code || t("ohne Gehäuse"))
               return (
                 <tbody key={g.code || '–'}>
                   <tr data-nav-row="">
@@ -244,7 +239,7 @@ export function VariantsSection() {
                       <div className="flex items-center gap-2 rounded-control bg-surface-2/70 px-1 py-1">
                         <span data-nav-host="" className="ml-1 flex">
                           <Checkbox
-                            aria-label={`Alle Bestellnummern im Gehäuse ${groupName} auswählen`}
+                            aria-label={t("Alle Bestellnummern im Gehäuse {0} auswählen", { "0": String(groupName) })}
                             checked={groupState}
                             onCheckedChange={(v) => toggle(mpns, v === true)}
                           />
@@ -262,14 +257,14 @@ export function VariantsSection() {
                               <ArrowRight aria-hidden className="size-3 shrink-0 text-fg-subtle" />
                               <span className="mono truncate">{fp.name}</span>
                               <Badge variant={fp.exists ? 'neutral' : 'success'} size="sm">
-                                {fp.exists ? 'vorhanden' : 'neu'}
+                                {fp.exists ? t("vorhanden") : t("neu")}
                               </Badge>
                             </span>
                           )}
                           {sym?.name && <span className="truncate text-fg-subtle">Symbol {sym.name}</span>}
-                          <span className="sr-only"> – in der Vorschau zeigen</span>
+                          <span className="sr-only"> {t(" – in der Vorschau zeigen")}</span>
                         </button>
-                        <SourceChip navItem pages={groupPages} what={`Bestellangaben ${packageLabel(pkg, g.code)}`} />
+                        <SourceChip navItem pages={groupPages} what={t("Bestellangaben {0}", { "0": String(packageLabel(pkg, g.code)) })} />
                         <span className="pr-1 text-2xs tabular-nums text-fg-subtle">
                           {on}/{mpns.length}
                         </span>
@@ -285,13 +280,13 @@ export function VariantsSection() {
                     return (
                       <tr key={`${v.mpn}-${i}`} data-nav-row="" className={cn('group/row', !isOn && 'text-fg-subtle')}>
                         <td data-nav-host="" className="border-b border-line py-1.5 pl-1 align-middle">
-                          <Checkbox aria-label={`${v.mpn} anlegen`} checked={isOn} onCheckedChange={(c) => toggle([v.mpn], c === true)} />
+                          <Checkbox aria-label={t("{0} anlegen", { "0": String(v.mpn) })} checked={isOn} onCheckedChange={(c) => toggle([v.mpn], c === true)} />
                         </td>
                         <td className="border-b border-line py-1.5 pr-2 align-middle">
                           <div className="flex items-center gap-1.5">
                             <span className={cn('mono whitespace-nowrap', isOn ? 'text-fg' : 'text-fg-subtle')}>{v.mpn}</span>
                             {v.notes && (
-                              <TipButton navItem tip={v.notes} label={`Anmerkung: ${v.notes}`} className="rounded-sm text-fg-subtle">
+                              <TipButton navItem tip={v.notes} label={t("Anmerkung: {0}", { "0": String(v.notes) })} className="rounded-sm text-fg-subtle">
                                 <Info aria-hidden className="size-3.5" />
                               </TipButton>
                             )}
@@ -306,8 +301,8 @@ export function VariantsSection() {
                             <span className="truncate" title={v.packaging || undefined}>
                               {v.packaging || '–'}
                             </span>
-                            {life && life !== 'Aktiv' && (
-                              <Badge variant={life === 'NRND' || life === 'Vorschau' ? 'warning' : 'danger'} size="sm">
+                            {life && life !== t('Aktiv') && (
+                              <Badge variant={life === 'NRND' || life === t('Vorschau') ? 'warning' : 'danger'} size="sm">
                                 {life}
                               </Badge>
                             )}
@@ -319,14 +314,14 @@ export function VariantsSection() {
                         <td className="border-b border-line py-1 pr-1 align-middle">
                           <div className="flex items-center justify-end gap-1">
                             {v.pages.join() !== groupPages.join() && (
-                              <SourceChip navItem pages={v.pages} what={`Bestellangaben ${v.mpn}`} className="hidden @[24rem]:inline-flex" />
+                              <SourceChip navItem pages={v.pages} what={t("Bestellangaben {0}", { "0": String(v.mpn) })} className="hidden @[24rem]:inline-flex" />
                             )}
                             <PackageCell
                               mpn={v.mpn}
                               value={v.package}
                               packages={extraction.packages}
                               onChange={(code) =>
-                                edit.apply(`Gehäuse von ${v.mpn}`, (d) => {
+                                edit.apply(t("Gehäuse von {0}", { "0": String(v.mpn) }), (d) => {
                                   d.devices[deviceIndex].variants[i].package = code
                                 })
                               }
@@ -342,8 +337,7 @@ export function VariantsSection() {
           </table>
           {/* Tastaturhinweis, sobald der Fokus in der Tabelle ist */}
           <p aria-hidden className="mt-1.5 hidden text-2xs text-fg-subtle group-focus-within/variants:block">
-            Tab: nächste Zeile · ←/→: Hinweis, Status, Gehäuse, Fundstelle · ↑/↓: Zeile wechseln
-          </p>
+            {t("Tab: nächste Zeile · ←/→: Hinweis, Status, Gehäuse, Fundstelle · ↑/↓: Zeile wechseln")}</p>
         </div>
       )}
     </Section>

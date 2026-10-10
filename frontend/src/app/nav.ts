@@ -1,3 +1,4 @@
+import { t as tr } from '@/lib/i18n'
 import {
   CircuitBoard,
   FileScan,
@@ -29,8 +30,8 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   {
     to: '/',
-    label: 'Übersicht',
-    description: 'Kennzahlen, Bibliotheksgesundheit und Schnellaktionen',
+    get label() { return tr("Übersicht") },
+    get description() { return tr("Kennzahlen, Bibliotheksgesundheit und Schnellaktionen") },
     icon: LayoutDashboard,
     hotkey: 'alt+1',
     group: 'Bibliothek',
@@ -38,8 +39,8 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     to: '/bauteile',
-    label: 'Bauteile',
-    description: 'Alle Bauteile durchsuchen, filtern und bearbeiten',
+    get label() { return tr("Bauteile") },
+    get description() { return tr("Alle Bauteile durchsuchen, filtern und bearbeiten") },
     icon: Microchip,
     hotkey: 'alt+2',
     group: 'Bibliothek',
@@ -47,8 +48,8 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     to: '/serien',
-    label: 'Serien-Assistent',
-    description: 'Komplette Bauteilserien in einem Rutsch anlegen',
+    get label() { return tr("Serien-Assistent") },
+    get description() { return tr("Komplette Bauteilserien in einem Rutsch anlegen") },
     icon: Layers,
     hotkey: 'alt+3',
     group: 'Bibliothek',
@@ -56,8 +57,8 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     to: '/import',
-    label: 'Datenblatt-Import',
-    description: 'Bauteile per KI aus PDF-Datenblättern erzeugen',
+    get label() { return tr("Datenblatt-Import") },
+    get description() { return tr("Bauteile per KI aus PDF-Datenblättern erzeugen") },
     icon: FileScan,
     hotkey: 'alt+4',
     group: 'Bibliothek',
@@ -66,8 +67,8 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     to: '/bibliotheksimport',
-    label: 'Bibliotheksimport',
-    description: 'Symbole und Footprints aus vorhandenen Altium-Bibliotheken übernehmen',
+    get label() { return tr("Bibliotheksimport") },
+    get description() { return tr("Symbole und Footprints aus vorhandenen Altium-Bibliotheken übernehmen") },
     icon: FolderInput,
     hotkey: 'alt+9',
     group: 'Bibliothek',
@@ -75,8 +76,8 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     to: '/symbole',
-    label: 'Symbole',
-    description: 'Schaltplansymbole ansehen, erzeugen und bearbeiten',
+    get label() { return tr("Symbole") },
+    get description() { return tr("Schaltplansymbole ansehen, erzeugen und bearbeiten") },
     icon: Shapes,
     hotkey: 'alt+5',
     group: 'Modelle',
@@ -85,7 +86,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     to: '/footprints',
     label: 'Footprints',
-    description: 'Footprints nach IPC-7351 generieren und verwalten',
+    get description() { return tr("Footprints nach IPC-7351 generieren und verwalten") },
     icon: CircuitBoard,
     hotkey: 'alt+6',
     group: 'Modelle',
@@ -93,8 +94,8 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     to: '/stapelbearbeitung',
-    label: 'Stapelbearbeitung',
-    description: 'Symbole und Footprints in einem Arbeitsgang an den Hausstil angleichen',
+    get label() { return tr("Stapelbearbeitung") },
+    get description() { return tr("Symbole und Footprints in einem Arbeitsgang an den Hausstil angleichen") },
     icon: PaintbrushVertical,
     hotkey: 'alt+0',
     group: 'Modelle',
@@ -103,7 +104,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     to: '/altium',
     label: 'Altium',
-    description: 'DbLib erzeugen, Bibliothek prüfen und in Altium installieren',
+    get description() { return tr("DbLib erzeugen, Bibliothek prüfen und in Altium installieren") },
     icon: PlugZap,
     hotkey: 'alt+7',
     group: 'System',
@@ -111,8 +112,8 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     to: '/einstellungen',
-    label: 'Einstellungen',
-    description: 'KI, Altium, Bibliothek und Darstellung',
+    get label() { return tr("Einstellungen") },
+    get description() { return tr("KI, Altium, Bibliothek und Darstellung") },
     icon: Settings,
     hotkey: 'alt+8',
     group: 'System',

@@ -1,20 +1,4 @@
-/**
- * Serien-Assistent: Hersteller-Serien (MPN-Vorlagen), Vorschau, Erzeugen als Job, Teilenummern lesen, eigene Vorlagen.
- *
- *   const templates = useSeriesTemplates('Resistors')               // GET  /api/series/templates?category=
- *   const tpl = useSeriesTemplate('vishay-crcw-e3', { full: true })  // GET  /api/series/templates/{id}?full=
- *   const preview = useSeriesPreview(request)                        // POST /api/series/preview (Zeilen + Status)
- *   const { job } = await seriesApi.commit({ ...request, mode: 'skip' }); trackJob(job)   // POST /api/series/commit
- *   const decoded = await seriesApi.decode('CRCW060310K0FKEA')        // POST /api/series/decode
- *   const test = await seriesApi.test({ template, samples })          // POST /api/series/templates/test
- *
- * Die Vorlagenliste trägt alles, was eine Karte zeigt (Beispiel-Teilenummer mit Zerlegung und Pflichtfeldprüfung,
- * Modus, Wertebereich, E-Reihen, Brücke, Quellen) – Karten brauchen keine eigenen Anfragen.
- *
- * Query-Keys beginnen mit „series“ (beim Bibliothekswechsel verworfen; nach einem beendeten Job laden nur die
- * Vorschauen neu – Vorlagen sind `meta.static`).
- * Fehler sind `ApiError` mit deutschem Text des Backends (400 Auswahl/Vorlage, 404 Vorlage, 409 ID vergeben).
- */
+import { useI18n } from '@/lib/i18n'
 import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { api } from './client'
 import type { Job } from './system'
@@ -206,6 +190,7 @@ export function useSaveCustomTemplate() {
 }
 
 export function useDeleteCustomTemplate() {
+  const { t: tr } = useI18n()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => seriesApi.deleteCustom(id),
@@ -217,6 +202,6 @@ export function useDeleteCustomTemplate() {
       qc.removeQueries({ queryKey: [...seriesKeys.templates, 'detail', id] })
       await qc.invalidateQueries({ queryKey: [...seriesKeys.templates, 'list'] })
     },
-    meta: { errorTitle: 'Vorlage konnte nicht gelöscht werden' },
+    meta: { errorTitle: tr("Vorlage konnte nicht gelöscht werden") },
   })
 }

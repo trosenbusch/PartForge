@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 /**
  * Serien-Assistent (`/serien`): eine komplette Bauteilserie in fünf Schritten – Kategorie → Hersteller-Serie →
  * Werte und Varianten (Live-Zähler) → Vorschau (alle Zeilen mit Status) → Erzeugen (Job mit Fortschritt).
@@ -114,6 +115,7 @@ function withStep(params: URLSearchParams, step: StepIndex): URLSearchParams {
 }
 
 export default function SerienPage() {
+  const { t: tr } = useI18n()
   const navigate = useNavigate()
   const qc = useQueryClient()
   const reduceMotion = useReducedMotion()
@@ -170,11 +172,11 @@ export default function SerienPage() {
     const table = (step >= 2 ? template?.category : null) ?? category
     if (!table) return ''
     return (
-      categories.data?.find((c) => c.table === table)?.label ??
+      tr(categories.data?.find((c) => c.table === table)?.label ??
       SERIES_CATEGORIES.find((c) => c.table === table)?.label ??
-      table
+      table)
     )
-  }, [categories.data, category, template?.category, step])
+  }, [categories.data, category, template?.category, step, tr])
 
   const templateIssue: TemplateIssue | null =
     template || step < 2
@@ -308,7 +310,7 @@ export default function SerienPage() {
 
   const commit = useMutation({
     mutationFn: () => {
-      if (!request) throw new Error('Keine gültige Auswahl.')
+      if (!request) throw new Error(tr("Keine gültige Auswahl."))
       return seriesApi.commit({ ...request, mode })
     },
     // Fehler stehen im Schritt „Erzeugen“ (deutscher Text des Backends)
@@ -398,7 +400,7 @@ export default function SerienPage() {
       chooseTemplate(t.category, t.id)
       goTo(2)
     } catch (error) {
-      toast.error('Vorlage konnte nicht geladen werden', { description: cleanErrorText(errorMessage(error)) })
+      toast.error(tr("Vorlage konnte nicht geladen werden"), { description: cleanErrorText(errorMessage(error)) })
     }
   }
 
@@ -422,9 +424,9 @@ export default function SerienPage() {
     }
     useSerien.getState().setStep(target)
     if (running) {
-      toast.info('Eine Serie wird gerade erzeugt', {
+      toast.info(tr("Eine Serie wird gerade erzeugt"), {
         id: 'serien-laeuft',
-        description: 'Die Auswahl ist gemerkt – nach dem Ende geht es mit „Neue Serie“ weiter.',
+        description: tr("Die Auswahl ist gemerkt – nach dem Ende geht es mit „Neue Serie“ weiter."),
       })
     }
     setParams(
@@ -436,7 +438,7 @@ export default function SerienPage() {
       },
       { replace: true },
     )
-  }, [paramCategory, paramTemplate, templates.data, setParams])
+  }, [paramCategory, paramTemplate, templates.data, setParams, tr])
 
   // ------------------------------------------------------------------ Eigene Vorlagen
   const [dialog, setDialog] = useState<{ open: boolean; edit: string | null }>({ open: false, edit: null })
@@ -444,16 +446,16 @@ export default function SerienPage() {
   const deleteCustom = useDeleteCustomTemplate()
   const removeCustom = async (t: SeriesTemplateSummary) => {
     const ok = await confirm({
-      title: `Vorlage „${t.title}“ löschen?`,
-      description: 'Bereits angelegte Bauteile bleiben unverändert. Die Vorlage lässt sich nicht wiederherstellen.',
+      title: tr("Vorlage „{v0}“ löschen?", { v0: t.title }),
+      description: tr("Bereits angelegte Bauteile bleiben unverändert. Die Vorlage lässt sich nicht wiederherstellen."),
       destructive: true,
-      confirmLabel: 'Löschen',
+      confirmLabel: tr("Löschen"),
       onConfirm: async () => {
         await deleteCustom.mutateAsync(t.id)
         if (useSerien.getState().templateId === t.id) useSerien.setState({ templateId: null })
       },
     })
-    if (ok) toast.success('Vorlage gelöscht', { description: t.title })
+    if (ok) toast.success(tr("Vorlage gelöscht"), { description: t.title })
   }
 
   // ------------------------------------------------------------------ Erzeugen
@@ -474,9 +476,9 @@ export default function SerienPage() {
     if (jobRunning) {
       // nie einen laufenden Job verwerfen – stattdessen seinen Fortschritt zeigen
       goTo(LAST_STEP)
-      toast.info('Eine Serie wird gerade erzeugt', {
+      toast.info(tr("Eine Serie wird gerade erzeugt"), {
         id: 'serien-laeuft',
-        description: 'Eine neue Serie lässt sich beginnen, sobald sie fertig ist.',
+        description: tr("Eine neue Serie lässt sich beginnen, sobald sie fertig ist."),
       })
       return
     }
@@ -485,60 +487,60 @@ export default function SerienPage() {
     setQuickDecoded(null)
     void qc.invalidateQueries({ queryKey: [...seriesKeys.all, 'preview'] })
     goTo(0)
-  }, [jobRunning, commit, qc, goTo])
+  }, [jobRunning, commit, qc, goTo, tr])
 
   // ------------------------------------------------------------------ Schritte
   const counts = preview.data?.counts ?? {}
   const writable = (counts.new ?? 0) + (counts.exists ?? 0)
   const writes = (counts.new ?? 0) + (mode === 'update' ? (counts.exists ?? 0) : 0)
   const canPreview = Boolean(request) && withinLimits
-  const templateReason = templateIssue ? 'Vorlage nicht geladen' : 'Vorlage wird geladen'
+  const templateReason = templateIssue ? tr("Vorlage nicht geladen") : tr("Vorlage wird geladen")
   const next = (() => {
     switch (step) {
       case 0:
         // Schnellstart hat eine Serie erkannt: die ist das Naheliegende (Strg+Enter übernimmt sie)
         if (quickDecoded) {
-          return { label: 'Serie übernehmen', disabled: false, reason: null, run: () => void applyDecoded({ decoded: quickDecoded }) }
+          return { label: tr("Serie übernehmen"), disabled: false, reason: null, run: () => void applyDecoded({ decoded: quickDecoded }) }
         }
-        return { label: 'Weiter', disabled: !category, reason: category ? null : 'Kategorie wählen', run: () => goTo(1) }
+        return { label: tr("Weiter"), disabled: !category, reason: category ? null : tr("Kategorie wählen"), run: () => goTo(1) }
       case 1:
         return {
-          label: 'Weiter: Werte festlegen',
+          label: tr("Weiter: Werte festlegen"),
           disabled: !templateId || !summary || summary.category !== category,
-          reason: templateId && summary?.category === category ? null : 'Hersteller-Serie wählen',
+          reason: templateId && summary?.category === category ? null : tr("Hersteller-Serie wählen"),
           run: () => goTo(2),
         }
       case 2:
         return {
-          label: 'Weiter: Vorschau',
+          label: tr("Weiter: Vorschau"),
           disabled: !canPreview || Boolean(previewError),
           reason: !template
             ? templateReason
             : !settings?.sizes.length
-              ? 'Bauform wählen'
+              ? tr("Bauform wählen")
               : rowsPlanned > SERIES_MAX_ROWS
-                ? 'Zu viele Bauteile'
+                ? tr("Zu viele Bauteile")
                 : !rowsPlanned
-                  ? 'Keine Bauteile'
+                  ? tr("Keine Bauteile")
                   : previewError
-                    ? 'Prüfung fehlgeschlagen'
+                    ? tr("Prüfung fehlgeschlagen")
                     : null,
           run: () => goTo(3),
         }
       case 3:
         return {
-          label: 'Weiter: Erzeugen',
+          label: tr("Weiter: Erzeugen"),
           disabled: !previewCurrent || !writable || !preview.data?.symbol,
           reason: !template
             ? templateReason
             : previewError || (!withinLimits && rowsPlanned > 0)
-              ? 'Prüfung fehlgeschlagen'
+              ? tr("Prüfung fehlgeschlagen")
               : !previewCurrent
-                ? 'Vorschau wird berechnet'
+                ? tr("Vorschau wird berechnet")
                 : !writable
-                  ? 'Nichts zu erzeugen'
+                  ? tr("Nichts zu erzeugen")
                   : !preview.data?.symbol
-                    ? 'Kein sicheres Symbol'
+                    ? tr("Kein sicheres Symbol")
                     : null,
           run: () => goTo(4),
         }
@@ -565,15 +567,15 @@ export default function SerienPage() {
   useRegisterCommands([
     {
       id: 'series.new',
-      title: 'Neue Serie',
+      title: tr("Neue Serie"),
       subtitle: jobRunning
-        ? 'Zeigt die laufende Serie – eine neue beginnt, sobald sie fertig ist'
-        : 'Serien-Assistent von vorn beginnen (die gemerkte Auswahl bleibt)',
-      group: 'Aktionen',
+        ? tr("Zeigt die laufende Serie – eine neue beginnt, sobald sie fertig ist")
+        : tr("Serien-Assistent von vorn beginnen (die gemerkte Auswahl bleibt)"),
+      group: tr('Aktionen'),
       icon: Layers,
       priority: 90,
       target: '/serien',
-      keywords: ['serie anlegen', 'serien-assistent', 'e-reihe', 'widerstand', 'kondensator', 'neu'],
+      keywords: [tr("serie anlegen"), 'serien-assistent', 'e-reihe', 'widerstand', 'kondensator', tr("neu")],
       run: ({ close }) => {
         close()
         newSeries()
@@ -581,9 +583,9 @@ export default function SerienPage() {
     },
     {
       id: 'series.template.new',
-      title: 'Eigene Serienvorlage anlegen',
-      subtitle: 'Teilenummern-Muster mit Codetabellen, sofort testbar',
-      group: 'Aktionen',
+      title: tr("Eigene Serienvorlage anlegen"),
+      subtitle: tr("Teilenummern-Muster mit Codetabellen, sofort testbar"),
+      group: tr('Aktionen'),
       icon: FilePlus2,
       priority: 40,
       keywords: ['vorlage', 'muster', 'mpn', 'hersteller', 'serie'],
@@ -597,7 +599,7 @@ export default function SerienPage() {
   // ------------------------------------------------------------------ Darstellung
   const [stepperRef, stepperSize] = useElementSize<HTMLDivElement>()
   const compactStepper = stepperSize.width > 0 && stepperSize.width < 900
-  const subtitle = `Schritt ${step + 1} von ${STEPS.length}${categoryLabel && step > 0 ? ` · ${categoryLabel}` : ''}`
+  const subtitle = tr("Schritt {v0} von {v1}{v2}", { v0: step + 1, v1: STEPS.length, v2: categoryLabel && step > 0 ? ` · ${categoryLabel}` : '' })
 
   const serverCount = previewCurrent && preview.data ? serverParts(preview.data.counts) : null
   const footerCount = (() => {
@@ -605,15 +607,14 @@ export default function SerienPage() {
     if (step === LAST_STEP) {
       return previewCurrent ? (
         <span className="shrink-0">
-          <span className="mono font-semibold text-fg">{formatNumber(writes)}</span> {writes === 1 ? 'wird' : 'werden'} geschrieben
-        </span>
+          <span className="mono font-semibold text-fg">{formatNumber(writes)}</span> {writes === 1 ? tr("wird") : tr("werden")} {tr("geschrieben")}</span>
       ) : null
     }
     const n = serverCount ?? estimate.total
     return (
       <span className="flex shrink-0 items-center gap-1.5">
         <span>
-          <span className="mono font-semibold text-fg">{formatNumber(n)}</span> {n === 1 ? 'Bauteil' : 'Bauteile'}
+          <span className="mono font-semibold text-fg">{formatNumber(n)}</span> {n === 1 ? tr("Bauteil") : tr("Bauteile")}
         </span>
         {step === 2 &&
           (previewError ? (
@@ -644,7 +645,7 @@ export default function SerienPage() {
       <span>{categoryLabel}</span>
     ) : step === 0 && quickDecoded ? (
       <span className="truncate">
-        Erkannt: <span className="font-medium text-fg">{quickDecoded.template_title}</span>
+        {tr("Erkannt:")} <span className="font-medium text-fg">{quickDecoded.template_title}</span>
       </span>
     ) : null
 
@@ -679,13 +680,13 @@ export default function SerienPage() {
   } else if (!template || !settings || !estimate) {
     content = templateIssue ? (
       <section aria-labelledby={STEP_HEADINGS[step]} className="flex flex-col gap-5">
-        <StepHeading id={STEP_HEADINGS[step]} title={STEPS[step].label} />
+        <StepHeading id={STEP_HEADINGS[step]} title={tr(STEPS[step].label)} />
         <LoadError
-          title={templateIssue.kind === 'missing' ? 'Diese Hersteller-Serie gibt es nicht mehr' : 'Vorlage nicht geladen'}
+          title={templateIssue.kind === 'missing' ? tr("Diese Hersteller-Serie gibt es nicht mehr") : tr("Vorlage nicht geladen")}
           error={templateIssue.kind === 'missing' ? null : templateIssue.error}
           description={
             templateIssue.kind === 'missing'
-              ? `Die Vorlage „${templateId ?? '–'}“ wurde gelöscht oder umbenannt. Bitte eine andere Hersteller‑Serie wählen.`
+              ? tr("Die Vorlage „{v0}“ wurde gelöscht oder umbenannt. Bitte eine andere Hersteller‑Serie wählen.", { v0: templateId ?? '–' })
               : undefined
           }
           onRetry={
@@ -696,8 +697,7 @@ export default function SerienPage() {
           retrying={templates.isFetching || templateQuery.isFetching}
           actions={
             <Button variant={templateIssue.kind === 'missing' ? 'secondary' : 'ghost'} leftIcon={<ArrowLeft />} onClick={() => goTo(1)}>
-              Andere Serie wählen
-            </Button>
+              {tr("Andere Serie wählen")}</Button>
           }
         />
       </section>
@@ -741,7 +741,7 @@ export default function SerienPage() {
         stale={!previewCurrent}
         error={
           !withinLimits
-            ? new Error(`Die Auswahl ergibt ${formatNumber(rowsPlanned)} Zeilen – höchstens ${formatNumber(SERIES_MAX_ROWS)}.`)
+            ? new Error(tr("Die Auswahl ergibt {v0} Zeilen – höchstens {v1}.", { v0: formatNumber(rowsPlanned), v1: formatNumber(SERIES_MAX_ROWS) }))
             : previewError
         }
         onRetry={() => void preview.refetch()}
@@ -780,12 +780,12 @@ export default function SerienPage() {
   const showFooter = !(step === LAST_STEP && jobInfo)
 
   const onTemplateSaved = (savedTemplate: SeriesTemplate, info: { created: boolean }): boolean => {
-    const title = info.created ? 'Vorlage angelegt' : 'Vorlage gespeichert'
+    const title = info.created ? tr("Vorlage angelegt") : tr("Vorlage gespeichert")
     if (jobRunning) {
       // laufende Serie nicht verlassen – die Vorlage ist beim nächsten Mal in ihrer Kategorie vorgewählt
       useSerien.setState((s) => ({ lastTemplate: { ...s.lastTemplate, [savedTemplate.category]: savedTemplate.id } }))
       toast.success(title, {
-        description: `${savedTemplate.title} – wählbar, sobald die laufende Serie fertig ist.`,
+        description: tr("{v0} – wählbar, sobald die laufende Serie fertig ist.", { v0: savedTemplate.title }),
       })
       return false
     }
@@ -800,24 +800,22 @@ export default function SerienPage() {
 
   return (
     <PageBody width="wide" className="flex min-h-[calc(100dvh-var(--pf-topbar-height))] flex-col gap-5 pb-0">
-      <PageTitle title="Serien-Assistent" subtitle={subtitle} />
+      <PageTitle title={tr("Serien-Assistent")} subtitle={subtitle} />
       <PageActions>
         {step > 0 && !jobInfo && (
           <Button variant="ghost" leftIcon={<RotateCcw />} onClick={newSeries}>
-            Neu beginnen
-          </Button>
+            {tr("Neu beginnen")}</Button>
         )}
         <Button variant="secondary" leftIcon={<FilePlus2 />} onClick={() => openCustom()}>
-          Eigene Vorlage
-        </Button>
+          {tr("Eigene Vorlage")}</Button>
       </PageActions>
 
       <p className="sr-only" aria-live="polite" aria-atomic="true">
-        {`Schritt ${step + 1} von ${STEPS.length}: ${STEPS[step].label}`}
+        {tr("Schritt {v0} von {v1}: {v2}", { v0: step + 1, v1: STEPS.length, v2: tr(STEPS[step].label) })}
       </p>
       <div ref={stepperRef} className="rounded-card border border-line bg-surface/70 px-3 py-2 shadow-card">
         <Stepper
-          steps={compactStepper ? STEPS_SHORT : STEPS}
+          steps={(compactStepper ? STEPS_SHORT : STEPS).map((s) => ({ ...s, label: tr(s.label), description: s.description ? tr(s.description) : undefined }))}
           // abgeschlossen erst, wenn die Serie in der Bibliothek steht (nicht, wenn nichts geschrieben werden konnte)
           current={liveJob?.status === 'done' && step === LAST_STEP && seriesWritten(liveJob.result) ? STEPS.length : step}
           compact={compactStepper}

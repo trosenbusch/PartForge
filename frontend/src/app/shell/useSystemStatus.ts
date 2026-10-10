@@ -1,3 +1,6 @@
+import { localizeMessage } from '@/lib/i18n'
+import { useI18n } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { useAltiumStatus } from '@/api/altium'
 import { aiSettingsSignature, useAiConnection, useHealth, useSettings, type AiConnectionCheck } from '@/api/system'
 import { formatNumber, formatRelativeTime, shortenPath } from '@/lib/format'
@@ -56,18 +59,19 @@ export function modelDisplayName(model: string): string {
 }
 
 const AI_PROBLEM: Record<NonNullable<AiConnectionCheck['code']>, { level: StatusLevel; title: string; short: string }> = {
-  key_rejected: { level: 'error', title: 'Schlüssel abgelehnt', short: 'abgelehnt' },
-  key_missing: { level: 'warn', title: 'API-Schlüssel fehlt', short: 'kein Schlüssel' },
-  model_unavailable: { level: 'warn', title: 'Modell nicht verfügbar', short: 'Modell fehlt' },
-  network: { level: 'warn', title: 'Claude-API nicht erreichbar', short: 'keine Verbindung' },
-  rate_limited: { level: 'warn', title: 'Anfragelimit erreicht', short: 'Limit erreicht' },
-  ai_disabled: { level: 'off', title: 'KI-Funktionen ausgeschaltet', short: 'aus' },
-  unexpected: { level: 'warn', title: 'Unerwartete Antwort', short: 'Antwort unklar' },
-  unknown: { level: 'warn', title: 'Verbindungstest fehlgeschlagen', short: 'Fehler' },
+  key_rejected: { level: 'error', get title() { return tr("Schlüssel abgelehnt") }, get short() { return tr('abgelehnt') } },
+  key_missing: { level: 'warn', get title() { return tr("API-Schlüssel fehlt") }, get short() { return tr("kein Schlüssel") } },
+  model_unavailable: { level: 'warn', get title() { return tr("Modell nicht verfügbar") }, get short() { return tr("Modell fehlt") } },
+  network: { level: 'warn', get title() { return tr("Claude-API nicht erreichbar") }, get short() { return tr("keine Verbindung") } },
+  rate_limited: { level: 'warn', get title() { return tr("Anfragelimit erreicht") }, get short() { return tr("Limit erreicht") } },
+  ai_disabled: { level: 'off', get title() { return tr("KI-Funktionen ausgeschaltet") }, get short() { return tr('aus') } },
+  unexpected: { level: 'warn', get title() { return tr("Unerwartete Antwort") }, get short() { return tr("Antwort unklar") } },
+  unknown: { level: 'warn', get title() { return tr("Verbindungstest fehlgeschlagen") }, get short() { return tr("Fehler") } },
 }
 
 /** Ampelstatus für Datenbank, Altium und KI (Sidebar, Übersicht). */
 export function useSystemStatus(): StatusItem[] {
+  const { t: tr } = useI18n()
   const health = useHealth()
   const settings = useSettings()
   const altiumStatus = useAltiumStatus()
@@ -78,23 +82,23 @@ export function useSystemStatus(): StatusItem[] {
   if (health.isError) {
     db = {
       key: 'db',
-      label: 'Datenbank',
+      label: tr("Datenbank"),
       level: 'error',
-      title: 'Backend nicht erreichbar',
+      title: tr("Backend nicht erreichbar"),
       short: 'offline',
-      detail: 'Der lokale PartForge-Dienst antwortet nicht.',
+      detail: tr("Der lokale PartForge-Dienst antwortet nicht."),
       to: '/',
     }
   } else if (!health.data) {
-    db = { key: 'db', label: 'Datenbank', level: 'pending', title: 'Wird geprüft …', short: '…', detail: '', to: '/' }
+    db = { key: 'db', label: tr("Datenbank"), level: 'pending', title: tr("Wird geprüft …"), short: '…', detail: '', to: '/' }
   } else if (health.data.workspace) {
     const ws = health.data.workspace
     const kind = ws.db_kind === 'postgres' ? 'PostgreSQL' : 'SQLite'
     db = {
       key: 'db',
-      label: 'Datenbank',
+      label: tr("Datenbank"),
       level: 'ok',
-      title: `${kind} verbunden`,
+      title: tr("{0} verbunden", { "0": String(kind) }),
       short: kind,
       detail: ws.db_kind === 'postgres' ? ws.name : shortenPath(ws.sqlite_path, 48),
       to: SETTINGS_PLACE.library.to,
@@ -102,11 +106,11 @@ export function useSystemStatus(): StatusItem[] {
   } else {
     db = {
       key: 'db',
-      label: 'Datenbank',
+      label: tr("Datenbank"),
       level: 'off',
-      title: 'Keine Bibliothek geöffnet',
-      short: 'keine',
-      detail: 'Bibliothek öffnen oder neu anlegen.',
+      title: tr("Keine Bibliothek geöffnet"),
+      short: tr('keine'),
+      detail: tr("Bibliothek öffnen oder neu anlegen."),
       to: '/willkommen',
     }
   }
@@ -120,13 +124,13 @@ export function useSystemStatus(): StatusItem[] {
       key: 'altium',
       label: 'Altium',
       level: 'unknown',
-      title: 'Altium-Status unbekannt',
-      short: 'unbekannt',
-      detail: 'Der Status konnte nicht abgefragt werden – PartForge versucht es alle 15 Sekunden erneut.',
+      title: tr("Altium-Status unbekannt"),
+      short: tr('unbekannt'),
+      detail: tr("Der Status konnte nicht abgefragt werden – PartForge versucht es alle 15 Sekunden erneut."),
       to: '/altium',
     }
   } else if (!st) {
-    altium = { key: 'altium', label: 'Altium', level: 'pending', title: 'Wird geprüft …', short: '…', detail: '', to: '/altium' }
+    altium = { key: 'altium', label: 'Altium', level: 'pending', title: tr("Wird geprüft …"), short: '…', detail: '', to: '/altium' }
   } else {
     const backend = s?.settings.altium.library_backend
     const rust = st.backends.find((b) => b.name === 'rust')
@@ -137,9 +141,9 @@ export function useSystemStatus(): StatusItem[] {
         key: 'altium',
         label: 'Altium',
         level: 'error',
-        title: 'Altium-Skript hängt',
-        short: 'Skript hängt',
-        detail: 'Ein PartForge-Skript hängt in Altium – dort Strg+F3 drücken (Skript anhalten) und erneut versuchen.',
+        title: tr("Altium-Skript hängt"),
+        short: tr("Skript hängt"),
+        detail: tr("Ein PartForge-Skript hängt in Altium – dort Strg+F3 drücken (Skript anhalten) und erneut versuchen."),
         to: '/altium',
       }
     } else if (st.altium_running) {
@@ -147,11 +151,11 @@ export function useSystemStatus(): StatusItem[] {
         key: 'altium',
         label: 'Altium',
         level: 'ok',
-        title: `${version} läuft`,
-        short: 'läuft',
+        title: tr("{0} läuft", { "0": String(version) }),
+        short: tr("läuft"),
         detail: st.refresh.auto_refresh
-          ? 'Änderungen an der Bibliothek erscheinen automatisch in Altium.'
-          : 'Änderungen erscheinen nach „In Altium aktualisieren“.',
+          ? tr("Änderungen an der Bibliothek erscheinen automatisch in Altium.")
+          : tr("Änderungen erscheinen nach „In Altium aktualisieren“."),
         to: '/altium',
       }
     } else if (!st.altium_exe) {
@@ -159,11 +163,11 @@ export function useSystemStatus(): StatusItem[] {
         key: 'altium',
         label: 'Altium',
         level: rustReady && backend !== 'altium' ? 'off' : 'warn',
-        title: 'Altium Designer nicht gefunden',
-        short: 'nicht gefunden',
+        title: tr("Altium Designer nicht gefunden"),
+        short: tr("nicht gefunden"),
         detail: rustReady
-          ? `Bibliotheken schreibt der ${WRITER} ohne Altium. Für Installieren und Prüfen den Pfad zu X2.EXE unter ${SETTINGS_PLACE.altium.label} eintragen.`
-          : `Weder Altium Designer noch der ${WRITER} ist verfügbar – ohne sie entstehen keine Bibliotheksdateien. Pfade unter ${SETTINGS_PLACE.altium.label} eintragen.`,
+          ? tr("Bibliotheken schreibt der {0} ohne Altium. Für Installieren und Prüfen den Pfad zu X2.EXE unter {1} eintragen.", { "0": tr(WRITER), "1": String(SETTINGS_PLACE.altium.label) })
+          : tr("Weder Altium Designer noch der {0} ist verfügbar – ohne sie entstehen keine Bibliotheksdateien. Pfade unter {1} eintragen.", { "0": tr(WRITER), "1": String(SETTINGS_PLACE.altium.label) }),
         to: SETTINGS_PLACE.altium.to,
       }
     } else {
@@ -173,13 +177,13 @@ export function useSystemStatus(): StatusItem[] {
         key: 'altium',
         label: 'Altium',
         level: needsAltium ? 'warn' : 'off',
-        title: 'Altium Designer nicht gestartet',
-        short: needsAltium && backend !== 'altium' ? 'kein Writer' : 'nicht gestartet',
+        title: tr("Altium Designer nicht gestartet"),
+        short: needsAltium && backend !== 'altium' ? tr("kein Writer") : tr("nicht gestartet"),
         detail: needsAltium
           ? backend === 'altium'
-            ? '„Über Altium“ ist gewählt – zum Schreiben der Bibliotheken Altium Designer starten.'
-            : `Ohne Altium und ohne ${WRITER} entstehen keine Bibliotheksdateien – ${WRITER} unter ${SETTINGS_PLACE.altium.label} eintragen oder Altium Designer starten.`
-          : `Bibliotheken schreibt der ${WRITER} ohne Altium. Für Installieren, Aktualisieren und Prüfen Altium Designer starten.`,
+            ? tr("„Über Altium“ ist gewählt – zum Schreiben der Bibliotheken Altium Designer starten.")
+            : tr("Ohne Altium und ohne {0} entstehen keine Bibliotheksdateien – {1} unter {2} eintragen oder Altium Designer starten.", { "0": tr(WRITER), "1": tr(WRITER), "2": String(SETTINGS_PLACE.altium.label) })
+          : tr("Bibliotheken schreibt der {0} ohne Altium. Für Installieren, Aktualisieren und Prüfen Altium Designer starten.", { "0": tr(WRITER) }),
         // Behebung: ohne Writer der Writer-Pfad (nicht die Altium-Seite, deren „Synchronisieren“ ebenso scheitert)
         to: needsAltium && backend !== 'altium' ? SETTINGS_PLACE.writer.to : '/altium',
       }
@@ -191,31 +195,31 @@ export function useSystemStatus(): StatusItem[] {
   if (!s) {
     ai = {
       key: 'ai',
-      label: 'KI',
+      label: tr("KI"),
       level: settings.isError ? 'unknown' : 'pending',
-      title: settings.isError ? 'KI-Status unbekannt' : 'Wird geprüft …',
-      short: settings.isError ? 'unbekannt' : '…',
+      title: settings.isError ? tr("KI-Status unbekannt") : tr("Wird geprüft …"),
+      short: settings.isError ? tr('unbekannt') : '…',
       detail: '',
       to: SETTINGS_PLACE.ai.to,
     }
   } else if (!s.settings.ai.enabled) {
     ai = {
       key: 'ai',
-      label: 'KI',
+      label: tr("KI"),
       level: 'off',
-      title: 'KI-Funktionen ausgeschaltet',
-      short: 'aus',
-      detail: `Einschaltbar unter ${SETTINGS_PLACE.ai.label}.`,
+      title: tr("KI-Funktionen ausgeschaltet"),
+      get short() { return tr('aus') },
+      detail: tr("Einschaltbar unter {0}.", { "0": String(SETTINGS_PLACE.ai.label) }),
       to: SETTINGS_PLACE.ai.to,
     }
   } else if (!s.ai_key_configured) {
     ai = {
       key: 'ai',
-      label: 'KI',
+      label: tr("KI"),
       level: 'warn',
-      title: 'API-Schlüssel fehlt',
-      short: 'kein Schlüssel',
-      detail: `Claude-API-Schlüssel unter ${SETTINGS_PLACE.ai.label} eingeben.`,
+      title: tr("API-Schlüssel fehlt"),
+      short: tr("kein Schlüssel"),
+      detail: tr("Claude-API-Schlüssel unter {0} eingeben.", { "0": String(SETTINGS_PLACE.ai.label) }),
       to: SETTINGS_PLACE.ai.to,
     }
   } else {
@@ -227,32 +231,32 @@ export function useSystemStatus(): StatusItem[] {
       const p = AI_PROBLEM[check.code]
       ai = {
         key: 'ai',
-        label: 'KI',
+        label: tr("KI"),
         level: p.level,
         title: p.title,
         short: p.short,
-        detail: `${check.message ?? p.title} (${check.source === 'job' ? 'Datenblatt-Analyse' : 'Verbindungstest'} ${when})`,
+        detail: `${localizeMessage(check.message ?? p.title)} (${check.source === 'job' ? tr('Datenblatt-Analyse') : tr('Verbindungstest')} ${when})`,
         to: SETTINGS_PLACE.ai.to,
       }
     } else if (check?.ok) {
       const latency = check.latencyMs !== null ? ` in ${formatNumber(check.latencyMs)} ms` : ''
       ai = {
         key: 'ai',
-        label: 'KI',
+        label: tr("KI"),
         level: 'ok',
-        title: 'Claude verbunden',
+        title: tr("Claude verbunden"),
         short: name.replace(/^Claude /, ''),
-        detail: `${name} – Verbindung ${when} geprüft${check.model ? ` (${modelDisplayName(check.model)}${latency})` : latency}.`,
+        detail: tr("{0} – Verbindung {1} geprüft{2}.", { "0": String(name), "1": String(when), "2": String(check.model ? ` (${modelDisplayName(check.model)}${latency})` : latency) }),
         to: SETTINGS_PLACE.ai.to,
       }
     } else {
       ai = {
         key: 'ai',
-        label: 'KI',
+        label: tr("KI"),
         level: 'ok',
-        title: 'Claude bereit',
+        title: tr("Claude bereit"),
         short: name.replace(/^Claude /, ''),
-        detail: `${name} – Schlüssel hinterlegt, Verbindung noch nicht geprüft (${SETTINGS_PLACE.ai.label} › Verbindung testen).`,
+        detail: tr("{0} – Schlüssel hinterlegt, Verbindung noch nicht geprüft ({1} › Verbindung testen).", { "0": String(name), "1": String(SETTINGS_PLACE.ai.label) }),
         to: SETTINGS_PLACE.ai.to,
       }
     }

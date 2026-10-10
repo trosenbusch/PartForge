@@ -1,3 +1,5 @@
+import { localizeMessage } from '@/lib/i18n'
+import { t, useI18n } from '@/lib/i18n'
 import { motion, useReducedMotion } from 'motion/react'
 import {
   ArrowRight,
@@ -41,6 +43,7 @@ const ALTIUM_ICON: Record<AfterWriteNotice['tone'], ReactNode> = {
 
 /** Erfolg nach „Bauteile anlegen“: angelegte/aktualisierte Bauteile (Links), Symbole, Footprints, Fehler, Kosten. */
 export function ResultView({ ds }: { ds: DatasheetDetail }) {
+  useI18n()
   const reduce = useReducedMotion()
   // „Nur Symbol/Footprint speichern“ legt keine Bauteile an – das Ergebnis zeigt die letzte Bauteil-Übernahme
   const commits = ds.committed.filter((c) => c.scope === 'part')
@@ -56,12 +59,11 @@ export function ResultView({ ds }: { ds: DatasheetDetail }) {
         <EmptyState
           illustration="no-parts"
           titleAs="h2"
-          title="Aus diesem Datenblatt wurde noch nichts angelegt"
+          title={t("Aus diesem Datenblatt wurde noch nichts angelegt")}
           actions={
             <Button asChild variant="secondary">
               <Link to={importPath(ds.id)}>
-                <ListChecks aria-hidden />Zur Prüfansicht
-              </Link>
+                <ListChecks aria-hidden />{t("Zur Prüfansicht")}</Link>
             </Button>
           }
         />
@@ -83,7 +85,7 @@ export function ResultView({ ds }: { ds: DatasheetDetail }) {
     <PageBody width="default" className="pb-16">
       <PageTitle
         title={ds.title || ds.original_name}
-        subtitle={`Übernommen ${formatDateTime(last.ts)}`}
+        subtitle={t("Übernommen {0}", { "0": String(formatDateTime(last.ts)) })}
       />
       <motion.div
         initial={reduce ? false : { opacity: 0, y: 10 }}
@@ -109,38 +111,35 @@ export function ResultView({ ds }: { ds: DatasheetDetail }) {
               {ok ? <Check /> : <CircleAlert />}
             </motion.span>
             <h2 className="mt-5 text-h2 font-semibold tracking-[-0.02em] text-fg">
-              {total ? `${plural(total, 'Bauteil', 'Bauteile')} ${created.length && !updated.length ? 'angelegt' : 'übernommen'}` : 'Nichts angelegt'}
+              {total ? `${plural(total, t("Bauteil"), t("Bauteile"))} ${created.length && !updated.length ? t("angelegt") : t("übernommen")}` : t("Nichts angelegt")}
             </h2>
             <p className="mt-1.5 max-w-xl text-ui leading-relaxed text-fg-muted">
               in <span className="font-medium text-fg">{label}</span>
-              {created.length && updated.length ? ` · ${created.length} neu, ${updated.length} aktualisiert` : ''}
+              {created.length && updated.length ? t(" · {0} neu, {1} aktualisiert", { "0": String(created.length), "1": String(updated.length) }) : ''}
               {last.symbols.length || last.footprints.length
-                ? ` · ${[
-                    last.symbols.length ? plural(last.symbols.length, 'Symbol', 'Symbole') : null,
+                ? t(" · {0} geschrieben", { "0": String([
+                    last.symbols.length ? plural(last.symbols.length, 'Symbol', t("Symbole")) : null,
                     last.footprints.length ? plural(last.footprints.length, 'Footprint', 'Footprints') : null,
                   ]
                     .filter(Boolean)
-                    .join(' und ')} geschrieben`
-                : ' · Symbol und Footprint waren schon vorhanden'}
-              {errors.length ? ` · ${plural(errors.length, 'Bestellnummer', 'Bestellnummern')} nicht angelegt` : ''}
+                    .join(t(' und '))) })
+                : t(" · Symbol und Footprint waren schon vorhanden")}
+              {errors.length ? t(" · {0} nicht angelegt", { "0": String(plural(errors.length, t("Bestellnummer"), t("Bestellnummern"))) }) : ''}
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
               {firstPn && (
                 <Button asChild variant="primary" size="lg">
                   <Link to={partLink(last.table, firstPn)}>
-                    <TableProperties aria-hidden />In der Bauteiltabelle öffnen
-                  </Link>
+                    <TableProperties aria-hidden />{t("In der Bauteiltabelle öffnen")}</Link>
                 </Button>
               )}
               <Button asChild variant="secondary" size="lg">
                 <Link to="/import">
-                  <FilePlus2 aria-hidden />Nächstes Datenblatt
-                </Link>
+                  <FilePlus2 aria-hidden />{t("Nächstes Datenblatt")}</Link>
               </Button>
               <Button asChild variant="ghost" size="lg">
                 <Link to={importPath(ds.id)}>
-                  <ListChecks aria-hidden />Zur Prüfansicht
-                </Link>
+                  <ListChecks aria-hidden />{t("Zur Prüfansicht")}</Link>
               </Button>
             </div>
             {/* was Altium jetzt sieht – echter Zustand (installiert? übersprungen?) mit dem nächsten Schritt */}
@@ -148,7 +147,7 @@ export function ResultView({ ds }: { ds: DatasheetDetail }) {
               <p className="mt-5 flex items-center justify-center gap-1.5 text-xs text-fg-subtle">
                 {ALTIUM_ICON[notice.tone]}
                 <span className="min-w-0">
-                  {notice.text}
+                  {localizeMessage(notice.text)}
                   {notice.next && <AltiumNextStep next={notice.next} className="ml-2" />}
                 </span>
               </p>
@@ -157,39 +156,39 @@ export function ResultView({ ds }: { ds: DatasheetDetail }) {
 
           <div className="relative grid gap-px border-t border-line bg-line @[48rem]:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
             <div className="bg-surface px-6 py-5">
-              <PartList title="Neu angelegt" table={last.table} pns={created} />
+              <PartList title={t("Neu angelegt")} table={last.table} pns={created} />
               <div className="mt-5">
-                <h3 className="micro-label mb-1">Als Nächstes</h3>
+                <h3 className="micro-label mb-1">{t("Als Nächstes")}</h3>
                 {/* die Übernahme hat Symbole und Footprints schon in die Bibliotheksdateien geschrieben */}
                 <p className="mb-2 text-xs leading-relaxed text-fg-subtle">
                   {last.symbols.length || last.footprints.length
-                    ? 'Symbole und Footprints stehen schon in den Bibliotheksdateien (SchLib/PcbLib) – zu synchronisieren ist nichts.'
-                    : 'Die Bauteile verwenden vorhandene Symbole und Footprints der Bibliothek.'}
+                    ? t("Symbole und Footprints stehen schon in den Bibliotheksdateien (SchLib/PcbLib) – zu synchronisieren ist nichts.")
+                    : t("Die Bauteile verwenden vorhandene Symbole und Footprints der Bibliothek.")}
                 </p>
                 <ul className="flex flex-col gap-1">
                   {notice?.next?.action === 'refresh' && (
                     <NextStep
                       to={ALTIUM_PATH}
                       state={altiumActionState('aktualisieren')}
-                      title="In Altium Designer aktualisieren"
-                      text="Neue Bauteile, Symbole und Footprints in der laufenden Sitzung laden"
+                      title={t("In Altium Designer aktualisieren")}
+                      text={t("Neue Bauteile, Symbole und Footprints in der laufenden Sitzung laden")}
                     />
                   )}
                   <NextStep
                     to={ALTIUM_PATH}
                     state={altiumActionState('pruefen')}
-                    title="Bibliothek prüfen"
-                    text="Verweise, Pflichtfelder und Dateien der neuen Bauteile kontrollieren"
+                    title={t("Bibliothek prüfen")}
+                    text={t("Verweise, Pflichtfelder und Dateien der neuen Bauteile kontrollieren")}
                   />
                   {!running && (
-                    <NextStep to={ALTIUM_PATH} title="Altium-Anbindung ansehen" text="DbLib-Status und Installation in Altium Designer" />
+                    <NextStep to={ALTIUM_PATH} title={t("Altium-Anbindung ansehen")} text={t("DbLib-Status und Installation in Altium Designer")} />
                   )}
                 </ul>
               </div>
-              {updated.length > 0 && <PartList title="Aktualisiert" table={last.table} pns={updated} className="mt-5" />}
+              {updated.length > 0 && <PartList title={t("Aktualisiert")} table={last.table} pns={updated} className="mt-5" />}
               {errors.length > 0 && (
                 <div className="mt-5">
-                  <h3 className="micro-label mb-2 text-danger-text">Nicht angelegt</h3>
+                  <h3 className="micro-label mb-2 text-danger-text">{t("Nicht angelegt")}</h3>
                   <ul className="flex flex-col gap-1.5">
                     {errors.map(([pn, msg]) => (
                       <li key={pn} className="flex items-start gap-2 text-xs leading-relaxed">
@@ -206,7 +205,7 @@ export function ResultView({ ds }: { ds: DatasheetDetail }) {
             </div>
             <div className="flex flex-col gap-5 bg-surface px-6 py-5">
               <LibraryList
-                title="Symbole"
+                title={t("Symbole")}
                 icon={<SymbolIcon />}
                 names={last.symbols}
                 empty="vorhandene verwendet"
@@ -221,25 +220,24 @@ export function ResultView({ ds }: { ds: DatasheetDetail }) {
               />
               <div className="mt-auto border-t border-line pt-4 text-xs text-fg-muted">
                 <div className="flex items-center justify-between gap-3">
-                  <span>{ds.runs.some((r) => r.kind === 'find') ? 'Kosten dieses Datenblatts (Suche und Analyse)' : 'Analysekosten dieses Datenblatts'}</span>
+                  <span>{ds.runs.some((r) => r.kind === 'find') ? t("Kosten dieses Datenblatts (Suche und Analyse)") : t("Analysekosten dieses Datenblatts")}</span>
                   <span className="mono font-semibold text-fg">{formatUsd(ds.cost_usd)}</span>
                 </div>
                 {commits.length > 1 && (
                   <div className="mt-1 flex items-center gap-1.5 text-2xs text-fg-subtle">
                     <RefreshCw aria-hidden className="size-3" />
-                    {formatNumber(commits.length)}. Übernahme aus diesem Datenblatt
-                  </div>
+                    {formatNumber(commits.length)}{t(". Übernahme aus diesem Datenblatt")}</div>
                 )}
               </div>
             </div>
           </div>
           {last.warnings.length > 0 && (
             <div className="relative border-t border-line bg-surface-2/40 px-6 py-4">
-              <h3 className="micro-label mb-1.5">Hinweise</h3>
+              <h3 className="micro-label mb-1.5">{t("Hinweise")}</h3>
               <ul className="flex flex-col gap-1">
                 {last.warnings.slice(0, 8).map((w) => (
                   <li key={w} className="text-xs leading-relaxed text-fg-muted">
-                    {w}
+                    {localizeMessage(w)}
                   </li>
                 ))}
               </ul>
@@ -253,6 +251,7 @@ export function ResultView({ ds }: { ds: DatasheetDetail }) {
 
 /** `state`: Aktion der Altium-Seite als Router-State (nie als `?aktion=` in der Adresse) */
 function NextStep({ to, state, title, text }: { to: string; state?: AltiumActionState; title: string; text: string }) {
+  useI18n()
   return (
     <li>
       <Link
@@ -271,6 +270,7 @@ function NextStep({ to, state, title, text }: { to: string; state?: AltiumAction
 }
 
 function PartList({ title, table, pns, className }: { title: string; table: string; pns: string[]; className?: string }) {
+  useI18n()
   return (
     <div className={className}>
       <div className="mb-2 flex items-center gap-2">
@@ -290,10 +290,10 @@ function PartList({ title, table, pns, className }: { title: string; table: stri
               </Link>
             </li>
           ))}
-          {pns.length > 40 && <li className="self-center text-xs text-fg-subtle">… und {pns.length - 40} weitere</li>}
+          {pns.length > 40 && <li className="self-center text-xs text-fg-subtle">{t("… und ")}{pns.length - 40} {t(" weitere")}</li>}
         </ul>
       ) : (
-        <p className="text-xs text-fg-subtle">keine</p>
+        <p className="text-xs text-fg-subtle">{t("keine")}</p>
       )}
     </div>
   )
@@ -312,6 +312,7 @@ function LibraryList({
   empty: string
   to: (name: string) => string
 }) {
+  useI18n()
   return (
     <div>
       <h3 className="micro-label mb-2 flex items-center gap-1.5 [&_svg]:size-3.5">
@@ -324,8 +325,7 @@ function LibraryList({
             <li key={n}>
               <Link to={to(n)} className="mono flex items-center gap-1.5 rounded-sm text-xs text-fg outline-none hover:underline focus-ring">
                 <Badge variant="success" size="sm">
-                  neu
-                </Badge>
+                  {t("neu")}</Badge>
                 <span className="truncate">{n}</span>
               </Link>
             </li>

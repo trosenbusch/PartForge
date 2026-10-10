@@ -1,3 +1,4 @@
+import { localizeMessage, useI18n } from '@/lib/i18n'
 /**
  * Protokoll eines Jobs (letzte 200 Zeilen, folgt dem Ende, solange man nicht hochgescrollt hat). Die Zeilen kommen vom
  * Backend (jede Phase des Serien-Jobs ist eine Logzeile); `live` hängt den aktuellen Fortschritt als letzte, sich
@@ -32,9 +33,10 @@ export interface JobLogProps {
 }
 
 export function JobLog({ entries, live, emptyText = 'Noch keine Einträge …', className, viewportClassName }: JobLogProps) {
+  const { t: tr } = useI18n()
   const viewport = useRef<HTMLDivElement | null>(null)
   const stick = useRef(true)
-  const liveText = live ? formatNumbersInText(live) : null
+  const liveText = live ? formatNumbersInText(localizeMessage(live)) : null
   useEffect(() => {
     const el = viewport.current
     if (!el) return
@@ -50,14 +52,14 @@ export function JobLog({ entries, live, emptyText = 'Noch keine Einträge …', 
   }, [entries.length, liveText])
   return (
     <ScrollArea
-      aria-label="Protokoll"
+      aria-label={tr("Protokoll")}
       viewportRef={viewport}
       className={cn('rounded-control border border-line bg-bg/60', className)}
       viewportClassName={viewportClassName}
     >
-      <ol aria-label="Protokoll" className="flex flex-col gap-0.5 p-2">
+      <ol aria-label={tr("Protokoll")} className="flex flex-col gap-0.5 p-2">
         {entries.length === 0 && !liveText ? (
-          <li className="px-1.5 py-1 text-2xs text-fg-subtle">{emptyText}</li>
+          <li className="px-1.5 py-1 text-2xs text-fg-subtle">{tr(emptyText)}</li>
         ) : (
           entries.slice(-200).map((e, i) => {
             const l = LEVEL[e.level] ?? LEVEL.info
@@ -65,8 +67,8 @@ export function JobLog({ entries, live, emptyText = 'Noch keine Einträge …', 
               <li key={`${e.ts}-${i}`} className="flex items-start gap-2 rounded-sm px-1.5 py-0.5 text-2xs leading-4">
                 <span className="mono shrink-0 tabular-nums text-fg-subtle">{formatClock(e.ts)}</span>
                 <span aria-hidden className={cn('mt-1.5 size-1.5 shrink-0 rounded-full', l.dot)} />
-                <span className="sr-only">{l.label}: </span>
-                <span className={cn('min-w-0 break-words', l.text)}>{formatNumbersInText(e.text)}</span>
+                <span className="sr-only">{tr(l.label)}: </span>
+                <span className={cn('min-w-0 break-words', l.text)}>{formatNumbersInText(localizeMessage(e.text))}</span>
               </li>
             )
           })
@@ -74,7 +76,7 @@ export function JobLog({ entries, live, emptyText = 'Noch keine Einträge …', 
         {liveText && (
           // ändert sich laufend – nicht vorlesen (die Ansage des Schritts nennt den Abschnitt)
           <li aria-hidden className="flex items-start gap-2 rounded-sm px-1.5 py-0.5 text-2xs leading-4">
-            <span className="mono w-[8ch] shrink-0 text-fg-subtle">jetzt</span>
+            <span className="mono w-[8ch] shrink-0 text-fg-subtle">{tr("jetzt")}</span>
             <Spinner size={10} className="mt-[3px] shrink-0 text-accent" />
             <span className="min-w-0 break-words text-fg">{liveText}</span>
           </li>

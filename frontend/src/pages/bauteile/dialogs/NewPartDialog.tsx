@@ -1,3 +1,4 @@
+import { translate, metadataLabel, localizeMessage, t, useI18n } from '@/lib/i18n'
 /**
  * „Neues Bauteil“ (Strg+N): Kategorie, **Smart-Eingabe** („10k 1% 0603 Dickschicht“ → Felder; eine
  * Hersteller-Teilenummer wie „RC0603FR-0710KL“ wird über die Serienvorlagen gelesen und wählt bei Bedarf auch die
@@ -108,10 +109,10 @@ const HINT_CAUSES: readonly (readonly [RegExp, HintCause])[] = [
   [/kein gültige[rs]? |keine ganze Zahl|kein Ja\/Nein-Wert|passt nicht zur Einheit|mehrdeutig/, 'unreadable'],
 ]
 const HINT_CAUSE_TEXT: Record<HintCause, string> = {
-  unreadable: 'nicht lesbar',
-  list: 'nicht in der Auswahlliste',
-  unregistered: 'nicht in der Bibliothek registriert',
-  other: 'zu prüfen',
+  get unreadable() { return t("nicht lesbar") },
+  get list() { return t("nicht in der Auswahlliste") },
+  get unregistered() { return t("nicht in der Bibliothek registriert") },
+  get other() { return t("zu prüfen") },
 }
 const HINT_CAUSE_ORDER: HintCause[] = ['unreadable', 'list', 'unregistered', 'other']
 
@@ -130,7 +131,7 @@ function hintSummary(hints: Record<string, string[]>): string {
   return HINT_CAUSE_ORDER.filter((c) => counts.has(c))
     .map((c, i) => {
       const n = counts.get(c) ?? 0
-      return `${i === 0 ? plural(n, 'Wert', 'Werte') : formatNumber(n)} ${HINT_CAUSE_TEXT[c]}`
+      return `${i === 0 ? plural(n, t("Wert"), t("Werte")) : formatNumber(n)} ${HINT_CAUSE_TEXT[c]}`
     })
     .join(', ')
 }
@@ -142,6 +143,7 @@ function clean(values: Values): Values {
 const fieldId = (column: string) => `np-${column.replace(/[^a-z0-9]+/gi, '-')}`
 
 export function NewPartDialog({ open, onOpenChange, defaultTable, onCreated, onOpenExisting }: NewPartDialogProps) {
+  const { t } = useI18n()
   const qc = useQueryClient()
   const navigate = useNavigate()
   const categories = useCategories()
@@ -320,19 +322,19 @@ export function NewPartDialog({ open, onOpenChange, defaultTable, onCreated, onO
       const name = result.kind === 'saved' ? result.record.name : preview.spec.name
       if (result.kind === 'job') {
         trackJob(result.job as Job, { openDock: false })
-        toast.success(`Symbol „${name}“ wird geschrieben`, {
-          description: result.out.library ? `Ziel: ${result.out.library} – das Job-Dock meldet den Abschluss.` : 'Das Job-Dock meldet den Abschluss.',
+        toast.success(t("Symbol „{1}“ wird geschrieben", { 1: name }), {
+          description: result.out.library ? t("Ziel: {1} – das Job-Dock meldet den Abschluss.", { 1: result.out.library }) : t("Das Job-Dock meldet den Abschluss."),
         })
       } else {
-        toast.success(`Symbol „${name}“ erzeugt`, { description: `In ${result.record.library} geschrieben.` })
+        toast.success(t("Symbol „{1}“ erzeugt", { 1: name }), { description: t("In {1} geschrieben.", { 1: result.record.library }) })
       }
       void qc.invalidateQueries({ queryKey: partsKeys.symbols })
       setValues((v) => ({ ...v, [SYMBOL_REF]: name }))
       setSuggested((s) => new Set(s).add(SYMBOL_REF))
     } catch (err) {
-      toast.error('Symbol nicht erzeugt', {
+      toast.error(t("Symbol nicht erzeugt"), {
         description: errorMessage(err),
-        action: match.kind ? { label: 'Im Generator öffnen', onClick: () => navigate(`/symbole?art=${encodeURIComponent(match.kind ?? '')}`) } : undefined,
+        action: match.kind ? { label: t("Im Generator öffnen"), onClick: () => navigate(`/symbole?art=${encodeURIComponent(match.kind ?? '')}`) } : undefined,
       })
     } finally {
       setGenerating(false)
@@ -363,11 +365,11 @@ export function NewPartDialog({ open, onOpenChange, defaultTable, onCreated, onO
     }
     const symbol = values[SYMBOL_REF]?.trim()
     if (symbol && symbolList.data && !registeredSymbols.has(symbol.toLowerCase())) {
-      ;(out[SYMBOL_REF] ??= []).push(`„${symbol}“ ist nicht in der Bibliothek registriert – Altium findet es nur, wenn die SchLib es enthält.`)
+      ;(out[SYMBOL_REF] ??= []).push(translate("„{1}“ ist nicht in der Bibliothek registriert – Altium findet es nur, wenn die SchLib es enthält.", 'de', { 1: symbol }))
     }
     const footprint = values[FOOTPRINT_REF]?.trim()
     if (footprint && footprintList.data && !registeredFootprints.has(footprint.toLowerCase())) {
-      ;(out[FOOTPRINT_REF] ??= []).push(`„${footprint}“ ist nicht in der Bibliothek registriert – Altium findet ihn nur, wenn die PcbLib ihn enthält.`)
+      ;(out[FOOTPRINT_REF] ??= []).push(translate("„{1}“ ist nicht in der Bibliothek registriert – Altium findet ihn nur, wenn die PcbLib ihn enthält.", 'de', { 1: footprint }))
     }
     return out
   }, [category, result?.warnings, values, symbolList.data, footprintList.data, registeredSymbols, registeredFootprints])
@@ -564,8 +566,8 @@ export function NewPartDialog({ open, onOpenChange, defaultTable, onCreated, onO
           <DialogHeader
             icon={<Plus />}
             tone="accent"
-            title="Neues Bauteil"
-            description="Werte eintippen wie im Gespräch – die Smart-Eingabe verteilt sie auf die Felder. Wert, Kommentar und Beschreibung entstehen aus den Vorlagen der Kategorie."
+            title={t("Neues Bauteil")}
+            description={t("Werte eintippen wie im Gespräch – die Smart-Eingabe verteilt sie auf die Felder. Wert, Kommentar und Beschreibung entstehen aus den Vorlagen der Kategorie.")}
           />
           <DialogBody className="grid min-h-0 grid-cols-1 gap-6 pt-3 @container md:grid-cols-[minmax(0,1fr)_17.5rem]">
             {/* ------------------------------------------------ Eingaben */}
@@ -573,14 +575,14 @@ export function NewPartDialog({ open, onOpenChange, defaultTable, onCreated, onO
               <div className="grid grid-cols-[minmax(0,15rem)_minmax(0,1fr)] gap-3">
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="np-category" className="text-ui font-medium text-fg">
-                    Kategorie
+                    {t("Kategorie")}
                   </label>
                   <Select
                     id="np-category"
                     value={table ?? undefined}
                     onValueChange={changeTable}
                     groups={categoryGroups}
-                    placeholder={categories.isPending ? 'Kategorien werden geladen …' : 'Kategorie wählen …'}
+                    placeholder={categories.isPending ? t("Kategorien werden geladen …") : t("Kategorie wählen …")}
                     disabled={categories.isPending}
                   />
                 </div>
@@ -608,14 +610,14 @@ export function NewPartDialog({ open, onOpenChange, defaultTable, onCreated, onO
 
               {category && sections ? (
                 <>
-                  <FieldSection title="Grunddaten">
+                  <FieldSection title={t("Grunddaten")}>
                     {sections.basics.map((f) =>
                       formField(
                         f,
                         f.column === PART_NUMBER
                           ? {
                               placeholder: partNumberPlaceholder(values, result?.values[PART_NUMBER]),
-                              hint: 'leer = Hersteller-Teilenummer',
+                              hint: t("leer = Hersteller-Teilenummer"),
                               required: false,
                             }
                           : {},
@@ -623,16 +625,16 @@ export function NewPartDialog({ open, onOpenChange, defaultTable, onCreated, onO
                     )}
                   </FieldSection>
                   {sections.values.length > 0 && (
-                    <FieldSection title={`Werte · ${category.label}`}>
+                    <FieldSection title={t("Werte · {1}", { 1: metadataLabel(category.label, t) })}>
                       {sections.values.map((f) =>
                         formField(f, { smart: smartKeys.current.includes(f.column) && !touched.has(f.column) }),
                       )}
                     </FieldSection>
                   )}
-                  <FieldSection title="Symbol, Footprint und Datenblatt">
+                  <FieldSection title={t("Symbol, Footprint und Datenblatt")}>
                     {sections.links.map((f) =>
                       formField(f, {
-                        suggestion: suggested.has(f.column) ? 'Vorschlag' : undefined,
+                        suggestion: suggested.has(f.column) ? t("Vorschlag") : undefined,
                         below:
                           f.column === SYMBOL_REF && missingStandard && !values[SYMBOL_REF] ? (
                             <MissingSymbol match={missingStandard} busy={generating} onGenerate={() => void generateSymbol(missingStandard)} />
@@ -648,9 +650,9 @@ export function NewPartDialog({ open, onOpenChange, defaultTable, onCreated, onO
                       className="flex items-center gap-2 self-start rounded-control text-ui font-medium text-fg-muted outline-none hover:text-fg focus-ring"
                     >
                       <ChevronRight aria-hidden className={cn('size-4 transition-transform', moreOpen && 'rotate-90')} />
-                      Weitere Angaben
+                      {t("Weitere Angaben")}
                       <span className="text-xs font-normal text-fg-subtle">
-                        Gehäuse, Lieferanten, Lebenszyklus, Texte überschreiben …
+                        {t("Gehäuse, Lieferanten, Lebenszyklus, Texte überschreiben …")}
                       </span>
                     </button>
                     <AnimatePresence initial={false}>
@@ -665,8 +667,8 @@ export function NewPartDialog({ open, onOpenChange, defaultTable, onCreated, onO
                           <div className="grid grid-cols-1 gap-x-4 gap-y-3 pb-1 @[34rem]:grid-cols-2">
                             {sections.more.map((f) =>
                               formField(f, {
-                                placeholder: GENERATED.includes(f.column) ? result?.rendered[f.column] || 'aus Vorlage' : undefined,
-                                hint: GENERATED.includes(f.column) ? 'leer = aus Vorlage' : undefined,
+                                placeholder: GENERATED.includes(f.column) ? result?.rendered[f.column] || t("aus Vorlage") : undefined,
+                                hint: GENERATED.includes(f.column) ? t("leer = aus Vorlage") : undefined,
                                 required: GENERATED.includes(f.column) ? false : undefined,
                                 wide: f.column === 'Notes' || f.column === 'Description',
                               }),
@@ -689,7 +691,7 @@ export function NewPartDialog({ open, onOpenChange, defaultTable, onCreated, onO
             </div>
 
             {/* ------------------------------------------------ Vorschau */}
-            <aside aria-label="Vorschau des neuen Bauteils" className="flex min-w-0 flex-col gap-3 md:sticky md:top-0 md:self-start">
+            <aside aria-label={t("Vorschau des neuen Bauteils")} className="flex min-w-0 flex-col gap-3 md:sticky md:top-0 md:self-start">
               <Summary
                 category={category}
                 categories={categories.data ?? []}
@@ -698,12 +700,12 @@ export function NewPartDialog({ open, onOpenChange, defaultTable, onCreated, onO
                 partNumber={result?.values[PART_NUMBER] ?? null}
                 rendered={category ? (result?.rendered ?? null) : null}
                 checking={validation.isFetching}
-                blocking={blocking.map(([c, m]) => [fields.get(c)?.label ?? c, m] as const)}
+                blocking={blocking.map(([c, m]) => [metadataLabel(fields.get(c)?.label ?? c, t), m] as const)}
                 missing={missing
                   // ohne Hersteller-Teilenummer fehlt die Teilenummer automatisch mit – nur einmal nennen
                   .filter(([c]) => !(c === PART_NUMBER && errors['Manufacturer Part Number']))
-                  .map(([c]) => fields.get(c)?.label ?? c)}
-                hinted={Object.keys(fieldHints).map((c) => fields.get(c)?.label ?? c)}
+                  .map(([c]) => metadataLabel(fields.get(c)?.label ?? c, t))}
+                hinted={Object.keys(fieldHints).map((c) => metadataLabel(fields.get(c)?.label ?? c, t))}
                 warnings={otherWarningsList}
                 conflict={conflict}
                 ready={ready && hintCount === 0}
@@ -725,26 +727,26 @@ export function NewPartDialog({ open, onOpenChange, defaultTable, onCreated, onO
                 <span className="flex items-center gap-1.5 text-warning-text">
                   <TriangleAlert aria-hidden className="size-3.5 shrink-0" />
                   <span className="line-clamp-2">
-                    {hintSummary(fieldHints)} – erneut <Kbd hotkey="mod+enter" size="xs" /> legt trotzdem an
+                    {hintSummary(fieldHints)}  {t("– erneut")} <Kbd hotkey="mod+enter" size="xs" />  {t("legt trotzdem an")}
                   </span>
                 </span>
               ) : (
                 <span className="hidden items-center gap-1.5 sm:flex">
-                  <Kbd hotkey="mod+enter" size="xs" /> anlegen
+                  <Kbd hotkey="mod+enter" size="xs" />  {t("anlegen")}
                   <span aria-hidden className="text-fg-subtle">
                     ·
                   </span>
-                  <Kbd size="xs">Enter</Kbd> nächstes Pflichtfeld
+                  <Kbd size="xs">Enter</Kbd>  {t("nächstes Pflichtfeld")}
                 </span>
               )}
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={create.isPending}>
-                Abbrechen
+                {t("Abbrechen")}
               </Button>
               {canDraft && (
                 <Button variant="secondary" onClick={() => void submit(true)} loading={create.isPending && create.variables === true}>
-                  Als Entwurf anlegen
+                  {t("Als Entwurf anlegen")}
                 </Button>
               )}
               <Button
@@ -755,7 +757,7 @@ export function NewPartDialog({ open, onOpenChange, defaultTable, onCreated, onO
                 disabled={!category}
                 aria-keyshortcuts="Control+Enter"
               >
-                {warnedNow ? 'Trotzdem anlegen' : 'Bauteil anlegen'}
+                {warnedNow ? t("Trotzdem anlegen") : t("Bauteil anlegen")}
               </Button>
             </div>
           </DialogFooter>
@@ -768,29 +770,30 @@ export function NewPartDialog({ open, onOpenChange, defaultTable, onCreated, onO
 // --------------------------------------------------------------------------- Bausteine
 
 function partNumberPlaceholder(values: Values, resolved: string | null | undefined): string {
-  return resolved || values['Manufacturer Part Number'] || '= Hersteller-Teilenummer'
+  return resolved || values['Manufacturer Part Number'] || t("= Hersteller-Teilenummer")
 }
 
 function smartExample(category: CategoryDef | null): string {
   switch (category?.table) {
     case 'Resistors':
-      return 'z. B. 10k 1% 0603 oder RC0603FR-0710KL'
+      return t("z. B. 10k 1% 0603 oder RC0603FR-0710KL")
     case 'Capacitors':
-      return 'z. B. 100n 50V X7R 0603'
+      return t("z. B. 100n 50V X7R 0603")
     case 'Inductors':
-      return 'z. B. 4u7 2A geschirmt'
+      return t("z. B. 4u7 2A geschirmt")
     case 'LEDs':
-      return 'z. B. Grün 0603 20mA'
+      return t("z. B. Grün 0603 20mA")
     case 'Connectors':
-      return 'z. B. Stiftleiste 2,54mm gerade'
+      return t("z. B. Stiftleiste 2,54mm gerade")
     case undefined:
-      return 'Hersteller-Teilenummer – erkennt die Kategorie'
+      return t("Hersteller-Teilenummer – erkennt die Kategorie")
     default:
-      return 'Werte, Bauform oder Teilenummer …'
+      return t("Werte, Bauform oder Teilenummer …")
   }
 }
 
 function useCategoryGroups(list: CategoryDef[]): SelectGroupDef[] {
+  const { t } = useI18n()
   return useMemo(() => {
     const map = new Map<string, CategoryDef[]>()
     for (const c of list) {
@@ -800,35 +803,36 @@ function useCategoryGroups(list: CategoryDef[]): SelectGroupDef[] {
     return [...map.entries()]
       .sort(([a], [b]) => CATEGORY_GROUP_ORDER.indexOf(a) - CATEGORY_GROUP_ORDER.indexOf(b))
       .map(([label, items]) => ({
-        label,
+        label: t(label),
         options: items.map((c) => ({
           value: c.table,
-          label: c.label,
+          label: metadataLabel(c.label, t),
           icon: <CategoryIcon name={c.icon} color={c.color} />,
           badge: <span className="mono text-2xs text-fg-subtle">{formatNumber(c.part_count ?? 0)}</span>,
         })),
       }))
-  }, [list])
+  }, [list, t])
 }
 
 /** Ohne (gültige) Vorauswahl: Kategorie wählen – die häufigsten als Schnellwahl */
 function ChooseCategory({ categories, onChoose }: { categories: CategoryDef[]; onChoose: (table: string) => void }) {
+  const { t } = useI18n()
   const top = [...categories].sort((a, b) => (b.part_count ?? 0) - (a.part_count ?? 0)).slice(0, 6)
   if (!categories.length) {
     return (
       <Callout
         tone="warning"
-        title="Noch keine Kategorie"
+        title={t("Noch keine Kategorie")}
         actions={
           <Button asChild variant="secondary" size="sm">
             <Link to="/einstellungen/kategorien">
-              Kategorien und Felder öffnen
+              {t("Kategorien und Felder öffnen")}
               <ArrowRight aria-hidden />
             </Link>
           </Button>
         }
       >
-        Legen Sie zuerst unter „Einstellungen › Kategorien und Felder“ eine Kategorie an.
+        {t("Legen Sie zuerst unter „Einstellungen › Kategorien und Felder“ eine Kategorie an.")}
       </Callout>
     )
   }
@@ -840,14 +844,14 @@ function ChooseCategory({ categories, onChoose }: { categories: CategoryDef[]; o
         </span>
         <div>
           <h3 id="np-choose" className="text-ui font-medium text-fg">
-            Kategorie wählen
+            {t("Kategorie wählen")}
           </h3>
           <p className="text-xs leading-relaxed text-fg-muted">
-            Oben auswählen – oder eine Hersteller-Teilenummer in die Smart-Eingabe tippen, dann wird die Kategorie erkannt.
+            {t("Oben auswählen – oder eine Hersteller-Teilenummer in die Smart-Eingabe tippen, dann wird die Kategorie erkannt.")}
           </p>
         </div>
       </div>
-      <ul className="grid grid-cols-2 gap-1.5 @[34rem]:grid-cols-3" aria-label="Häufige Kategorien">
+      <ul className="grid grid-cols-2 gap-1.5 @[34rem]:grid-cols-3" aria-label={t("Häufige Kategorien")}>
         {top.map((c) => (
           <li key={c.table}>
             <button
@@ -856,7 +860,7 @@ function ChooseCategory({ categories, onChoose }: { categories: CategoryDef[]; o
               className="flex h-8 w-full items-center gap-2 rounded-control border border-line px-2.5 text-left text-ui text-fg outline-none transition-colors hover:border-line-strong hover:bg-surface-2 focus-ring"
             >
               <CategoryIcon name={c.icon} color={c.color} className="size-3.5 shrink-0" />
-              <span className="min-w-0 flex-1 truncate">{c.label}</span>
+              <span className="min-w-0 flex-1 truncate">{metadataLabel(c.label, t)}</span>
               <span className="mono text-2xs text-fg-subtle">{formatNumber(c.part_count ?? 0)}</span>
             </button>
           </li>
@@ -881,11 +885,12 @@ function SmartInput({
   example: string
   inputRef: Ref<HTMLInputElement>
 }) {
+  const { t } = useI18n()
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
       <label htmlFor="np-smart" className="flex items-center gap-1.5 text-ui font-medium text-fg">
-        Smart-Eingabe
-        <span className="truncate text-2xs font-normal text-fg-subtle">Werte, Bauform, Hersteller-Teilenummer</span>
+        {t("Smart-Eingabe")}
+        <span className="truncate text-2xs font-normal text-fg-subtle">{t("Werte, Bauform, Hersteller-Teilenummer")}</span>
       </label>
       <div
         className={cn(
@@ -908,7 +913,7 @@ function SmartInput({
           className="mono h-full min-w-0 flex-1 bg-transparent text-ui text-fg outline-none placeholder:font-sans placeholder:text-fg-subtle"
         />
         <span id="np-smart-help" className="sr-only">
-          Enter übernimmt die Eingabe und springt zum ersten offenen Pflichtfeld. Strg+Enter legt das Bauteil an.
+          {t("Enter übernimmt die Eingabe und springt zum ersten offenen Pflichtfeld. Strg+Enter legt das Bauteil an.")}
         </span>
         {busy ? (
           <Spinner size={14} tone="accent" />
@@ -916,7 +921,7 @@ function SmartInput({
           <button
             type="button"
             onClick={() => onChange('')}
-            aria-label="Smart-Eingabe leeren"
+            aria-label={t("Smart-Eingabe leeren")}
             className="flex size-5 items-center justify-center rounded-sm text-fg-subtle outline-none hover:bg-surface-3 hover:text-fg focus-ring"
           >
             <X aria-hidden className="size-3.5" />
@@ -928,10 +933,10 @@ function SmartInput({
 }
 
 const ASSIGN_TARGETS: { column: string; label: string }[] = [
-  { column: 'Manufacturer', label: 'als Hersteller' },
-  { column: 'Manufacturer Part Number', label: 'als Hersteller-Teilenummer' },
-  { column: 'Package', label: 'als Gehäuse' },
-  { column: 'Notes', label: 'als Notiz' },
+  { column: 'Manufacturer', get label() { return t("als Hersteller") } },
+  { column: 'Manufacturer Part Number', get label() { return t("als Hersteller-Teilenummer") } },
+  { column: 'Package', get label() { return t("als Gehäuse") } },
+  { column: 'Notes', get label() { return t("als Notiz") } },
 ]
 
 function SmartResult({
@@ -955,6 +960,7 @@ function SmartResult({
   onSwitchCategory: (table: string) => void
   categories: CategoryDef[]
 }) {
+  const { t } = useI18n()
   const fields = new Map((category?.fields ?? []).map((f) => [f.column, f]))
   const otherCategory = decodedOther ? categories.find((c) => c.table.toLowerCase() === decodedOther.category.toLowerCase()) : null
   const visible = recognized.length > 0 || unmatched.length > 0 || decoded || decodedOther
@@ -964,17 +970,17 @@ function SmartResult({
       {decoded && !decodedOther && (
         <p className="flex items-center gap-2 text-xs text-fg-muted">
           <ScanLine aria-hidden className="size-3.5 shrink-0 text-accent-text" />
-          Teilenummer erkannt: <span className="font-medium text-fg">{decoded.template_title}</span>
+          {t("Teilenummer erkannt:")} <span className="font-medium text-fg">{decoded.template_title}</span>
         </p>
       )}
       {decodedOther && otherCategory && (
         <Callout
           tone="info"
           icon={<Lightbulb />}
-          title={`„${decodedOther.mpn}“ gehört zu „${otherCategory.label}“`}
+          title={t("„{1}“ gehört zu „{2}“", { 1: decodedOther.mpn, 2: metadataLabel(otherCategory.label, t) })}
           actions={
             <Button size="sm" variant="secondary" rightIcon={<ArrowRight />} onClick={() => onSwitchCategory(otherCategory.table)}>
-              Kategorie wechseln
+              {t("Kategorie wechseln")}
             </Button>
           }
         >
@@ -982,11 +988,11 @@ function SmartResult({
         </Callout>
       )}
       {(recognized.length > 0 || unmatched.length > 0) && (
-        <ul aria-label="Ergebnis der Smart-Eingabe" className="flex flex-wrap items-center gap-1.5">
+        <ul aria-label={t("Ergebnis der Smart-Eingabe")} className="flex flex-wrap items-center gap-1.5">
           {recognized.map((col) => (
             <li key={col}>
               <Badge variant="neutral" className="gap-1">
-                <span className="font-normal text-fg-muted">{fields.get(col)?.label ?? col}</span>
+                <span className="font-normal text-fg-muted">{metadataLabel(fields.get(col)?.label ?? col, t)}</span>
                 <span className="mono text-fg">{displayValue(fields.get(col), values[col])}</span>
               </Badge>
             </li>
@@ -998,14 +1004,14 @@ function SmartResult({
                   <button
                     type="button"
                     className="inline-flex h-5 items-center gap-1 rounded-full border border-dashed border-warning/60 px-2 text-2xs text-warning-text outline-none hover:border-warning hover:bg-warning/8 focus-ring"
-                    aria-label={`„${token}“ nicht erkannt – zuordnen`}
+                    aria-label={t("„{1}“ nicht erkannt – zuordnen", { 1: token })}
                   >
                     <span className="mono">{token}</span>
                     <span aria-hidden>?</span>
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-60">
-                  <DropdownMenuLabel>„{token}“ übernehmen …</DropdownMenuLabel>
+                  <DropdownMenuLabel>{t("„{1}“ übernehmen …", {1: token})}</DropdownMenuLabel>
                   {ASSIGN_TARGETS.filter((t) => fields.has(t.column)).map((t) => (
                     <DropdownMenuItem key={t.column} onSelect={() => onAssign(token, t.column)}>
                       {t.label}
@@ -1015,7 +1021,7 @@ function SmartResult({
               </DropdownMenu>
             </li>
           ))}
-          {unmatched.length > 0 && <li className="text-2xs text-fg-subtle">nicht erkannt – zum Zuordnen anklicken</li>}
+          {unmatched.length > 0 && <li className="text-2xs text-fg-subtle">{t("nicht erkannt – zum Zuordnen anklicken")}</li>}
         </ul>
       )}
     </motion.div>
@@ -1023,6 +1029,7 @@ function SmartResult({
 }
 
 function FieldSection({ title, children }: { title: string; children: ReactNode }) {
+  useI18n()
   return (
     <section className="flex flex-col gap-3">
       <h3 className="micro-label">{title}</h3>
@@ -1033,15 +1040,16 @@ function FieldSection({ title, children }: { title: string; children: ReactNode 
 
 /** Standardsymbol fehlt in der Bibliothek → erzeugen statt einen toten Verweis vorzuschlagen */
 function MissingSymbol({ match, busy, onGenerate }: { match: StandardSymbolMatch; busy: boolean; onGenerate: () => void }) {
+  const { t } = useI18n()
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-fg-muted">
       <Lightbulb aria-hidden className="size-3.5 shrink-0 text-fg-subtle" />
       <span>
-        Passend wäre <span className="mono text-fg">{match.name}</span> – noch nicht in der Bibliothek.
+        {t("Passend wäre")} <span className="mono text-fg">{match.name}</span>  {t("– noch nicht in der Bibliothek.")}
       </span>
       {match.request && (
         <Button variant="link" size="xs" leftIcon={busy ? <Spinner size={11} /> : <Hammer />} disabled={busy} onClick={onGenerate} className="h-auto p-0">
-          Symbol erzeugen
+          {t("Symbol erzeugen")}
         </Button>
       )}
     </div>
@@ -1081,6 +1089,7 @@ function FormField({
   wide,
   below,
 }: FormFieldProps) {
+  const { t } = useI18n()
   const id = fieldId(field.column)
   const isRequired = required ?? field.required
   const msgId = `${id}-msg`
@@ -1088,8 +1097,8 @@ function FormField({
   return (
     <div className={cn('flex min-w-0 flex-col gap-1.5', wide && '@[34rem]:col-span-2')}>
       <div className="flex min-h-5 items-baseline justify-between gap-2">
-        <label htmlFor={id} className="truncate text-ui font-medium text-fg" title={field.help ?? field.column}>
-          {field.label}
+        <label htmlFor={id} className="truncate text-ui font-medium text-fg" title={field.help ? metadataLabel(field.help, t) : field.column}>
+          {metadataLabel(field.label, t)}
           {isRequired && (
             <span aria-hidden className="ml-0.5 text-accent-text">
               *
@@ -1099,7 +1108,7 @@ function FormField({
         {smart ? (
           <span className="flex shrink-0 items-center gap-1 text-2xs text-fg-subtle">
             <Wand aria-hidden className="size-3 text-accent-text" />
-            erkannt
+            {t("erkannt")}
           </span>
         ) : suggestion && value ? (
           <span className="flex shrink-0 items-center gap-1 text-2xs text-fg-subtle">
@@ -1126,12 +1135,12 @@ function FormField({
       {error ? (
         <p id={msgId} role="alert" className="flex items-start gap-1.5 text-xs leading-snug text-danger-text">
           <CircleAlert aria-hidden className="mt-px size-3.5 shrink-0" />
-          <span>{error}</span>
+          <span>{localizeMessage(error)}</span>
         </p>
       ) : hints?.length ? (
         <p id={msgId} className="flex items-start gap-1.5 text-xs leading-snug text-warning-text">
           <TriangleAlert aria-hidden className="mt-px size-3.5 shrink-0" />
-          <span>{hints.join(' ')}</span>
+          <span>{hints.map(localizeMessage).join(' ')}</span>
         </p>
       ) : null}
       {below}
@@ -1171,6 +1180,7 @@ function Summary({
   ready: boolean
   onOpenExisting: (table: string, pn: string) => void
 }) {
+  const { t } = useI18n()
   const symbol = useLibrarySymbol(symbolName || null)
   const footprint = useLibraryFootprint(footprintName || null)
   const conflictLabel = conflict ? (categories.find((c) => c.table.toLowerCase() === conflict.table.toLowerCase())?.label ?? conflict.table) : ''
@@ -1201,41 +1211,41 @@ function Summary({
       <div className="flex flex-col gap-2.5 px-3.5 py-3">
         <div className="flex items-center gap-2">
           {category ? <CategoryIcon name={category.icon} color={category.color} /> : <FolderTree aria-hidden className="size-4 text-fg-subtle" />}
-          <span className={cn('text-xs font-medium', category ? 'text-fg' : 'text-fg-subtle')}>{category?.label ?? 'Kategorie wählen'}</span>
+          <span className={cn('text-xs font-medium', category ? 'text-fg' : 'text-fg-subtle')}>{category ? metadataLabel(category.label, t) : t("Kategorie wählen")}</span>
           {checking && <Spinner size={12} className="ml-auto text-fg-subtle" />}
         </div>
-        <dl className="flex flex-col gap-2.5">{textRow('Teilenummer', partNumber)}</dl>
+        <dl className="flex flex-col gap-2.5">{textRow(t("Teilenummer"), partNumber)}</dl>
         {/* Erzeugte Texte gehen so nach Altium (Dezimalpunkt, ohne Leerzeichen: „4.7kΩ“) – anders als die
             deutsch formatierten Werte der Felder („4,7 kΩ“). Darum ausdrücklich als Altium-Texte beschriftet. */}
         <div className="flex flex-col gap-1.5 border-t border-line pt-2.5">
           <p className="flex items-baseline justify-between gap-2">
-            <span className="micro-label">Texte für Altium</span>
-            <span className="text-2xs text-fg-subtle">aus den Vorlagen</span>
+            <span className="micro-label">{t("Texte für Altium")}</span>
+            <span className="text-2xs text-fg-subtle">{t("aus den Vorlagen")}</span>
           </p>
           <dl className="flex flex-col gap-2.5">
-            {textRow('Wert', rendered?.Value)}
-            {textRow('Kommentar (Schaltplan)', rendered?.Comment)}
-            {textRow('Beschreibung', rendered?.Description, false)}
+            {textRow(t("Wert"), rendered?.Value)}
+            {textRow(t("Kommentar (Schaltplan)"), rendered?.Comment)}
+            {textRow(t("Beschreibung"), rendered?.Description, false)}
           </dl>
         </div>
       </div>
       <div className="flex flex-col gap-2 border-t border-line px-3.5 py-3 text-xs">
         {!category ? (
-          <span className="text-fg-subtle">Noch keine Kategorie gewählt.</span>
+          <span className="text-fg-subtle">{t("Noch keine Kategorie gewählt.")}</span>
         ) : conflict ? (
           <div role="alert" className="flex flex-col gap-1.5 text-danger-text">
             <span className="flex items-start gap-1.5">
               <CircleAlert aria-hidden className="mt-px size-3.5 shrink-0" />
-              <span>Teilenummer schon vergeben in „{conflictLabel}“.</span>
+              <span>{t("Teilenummer schon vergeben in „")}{metadataLabel(conflictLabel, t)}“.</span>
             </span>
             <Button variant="link" size="xs" className="self-start" onClick={() => onOpenExisting(conflict.table, conflict.part_number)}>
-              „{conflict.part_number}“ öffnen
+              {t("„{1}“ öffnen", {1: conflict.part_number})}
             </Button>
           </div>
         ) : ready ? (
           <span className="flex items-center gap-1.5 font-medium text-success-text">
             <CircleCheck aria-hidden className="size-3.5" />
-            Bereit zum Anlegen
+            {t("Bereit zum Anlegen")}
           </span>
         ) : (
           <>
@@ -1243,7 +1253,7 @@ function Summary({
               <span key={label} className="flex items-start gap-1.5 text-danger-text">
                 <CircleAlert aria-hidden className="mt-px size-3.5 shrink-0" />
                 <span>
-                  {label}: {msg}
+                  {label}: {localizeMessage(msg)}
                 </span>
               </span>
             ))}
@@ -1251,14 +1261,14 @@ function Summary({
               <span className="flex items-start gap-1.5 text-fg-muted">
                 <CircleAlert aria-hidden className="mt-px size-3.5 shrink-0 text-fg-subtle" />
                 <span>
-                  {plural(missing.length, 'Pflichtfeld fehlt', 'Pflichtfelder fehlen')}: {missing.join(', ')}
+                  {plural(missing.length, t("Pflichtfeld fehlt"), t("Pflichtfelder fehlen"))}: {missing.join(', ')}
                 </span>
               </span>
             )}
             {hinted.length > 0 && (
               <span className="flex items-start gap-1.5 text-warning-text">
                 <TriangleAlert aria-hidden className="mt-px size-3.5 shrink-0" />
-                <span>Bitte prüfen: {hinted.join(', ')}</span>
+                <span>{t("Bitte prüfen:")} {hinted.join(', ')}</span>
               </span>
             )}
           </>
@@ -1266,7 +1276,7 @@ function Summary({
         {warnings.slice(0, 3).map((w) => (
           <span key={w} className="flex items-start gap-1.5 text-warning-text">
             <TriangleAlert aria-hidden className="mt-px size-3.5 shrink-0" />
-            <span>{w}</span>
+            <span>{localizeMessage(w)}</span>
           </span>
         ))}
       </div>
@@ -1275,6 +1285,7 @@ function Summary({
 }
 
 function MiniPlaceholder({ label, name, loading, board }: { label: string; name: string; loading: boolean; board?: boolean }) {
+  const { t } = useI18n()
   return (
     <div className={cn('absolute inset-0 flex flex-col items-center justify-center gap-1 px-2 text-center', board ? 'text-pcb-paste' : 'text-fg-subtle')}>
       {loading ? (
@@ -1282,7 +1293,7 @@ function MiniPlaceholder({ label, name, loading, board }: { label: string; name:
       ) : (
         <>
           <span className="micro-label text-[inherit]">{label}</span>
-          <span className="mono line-clamp-2 break-all text-2xs">{name || 'nicht gewählt'}</span>
+          <span className="mono line-clamp-2 break-all text-2xs">{name || t("nicht gewählt")}</span>
         </>
       )}
     </div>

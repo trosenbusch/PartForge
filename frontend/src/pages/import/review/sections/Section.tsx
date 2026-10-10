@@ -1,3 +1,5 @@
+import { localizeMessage } from '@/lib/i18n'
+import { t, useI18n } from '@/lib/i18n'
 import { Check, CircleAlert, Info, TriangleAlert } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { ExtractionIssue } from '@/api/datasheets'
@@ -23,6 +25,7 @@ export interface SectionProps {
 
 /** Abschnitt im Datenbereich: klebender Kopf mit Titel, Zähler, Konfidenz und Fundstellen. */
 export function Section({ id, title, icon, count, issues, aside, children, className }: SectionProps) {
+  useI18n()
   return (
     <section id={`sec-${id}`} data-section={id} aria-labelledby={`sec-${id}-title`} className={cn('border-b border-line', className)}>
       <header className="sticky top-0 z-[2] flex min-h-11 items-center gap-2 bg-bg px-4 py-2">
@@ -47,45 +50,46 @@ export function Section({ id, title, icon, count, issues, aside, children, class
 
 /** „Plausibel“ bzw. Zahl der Fehler/Warnungen/Hinweise der automatischen Prüfung – Tooltip mit den Meldungen. */
 export function ConfidenceBadge({ issues, className }: { issues: readonly ExtractionIssue[]; className?: string }) {
+  useI18n()
   const c = severityCounts(issues)
   const badge =
     c.error > 0 ? (
       <Badge variant="danger" className={className}>
         <CircleAlert />
-        {formatNumber(c.error)} {c.error === 1 ? 'Fehler' : 'Fehler'}
+        {formatNumber(c.error)} {c.error === 1 ? t("Fehler") : t("Fehler")}
       </Badge>
     ) : c.warning > 0 ? (
       <Badge variant="warning" className={className}>
         <TriangleAlert />
-        {formatNumber(c.warning)} {c.warning === 1 ? 'Warnung' : 'Warnungen'}
+        {formatNumber(c.warning)} {c.warning === 1 ? t("Warnung") : t("Warnungen")}
       </Badge>
     ) : c.info > 0 ? (
       <Badge variant="info" className={className}>
         <Info />
-        {formatNumber(c.info)} {c.info === 1 ? 'Hinweis' : 'Hinweise'}
+        {formatNumber(c.info)} {c.info === 1 ? t("Hinweis") : t("Hinweise")}
       </Badge>
     ) : (
       <Badge variant="success" className={className}>
         <Check />
-        Plausibel
-      </Badge>
+        {t("Plausibel")}</Badge>
     )
   const content = issues.length ? (
     <ul className="flex max-w-80 flex-col gap-1">
       {issues.slice(0, 6).map((i, k) => (
         <li key={k} className="leading-snug">
-          {i.message}
+          {localizeMessage(i.message)}
         </li>
       ))}
     </ul>
   ) : (
-    'Die automatische Prüfung hat hier nichts beanstandet.'
+    t("Die automatische Prüfung hat hier nichts beanstandet.")
   )
   return <TipButton tip={content}>{badge}</TipButton>
 }
 
 /** Kleine Feldbeschriftung im Raster (Label oben, Inhalt darunter) */
 export function FieldLabel({ children, htmlFor, hint }: { children: ReactNode; htmlFor?: string; hint?: ReactNode }) {
+  useI18n()
   return (
     <div className="mb-1 flex items-baseline gap-1.5">
       <label htmlFor={htmlFor} className="text-xs font-medium text-fg-muted">

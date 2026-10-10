@@ -1,3 +1,5 @@
+import { useI18n } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { motion, useReducedMotion } from 'motion/react'
 import {
   ArrowRight,
@@ -28,10 +30,10 @@ import { DEFAULT_DBLIB_FILE, EXAMPLE_PART_COUNT } from '@/lib/libraryDefaults'
 const ease = [0.16, 1, 0.3, 1] as const
 
 const FEATURES = [
-  { icon: Layers, title: 'Serien in Sekunden', text: 'Komplette E‑Reihen mit allen Bauformen auf einen Schlag.' },
-  { icon: FileScan, title: 'Datenblatt → Bauteil', text: 'Claude liest das PDF und schlägt alle Felder vor.', ai: true },
-  { icon: CircuitBoard, title: 'Footprints nach IPC', text: 'IPC‑7351-Footprints und 3D‑Modelle automatisch.' },
-  { icon: PlugZap, title: 'Direkt in Altium', text: 'Als Datenbankbibliothek (DbLib) sofort nutzbar.' },
+  { icon: Layers, get title() { return tr("Serien in Sekunden") }, get text() { return tr("Komplette E‑Reihen mit allen Bauformen auf einen Schlag.") } },
+  { icon: FileScan, get title() { return tr("Datenblatt → Bauteil") }, get text() { return tr("Claude liest das PDF und schlägt alle Felder vor.") }, ai: true },
+  { icon: CircuitBoard, get title() { return tr("Footprints nach IPC") }, get text() { return tr("IPC‑7351-Footprints und 3D‑Modelle automatisch.") } },
+  { icon: PlugZap, get title() { return tr("Direkt in Altium") }, get text() { return tr("Als Datenbankbibliothek (DbLib) sofort nutzbar.") } },
 ]
 
 /**
@@ -65,6 +67,7 @@ function useIdleLoops(ms = 8000) {
 }
 
 export default function WillkommenPage() {
+  const { t: tr } = useI18n()
   const navigate = useNavigate()
   const setLibraryDialog = useUi((s) => s.setLibraryDialog)
   const workspace = useWorkspace().data
@@ -78,10 +81,10 @@ export default function WillkommenPage() {
   const openRecent = (path: string) =>
     openWs.mutate(path, {
       onSuccess: (info) => {
-        toast.success(`„${info.name}“ geöffnet`, { description: shortenPath(info.root, 56) })
+        toast.success(tr("„{0}“ geöffnet", { "0": String(info.name) }), { description: shortenPath(info.root, 56) })
         navigate('/')
       },
-      onError: (err) => toast.error('Bibliothek konnte nicht geöffnet werden', { description: errorMessage(err) }),
+      onError: (err) => toast.error(tr("Bibliothek konnte nicht geöffnet werden"), { description: errorMessage(err) }),
     })
 
   return (
@@ -95,8 +98,7 @@ export default function WillkommenPage() {
           <Button variant="ghost" size="sm" asChild>
             <Link to="/einstellungen">
               <Settings aria-hidden />
-              Einstellungen
-            </Link>
+              {tr("Einstellungen")}</Link>
           </Button>
           <ThemeMenu />
         </div>
@@ -111,7 +113,7 @@ export default function WillkommenPage() {
                 <Database className="size-2.5" strokeWidth={2.25} />
               </span>
               <span>
-                Datenbankbibliotheken für <span className="whitespace-nowrap">Altium Designer</span>
+                {tr("Datenbankbibliotheken für ")}<span className="whitespace-nowrap">Altium Designer</span>
               </span>
             </span>
           </motion.div>
@@ -122,10 +124,9 @@ export default function WillkommenPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease, delay: 0.05 }}
           >
-            Bauteile <span className="text-gradient-forge">schmieden</span>,
+            {tr("Bauteile ")}<span className="text-gradient-forge">schmieden</span>,
             <br />
-            nicht abtippen.
-          </motion.h1>
+            {tr("nicht abtippen.")}</motion.h1>
 
           <motion.p
             className="mt-5 max-w-[34rem] text-md leading-relaxed text-fg-muted"
@@ -133,9 +134,7 @@ export default function WillkommenPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease, delay: 0.1 }}
           >
-            PartForge legt komplette Bauteilserien an, liest Datenblätter per KI und liefert Symbole, Footprints und
-            3D‑Modelle direkt als Altium‑Datenbankbibliothek – sauber, einheitlich und in Minuten statt Tagen.
-          </motion.p>
+            {tr("PartForge legt komplette Bauteilserien an, liest Datenblätter per KI und liefert Symbole, Footprints und 3D‑Modelle direkt als Altium‑Datenbankbibliothek – sauber, einheitlich und in Minuten statt Tagen.")}</motion.p>
 
           {workspace ? (
             // Bibliothek offen: „Zur Übersicht“ ist die eine Primäraktion
@@ -154,23 +153,20 @@ export default function WillkommenPage() {
                   <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-surface bg-success" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-2xs font-medium uppercase tracking-[0.06em] text-fg-subtle">Geöffnet</span>
+                  <span className="block text-2xs font-medium uppercase tracking-[0.06em] text-fg-subtle">{tr("Geöffnet")}</span>
                   <span className="block truncate text-ui font-semibold text-fg" title={workspace.root}>
                     {workspace.name}
                   </span>
                 </span>
                 <Button size="lg" variant="primary" rightIcon={<ArrowRight />} onClick={() => navigate('/')}>
-                  Zur Übersicht
-                </Button>
+                  {tr("Zur Übersicht")}</Button>
               </div>
               <div className="flex flex-wrap items-center gap-2.5">
                 {/* Knöpfe, die einen Dialog öffnen, enden wie in Seitenleiste und Befehlspalette auf „…“ */}
                 <Button variant="secondary" leftIcon={<FolderPlus />} onClick={() => setLibraryDialog('create')}>
-                  Neue Bibliothek anlegen …
-                </Button>
+                  {tr("Neue Bibliothek anlegen …")}</Button>
                 <Button variant="ghost" leftIcon={<FolderOpen />} onClick={() => setLibraryDialog('open')}>
-                  Andere Bibliothek öffnen …
-                </Button>
+                  {tr("Andere Bibliothek öffnen …")}</Button>
               </div>
             </motion.div>
           ) : (
@@ -181,11 +177,9 @@ export default function WillkommenPage() {
               transition={{ duration: 0.6, ease, delay: 0.16 }}
             >
               <Button size="lg" variant="primary" leftIcon={<FolderPlus />} onClick={() => setLibraryDialog('create')}>
-                Neue Bibliothek anlegen …
-              </Button>
+                {tr("Neue Bibliothek anlegen …")}</Button>
               <Button size="lg" variant="secondary" leftIcon={<FolderOpen />} onClick={() => setLibraryDialog('open')}>
-                Bibliothek öffnen …
-              </Button>
+                {tr("Bibliothek öffnen …")}</Button>
             </motion.div>
           )}
 
@@ -198,7 +192,7 @@ export default function WillkommenPage() {
             {recentList.length > 0 ? (
               <section aria-labelledby="recent-heading" className="max-w-[34rem]">
                 <h2 id="recent-heading" className="micro-label mb-2.5 flex items-center justify-between">
-                  {workspace ? 'Weitere Bibliotheken' : 'Zuletzt verwendet'}
+                  {workspace ? tr("Weitere Bibliotheken") : tr("Zuletzt verwendet")}
                   {recent.isFetching && <Spinner size={12} />}
                 </h2>
                 <ul className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
@@ -232,7 +226,7 @@ export default function WillkommenPage() {
                             className="size-4 shrink-0 -translate-x-1 text-fg-subtle opacity-0 transition-all group-hover/rl:translate-x-0 group-hover/rl:opacity-100 group-focus-visible/rl:translate-x-0 group-focus-visible/rl:opacity-100"
                           />
                         ) : (
-                          <Badge variant="warning">nicht gefunden</Badge>
+                          <Badge variant="warning">{tr("nicht gefunden")}</Badge>
                         )}
                       </button>
                     </motion.li>
@@ -279,12 +273,10 @@ export default function WillkommenPage() {
 
       <footer className="relative z-10 mx-auto flex max-w-[1280px] items-center gap-6 px-10 pb-6 text-2xs text-fg-subtle">
         <span className="min-w-0">
-          Läuft lokal – Ihre Bibliotheken bleiben auf Ihrem Rechner. Datenblätter gehen nur beim KI‑Import an die
-          Claude‑API.
-        </span>
+          {tr("Läuft lokal – Ihre Bibliotheken bleiben auf Ihrem Rechner. Datenblätter gehen nur beim KI‑Import an die Claude‑API.")}</span>
         <span className="ml-auto flex shrink-0 items-center gap-2">
           <Kbd hotkey="mod+k" size="xs" />
-          <span>alle Befehle</span>
+          <span>{tr("alle Befehle")}</span>
         </span>
         {version && <span className="mono shrink-0">PartForge {version}</span>}
       </footer>
@@ -295,6 +287,7 @@ export default function WillkommenPage() {
 // --------------------------------------------------------------------------- Hintergrund
 
 function Backdrop() {
+  useI18n()
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
       <div className="dot-grid absolute inset-0 [mask-image:radial-gradient(ellipse_70%_60%_at_70%_45%,black,transparent_75%)]" />
@@ -319,6 +312,7 @@ interface FloatCardProps {
 }
 
 function FloatCard({ className, delay, active, icon, ai, label, mpn, meta, badge }: FloatCardProps) {
+  useI18n()
   return (
     <motion.div
       className={cn('absolute w-[184px] xl:w-[204px]', className)}
@@ -358,6 +352,7 @@ function FloatCard({ className, delay, active, icon, ai, label, mpn, meta, badge
 
 /** Leiterbahn mit fließendem Signal */
 function Trace({ d, delay, active }: { d: string; delay: number; active: boolean }) {
+  useI18n()
   return (
     <g>
       <path d={d} stroke="var(--pf-accent)" strokeOpacity="0.28" strokeWidth="1.5" fill="none" strokeLinejoin="round" />
@@ -377,6 +372,7 @@ function Trace({ d, delay, active }: { d: string; delay: number; active: boolean
 }
 
 function HeroVisual({ active, onWake }: { active: boolean; onWake: () => void }) {
+  const { t: tr } = useI18n()
   return (
     <div
       className="relative mx-auto aspect-square w-full max-w-[440px] xl:max-w-[520px]"
@@ -445,16 +441,16 @@ function HeroVisual({ active, onWake }: { active: boolean; onWake: () => void })
         delay={0}
         active={active}
         icon={<Layers />}
-        label="Widerstand · Serie E96"
+        label={tr("Widerstand · Serie E96")}
         mpn="RC0603FR-0710KL"
-        meta="10 kΩ · 1 % · 0603 · 0,1 W"
+        meta={tr("10 kΩ · 1 % · 0603 · 0,1 W")}
       />
       <FloatCard
         className="right-0 top-[14%]"
         delay={0.25}
         active={active}
         icon={<CircuitBoard />}
-        label="Kondensator"
+        label={tr("Kondensator")}
         mpn="GRM188R71H104KA93D"
         meta="100 nF · 50 V · X7R · 0603"
       />
@@ -464,10 +460,10 @@ function HeroVisual({ active, onWake }: { active: boolean; onWake: () => void })
         active={active}
         ai
         icon={<Sparkles />}
-        label="Aus Datenblatt"
+        label={tr("Aus Datenblatt")}
         mpn="LM358DR"
-        meta="Dual-OPV · SOIC-8 · 8 Pins"
-        badge={<Badge variant="spark">KI</Badge>}
+        meta={tr("Dual-OPV · SOIC-8 · 8 Pins")}
+        badge={<Badge variant="spark">{tr("KI")}</Badge>}
       />
       {/* DbLib wie bei einer neuen Bibliothek mit Beispielinhalten – etwas breiter, damit ihr Name ganz passt */}
       <FloatCard
@@ -477,7 +473,7 @@ function HeroVisual({ active, onWake }: { active: boolean; onWake: () => void })
         icon={<PlugZap />}
         label="Altium Designer"
         mpn={DEFAULT_DBLIB_FILE}
-        meta={`${EXAMPLE_PART_COUNT} Bauteile · synchron`}
+        meta={tr("{0} Bauteile · synchron", { "0": String(EXAMPLE_PART_COUNT) })}
         badge={<span className="size-1.5 rounded-full bg-success shadow-[0_0_8px_var(--pf-success)]" />}
       />
     </div>

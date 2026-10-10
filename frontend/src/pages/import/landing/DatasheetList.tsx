@@ -1,3 +1,5 @@
+import { localizeMessage } from '@/lib/i18n'
+import { t, useI18n } from '@/lib/i18n'
 import { motion, useReducedMotion } from 'motion/react'
 import { CircleAlert, Combine, ExternalLink, FileScan, FileStack, FileText, Globe, MoreHorizontal, RefreshCw, Search, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -45,7 +47,7 @@ export interface DatasheetListProps {
   onReanalyze: (d: DatasheetSummary) => void
 }
 
-const fold = (s: string) => s.toLocaleLowerCase('de-DE').replace(/[\s\-_/]+/g, '')
+const fold = (s: string, locale: string) => s.toLocaleLowerCase(locale).replace(/[\s\-_/]+/g, '')
 
 /** Spalten: schmal Miniatur · Titel · (Status, Kosten, Menü) – mittel + Bestellnummern, Status, Kosten – breit + Hersteller, Datum */
 const ROW_GRID =
@@ -53,6 +55,7 @@ const ROW_GRID =
 
 /** „OPA656 – Wideband …“: Bauteil kräftig, Beschreibung gedämpft (gekürzt wird nur die Beschreibung). */
 function TitleText({ title }: { title: string }) {
+  useI18n()
   const [base, ...rest] = title.split(' – ')
   return (
     <>
@@ -64,27 +67,26 @@ function TitleText({ title }: { title: string }) {
 
 /** Status einer Zeile: laufende Analyse, fehlgeschlagen (mit Ursache) oder der gespeicherte Stand */
 function StatusCell({ d, job, compact }: { d: DatasheetSummary; job: Job | undefined; compact?: boolean }) {
+  useI18n()
   const running = job ? isJobActive(job) : false
   const meta = STATUS_META[d.status]
   if (running && job) {
     return compact ? (
-      <ProgressRing value={job.progress} size={20} stroke={2} tone="spark" label="Analyse läuft" />
+      <ProgressRing value={job.progress} size={20} stroke={2} tone="spark" label={t("Analyse läuft")} />
     ) : (
-      <Tooltip content={job.message || 'Analyse läuft'}>
+      <Tooltip content={localizeMessage(job.message || '') || t("Analyse läuft")}>
         <span className="relative z-10 flex items-center gap-1.5 text-xs text-spark-text">
-          <ProgressRing value={job.progress} size={18} stroke={2} tone="spark" label="Analyse läuft" />
-          Analyse …
-        </span>
+          <ProgressRing value={job.progress} size={18} stroke={2} tone="spark" label={t("Analyse läuft")} />
+          {t("Analyse …")}</span>
       </Tooltip>
     )
   }
   if (analysisFailed(d)) {
     return (
-      <TipButton tip={d.last_error} label={`Analyse fehlgeschlagen: ${d.last_error ?? ''}`} className="relative z-10">
+      <TipButton tip={d.last_error} label={t("Analyse fehlgeschlagen: {0}", { "0": String(d.last_error ?? '') })} className="relative z-10">
         <Badge variant="danger">
           <CircleAlert />
-          Fehlgeschlagen
-        </Badge>
+          {t("Fehlgeschlagen")}</Badge>
       </TipButton>
     )
   }
@@ -93,6 +95,7 @@ function StatusCell({ d, job, compact }: { d: DatasheetSummary; job: Job | undef
 
 /** Bisherige Datenblätter: Miniatur, Titel, Hersteller, Bestellnummern, Seiten, Status, Kosten – neueste zuerst. */
 export function DatasheetList({ items, loading, active, urlJobs, aiReady, onReanalyze }: DatasheetListProps) {
+  const { locale } = useI18n()
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const reduce = useReducedMotion()
@@ -102,44 +105,44 @@ export function DatasheetList({ items, loading, active, urlJobs, aiReady, onRean
   const sorted = useMemo(() => {
     const list = [...(items ?? [])]
     list.sort((a, b) => (b.extracted ?? b.created ?? '').localeCompare(a.extracted ?? a.created ?? ''))
-    const q = fold(query.trim())
+    const q = fold(query.trim(), locale)
     if (!q) return list
     return list.filter((d) =>
-      [d.title ?? '', d.original_name, d.manufacturer ?? '', ...d.mpns, ...d.devices].some((t) => fold(t).includes(q)),
+      [d.title ?? '', d.original_name, d.manufacturer ?? '', ...d.mpns, ...d.devices].some((t) => fold(t, locale).includes(q)),
     )
-  }, [items, query])
+  }, [items, query, locale])
 
   const count = items?.length ?? 0
 
   const askDelete = async (d: DatasheetSummary) => {
     const ok = await confirm({
-      title: `„${(d.has_extraction && d.title) || d.original_name}“ löschen?`,
+      title: t("„{0}“ löschen?", { "0": String((d.has_extraction && d.title) || d.original_name) }),
       description:
-        'Eintrag, Analyse und Seitenbilder werden entfernt. Die PDF-Datei bleibt erhalten, solange Bauteile auf sie verlinken. Angelegte Bauteile bleiben unverändert.',
-      confirmLabel: 'Löschen',
+        t("Eintrag, Analyse und Seitenbilder werden entfernt. Die PDF-Datei bleibt erhalten, solange Bauteile auf sie verlinken. Angelegte Bauteile bleiben unverändert."),
+      confirmLabel: t("Löschen"),
       destructive: true,
       onConfirm: () => remove.mutateAsync({ id: d.id }),
     })
-    if (ok) toast.success('Datenblatt gelöscht', { description: d.original_name })
+    if (ok) toast.success(t("Datenblatt gelöscht"), { description: d.original_name })
   }
 
   return (
     <Card className="@container overflow-hidden">
       <CardHeader
         icon={<FileText />}
-        title="Bisherige Datenblätter"
+        title={t("Bisherige Datenblätter")}
         description={
           count
-            ? `${plural(count, 'Datenblatt', 'Datenblätter')} in dieser Bibliothek – Klick öffnet die Prüfansicht.`
-            : 'Analysierte und gespeicherte Datenblätter erscheinen hier.'
+            ? t("{0} in dieser Bibliothek – Klick öffnet die Prüfansicht.", { "0": String(plural(count, t("Datenblatt"), t("Datenblätter"))) })
+            : t("Analysierte und gespeicherte Datenblätter erscheinen hier.")
         }
         actions={
           count > 3 ? (
             <Input
               size="sm"
               type="search"
-              aria-label="Datenblätter durchsuchen"
-              placeholder="Suchen …"
+              aria-label={t("Datenblätter durchsuchen")}
+              placeholder={t("Suchen …")}
               prefix={<Search />}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -159,18 +162,18 @@ export function DatasheetList({ items, loading, active, urlJobs, aiReady, onRean
           )}
         >
           <span />
-          <span>Datenblatt</span>
-          <span className="hidden @[60rem]:block">Hersteller</span>
-          <span>Bestellnummern</span>
+          <span>{t("Datenblatt")}</span>
+          <span className="hidden @[60rem]:block">{t("Hersteller")}</span>
+          <span>{t("Bestellnummern")}</span>
           <span>Status</span>
-          <span className="text-right">Kosten</span>
-          <span className="hidden text-right @[60rem]:block">Datum</span>
+          <span className="text-right">{t("Kosten")}</span>
+          <span className="hidden text-right @[60rem]:block">{t("Datum")}</span>
           <span className="w-7" />
         </div>
       )}
 
       {loading ? (
-        <ul aria-label="Datenblätter werden geladen" className="divide-y divide-line">
+        <ul aria-label={t("Datenblätter werden geladen")} className="divide-y divide-line">
           {[0, 1, 2].map((i) => (
             <li key={i} className="flex items-center gap-4 px-4 py-3">
               <Skeleton className="h-[3.25rem] w-10 rounded-md" />
@@ -183,21 +186,21 @@ export function DatasheetList({ items, loading, active, urlJobs, aiReady, onRean
         </ul>
       ) : sorted.length === 0 && urlJobs.length === 0 ? (
         query ? (
-          <EmptyState illustration="search-empty" size="sm" title="Keine Treffer" description={`Nichts gefunden für „${query}“.`} />
+          <EmptyState illustration="search-empty" size="sm" title={t("Keine Treffer")} description={t("Nichts gefunden für „{0}“.", { "0": String(query) })} />
         ) : (
           <EmptyState
             illustration="drop-pdf"
             size="sm"
-            title="Noch keine Datenblätter"
+            title={t("Noch keine Datenblätter")}
             description={
               aiReady
-                ? 'PDF oben ablegen oder eine Web-Adresse eingeben – in etwa einer halben Minute steht der Bauteil-Vorschlag bereit.'
-                : `Abgelegte PDFs erscheinen hier. Analysiert werden sie, sobald die KI eingerichtet ist (${SETTINGS_PLACE.ai.label}).`
+                ? t("PDF oben ablegen oder eine Web-Adresse eingeben – in etwa einer halben Minute steht der Bauteil-Vorschlag bereit.")
+                : t("Abgelegte PDFs erscheinen hier. Analysiert werden sie, sobald die KI eingerichtet ist ({0}).", { "0": String(SETTINGS_PLACE.ai.label) })
             }
           />
         )
       ) : (
-        <ul aria-label="Datenblätter" className="divide-y divide-line">
+        <ul aria-label={t("Datenblätter")} className="divide-y divide-line">
           {urlJobs.map(({ entry, job }) => (
             <li key={entry.jobId} className="relative flex items-center gap-4 px-4 py-3">
               <span aria-hidden className="flex h-[3.25rem] w-10 shrink-0 items-center justify-center rounded-md border border-dashed border-line-strong text-fg-subtle">
@@ -212,10 +215,10 @@ export function DatasheetList({ items, loading, active, urlJobs, aiReady, onRean
                 </Link>
                 <div className="mt-0.5 flex items-center gap-1.5 text-2xs text-fg-subtle">
                   <Spinner size={11} tone="spark" />
-                  {job?.message || 'Wird heruntergeladen …'}
+                  {localizeMessage(job?.message || '') || t("Wird heruntergeladen …")}
                 </div>
               </div>
-              {job && <ProgressRing value={job.progress} size={28} stroke={2.5} tone="spark" label="Fortschritt" />}
+              {job && <ProgressRing value={job.progress} size={28} stroke={2.5} tone="spark" label={t("Fortschritt")} />}
             </li>
           ))}
           {sorted.map((d, i) => {
@@ -250,7 +253,7 @@ export function DatasheetList({ items, loading, active, urlJobs, aiReady, onRean
                   <div className="mt-0.5 flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-2xs text-fg-subtle">
                     <span className="min-w-[3.5rem] shrink truncate">{d.original_name}</span>
                     <span aria-hidden>·</span>
-                    <span className="shrink-0 tabular-nums">{plural(d.page_count, 'Seite', 'Seiten')}</span>
+                    <span className="shrink-0 tabular-nums">{plural(d.page_count, t("Seite"), t("Seiten"))}</span>
                     {d.size_bytes > 0 && (
                       <span className="hidden shrink-0 items-center gap-1.5 @[60rem]:flex">
                         <span aria-hidden>·</span>
@@ -280,13 +283,13 @@ export function DatasheetList({ items, loading, active, urlJobs, aiReady, onRean
                       <span className="flex min-w-0 shrink items-center gap-1.5 text-accent-text">
                         <span aria-hidden className="text-fg-subtle">·</span>
                         <Combine aria-hidden className="size-3 shrink-0" />
-                        <span className="truncate">Maße aus {d.merged_from.join(', ')}</span>
+                        <span className="truncate">{t("Maße aus ")}{d.merged_from.join(', ')}</span>
                       </span>
                     )}
                     {d.status !== 'übernommen' && (d.saved_symbols.length > 0 || d.saved_footprints.length > 0) && (
                       <span className="flex shrink-0 items-center gap-1.5 text-success-text">
                         <span aria-hidden className="text-fg-subtle">·</span>
-                        {[d.saved_symbols.length ? 'Symbol gespeichert' : null, d.saved_footprints.length ? 'Footprint gespeichert' : null]
+                        {[d.saved_symbols.length ? t("Symbol gespeichert") : null, d.saved_footprints.length ? t("Footprint gespeichert") : null]
                           .filter(Boolean)
                           .join(', ')}
                       </span>
@@ -298,7 +301,7 @@ export function DatasheetList({ items, loading, active, urlJobs, aiReady, onRean
                   {d.package_only ? (
                     <span className="flex min-w-0 items-center gap-1 text-xs text-fg-muted">
                       <FileStack aria-hidden className="size-3.5 shrink-0 text-fg-subtle" />
-                      <span className="truncate">Gehäusezeichnung</span>
+                      <span className="truncate">{t("Gehäusezeichnung")}</span>
                     </span>
                   ) : d.mpns.length ? (
                     <>
@@ -306,7 +309,7 @@ export function DatasheetList({ items, loading, active, urlJobs, aiReady, onRean
                       {d.mpns.length > 1 && (
                         <TipButton
                           tip={d.mpns.slice(1, 16).join(', ') + (d.mpns.length > 16 ? ' …' : '')}
-                          label={`${formatNumber(d.mpns.length - 1)} weitere Bestellnummern`}
+                          label={t("{0} weitere Bestellnummern", { "0": String(formatNumber(d.mpns.length - 1)) })}
                           className="relative z-10 rounded-md px-1 text-2xs tabular-nums text-fg-subtle"
                         >
                           +{formatNumber(d.mpns.length - 1)}
@@ -321,8 +324,8 @@ export function DatasheetList({ items, loading, active, urlJobs, aiReady, onRean
                   <StatusCell d={d} job={job} />
                   {!running && (errors > 0 || warnings > 0) && (
                     <TipButton
-                      tip={`${errors} Fehler, ${warnings} Warnungen der Prüfung`}
-                      label={`${errors} Fehler, ${warnings} Warnungen`}
+                      tip={t("{0} Fehler, {1} Warnungen der Prüfung", { "0": String(errors), "1": String(warnings) })}
+                      label={t("{0} Fehler, {1} Warnungen", { "0": String(errors), "1": String(warnings) })}
                       className="relative z-10 p-1"
                     >
                       <span aria-hidden className={cn('size-1.5 rounded-full', errors ? 'bg-danger' : 'bg-warning')} />
@@ -339,47 +342,42 @@ export function DatasheetList({ items, loading, active, urlJobs, aiReady, onRean
                   </span>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <IconButton size="sm" label={`Aktionen für „${title}“`} icon={<MoreHorizontal />} tooltip={false} />
+                      <IconButton size="sm" label={t("Aktionen für „{0}“", { "0": String(title) })} icon={<MoreHorizontal />} tooltip={false} />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="min-w-52">
                       <DropdownMenuItem icon={<FileScan />} onSelect={() => navigate(importPath(d.id, running ? job?.id : null))}>
-                        Prüfansicht öffnen
-                      </DropdownMenuItem>
+                        {t("Prüfansicht öffnen")}</DropdownMenuItem>
                       <DropdownMenuItem icon={<ExternalLink />} onSelect={() => void openPdf(d)}>
-                        PDF öffnen
-                      </DropdownMenuItem>
+                        {t("PDF öffnen")}</DropdownMenuItem>
                       {d.has_extraction && d.devices.length > 0 && (
                         <DropdownMenuItem
                           icon={<Combine />}
                           disabled={running}
-                          description="Aus einer eigenen Gehäusezeichnung des Herstellers"
+                          description={t("Aus einer eigenen Gehäusezeichnung des Herstellers")}
                           onSelect={() => setMerge({ datasheet: d, direction: 'take' })}
                         >
-                          Maße übernehmen …
-                        </DropdownMenuItem>
+                          {t("Maße übernehmen …")}</DropdownMenuItem>
                       )}
                       {d.has_extraction && (d.package_only || d.mpns.length === 0) && (
                         <DropdownMenuItem
                           icon={<Combine />}
                           disabled={running}
-                          description="In das Datenblatt des Bauteils, dem sie gehört"
+                          description={t("In das Datenblatt des Bauteils, dem sie gehört")}
                           onSelect={() => setMerge({ datasheet: d, direction: 'give' })}
                         >
-                          Zeichnung einem Bauteil geben …
-                        </DropdownMenuItem>
+                          {t("Zeichnung einem Bauteil geben …")}</DropdownMenuItem>
                       )}
                       <DropdownMenuItem
                         icon={<RefreshCw />}
                         disabled={!aiReady || running}
                         onSelect={() => onReanalyze(d)}
-                        description={d.cost_usd > 0 ? `Bisher ${formatUsd(d.cost_usd)} für dieses Datenblatt` : 'Seiten, Modell und erwartete Kosten wählen'}
+                        description={d.cost_usd > 0 ? t("Bisher {0} für dieses Datenblatt", { "0": String(formatUsd(d.cost_usd)) }) : t("Seiten, Modell und erwartete Kosten wählen")}
                       >
-                        {d.has_extraction ? 'Neu analysieren …' : 'Analysieren …'}
+                        {d.has_extraction ? t("Neu analysieren …") : t("Analysieren …")}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem icon={<Trash2 />} destructive disabled={running} onSelect={() => void askDelete(d)}>
-                        Löschen …
-                      </DropdownMenuItem>
+                        {t("Löschen …")}</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>

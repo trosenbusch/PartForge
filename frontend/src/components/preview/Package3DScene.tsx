@@ -1,3 +1,5 @@
+import { useLocalizedMemo } from '@/components/preview/useLocalizedMemo'
+import { t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * 3D-Szene eines Footprints (three.js über @react-three/fiber) – wird von <Package3D> **lazy** geladen, damit three.js
  * nicht im Start-Bundle landet. Offline: keine HDR-/CDN-Dateien; Reflexionen kommen aus einer prozedural erzeugten
@@ -7,7 +9,7 @@
  */
 import { ContactShadows, OrbitControls } from '@react-three/drei'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { useEffect, useId, useImperativeHandle, useMemo, useRef, useState, type KeyboardEvent, type Ref, type RefObject } from 'react'
+import { useEffect, useId, useImperativeHandle, useRef, useState, type KeyboardEvent, type Ref, type RefObject } from 'react'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
@@ -328,13 +330,14 @@ interface RigApi {
 
 /** Kamera einpassen (schräg von vorn rechts oben) und auf Wunsch weich dorthin fahren */
 function CameraRig({ model, rigRef }: { model: BoardModel; rigRef: RefObject<RigApi | null> }) {
+  useI18n()
   const get = useThree((s) => s.get)
   const fov = useThree((s) => (s.camera as THREE.PerspectiveCamera).fov)
   const hasControls = useThree((s) => Boolean(s.controls))
   const size = useThree((s) => s.size)
   const anim = useRef<{ from: THREE.Vector3; to: THREE.Vector3; fromT: THREE.Vector3; toT: THREE.Vector3; t0: number } | null>(null)
 
-  const target = useMemo(() => {
+  const target = useLocalizedMemo(() => {
     const vfov = ((fov || 30) * Math.PI) / 180
     const aspect = size.width / Math.max(size.height, 1)
     const hfov = 2 * Math.atan(Math.tan(vfov / 2) * aspect)
@@ -413,7 +416,8 @@ function SceneContent({
   controlsRef: RefObject<OrbitControlsImpl | null>
   rigRef: RefObject<RigApi | null>
 }) {
-  const materials = useMemo(
+  useI18n()
+  const materials = useLocalizedMemo(
     () => ({
       mask: new THREE.MeshPhysicalMaterial({ color: '#0C3022', roughness: 0.55, metalness: 0.02, clearcoat: 0.28, clearcoatRoughness: 0.45 }),
       core: new THREE.MeshStandardMaterial({ color: '#5F5A43', roughness: 0.92, metalness: 0 }),
@@ -425,7 +429,7 @@ function SceneContent({
   )
   useEffect(() => () => Object.values(materials).forEach((m) => m.dispose()), [materials])
 
-  const bodyMaterials = useMemo(
+  const bodyMaterials = useLocalizedMemo(
     () =>
       model.bodies.map(({ body, metal }) =>
         metal
@@ -536,8 +540,9 @@ export default function Package3DScene({
   onContextLost,
   ref,
 }: Package3DSceneProps) {
+  useI18n()
   const uid = useId().replace(/:/g, '')
-  const model = useMemo(() => buildModel(spec, showBoard), [spec, showBoard])
+  const model = useLocalizedMemo(() => buildModel(spec, showBoard), [spec, showBoard])
   useEffect(() => () => disposeModel(model), [model])
   const controlsRef = useRef<OrbitControlsImpl | null>(null)
   const rigRef = useRef<RigApi | null>(null)
@@ -606,13 +611,13 @@ export default function Package3DScene({
   }
 
   const size = model.size
-  const label = ariaLabel ?? `3D-Ansicht ${spec.name}`
+  const label = ariaLabel ?? tr("3D-Ansicht {value0}", { value0: String(spec.name) })
   return (
     // Leinwand-Widget mit eigener Tastatursteuerung (Drehen, Zoomen, Zurücksetzen) – role="application"
     // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <div
       role="application"
-      aria-roledescription="3D-Ansicht"
+      aria-roledescription={tr("3D-Ansicht")}
       aria-label={label}
       aria-describedby={`${uid}-help`}
       // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex
@@ -655,11 +660,9 @@ export default function Package3DScene({
           </CanvasBadge>
         </div>
       )}
-      <CanvasKeyHint tone="board">Pfeiltasten drehen · +/− zoomen · 0 zurücksetzen · Leertaste dreht automatisch</CanvasKeyHint>
+      <CanvasKeyHint tone="board">{tr("Pfeiltasten drehen · +/− zoomen · 0 zurücksetzen · Leertaste dreht automatisch")}</CanvasKeyHint>
       <p id={`${uid}-help`} className="sr-only">
-        {(spec.bodies ?? []).length} 3D-Körper, Höhe {formatMm(model.height)} Millimeter. Ziehen dreht, Mausrad zoomt,
-        rechte Maustaste verschiebt. Pfeiltasten drehen, Plus und Minus zoomen, 0 setzt die Ansicht zurück, die Leertaste
-        schaltet die automatische Drehung um.
+        {(spec.bodies ?? []).length} {tr("3D-Körper, Höhe")}{' '}{formatMm(model.height)} {tr("Millimeter. Ziehen dreht, Mausrad zoomt, rechte Maustaste verschiebt. Pfeiltasten drehen, Plus und Minus zoomen, 0 setzt die Ansicht zurück, die Leertaste schaltet die automatische Drehung um.")}
       </p>
     </div>
   )

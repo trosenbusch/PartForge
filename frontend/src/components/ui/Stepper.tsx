@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { motion } from 'motion/react'
 import { Check } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -30,8 +31,9 @@ export interface StepperProps {
  * gekürzt, während neben kurzen noch lange Linien standen).
  */
 export function Stepper({ steps, current, onStepClick, compact, className }: StepperProps) {
+  const { t: tr } = useI18n()
   return (
-    <ol className={cn('flex w-full items-center', className)} aria-label="Fortschritt">
+    <ol className={cn('flex w-full items-center', className)} aria-label={tr("Fortschritt")}>
       {steps.map((step, i) => {
         const done = i < current
         const active = i === current

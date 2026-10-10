@@ -1,3 +1,4 @@
+import { localizeMessage, useI18n } from '@/lib/i18n'
 /**
  * Export der Bauteiltabelle (XLSX/CSV) über den gemeinsamen Speichern-Helfer `@/lib/download`: im Desktop-Fenster
  * der native Speichern-Dialog (Binärdaten exakt – BOM der CSV und XLSX bleiben erhalten), im Browser ein Download.
@@ -25,16 +26,17 @@ const MAX_URL_LENGTH = 12_000
 export const LARGE_XLSX_ROWS = 5_000
 
 export function useExport(table: string | undefined, label: string) {
+  const { t } = useI18n()
   const [jobId, setJobId] = useState<string | null>(null)
   useJob<ExportFileResult>(jobId, {
     onDone: (job) => {
       const r = job.result
       // gleiche ID wie die Meldung des Job-Docks → dieselbe Meldung bekommt „Im Explorer zeigen“
       if (r) {
-        toast.success(job.title, {
+        toast.success(localizeMessage(job.title), {
           id: `job:${job.id}`,
-          description: formatNumbersInText(job.message || `${plural(r.rows, 'Bauteil', 'Bauteile')} in ${r.rel_path}`),
-          action: { label: 'Im Explorer zeigen', onClick: () => void revealPath(r.path, { what: 'Exportdatei' }) },
+          description: formatNumbersInText(job.message ? localizeMessage(job.message) : t("{1} in {2}", { 1: plural(r.rows, t("Bauteil"), t("Bauteile")), 2: r.rel_path })),
+          action: { label: t("Im Explorer zeigen"), onClick: () => void revealPath(r.path, { what: t("Exportdatei") }) },
         })
       }
       setJobId(null)
@@ -48,27 +50,27 @@ export function useExport(table: string | undefined, label: string) {
     /** `rows` = erwartete Zeilenzahl (Auswahl bzw. Treffer) – entscheidet über den Job und steht im Lade-Toast */
     (opts: ExportOptions, rows?: number | null) => {
       if (!table) return
-      const what = opts.format === 'xlsx' ? 'Excel-Datei' : 'CSV-Datei'
+      const what = opts.format === 'xlsx' ? t("Excel-Datei") : t('CSV-Datei')
       const id = `export:${table}`
       const tooLong = partsApi.exportUrl(table, opts).length > MAX_URL_LENGTH
       const large = opts.format === 'xlsx' && (rows ?? 0) > LARGE_XLSX_ROWS
       if (tooLong || large) {
-        toast.loading(`${what} wird vorbereitet …`, { id, description: rows ? plural(rows, 'Bauteil', 'Bauteile') : undefined })
+        toast.loading(t("{1} wird vorbereitet …", { 1: what }), { id, description: rows ? plural(rows, t("Bauteil"), t("Bauteile")) : undefined })
         void partsApi
           .exportJob(table, opts)
           .then(({ job }) => {
             // erst der Hinweis, dann der Job – kleine Exporte sind fertig, bevor die nächste Zeile läuft
-            toast.info(large ? 'Großer Excel-Export – läuft im Hintergrund' : 'Große Auswahl – Export in den Bibliotheksordner', {
+            toast.info(large ? t("Großer Excel-Export – läuft im Hintergrund") : t("Große Auswahl – Export in den Bibliotheksordner"), {
               id,
               description: large
-                ? `${plural(rows ?? 0, 'Bauteil', 'Bauteile')} · die Datei landet im Ordner „Exports“ der Bibliothek, Fortschritt im Job-Dock.`
-                : 'Die Datei landet im Ordner „Exports“ der Bibliothek.',
+                ? t("{1} · die Datei landet im Ordner „Exports“ der Bibliothek, Fortschritt im Job-Dock.", { 1: plural(rows ?? 0, t("Bauteil"), t("Bauteile")) })
+                : t("Die Datei landet im Ordner „Exports“ der Bibliothek."),
             })
             // Erfolgsmeldung = Schlussmeldung des Jobs (Backend), kein eigener Text
             trackJob<ExportFileResult>(job, { openDock: false })
             setJobId(job.id)
           })
-          .catch((err: unknown) => toast.error('Export nicht möglich', { id, description: cleanErrorText(errorMessage(err)) }))
+          .catch((err: unknown) => toast.error(t("Export nicht möglich"), { id, description: cleanErrorText(errorMessage(err)) }))
         return
       }
       void saveFile({
@@ -76,7 +78,7 @@ export function useExport(table: string | undefined, label: string) {
         type: opts.format === 'xlsx' ? FILE_TYPES.xlsx : FILE_TYPES.csv,
         // Rückmeldung, sobald die Datei entsteht (im Browser-Dialog erst nach der Wahl des Speicherorts)
         load: () => {
-          toast.loading(`${what} wird erstellt …`, { id, description: rows ? plural(rows, 'Bauteil', 'Bauteile') : undefined })
+          toast.loading(t("{1} wird erstellt …", { 1: what }), { id, description: rows ? plural(rows, t("Bauteil"), t("Bauteile")) : undefined })
           return partsApi.exportFile(table, opts)
         },
       })
@@ -84,8 +86,8 @@ export function useExport(table: string | undefined, label: string) {
           if (result.status === 'cancelled') toast.dismiss(id)
           else notifySaveResult(result, { what, id })
         })
-        .catch((err: unknown) => toast.error(`${what} konnte nicht gespeichert werden`, { id, description: cleanErrorText(errorMessage(err)) }))
+        .catch((err: unknown) => toast.error(t("{1} konnte nicht gespeichert werden", { 1: what }), { id, description: cleanErrorText(errorMessage(err)) }))
     },
-    [table, label],
+    [table, label, t],
   )
 }

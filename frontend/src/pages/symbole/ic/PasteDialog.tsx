@@ -1,3 +1,5 @@
+import { useLocalizedMemo } from '@/components/preview/useLocalizedMemo'
+import { t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * „Pinliste einfügen“: Tabelle aus Excel oder dem Datenblatt einfügen (Strg+V), Spalten werden erkannt
  * (Nummer, Name, Typ, Beschreibung …) und lassen sich je Spalte anders zuordnen („Nummer ⇄ Name“ für Tabellen,
@@ -5,7 +7,7 @@
  * ersetzen oder anhängen.
  */
 import { ArrowLeftRight, ClipboardPaste, RotateCcw, TriangleAlert } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import {
   Badge,
   Button,
@@ -70,6 +72,7 @@ function ColumnMapping({
   onChange: (next: (PasteColumn | null)[]) => void
   onReset: () => void
 }) {
+  useI18n()
   const shown = mapping.slice(0, MAPPABLE_COLUMNS)
   const set = (i: number, value: PasteColumn | null) => {
     const next = shown.map((c, j) => (j !== i && value !== null && c === value ? null : c))
@@ -86,17 +89,17 @@ function ColumnMapping({
     onChange(next)
   }
   return (
-    <section aria-label="Spalten zuordnen" className="flex flex-col gap-2">
+    <section aria-label={tr("Spalten zuordnen")} className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <span className="text-ui font-medium text-fg">Spalten</span>
-        <span className="text-xs text-fg-muted">{custom ? 'eigene Zuordnung' : 'automatisch erkannt'}</span>
+        <span className="text-ui font-medium text-fg">{tr("Spalten")}</span>
+        <span className="text-xs text-fg-muted">{custom ? tr('eigene Zuordnung') : tr('automatisch erkannt')}</span>
         <div className="ml-auto flex items-center gap-1">
           <Button size="xs" variant="ghost" leftIcon={<ArrowLeftRight />} disabled={di < 0 || ni < 0} onClick={swap}>
-            Nummer ⇄ Name
+            {tr("Nummer ⇄ Name")}
           </Button>
           {custom && (
             <Button size="xs" variant="ghost" leftIcon={<RotateCcw />} onClick={onReset}>
-              Erkennung
+              {tr("Erkennung")}
             </Button>
           )}
         </div>
@@ -106,11 +109,11 @@ function ColumnMapping({
           <div key={i} className="flex w-36 min-w-0 flex-col gap-1">
             <Select<PasteColumn | typeof IGNORE>
               size="sm"
-              aria-label={`Spalte ${i + 1}${sample[i] ? ` (z. B. ${sample[i]})` : ''}`}
+              aria-label={tr("Spalte {value0}{value1}", { value0: String(i + 1), value1: String(sample[i] ? tr(" (z. B. {value0})", { value0: String(sample[i]) }) : '') })}
               value={c ?? IGNORE}
               onValueChange={(v) => set(i, v === IGNORE ? null : v)}
               prefix={<span className="mono text-2xs font-semibold text-fg-subtle">{i + 1}</span>}
-              options={COLUMN_OPTIONS}
+              options={COLUMN_OPTIONS.map((o) => ({ ...o, label: tr(o.label) }))}
               className={cn(!c && 'text-fg-subtle')}
             />
             <span className="mono truncate px-1 text-2xs text-fg-subtle" title={sample[i]}>
@@ -124,19 +127,20 @@ function ColumnMapping({
 }
 
 function PasteDialogBody({ initialText, existing, onApply, onClose }: Omit<PasteDialogProps, 'open' | 'onOpenChange'> & { onClose: () => void }) {
+  useI18n()
   const [text, setText] = useState(initialText ?? '')
   const [convert, setConvert] = useState(true)
   const [mode, setMode] = useState<'replace' | 'append'>(existing.length ? 'append' : 'replace')
   const [custom, setCustom] = useState<{ count: number; mapping: (PasteColumn | null)[] } | null>(null)
-  const detected = useMemo(() => parsePinTable(text, { convertActiveLow: convert }), [text, convert])
+  const detected = useLocalizedMemo(() => parsePinTable(text, { convertActiveLow: convert }), [text, convert])
   // eigene Zuordnung nur, solange die eingefügte Tabelle gleich viele Spalten hat
   const customMapping = custom && custom.count === detected.columnCount ? custom.mapping : null
-  const result = useMemo(
+  const result = useLocalizedMemo(
     () => (customMapping ? parsePinTable(text, { convertActiveLow: convert, mapping: customMapping }) : detected),
     [customMapping, detected, text, convert],
   )
 
-  const duplicates = useMemo(() => {
+  const duplicates = useLocalizedMemo(() => {
     const seen = new Map<string, number>()
     const base = mode === 'append' ? existing.map((p) => p.designator.trim().toUpperCase()) : []
     for (const d of base) seen.set(d, (seen.get(d) ?? 0) + 1)
@@ -160,16 +164,16 @@ function PasteDialogBody({ initialText, existing, onApply, onClose }: Omit<Paste
     <>
       <DialogBody className="flex flex-col gap-4">
         <Field
-          label="Tabelle"
-          hint="Strg+V"
-          help="Ohne Kopfzeile gilt: Nummer, Name, Typ, Beschreibung – die Zuordnung lässt sich darunter je Spalte ändern. „5, 6“ und „5–8“ ergeben mehrere Pins."
+          label={tr("Tabelle")}
+          hint={tr("Strg+V")}
+          help={tr("Ohne Kopfzeile gilt: Nummer, Name, Typ, Beschreibung – die Zuordnung lässt sich darunter je Spalte ändern. „5, 6“ und „5–8“ ergeben mehrere Pins.")}
         >
           <Textarea
             mono
             rows={7}
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder={PLACEHOLDER}
+            placeholder={tr(PLACEHOLDER)}
             spellCheck={false}
             className="min-h-36 whitespace-pre text-xs leading-5"
           />
@@ -187,36 +191,36 @@ function PasteDialogBody({ initialText, existing, onApply, onClose }: Omit<Paste
           <Checkbox
             checked={convert}
             onCheckedChange={(v) => setConvert(v === true)}
-            label="Low-aktive Namen umwandeln"
-            description="/RESET, RESET#, nRESET → Überstrich wie in Altium"
+            label={tr("Low-aktive Namen umwandeln")}
+            description={tr("/RESET, RESET#, nRESET → Überstrich wie in Altium")}
           />
           <Button size="sm" variant="ghost" leftIcon={<ClipboardPaste />} onClick={() => void readClipboard()}>
-            Aus der Zwischenablage
+            {tr("Aus der Zwischenablage")}
           </Button>
         </div>
 
         {count > 0 && (
-          <section aria-label="Erkannte Pins" className="overflow-hidden rounded-card border border-line">
+          <section aria-label={tr("Erkannte Pins")} className="overflow-hidden rounded-card border border-line">
             <div className="flex flex-wrap items-center gap-2 border-b border-line bg-surface-2/50 px-3 py-2 text-xs">
-              <span className="font-semibold text-fg">{plural(count, 'Pin', 'Pins')} erkannt</span>
-              <Badge size="sm">{SEPARATOR_LABEL[result.separator]}</Badge>
-              {result.headerSkipped && <Badge size="sm">Kopfzeile erkannt</Badge>}
+              <span className="font-semibold text-fg">{plural(count, tr('Pin'), tr('Pins'))} {tr("erkannt")}</span>
+              <Badge size="sm">{tr(SEPARATOR_LABEL[result.separator])}</Badge>
+              {result.headerSkipped && <Badge size="sm">{tr("Kopfzeile erkannt")}</Badge>}
             </div>
             <div className="max-h-56 overflow-y-auto">
               <table className="w-full text-xs">
                 <thead className="sticky top-0 bg-surface text-left text-2xs uppercase tracking-[0.06em] text-fg-subtle">
                   <tr>
                     <th scope="col" className="w-16 border-b border-line px-3 py-1.5 font-semibold">
-                      Nr.
+                      {tr("Nr.")}
                     </th>
                     <th scope="col" className="border-b border-line px-3 py-1.5 font-semibold">
-                      Name
+                      {tr("Name")}
                     </th>
                     <th scope="col" className="w-36 border-b border-line px-3 py-1.5 font-semibold">
-                      Typ
+                      {tr("Typ")}
                     </th>
                     <th scope="col" className="border-b border-line px-3 py-1.5 font-semibold">
-                      Beschreibung
+                      {tr("Beschreibung")}
                     </th>
                   </tr>
                 </thead>
@@ -232,7 +236,7 @@ function PasteDialogBody({ initialText, existing, onApply, onClose }: Omit<Paste
                           <ElectricalDot type={p.electrical} />
                           {electricalShort(p.electrical)}
                           {p.electricalSource === 'unknown' && <span className="text-warning-text">(„{p.rawType}“?)</span>}
-                          {p.electricalSource === 'guess' && <span className="text-fg-subtle">· geschätzt</span>}
+                          {p.electricalSource === 'guess' && <span className="text-fg-subtle">{tr("· geschätzt")}</span>}
                         </span>
                       </td>
                       <td className="max-w-0 truncate border-b border-line px-3 py-1 text-fg-muted">{p.description || '–'}</td>
@@ -241,50 +245,50 @@ function PasteDialogBody({ initialText, existing, onApply, onClose }: Omit<Paste
                 </tbody>
               </table>
               {count > PREVIEW_LIMIT && (
-                <p className="px-3 py-2 text-2xs text-fg-subtle">… und {formatNumber(count - PREVIEW_LIMIT)} weitere</p>
+                <p className="px-3 py-2 text-2xs text-fg-subtle">{tr("… und")}{' '}{formatNumber(count - PREVIEW_LIMIT)} {tr("weitere")}</p>
               )}
             </div>
           </section>
         )}
 
         {(duplicates.length > 0 || result.ignoredLines.length > 0 || result.unknownTypes.length > 0) && (
-          <ul className="space-y-1 text-xs text-fg-muted" aria-label="Hinweise zum Einfügen">
+          <ul className="space-y-1 text-xs text-fg-muted" aria-label={tr("Hinweise zum Einfügen")}>
             {duplicates.length > 0 && (
               <li className="flex items-start gap-1.5 text-danger-text">
                 <TriangleAlert aria-hidden className="mt-0.5 size-3.5 shrink-0" />
-                Doppelte Pin-Nummern: {duplicates.slice(0, 10).join(', ')}
-                {duplicates.length > 10 ? ' …' : ''} – bitte nach dem Übernehmen korrigieren.
+                {tr("Doppelte Pin-Nummern:")}{' '}{duplicates.slice(0, 10).join(', ')}
+                {duplicates.length > 10 ? ' …' : ''} {tr("– bitte nach dem Übernehmen korrigieren.")}
               </li>
             )}
             {result.ignoredLines.length > 0 && (
               <li className="flex items-start gap-1.5">
                 <TriangleAlert aria-hidden className="mt-0.5 size-3.5 shrink-0 text-warning-text" />
-                {result.ignoredLines.length === 1 ? 'Zeile' : 'Zeilen'} {result.ignoredLines.slice(0, 12).join(', ')}
-                {result.ignoredLines.length > 12 ? ' …' : ''} ohne erkennbare Pin-Nummer übersprungen.
+                {result.ignoredLines.length === 1 ? tr('Zeile') : tr('Zeilen')} {result.ignoredLines.slice(0, 12).join(', ')}
+                {result.ignoredLines.length > 12 ? ' …' : ''} {tr("ohne erkennbare Pin-Nummer übersprungen.")}
               </li>
             )}
             {result.unknownTypes.length > 0 && (
               <li className="flex items-start gap-1.5">
                 <TriangleAlert aria-hidden className="mt-0.5 size-3.5 shrink-0 text-warning-text" />
-                Unbekannte Typen ({result.unknownTypes.slice(0, 6).map((t) => `„${t}“`).join(', ')}) – aus dem Namen geschätzt, sonst Passiv.
+                {tr("Unbekannte Typen (")}{result.unknownTypes.slice(0, 6).map((t) => `„${t}“`).join(', ')}{tr(") – aus dem Namen geschätzt, sonst Passiv.")}
               </li>
             )}
           </ul>
         )}
         {count > 0 && guessed > 0 && !result.unknownTypes.length && !result.columns.includes('electrical') && (
-          <p className="text-xs text-fg-subtle">Ohne Typ-Spalte: Versorgung und Masse werden am Namen erkannt, alle anderen Pins sind Passiv.</p>
+          <p className="text-xs text-fg-subtle">{tr("Ohne Typ-Spalte: Versorgung und Masse werden am Namen erkannt, alle anderen Pins sind Passiv.")}</p>
         )}
       </DialogBody>
       <DialogFooter className="justify-between">
         {existing.length > 0 ? (
           <SegmentedControl
             size="sm"
-            aria-label="Vorhandene Pins"
+            aria-label={tr("Vorhandene Pins")}
             value={mode}
             onValueChange={setMode}
             options={[
-              { value: 'append', label: 'Anhängen' },
-              { value: 'replace', label: `${formatNumber(existing.length)} ersetzen` },
+              { value: 'append', label: tr('Anhängen') },
+              { value: 'replace', label: tr("{value0} ersetzen", { value0: String(formatNumber(existing.length)) }) },
             ]}
           />
         ) : (
@@ -292,7 +296,7 @@ function PasteDialogBody({ initialText, existing, onApply, onClose }: Omit<Paste
         )}
         <div className="flex items-center gap-2">
           <Button variant="ghost" onClick={onClose}>
-            Abbrechen
+            {tr("Abbrechen")}
           </Button>
           <Button
             variant="primary"
@@ -302,7 +306,7 @@ function PasteDialogBody({ initialText, existing, onApply, onClose }: Omit<Paste
               onClose()
             }}
           >
-            {count ? `${plural(count, 'Pin', 'Pins')} übernehmen` : 'Pins übernehmen'}
+            {count ? tr("{value0} übernehmen", { value0: String(plural(count, tr('Pin'), tr('Pins'))) }) : tr('Pins übernehmen')}
           </Button>
         </div>
       </DialogFooter>
@@ -311,13 +315,14 @@ function PasteDialogBody({ initialText, existing, onApply, onClose }: Omit<Paste
 }
 
 export function PasteDialog({ open, onOpenChange, initialText, existing, onApply }: PasteDialogProps) {
+  useI18n()
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader
           icon={<ClipboardPaste />}
-          title="Pinliste einfügen"
-          description="Aus Excel, einer CSV-Datei oder der Pin-Tabelle eines Datenblatts kopieren und hier einfügen."
+          title={tr("Pinliste einfügen")}
+          description={tr("Aus Excel, einer CSV-Datei oder der Pin-Tabelle eines Datenblatts kopieren und hier einfügen.")}
         />
         {open && (
           <PasteDialogBody key={initialText ?? ''} initialText={initialText} existing={existing} onApply={onApply} onClose={() => onOpenChange(false)} />

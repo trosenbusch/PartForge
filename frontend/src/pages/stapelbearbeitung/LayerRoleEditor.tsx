@@ -1,8 +1,5 @@
-/**
- * Lagenrollen einer PcbLib: je mechanischer Quell-Lage die erkannte Rolle (am Lagentyp oder -namen im
- * Bibliothekskopf, sonst am Inhalt) mit Name im Kopf und Anzahl der Primitive. Eine andere Rolle zu wählen schreibt
- * `rules.footprints.roles[Bibliothek][Lage]` (wirkt nach erneutem Prüfen); „automatisch“ entfernt die eigene Rolle.
- */
+import { useI18n, localizeMessage } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { RotateCcw } from 'lucide-react'
 import {
   ROLE_LABELS,
@@ -27,15 +24,15 @@ const REASON_VARIANT: Record<Reason, NonNullable<BadgeProps['variant']>> = {
 
 /** Woran die Rolle erkannt wurde – als Tooltip am Kennzeichen */
 const REASON_HINT: Record<Reason, string> = {
-  kind: 'Erkannt am Lagentyp im Bibliothekskopf',
-  name: 'Erkannt am Namen der Lage im Bibliothekskopf',
-  content: 'Erkannt am Inhalt der Footprints: äußere Kontur um die Pads = Courtyard, innere = Bestückungszeichnung',
-  manual: 'Von Hand gewählt',
-  default: 'Nicht erkannt – die Primitive bleiben, wo sie sind',
+  get kind() { return tr("Erkannt am Lagentyp im Bibliothekskopf") },
+  get name() { return tr("Erkannt am Namen der Lage im Bibliothekskopf") },
+  get content() { return tr("Erkannt am Inhalt der Footprints: äußere Kontur um die Pads = Courtyard, innere = Bestückungszeichnung") },
+  get manual() { return tr("Von Hand gewählt") },
+  get default() { return tr("Nicht erkannt – die Primitive bleiben, wo sie sind") },
 }
 
 /** Kennzeichen „Erkannt an“ (bei „–“ ausgeschrieben) */
-const reasonText = (reason: Reason) => (reason === 'default' ? 'nicht erkannt' : ROLE_REASON_LABELS[reason])
+const reasonText = (reason: Reason) => (reason === 'default' ? tr("nicht erkannt") : tr(ROLE_REASON_LABELS[reason]))
 
 export interface LayerRoleEditorProps {
   library: ConformLibraryReport
@@ -48,6 +45,7 @@ export interface LayerRoleEditorProps {
 }
 
 export function LayerRoleEditor({ library, manual, onChange, layers, inactive }: LayerRoleEditorProps) {
+  const { t: tr } = useI18n()
   const options = ROLE_ORDER.map((role) => ({
     value: role,
     label: ROLE_LABELS[role],
@@ -58,26 +56,21 @@ export function LayerRoleEditor({ library, manual, onChange, layers, inactive }:
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-col gap-0.5">
-        <h4 className="text-xs font-medium text-fg">Lagenrollen</h4>
+        <h4 className="text-xs font-medium text-fg">{tr("Lagenrollen")}</h4>
         <p className="text-2xs leading-snug text-fg-subtle">
-          Die Rolle bestimmt, auf welche Lage der Lagenzuordnung die Primitive einer Quell-Lage wandern. Mittelkreuz,
-          .Designator/.Comment und 3D-Körper erkennt PartForge unabhängig von ihrer Lage.
-          {inactive && ' Die Regeln „Lagen“ und „Linienbreiten“ sind ausgeschaltet – die Rollen wirken derzeit nicht.'}
+          {tr("Die Rolle bestimmt, auf welche Lage der Lagenzuordnung die Primitive einer Quell-Lage wandern. Mittelkreuz, .Designator/.Comment und 3D-Körper erkennt PartForge unabhängig von ihrer Lage.")}{inactive && tr(" Die Regeln „Lagen“ und „Linienbreiten“ sind ausgeschaltet – die Rollen wirken derzeit nicht.")}
         </p>
       </div>
       <table className="w-full table-fixed border-collapse text-left">
-        <caption className="sr-only">Lagenrollen von {fileName}</caption>
+        <caption className="sr-only">{tr("Lagenrollen von ")}{fileName}</caption>
         <thead>
           <tr className="text-2xs font-semibold uppercase tracking-[0.06em] text-fg-subtle">
             <th scope="col" className="py-1.5 pr-2 font-semibold">
-              Quell-Lage
-            </th>
+              {tr("Quell-Lage")}</th>
             <th scope="col" className="w-[4.5rem] px-2 py-1.5 text-right font-semibold">
-              Primitive
-            </th>
+              {tr("Primitive")}</th>
             <th scope="col" className="w-[14.5rem] py-1.5 pl-2 font-semibold">
-              Rolle
-            </th>
+              {tr("Rolle")}</th>
           </tr>
         </thead>
         <tbody>
@@ -91,7 +84,7 @@ export function LayerRoleEditor({ library, manual, onChange, layers, inactive }:
               own !== undefined
                 ? { text: ROLE_REASON_LABELS.manual, variant: 'accent' as const, hint: REASON_HINT.manual }
                 : removed
-                  ? { text: 'automatisch', variant: 'accent' as const, hint: 'Wird beim nächsten Prüfen neu erkannt' }
+                  ? { text: tr("automatisch"), variant: 'accent' as const, hint: tr("Wird beim nächsten Prüfen neu erkannt") }
                   : { text: reasonText(r.reason), variant: REASON_VARIANT[r.reason], hint: REASON_HINT[r.reason] }
             return (
               <tr key={r.layer} className="border-t border-line align-middle">
@@ -105,7 +98,7 @@ export function LayerRoleEditor({ library, manual, onChange, layers, inactive }:
                   </span>
                   {r.name && r.name !== r.layer && (
                     <span className="mt-0.5 block text-2xs text-fg-subtle [overflow-wrap:anywhere]">
-                      im Kopf: „{r.name}“
+                      {tr("im Kopf: „")}{r.name}“
                     </span>
                   )}
                 </td>
@@ -115,8 +108,8 @@ export function LayerRoleEditor({ library, manual, onChange, layers, inactive }:
                     <Select<LayerRoleName | ''>
                       size="sm"
                       className="min-w-0 flex-1"
-                      aria-label={`Rolle von ${r.layer}`}
-                      placeholder="automatisch …"
+                      aria-label={tr("Rolle von {0}", { "0": String(r.layer) })}
+                      placeholder={tr("automatisch …")}
                       value={value}
                       options={options}
                       onValueChange={(role) => {
@@ -129,7 +122,7 @@ export function LayerRoleEditor({ library, manual, onChange, layers, inactive }:
                     {own !== undefined ? (
                       <IconButton
                         size="xs"
-                        label={`Rolle von ${r.layer} wieder automatisch bestimmen`}
+                        label={tr("Rolle von {0} wieder automatisch bestimmen", { "0": String(r.layer) })}
                         icon={<RotateCcw />}
                         onClick={() => onChange(r.layer, null)}
                       />
@@ -138,9 +131,9 @@ export function LayerRoleEditor({ library, manual, onChange, layers, inactive }:
                     )}
                     <span
                       role={pending ? 'img' : undefined}
-                      aria-label={pending ? 'geändert – wirkt nach erneutem Prüfen' : undefined}
+                      aria-label={pending ? tr("geändert – wirkt nach erneutem Prüfen") : undefined}
                       aria-hidden={pending ? undefined : true}
-                      title={pending ? 'Geändert – wirkt nach erneutem Prüfen' : undefined}
+                      title={pending ? tr("Geändert – wirkt nach erneutem Prüfen") : undefined}
                       className={
                         pending
                           ? 'size-1.5 shrink-0 rounded-full bg-accent shadow-[0_0_6px_var(--pf-accent)]'
@@ -150,7 +143,7 @@ export function LayerRoleEditor({ library, manual, onChange, layers, inactive }:
                   </div>
                   {r.note && own === undefined && !removed && (
                     <span className={`mt-0.5 block text-2xs leading-snug [overflow-wrap:anywhere] ${r.target ? 'text-fg-subtle' : 'text-warning-text'}`}>
-                      {r.note}
+                      {localizeMessage(r.note)}
                     </span>
                   )}
                 </td>

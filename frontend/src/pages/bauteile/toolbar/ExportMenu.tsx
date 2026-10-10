@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 /**
  * Export-Menü: XLSX oder CSV der aktuellen Tabelle – Suche, Filter, Sortierung gelten; wahlweise nur die Auswahl
  * bzw. nur sichtbare Spalten. Die Ausführung übernimmt `useExport` (Speichern-Dialog bzw. Download; sehr große
@@ -32,6 +33,7 @@ export interface ExportMenuProps {
 }
 
 export function ExportMenu({ total, selectionCount, allMatching, onExport, compact }: ExportMenuProps) {
+  const { t } = useI18n()
   const native = useNativeBridge()
   const [onlySelection, setOnlySelection] = useState(true)
   const [visibleOnly, setVisibleOnly] = useState(true)
@@ -41,31 +43,31 @@ export function ExportMenu({ total, selectionCount, allMatching, onExport, compa
 
   return (
     <DropdownMenu>
-      <Tooltip content="Exportieren" disabled={!compact}>
+      <Tooltip content={t("Exportieren")} disabled={!compact}>
         <DropdownMenuTrigger asChild>
           {/* Name = sichtbarer Text („Export“); nur als Symbolknopf trägt er eine eigene Beschriftung */}
-          <Button variant="ghost" size="sm" leftIcon={<Download />} aria-label={compact ? 'Exportieren' : undefined} iconOnly={compact}>
+          <Button variant="ghost" size="sm" leftIcon={<Download />} aria-label={compact ? t("Exportieren") : undefined} iconOnly={compact}>
             {!compact && 'Export'}
           </Button>
         </DropdownMenuTrigger>
       </Tooltip>
       <DropdownMenuContent align="end" className="w-72">
-        <DropdownMenuLabel>{count === null ? 'Exportieren' : `${plural(count, 'Bauteil', 'Bauteile')} exportieren`}</DropdownMenuLabel>
+        <DropdownMenuLabel>{count === null ? t("Exportieren") : t("{1} exportieren", { 1: plural(count, t("Bauteil"), t("Bauteile")) })}</DropdownMenuLabel>
         <DropdownMenuItem
           icon={<FileSpreadsheet />}
           description={
             count !== null && count > LARGE_XLSX_ROWS
-              ? 'Läuft im Hintergrund · Datei im Ordner „Exports“ der Bibliothek'
+              ? t("Läuft im Hintergrund · Datei im Ordner „Exports“ der Bibliothek")
               : native.canSaveFile
-                ? 'Speichern unter … · mit Kopfzeile und Spaltenbreiten'
-                : 'Mit Kopfzeile und Spaltenbreiten'
+                ? t("Speichern unter … · mit Kopfzeile und Spaltenbreiten")
+                : t("Mit Kopfzeile und Spaltenbreiten")
           }
           onSelect={() => run('xlsx')}
         >
-          Excel-Datei (XLSX)
+          {t("Excel-Datei (XLSX)")}
         </DropdownMenuItem>
-        <DropdownMenuItem icon={<FileText />} description="Semikolon-getrennt, UTF‑8" onSelect={() => run('csv')}>
-          CSV-Datei
+        <DropdownMenuItem icon={<FileText />} description={t("Semikolon-getrennt, UTF‑8")} onSelect={() => run('csv')}>
+          {t("CSV-Datei")}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         {selectionCount > 0 && !allMatching && (
@@ -74,13 +76,13 @@ export function ExportMenu({ total, selectionCount, allMatching, onExport, compa
             onCheckedChange={(v) => setOnlySelection(v === true)}
             onSelect={(e) => e.preventDefault()}
           >
-            Nur Auswahl ({formatNumber(selectionCount)})
+            {t("Nur Auswahl (")}{formatNumber(selectionCount)})
           </DropdownMenuCheckboxItem>
         )}
         <DropdownMenuCheckboxItem checked={visibleOnly} onCheckedChange={(v) => setVisibleOnly(v === true)} onSelect={(e) => e.preventDefault()}>
-          Nur sichtbare Spalten
+          {t("Nur sichtbare Spalten")}
         </DropdownMenuCheckboxItem>
-        <p className="px-2 pb-1.5 pt-1 text-2xs leading-snug text-fg-subtle">Suche, Filter und Sortierung der Tabelle gelten auch für den Export.</p>
+        <p className="px-2 pb-1.5 pt-1 text-2xs leading-snug text-fg-subtle">{t("Suche, Filter und Sortierung der Tabelle gelten auch für den Export.")}</p>
       </DropdownMenuContent>
     </DropdownMenu>
   )

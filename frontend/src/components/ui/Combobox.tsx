@@ -1,3 +1,5 @@
+import { useI18n } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { Command } from 'cmdk'
 import { Check, ChevronsUpDown, Plus, Search, X } from 'lucide-react'
 import { Popover as PopoverPrimitive } from 'radix-ui'
@@ -44,11 +46,11 @@ export function Combobox({
   options,
   value,
   onValueChange,
-  placeholder = 'Auswählen …',
-  searchPlaceholder = 'Suchen …',
-  emptyText = 'Keine Treffer',
+  placeholder = tr("Auswählen …"),
+  searchPlaceholder = tr("Suchen …"),
+  emptyText = tr("Keine Treffer"),
   allowCustom,
-  customLabel = (q) => `„${q}“ übernehmen`,
+  customLabel = (q) => tr("„{0}“ übernehmen", { "0": String(q) }),
   clearable,
   size = 'md',
   disabled,
@@ -59,6 +61,7 @@ export function Combobox({
   contentClassName,
   'aria-label': ariaLabel,
 }: ComboboxProps) {
+  const { t: tr } = useI18n()
   const field = useFieldContext()
   const listId = `cb-pop-${useId().replace(/:/g, '')}`
   const [open, setOpen] = useState(false)
@@ -140,7 +143,7 @@ export function Combobox({
             <button
               type="button"
               tabIndex={-1}
-              aria-label="Auswahl entfernen"
+              aria-label={tr("Auswahl entfernen")}
               onClick={() => onValueChange(null)}
               className="absolute right-2 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-fg-subtle outline-none hover:bg-surface-3 hover:text-fg"
             >
@@ -152,7 +155,7 @@ export function Combobox({
       <PopoverPrimitive.Portal>
         <PopoverPrimitive.Content
           id={listId}
-          aria-label={ariaLabel ? `${ariaLabel} – Auswahl` : 'Auswahl'}
+          aria-label={ariaLabel ? tr("{0} – Auswahl", { "0": String(ariaLabel) }) : tr("Auswahl")}
           align="start"
           sideOffset={6}
           collisionPadding={10}

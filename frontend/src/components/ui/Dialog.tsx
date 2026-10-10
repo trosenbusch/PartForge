@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { AnimatePresence, motion } from 'motion/react'
 import { X } from 'lucide-react'
 import { Dialog as DialogPrimitive } from 'radix-ui'
@@ -15,6 +16,7 @@ export interface DialogProps {
 
 /** Dialog-Wurzel (kontrolliert oder unkontrolliert). Inhalte mit <DialogContent> animiert. */
 export function Dialog({ open, defaultOpen, onOpenChange, modal = true, children }: DialogProps) {
+  useI18n()
   const [internal, setInternal] = useState(defaultOpen ?? false)
   const isOpen = open ?? internal
   const setOpen = (next: boolean) => {
@@ -61,6 +63,7 @@ export function DialogContent({
   onCloseAutoFocus,
   ...props
 }: DialogContentProps) {
+  const { t: tr } = useI18n()
   const { open } = useDialog()
   const returnFocus = useReturnFocus(open)
   const isCentered = centered || size === 'full'
@@ -114,7 +117,7 @@ export function DialogContent({
                 {children}
                 {!hideClose && (
                   <DialogPrimitive.Close
-                    aria-label="Schließen"
+                    aria-label={tr("Schließen")}
                     className="absolute right-3.5 top-3.5 flex size-7 items-center justify-center rounded-control text-fg-subtle outline-none transition-colors hover:bg-surface-3 hover:text-fg focus-ring"
                   >
                     <X className="size-4" />
@@ -148,6 +151,7 @@ const iconTone = {
 }
 
 export function DialogHeader({ title, description, icon, tone = 'neutral', className, children }: DialogHeaderProps) {
+  useI18n()
   return (
     <div className={cn('flex shrink-0 items-start gap-3.5 px-6 pb-2 pt-6 pr-14', className)}>
       {icon && (
@@ -173,10 +177,12 @@ export function DialogHeader({ title, description, icon, tone = 'neutral', class
 }
 
 export function DialogBody({ className, ...props }: ComponentProps<'div'>) {
+  useI18n()
   return <div className={cn('min-h-0 flex-1 overflow-y-auto px-6 py-4', className)} {...props} />
 }
 
 export function DialogFooter({ className, ...props }: ComponentProps<'div'>) {
+  useI18n()
   return (
     <div
       className={cn(

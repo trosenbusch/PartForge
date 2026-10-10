@@ -1,3 +1,4 @@
+import { t } from '@/lib/i18n'
 import { toast } from 'sonner'
 import { errorMessage } from '@/api/client'
 import { datasheetFile } from '@/api/datasheets'
@@ -25,7 +26,7 @@ export async function openPdf(ds: { id: string; path?: string | null }): Promise
     window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
   } catch (err) {
     win?.close()
-    toast.error('Das Datenblatt konnte nicht geöffnet werden.', { description: errorMessage(err) })
+    toast.error(t("Das Datenblatt konnte nicht geöffnet werden."), { description: errorMessage(err) })
   }
 }
 

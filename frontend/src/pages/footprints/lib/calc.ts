@@ -1,3 +1,4 @@
+import { t as tr } from '@/components/preview/i18n'
 /**
  * Rechenprotokoll des Footprint-Generators (`FootprintPreview.calc`, freies Objekt) defensiv und vollständig lesen:
  * Lötflächen je Anschlussreihe (Zmax/Gmin/Xmax mit Rohwerten, J-Werten, Eingangsmaßen, Begrenzungen), Toleranzen,
@@ -159,13 +160,13 @@ function land(v: unknown): LandRecord | null {
   const xr = num(v.x_rounded) ?? x
   const off = (a: number, b: number) => Math.abs(a - b) > 1e-6
   return {
-    label: str(v.label) ?? 'Anschlüsse',
+    label: str(v.label) ?? tr('Anschlüsse'),
     axis: v.axis === 'y' ? 'y' : 'x',
     source: v.source === 'manufacturer' ? 'manufacturer' : 'ipc',
     standard: str(v.standard) ?? 'IPC-7351B',
     table: str(v.table) ?? '–',
     tableKey,
-    tableLabel: TABLE_LABELS[tableKey] ?? str(v.table_title) ?? '',
+    tableLabel: tr(TABLE_LABELS[tableKey] ?? str(v.table_title) ?? ''),
     toe: n0(v.toe),
     heel: n0(v.heel),
     side: n0(v.side),
@@ -197,7 +198,7 @@ function land(v: unknown): LandRecord | null {
 function tht(v: unknown): ThtRecord | null {
   if (!isRec(v)) return null
   return {
-    what: str(v.what) ?? 'Anschlüsse',
+    what: str(v.what) ?? tr('Anschlüsse'),
     leadSize: num(v.lead_size),
     hole: num(v.hole),
     pad: num(v.pad),
@@ -278,7 +279,7 @@ export const DENSITY_INFO: Record<DensityCode, { name: string; level: string; te
 export function densityLabel(density: string | null | undefined): string {
   if (!density) return '–'
   const info = DENSITY_INFO[density as DensityCode] as (typeof DENSITY_INFO)[DensityCode] | undefined
-  return info ? `${info.name} (${density})` : density
+  return info ? `${tr(info.name)} (${density})` : density
 }
 
 export const ROUNDING_LABEL: Record<string, string> = {

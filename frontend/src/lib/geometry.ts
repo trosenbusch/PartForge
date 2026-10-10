@@ -1,3 +1,5 @@
+import { t as tr } from '@/components/preview/i18n'
+import { getLocale } from './i18n'
 /**
  * Geometrie-Vertrag für Symbole und Footprints – Typen aus dem OpenAPI-Schema (`schema.d.ts`, gespiegelt aus
  * `partforge/geometry/model.py`) plus Helfer für Vorschau-Leinwände, Tabellen und 3D.
@@ -71,15 +73,15 @@ export const MIL_PER_MM = 1 / MM_PER_MIL
 export const milToMm = (mil: number): number => mil * MM_PER_MIL
 export const mmToMil = (mm: number): number => mm * MIL_PER_MM
 
-const mmFormats = new Map<number, Intl.NumberFormat>()
+const mmFormats = new Map<string, Intl.NumberFormat>()
 
 /** 1.27 → „1,27“ (feste Nachkommastellen, deutsches Komma, echtes Minuszeichen) */
 export function formatMm(value: number, digits = 2): string {
   if (!Number.isFinite(value)) return '–'
-  let f = mmFormats.get(digits)
+  let f = mmFormats.get(`${getLocale()}:${digits}`)
   if (!f) {
-    f = new Intl.NumberFormat('de-DE', { minimumFractionDigits: digits, maximumFractionDigits: digits })
-    mmFormats.set(digits, f)
+    f = new Intl.NumberFormat(getLocale(), { minimumFractionDigits: digits, maximumFractionDigits: digits })
+    mmFormats.set(`${getLocale()}:${digits}`, f)
   }
   const rounded = Math.abs(value) < 0.5 * 10 ** -digits ? 0 : value
   return f.format(rounded).replace('-', '−')
@@ -89,7 +91,7 @@ export function formatMm(value: number, digits = 2): string {
 export const formatLength = (mm: number, digits = 2): string => `${formatMm(mm, digits)} mm`
 
 /** mil als Text: „200 mil“ */
-export const formatMil = (mil: number): string => `${Math.round(mil).toLocaleString('de-DE')} mil`
+export const formatMil = (mil: number): string => `${Math.round(mil).toLocaleString(getLocale())} mil`
 
 // --------------------------------------------------------------------------- Rechtecke (Bounding Boxes)
 
@@ -175,20 +177,20 @@ export function spokenPinName(name: string): string {
   const text = displayText(name)
   if (!hasOverbar(name)) return text
   const all = parseOverbar(name).every((c) => c.barred)
-  return `${text} (${all ? 'invertiert' : 'teilweise invertiert'})`
+  return `${text} (${all ? 'invertiert' : tr('teilweise invertiert')})`
 }
 
 // --------------------------------------------------------------------------- Symbole
 
 export const ELECTRICAL_LABEL: Record<ElectricalType, string> = {
-  input: 'Eingang',
-  output: 'Ausgang',
-  io: 'Ein-/Ausgang',
-  passive: 'Passiv',
-  power: 'Versorgung',
+  get input() { return tr("Eingang") },
+  get output() { return tr("Ausgang") },
+  get io() { return tr("Ein-/Ausgang") },
+  get passive() { return tr("Passiv") },
+  get power() { return tr("Versorgung") },
   open_collector: 'Open Collector',
   open_emitter: 'Open Emitter',
-  hiz: 'Hochohmig (Tri-State)',
+  get hiz() { return tr("Hochohmig (Tri-State)") },
 }
 
 export const electricalLabel = (type: ElectricalType | null | undefined): string =>
@@ -354,7 +356,7 @@ const meta = (
   order: number,
   visible: boolean,
   extra: Partial<LayerMeta> = {},
-): LayerMeta => ({ id, label, altium, color: { dark: color, light: color }, order, visible, ...extra })
+): LayerMeta => ({ id, get label() { return tr(label) }, altium, color: { dark: color, light: color }, order, visible, ...extra })
 
 /** Lagen-Metadaten (Farben aus FRONTEND.md §3 bzw. den `--pf-pcb-*`-Tokens) */
 export const LAYERS: Record<CanvasLayer, LayerMeta> = {
@@ -407,16 +409,16 @@ export function padLayer(pad: Pad): CanvasLayer {
 }
 
 export const PAD_SHAPE_LABEL: Record<PadShape, string> = {
-  rect: 'Rechteck',
-  roundrect: 'Rechteck, abgerundet',
-  circle: 'Rund',
+  get rect() { return tr("Rechteck") },
+  get roundrect() { return tr("Rechteck, abgerundet") },
+  get circle() { return tr("Rund") },
   oval: 'Oval',
-  octagon: 'Achteck',
+  get octagon() { return tr("Achteck") },
 }
 
 export const PAD_SIDE_LABEL: Record<PadSide, string> = {
-  top: 'oben (SMD)',
-  bottom: 'unten (SMD)',
+  get top() { return tr("oben (SMD)") },
+  get bottom() { return tr("unten (SMD)") },
   through: 'durchkontaktiert',
 }
 
@@ -684,7 +686,12 @@ export function parseFootprintCalc(raw: unknown): FootprintCalc | null {
 
 // --------------------------------------------------------------------------- Sonstiges
 
-const collator = new Intl.Collator('de-DE', { numeric: true, sensitivity: 'base' })
+const collators = new Map<string, Intl.Collator>()
+function getCollator() {
+  const locale = getLocale()
+  if (!collators.has(locale)) collators.set(locale, new Intl.Collator(locale, { numeric: true, sensitivity: 'base' }))
+  return collators.get(locale)!
+}
 
 /** Natürliche Sortierung von Pin-/Pad-Nummern: 1, 2, 10, A1, A2, B1 … */
-export const naturalCompare = (a: string, b: string): number => collator.compare(a, b)
+export const naturalCompare = (a: string, b: string): number => getCollator().compare(a, b)

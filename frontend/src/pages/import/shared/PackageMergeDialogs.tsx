@@ -1,15 +1,5 @@
-/**
- * Gehäuse aus einem anderen Datenblatt übernehmen – in beide Richtungen:
- *
- * - `PackageSourceDialog`: im Datenblatt eines Bauteils ein Gehäuse ohne (vollständige) Maße → die Zeichnung aus einem
- *   anderen analysierten Dokument wählen (`GET …/package-sources`, bestes zuerst), z. B. TIs eigene Gehäusezeichnung.
- * - `PackageTargetDialog`: in einer Gehäusezeichnung ohne Bauteil → das Gehäuse des Bauteil-Datenblatts wählen, das die
- *   Maße bekommt (`GET …/package-targets`, fehlende Maße zuerst); danach öffnet sich dessen Prüfansicht.
- *
- * Übernommen werden Maße, Herstellerempfehlung, Exposed-Pad-Nummer und Anschlussanordnung (`POST …/merge-package`,
- * gespeichert wie eine Korrektur, mit Herkunft); Code und Name des Gehäuses bleiben. „Übernahme aufheben“ stellt das
- * Gehäuse wieder her.
- */
+import { localizeMessage } from '@/lib/i18n'
+import { t as translate, useI18n } from '@/lib/i18n'
 import { Check, Combine, FileSearch, TriangleAlert } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
@@ -61,10 +51,11 @@ export interface PackageSourceDialogProps {
 
 /** „Maße aus anderem Datenblatt übernehmen“ – Zeichnungen anderer Analysen, bestes zuerst. */
 export function PackageSourceDialog({ open, onOpenChange, datasheetId, packageCode, packageLabel }: PackageSourceDialogProps) {
+  useI18n()
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
-        <DialogHeader icon={<Combine />} tone="accent" title={`Maße für ${packageLabel} übernehmen`} description={WHAT} />
+        <DialogHeader icon={<Combine />} tone="accent" title={translate("Maße für {0} übernehmen", { "0": String(packageLabel) })} description={translate(WHAT)} />
         {open && <SourceList datasheetId={datasheetId} packageCode={packageCode} onDone={() => onOpenChange(false)} />}
       </DialogContent>
     </Dialog>
@@ -72,6 +63,7 @@ export function PackageSourceDialog({ open, onOpenChange, datasheetId, packageCo
 }
 
 function SourceList({ datasheetId, packageCode, onDone }: { datasheetId: string; packageCode: string; onDone: () => void }) {
+  useI18n()
   const navigate = useNavigate()
   const sources = usePackageSources(datasheetId, packageCode)
   const merge = useMergePackage()
@@ -87,7 +79,7 @@ function SourceList({ datasheetId, packageCode, onDone }: { datasheetId: string;
       .mutateAsync({ id: datasheetId, package: packageCode, source_id: c.datasheet_id, source_package: c.package })
       .catch(() => null)
     if (!out) return
-    toast.success('Maße übernommen', { description: out.notes.join(' ') })
+    toast.success(translate("Maße übernommen"), { description: out.notes.map(localizeMessage).join(' ') })
     onDone()
   }
   const { radioProps } = useRadioCards({ keys, value: chosenKey, onChange: setPicked, onActivate: (k) => void apply(items.find((c) => keyOf(c) === k)) })
@@ -100,18 +92,17 @@ function SourceList({ datasheetId, packageCode, onDone }: { datasheetId: string;
       <EmptyState
         illustration="search-empty"
         size="sm"
-        title="Keine Zeichnung zum Übernehmen"
-        description="Die Gehäusezeichnung des Herstellers (bei TI z. B. „RGY0019B“ als eigenes PDF) importieren und analysieren – danach steht sie hier zur Auswahl."
+        title={translate("Keine Zeichnung zum Übernehmen")}
+        description={translate("Die Gehäusezeichnung des Herstellers (bei TI z. B. „RGY0019B“ als eigenes PDF) importieren und analysieren – danach steht sie hier zur Auswahl.")}
         actions={
           <Button variant="secondary" leftIcon={<FileSearch />} onClick={() => navigate('/import')}>
-            Zum Datenblatt-Import
-          </Button>
+            {translate("Zum Datenblatt-Import")}</Button>
         }
       />
     )
   else
     body = (
-      <div role="radiogroup" aria-label="Gehäusezeichnung" className="flex flex-col gap-2">
+      <div role="radiogroup" aria-label={translate("Gehäusezeichnung")} className="flex flex-col gap-2">
         {items.map((c, i) => (
           <CandidateCard
             key={keyOf(c)}
@@ -122,12 +113,12 @@ function SourceList({ datasheetId, packageCode, onDone }: { datasheetId: string;
             title={c.label}
             subtitle={[c.file, c.title && c.title !== c.label ? c.title : null].filter(Boolean).join(' · ')}
             facts={[
-              c.package_only ? 'Gehäusezeichnung' : null,
-              c.pin_count ? plural(c.pin_count, 'Anschluss', 'Anschlüsse') : null,
+              c.package_only ? translate("Gehäusezeichnung") : null,
+              c.pin_count ? plural(c.pin_count, translate("Anschluss"), translate("Anschlüsse")) : null,
               c.exposed_pad ? `Exposed Pad${c.exposed_pad_number ? ` ${c.exposed_pad_number}` : ''}` : null,
-              plural(c.dimensions, 'Maß', 'Maße'),
-              c.land_pattern ? 'Herstellerempfehlung' : null,
-              c.layout ? 'Anschlussanordnung' : null,
+              plural(c.dimensions, translate("Maß"), translate("Maße")),
+              c.land_pattern ? translate("Herstellerempfehlung") : null,
+              c.layout ? translate("Anschlussanordnung") : null,
             ]}
             matches={c.matches}
             problems={c.problems}
@@ -141,11 +132,9 @@ function SourceList({ datasheetId, packageCode, onDone }: { datasheetId: string;
       <DialogBody className="pt-2">{body}</DialogBody>
       <DialogFooter>
         <Button variant="ghost" onClick={onDone}>
-          Abbrechen
-        </Button>
+          {translate("Abbrechen")}</Button>
         <Button variant="primary" leftIcon={<Combine />} disabled={!chosen} loading={merge.isPending} onClick={() => void apply(chosen)}>
-          Maße übernehmen
-        </Button>
+          {translate("Maße übernehmen")}</Button>
       </DialogFooter>
     </>
   )
@@ -164,14 +153,15 @@ export interface PackageTargetDialogProps {
 
 /** „In Datenblatt eines Bauteils übernehmen“ – die Gegenrichtung aus einer Gehäusezeichnung heraus. */
 export function PackageTargetDialog({ open, onOpenChange, sourceId, sourcePackage, sourceLabel }: PackageTargetDialogProps) {
+  useI18n()
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader
           icon={<Combine />}
           tone="accent"
-          title={`${sourceLabel} einem Bauteil geben`}
-          description={`Das Datenblatt des Bauteils bekommt die Zeichnung. ${WHAT}`}
+          title={translate("{0} einem Bauteil geben", { "0": String(sourceLabel) })}
+          description={translate("Das Datenblatt des Bauteils bekommt die Zeichnung. {0}", { "0": translate(WHAT) })}
         />
         {open && <TargetList sourceId={sourceId} sourcePackage={sourcePackage} onDone={() => onOpenChange(false)} />}
       </DialogContent>
@@ -180,6 +170,7 @@ export function PackageTargetDialog({ open, onOpenChange, sourceId, sourcePackag
 }
 
 function TargetList({ sourceId, sourcePackage, onDone }: { sourceId: string; sourcePackage: string; onDone: () => void }) {
+  useI18n()
   const navigate = useNavigate()
   const targets = usePackageTargets(sourceId, sourcePackage)
   const merge = useMergePackage()
@@ -195,7 +186,7 @@ function TargetList({ sourceId, sourcePackage, onDone }: { sourceId: string; sou
       .mutateAsync({ id: t.datasheet_id, package: t.package, source_id: sourceId, source_package: sourcePackage })
       .catch(() => null)
     if (!out) return
-    toast.success(`Maße an ${t.devices[0] ?? t.file} übergeben`, { description: out.notes.join(' ') })
+    toast.success(translate("Maße an {0} übergeben", { "0": String(t.devices[0] ?? t.file) }), { description: out.notes.map(localizeMessage).join(' ') })
     onDone()
     navigate(importPath(t.datasheet_id))
   }
@@ -209,13 +200,13 @@ function TargetList({ sourceId, sourcePackage, onDone }: { sourceId: string; sou
       <EmptyState
         illustration="search-empty"
         size="sm"
-        title="Kein Bauteil-Datenblatt gefunden"
-        description="Zuerst das Datenblatt des Bauteils importieren und analysieren – danach hier übernehmen oder dort unter „Gehäuse“ „Maße übernehmen …“ wählen."
+        title={translate("Kein Bauteil-Datenblatt gefunden")}
+        description={translate("Zuerst das Datenblatt des Bauteils importieren und analysieren – danach hier übernehmen oder dort unter „Gehäuse“ „Maße übernehmen …“ wählen.")}
       />
     )
   else
     body = (
-      <div role="radiogroup" aria-label="Bauteil-Datenblatt" className="flex flex-col gap-2">
+      <div role="radiogroup" aria-label={translate("Bauteil-Datenblatt")} className="flex flex-col gap-2">
         {items.map((t, i) => (
           <CandidateCard
             key={keyOf(t)}
@@ -226,11 +217,11 @@ function TargetList({ sourceId, sourcePackage, onDone }: { sourceId: string; sou
             title={`${t.devices.join(', ') || t.file} · ${t.label}`}
             subtitle={[t.file, t.title].filter(Boolean).join(' · ')}
             facts={[
-              t.pin_count ? plural(t.pin_count, 'Anschluss', 'Anschlüsse') : null,
-              t.dims_missing ? null : plural(t.dimensions, 'Maß', 'Maße'),
-              t.merged_from ? `Maße bisher aus „${t.merged_from}“` : null,
+              t.pin_count ? plural(t.pin_count, translate("Anschluss"), translate("Anschlüsse")) : null,
+              t.dims_missing ? null : plural(t.dimensions, translate("Maß"), translate("Maße")),
+              t.merged_from ? translate("Maße bisher aus „{0}“", { "0": String(t.merged_from) }) : null,
             ]}
-            flag={t.dims_missing ? 'Maße fehlen' : undefined}
+            flag={t.dims_missing ? translate("Maße fehlen") : undefined}
             matches={t.matches.filter((m) => m !== 'Maße fehlen dort')}
             problems={t.problems}
           />
@@ -243,11 +234,9 @@ function TargetList({ sourceId, sourcePackage, onDone }: { sourceId: string; sou
       <DialogBody className="pt-2">{body}</DialogBody>
       <DialogFooter>
         <Button variant="ghost" onClick={onDone}>
-          Abbrechen
-        </Button>
+          {translate("Abbrechen")}</Button>
         <Button variant="primary" leftIcon={<Combine />} disabled={!chosen} loading={merge.isPending} onClick={() => void apply(chosen)}>
-          Übernehmen und öffnen
-        </Button>
+          {translate("Übernehmen und öffnen")}</Button>
       </DialogFooter>
     </>
   )
@@ -278,6 +267,7 @@ export function DatasheetMergeDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  useI18n()
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
@@ -288,6 +278,7 @@ export function DatasheetMergeDialog({
 }
 
 function MergeChooser({ datasheet, direction, onDone }: { datasheet: DatasheetSummary; direction: MergeDirection; onDone: () => void }) {
+  useI18n()
   const extractionQ = useExtraction(datasheet.id, { enabled: datasheet.has_extraction })
   const data = extractionQ.data?.extraction
   const giving = direction === 'give'
@@ -301,13 +292,13 @@ function MergeChooser({ datasheet, direction, onDone }: { datasheet: DatasheetSu
   const chooser = ordered.length > 1 && (
     <Select
       size="sm"
-      aria-label={giving ? 'Gehäuse, dessen Zeichnung abgegeben wird' : 'Gehäuse, das die Maße bekommt'}
+      aria-label={giving ? translate("Gehäuse, dessen Zeichnung abgegeben wird") : translate("Gehäuse, das die Maße bekommt")}
       value={pkg?.code}
       onValueChange={setPicked}
       options={ordered.map((p) => ({
         value: p.code,
         label: p.name && p.name !== p.code ? `${p.name} (${p.code})` : p.code,
-        description: missing.has(p.code) ? 'Maße fehlen' : undefined,
+        description: missing.has(p.code) ? translate("Maße fehlen") : undefined,
       }))}
       className="mt-2.5 w-auto min-w-56"
     />
@@ -317,8 +308,8 @@ function MergeChooser({ datasheet, direction, onDone }: { datasheet: DatasheetSu
     <DialogHeader
       icon={<Combine />}
       tone="accent"
-      title={pkg ? `${label} einem Bauteil geben` : 'Zeichnung einem Bauteil geben'}
-      description={`Das Datenblatt des Bauteils bekommt die Zeichnung aus „${datasheet.original_name}“. ${WHAT}`}
+      title={pkg ? translate("{0} einem Bauteil geben", { "0": String(label) }) : translate("Zeichnung einem Bauteil geben")}
+      description={translate("Das Datenblatt des Bauteils bekommt die Zeichnung aus „{0}“. {1}", { "0": String(datasheet.original_name), "1": translate(WHAT) })}
     >
       {chooser}
     </DialogHeader>
@@ -326,8 +317,8 @@ function MergeChooser({ datasheet, direction, onDone }: { datasheet: DatasheetSu
     <DialogHeader
       icon={<Combine />}
       tone="accent"
-      title={pkg ? `Maße für ${label} übernehmen` : 'Maße aus anderem Datenblatt übernehmen'}
-      description={WHAT}
+      title={pkg ? translate("Maße für {0} übernehmen", { "0": String(label) }) : translate("Maße aus anderem Datenblatt übernehmen")}
+      description={translate(WHAT)}
     >
       {chooser}
 
@@ -343,11 +334,11 @@ function MergeChooser({ datasheet, direction, onDone }: { datasheet: DatasheetSu
         <EmptyState
           illustration="search-empty"
           size="sm"
-          title={giving ? 'Keine Zeichnung mit Maßen' : 'Kein Gehäuse zum Zusammenführen'}
+          title={giving ? translate("Keine Zeichnung mit Maßen") : translate("Kein Gehäuse zum Zusammenführen")}
           description={
             giving
-              ? 'Die Analyse hat in diesem Dokument keine eigenen Maße gefunden.'
-              : 'Alle Gehäuse dieses Datenblatts haben ihre Maße schon aus einem anderen Datenblatt.'
+              ? translate("Die Analyse hat in diesem Dokument keine eigenen Maße gefunden.")
+              : translate("Alle Gehäuse dieses Datenblatts haben ihre Maße schon aus einem anderen Datenblatt.")
           }
         />
       </DialogBody>
@@ -387,6 +378,7 @@ function CandidateCard({
   matches: string[]
   problems: string[]
 }) {
+  useI18n()
   return (
     <button
       type="button"
@@ -402,8 +394,7 @@ function CandidateCard({
           <span className="truncate text-ui font-medium text-fg">{title}</span>
           {best && (
             <Badge variant="success" size="sm">
-              passt am besten
-            </Badge>
+              {translate("passt am besten")}</Badge>
           )}
           {flag && (
             <Badge variant="warning" size="sm">
@@ -424,13 +415,13 @@ function CandidateCard({
             {matches.length > 0 && (
               <span className="flex items-start gap-1 text-success-text">
                 <Check aria-hidden className="mt-0.5 size-3 shrink-0" />
-                {matches.join(' · ')}
+                {matches.map(localizeMessage).join(' · ')}
               </span>
             )}
             {problems.map((p) => (
               <span key={p} className="flex items-start gap-1 text-warning-text">
                 <TriangleAlert aria-hidden className="mt-0.5 size-3 shrink-0" />
-                {p}
+                {localizeMessage(p)}
               </span>
             ))}
           </span>
@@ -450,6 +441,7 @@ function CandidateCard({
 }
 
 function ListSkeleton() {
+  useI18n()
   return (
     <div className="flex flex-col gap-2" aria-busy>
       {[0, 1].map((i) => (

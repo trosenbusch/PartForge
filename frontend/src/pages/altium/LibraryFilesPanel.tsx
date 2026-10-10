@@ -1,12 +1,5 @@
-/**
- * Bibliotheksdateien: jede SchLib/PcbLib der Bibliothek, gruppiert nach Art, mit Einträgen, Größe, Änderung und Abgleich
- * (synchron, ausstehend, fehlt, außerhalb geändert, Lagen) – der Grund steht als Text in der Zeile. Aktionen:
- * Synchronisieren, Prüfen (optional mit Übernahme unbekannter Einträge), je Datei „In Altium öffnen“ und „Im Explorer
- * zeigen“ (Datei markiert; außerhalb des Desktop-Programms wird der Pfad kopiert).
- *
- * Lange Listen (Layout „eine Datei je Bauteil“): keine Animation je Zeile, je Art zuerst {@link FILE_PAGE} Dateien
- * („weitere anzeigen“), ab {@link SEARCH_FROM} Dateien ein Suchfeld.
- */
+import { useI18n, localizeMessage } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import {
   ChevronDown,
   CircuitBoard,
@@ -59,46 +52,46 @@ interface FileState {
   reason: string
 }
 
-const names = (list: string[], max = 4) => list.slice(0, max).join(', ') + (list.length > max ? ` und ${formatNumber(list.length - max)} weitere` : '')
+const names = (list: string[], max = 4) => list.slice(0, max).join(', ') + (list.length > max ? tr(" und {0} weitere", { "0": String(formatNumber(list.length - max)) }) : '')
 
 const NO_HEIGHTS: LibraryHeights = { total: 0, repairable: 0 }
 
 /** Zustände einer Datei, wichtigster zuerst (`heights`: Footprints ohne Höhe laut Prüfbericht) */
 function fileStates(f: LibraryFile, heights: LibraryHeights = NO_HEIGHTS): FileState[] {
   const out: FileState[] = []
-  if (!f.exists) out.push({ label: 'Datei fehlt', variant: 'danger', reason: '„Synchronisieren“ schreibt sie neu' })
+  if (!f.exists) out.push({ label: tr("Datei fehlt"), variant: 'danger', reason: tr("„Synchronisieren“ schreibt sie neu") })
   // beschädigt (nicht lesbar): geht „außerhalb geändert“ vor – Behebung im Prüfbericht („Aus Sicherung wiederherstellen“)
   if (f.exists && f.unreadable) {
-    out.push({ label: 'Beschädigt', variant: 'danger', reason: 'nicht lesbar – im Prüfbericht „Aus Sicherung wiederherstellen“' })
+    out.push({ label: tr("Beschädigt"), variant: 'danger', reason: tr("nicht lesbar – im Prüfbericht „Aus Sicherung wiederherstellen“") })
   }
-  if (f.errors) out.push({ label: plural(f.errors, 'Fehler', 'Fehler'), variant: 'danger', reason: 'Schreiben fehlgeschlagen – Details im Prüfbericht' })
-  if (f.pending) out.push({ label: `${formatNumber(f.pending)} ausstehend`, variant: 'warning', reason: 'beim nächsten Synchronisieren' })
+  if (f.errors) out.push({ label: plural(f.errors, tr("Fehler"), tr("Fehler")), variant: 'danger', reason: tr("Schreiben fehlgeschlagen – Details im Prüfbericht") })
+  if (f.pending) out.push({ label: tr("{0} ausstehend", { "0": String(formatNumber(f.pending)) }), variant: 'warning', reason: tr("beim nächsten Synchronisieren") })
   if (f.exists && f.missing.length) {
-    out.push({ label: plural(f.missing.length, 'fehlt', 'fehlen'), variant: 'warning', reason: `nicht in der Datei: ${names(f.missing)}` })
+    out.push({ label: plural(f.missing.length, tr("fehlt"), tr("fehlen")), variant: 'warning', reason: tr("nicht in der Datei: {0}", { "0": String(names(f.missing)) }) })
   }
   if (f.external_changes && !f.unreadable) {
-    out.push({ label: 'Außerhalb geändert', variant: 'warning', reason: 'PartForge ersetzt hier nur noch eigene, geänderte Einträge' })
+    out.push({ label: tr("Außerhalb geändert"), variant: 'warning', reason: tr("PartForge ersetzt hier nur noch eigene, geänderte Einträge") })
   }
   if (f.layers_ok === false) {
-    out.push({ label: 'Lagen abweichend', variant: 'warning', reason: `unter ${SETTINGS_PLACE.layers.label} übertragen` })
+    out.push({ label: tr("Lagen abweichend"), variant: 'warning', reason: tr("unter {0} übertragen", { "0": String(SETTINGS_PLACE.layers.label) }) })
   }
   if (heights.total) {
     out.push({
-      label: plural(heights.total, 'Höhe fehlt', 'Höhen fehlen'),
+      label: plural(heights.total, tr("Höhe fehlt"), tr("Höhen fehlen")),
       variant: 'warning',
       reason: heights.repairable
-        ? 'Höhe 0 in der PcbLib – „Footprint-Höhen nachtragen“ im Prüfbericht'
-        : 'Höhe 0 in der PcbLib – außerhalb geändert: Höhe in Altium eintragen',
+        ? tr("Höhe 0 in der PcbLib – „Footprint-Höhen nachtragen“ im Prüfbericht")
+        : tr("Höhe 0 in der PcbLib – außerhalb geändert: Höhe in Altium eintragen"),
     })
   }
   if (f.exists && f.components === null && !f.unreadable) {
-    out.push({ label: 'Nicht lesbar', variant: 'neutral', reason: f.message ?? 'Inhalt nicht lesbar' })
+    out.push({ label: tr("Nicht lesbar"), variant: 'neutral', reason: f.message ?? tr("Inhalt nicht lesbar") })
   }
   if (f.unregistered.length) {
     out.push({
-      label: `${formatNumber(f.unregistered.length)} unbekannt`,
+      label: tr("{0} unbekannt", { "0": String(formatNumber(f.unregistered.length)) }),
       variant: 'info',
-      reason: `nicht registriert: ${names(f.unregistered)} – „Prüfen und unbekannte übernehmen“ registriert sie`,
+      reason: tr("nicht registriert: {0} – „Prüfen und unbekannte übernehmen“ registriert sie", { "0": String(names(f.unregistered)) }),
     })
   }
   return out
@@ -110,8 +103,8 @@ function splitPath(rel: string): { folder: string; name: string } {
 }
 
 const KIND = {
-  schlib: { title: 'Symbolbibliotheken', unit: ['Symbol', 'Symbole'], icon: Shapes },
-  pcblib: { title: 'Footprint-Bibliotheken', unit: ['Footprint', 'Footprints'], icon: CircuitBoard },
+  schlib: { get title() { return tr("Symbolbibliotheken") }, unit: ['Symbol', 'Symbole'], icon: Shapes },
+  pcblib: { get title() { return tr("Footprint-Bibliotheken") }, unit: ['Footprint', 'Footprints'], icon: CircuitBoard },
 } as const
 
 export interface LibraryFilesPanelProps {
@@ -139,10 +132,11 @@ export function LibraryFilesPanel({
   onRetry,
   heightsByLibrary,
 }: LibraryFilesPanelProps) {
+  const { t: tr, locale } = useI18n()
   const navigate = useNavigate()
   const [view, setView] = useState<'all' | 'issues'>('all')
   const [query, setQuery] = useState('')
-  const sorted = useMemo(() => [...(files ?? [])].sort((a, b) => a.rel.localeCompare(b.rel, 'de', { numeric: true })), [files])
+  const sorted = useMemo(() => [...(files ?? [])].sort((a, b) => a.rel.localeCompare(b.rel, locale, { numeric: true })), [files, locale])
   const heightsOf = (f: LibraryFile) => heightsByLibrary?.get(libraryKey(f.rel)) ?? NO_HEIGHTS
   const withIssues = sorted.filter((f) => fileStates(f, heightsOf(f)).length > 0)
   // Große Bibliotheken: auf Dateien mit Abweichungen beschränken (nur anbieten, wenn es welche gibt)
@@ -161,12 +155,12 @@ export function LibraryFilesPanel({
         {withIssues.length > 0 && (
           <SegmentedControl<'all' | 'issues'>
             size="sm"
-            aria-label="Dateien filtern"
+            aria-label={tr("Dateien filtern")}
             value={effectiveView}
             onValueChange={setView}
             options={[
-              { value: 'all', label: <FilterLabel label="Alle" count={sorted.length} /> },
-              { value: 'issues', label: <FilterLabel label="Mit Abweichungen" count={withIssues.length} tone="warning" /> },
+              { value: 'all', label: <FilterLabel label={tr("Alle")} count={sorted.length} /> },
+              { value: 'issues', label: <FilterLabel label={tr("Mit Abweichungen")} count={withIssues.length} tone="warning" /> },
             ]}
           />
         )}
@@ -182,10 +176,10 @@ export function LibraryFilesPanel({
                 setQuery('')
               }
             }}
-            placeholder="Datei suchen …"
-            aria-label="Bibliotheksdateien durchsuchen"
+            placeholder={tr("Datei suchen …")}
+            aria-label={tr("Bibliotheksdateien durchsuchen")}
             prefix={<Search />}
-            suffix={query ? <IconButton size="xs" label="Suche leeren" icon={<X />} onClick={() => setQuery('')} tooltip={false} /> : undefined}
+            suffix={query ? <IconButton size="xs" label={tr("Suche leeren")} icon={<X />} onClick={() => setQuery('')} tooltip={false} /> : undefined}
             containerClassName="w-56 max-w-full"
           />
         )}
@@ -194,13 +188,13 @@ export function LibraryFilesPanel({
             summary.total ? (
               <>
                 <span className="font-medium text-fg">
-                  {needle ? `${formatNumber(visible.length)} von ${plural(summary.total, 'Datei', 'Dateien')}` : plural(summary.total, 'Datei', 'Dateien')}
+                  {needle ? tr("{0} von {1}", { "0": String(formatNumber(visible.length)), "1": String(plural(summary.total, tr("Datei"), tr("Dateien"))) }) : plural(summary.total, tr("Datei"), tr("Dateien"))}
                 </span>
                 {' · '}
-                {plural(summary.components, 'Eintrag', 'Einträge')}
+                {plural(summary.components, tr("Eintrag"), tr("Einträge"))}
               </>
             ) : (
-              'Noch keine Bibliotheksdateien'
+              tr("Noch keine Bibliotheksdateien")
             )
           ) : loading ? (
             <Skeleton className="h-4 w-56" />
@@ -211,35 +205,30 @@ export function LibraryFilesPanel({
           {writer.label}
           {!writer.ok && (
             <Button variant="link" size="xs" className="text-xs" onClick={() => actions.run('writer')}>
-              Writer einrichten →
-            </Button>
+              {tr("Writer einrichten →")}</Button>
           )}
         </span>
         <div className="ml-auto flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="sm" variant="secondary" leftIcon={<FolderSearch />} rightIcon={<ChevronDown />} loading={actions.pending.scan}>
-                Dateien prüfen
-              </Button>
+                {tr("Dateien prüfen")}</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80">
-              <DropdownMenuItem description="Vergleicht Dateien und Registrierung, merkt fehlende Einträge vor" onSelect={() => void actions.scan(false)}>
-                Prüfen
-              </DropdownMenuItem>
+              <DropdownMenuItem description={tr("Vergleicht Dateien und Registrierung, merkt fehlende Einträge vor")} onSelect={() => void actions.scan(false)}>
+                {tr("Prüfen")}</DropdownMenuItem>
               <DropdownMenuItem
-                description="Registriert zusätzlich die unbekannten Einträge – solche, die nur in den Dateien stehen"
+                description={tr("Registriert zusätzlich die unbekannten Einträge – solche, die nur in den Dateien stehen")}
                 onSelect={() => void actions.scan(true)}
               >
-                Prüfen und unbekannte übernehmen
-              </DropdownMenuItem>
+                {tr("Prüfen und unbekannte übernehmen")}</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <Button size="sm" variant="secondary" leftIcon={<FolderSync />} loading={actions.pending.sync} onClick={() => void actions.sync()}>
-            Synchronisieren
-            {needsSync && summary && (
+            {tr("Synchronisieren")}{needsSync && summary && (
               <span className="mono ml-0.5 rounded-full bg-warning/15 px-1.5 text-2xs leading-4 text-warning-text">
                 {formatNumber(summary.pending + summary.errors)}
-                <span className="sr-only"> ausstehend</span>
+                <span className="sr-only"> {' '}{tr("ausstehend")}</span>
               </span>
             )}
           </Button>
@@ -249,14 +238,13 @@ export function LibraryFilesPanel({
       {error && (
         <Callout
           tone="danger"
-          title="Bibliotheksdateien konnten nicht gelesen werden"
+          title={tr("Bibliotheksdateien konnten nicht gelesen werden")}
           actions={
             <Button size="sm" onClick={onRetry}>
-              Erneut versuchen
-            </Button>
+              {tr("Erneut versuchen")}</Button>
           }
         >
-          {error.message}
+          {localizeMessage(error.message)}
         </Callout>
       )}
 
@@ -267,52 +255,44 @@ export function LibraryFilesPanel({
           <EmptyState
             size="sm"
             illustration="search-empty"
-            title="Keine Treffer"
-            description={`Keine Bibliotheksdatei passt zu „${query.trim()}“.`}
+            title={tr("Keine Treffer")}
+            description={tr("Keine Bibliotheksdatei passt zu „{0}“.", { "0": String(query.trim()) })}
             actions={
               <Button size="sm" onClick={() => setQuery('')}>
-                Suche leeren
-              </Button>
+                {tr("Suche leeren")}</Button>
             }
           />
         ) : groups.length === 0 && !error ? (
           <EmptyState
             illustration="forge"
-            title="Noch keine Bibliotheksdateien"
-            description="SchLib- und PcbLib-Dateien entstehen mit den ersten Symbolen und Footprints – Serien-Assistent, Datenblatt-Import und Footprint-Generator legen sie automatisch an."
+            title={tr("Noch keine Bibliotheksdateien")}
+            description={tr("SchLib- und PcbLib-Dateien entstehen mit den ersten Symbolen und Footprints – Serien-Assistent, Datenblatt-Import und Footprint-Generator legen sie automatisch an.")}
             actions={
               <>
                 <Button size="sm" leftIcon={<Layers />} onClick={() => navigate('/serien')}>
-                  Serie erzeugen
-                </Button>
+                  {tr("Serie erzeugen")}</Button>
                 <Button size="sm" variant="ghost" leftIcon={<CircuitBoard />} onClick={() => navigate('/footprints')}>
-                  Footprint-Generator
-                </Button>
+                  {tr("Footprint-Generator")}</Button>
               </>
             }
           />
         ) : groups.length > 0 ? (
           <table className="w-full border-collapse text-left">
-            <caption className="sr-only">Bibliotheksdateien der Bibliothek</caption>
+            <caption className="sr-only">{tr("Bibliotheksdateien der Bibliothek")}</caption>
             <thead>
               <tr className="border-b border-line text-2xs font-semibold uppercase tracking-[0.06em] text-fg-subtle">
                 <th scope="col" className="min-w-48 py-2.5 pl-4 pr-3 font-semibold">
-                  Datei
-                </th>
+                  {tr("Datei")}</th>
                 <th scope="col" className="px-3 py-2.5 text-right font-semibold">
-                  Einträge
-                </th>
+                  {tr("Einträge")}</th>
                 <th scope="col" className="hidden px-3 py-2.5 text-right font-semibold @[50rem]:table-cell">
-                  Größe
-                </th>
+                  {tr("Größe")}</th>
                 <th scope="col" className="px-3 py-2.5 font-semibold">
-                  Geändert
-                </th>
+                  {tr("Geändert")}</th>
                 <th scope="col" className="px-3 py-2.5 font-semibold">
-                  Zustand
-                </th>
+                  {tr("Zustand")}</th>
                 <th scope="col" className="py-2.5 pl-3 pr-4 text-right font-semibold">
-                  <span className="sr-only">Aktionen</span>
+                  <span className="sr-only">{tr("Aktionen")}</span>
                 </th>
               </tr>
             </thead>
@@ -334,13 +314,8 @@ export function LibraryFilesPanel({
       <p className="flex items-start gap-2 px-1 text-xs leading-relaxed text-fg-subtle">
         <Info aria-hidden className="mt-0.5 size-3.5 shrink-0" />
         <span>
-          <span className="text-fg-muted">Synchronisieren</span> schreibt ausstehende Symbole und Footprints in ihre Dateien.{' '}
-          <span className="text-fg-muted">Prüfen</span> vergleicht Dateien und Registrierung: fehlende Einträge werden vorgemerkt,
-          außerhalb geänderte Dateien erkannt; <span className="text-fg-muted">Prüfen und unbekannte übernehmen</span> registriert
-          zusätzlich die unbekannten Einträge, die nur in den Dateien stehen. Dateien ohne Kennzeichnung schreibt PartForge
-          vollständig selbst; <span className="text-fg-muted">gemischt</span> heißt, die Datei enthält fremde oder außerhalb
-          geänderte Einträge – dort ersetzt PartForge nur eigene Einträge einzeln.
-        </span>
+          <span className="text-fg-muted">{tr("Synchronisieren")}</span> {tr(" schreibt ausstehende Symbole und Footprints in ihre Dateien.")}{' '}
+          <span className="text-fg-muted">{tr("Prüfen")}</span> {tr(" vergleicht Dateien und Registrierung: fehlende Einträge werden vorgemerkt, außerhalb geänderte Dateien erkannt; ")}<span className="text-fg-muted">{tr("Prüfen und unbekannte übernehmen")}</span> {tr(" registriert zusätzlich die unbekannten Einträge, die nur in den Dateien stehen. Dateien ohne Kennzeichnung schreibt PartForge vollständig selbst; ")}<span className="text-fg-muted">{tr("gemischt")}</span> {tr(" heißt, die Datei enthält fremde oder außerhalb geänderte Einträge – dort ersetzt PartForge nur eigene Einträge einzeln.")}</span>
       </p>
     </div>
   )
@@ -359,6 +334,7 @@ function FileGroup({
   blocker: string | null
   heightsOf: (f: LibraryFile) => LibraryHeights
 }) {
+  const { t: tr } = useI18n()
   const [limit, setLimit] = useState(FILE_PAGE)
   const meta = KIND[kind]
   const Icon = meta.icon
@@ -375,8 +351,8 @@ function FileGroup({
             <Icon aria-hidden className="size-3.5 text-fg-muted" />
             <span className="font-semibold text-fg">{meta.title}</span>
             <span className="text-fg-subtle">
-              {common ? <span className="mono">{common}</span> : 'mehrere Ordner'} · {plural(files.length, 'Datei', 'Dateien')} ·{' '}
-              {plural(entries, meta.unit[0], meta.unit[1])}
+              {common ? <span className="mono">{common}</span> : tr("mehrere Ordner")} · {plural(files.length, tr("Datei"), tr("Dateien"))} ·{' '}
+              {plural(entries, tr(meta.unit[0]), tr(meta.unit[1]))}
             </span>
           </span>
         </th>
@@ -388,10 +364,8 @@ function FileGroup({
         <tr className="border-t border-line">
           <td colSpan={6} className="px-4 py-2 text-2xs text-fg-subtle">
             <Button size="xs" variant="ghost" className="mr-3" onClick={() => setLimit((l) => l + FILE_PAGE * 4)}>
-              {formatNumber(Math.min(FILE_PAGE * 4, rest))} weitere anzeigen
-            </Button>
-            {formatNumber(shown.length)} von {plural(files.length, 'Datei', 'Dateien')} angezeigt
-          </td>
+              {formatNumber(Math.min(FILE_PAGE * 4, rest))} {tr(" weitere anzeigen")}</Button>
+            {formatNumber(shown.length)} {tr(" von ")}{plural(files.length, tr("Datei"), tr("Dateien"))} {' '}{tr("angezeigt")}</td>
         </tr>
       )}
     </tbody>
@@ -412,13 +386,14 @@ function FileRow({
   /** Footprints ohne Höhe in dieser PcbLib (Prüfbericht) */
   heights: LibraryHeights
 }) {
+  const { t: tr } = useI18n()
   const bridge = useNativeBridge()
   const { folder, name } = splitPath(f.rel)
   const states = fileStates(f, heights)
-  const managedLabel = f.managed ? null : f.registered === 0 ? 'fremde Datei' : 'gemischt'
-  const openLabel = blocker ? `${name} in Altium öffnen – ${blocker}` : `${name} in Altium öffnen`
+  const managedLabel = f.managed ? null : f.registered === 0 ? tr("fremde Datei") : tr("gemischt")
+  const openLabel = blocker ? tr("{0} in Altium öffnen – {1}", { "0": String(name), "1": String(blocker) }) : tr("{0} in Altium öffnen", { "0": String(name) })
   // Desktop: Explorer mit markierter Datei; Browser: Pfad kopieren (revealPath meldet es)
-  const revealLabel = bridge.canRevealPath || bridge.canOpenPath ? `${name} im Explorer zeigen` : `Pfad von ${name} kopieren`
+  const revealLabel = bridge.canRevealPath || bridge.canOpenPath ? tr("{0} im Explorer zeigen", { "0": String(name) }) : tr("Pfad von {0} kopieren", { "0": String(name) })
 
   return (
     <tr className="group/row border-t border-line align-top transition-colors hover:bg-surface-2/60">
@@ -438,7 +413,7 @@ function FileRow({
       <td className="px-3 py-2 text-right">
         <span className="mono text-ui text-fg">{f.components === null ? '–' : formatNumber(f.components)}</span>
         {f.components !== null && f.registered !== f.components && (
-          <div className="whitespace-nowrap text-2xs text-fg-subtle">{formatNumber(f.registered)} registriert</div>
+          <div className="whitespace-nowrap text-2xs text-fg-subtle">{formatNumber(f.registered)} {' '}{tr("registriert")}</div>
         )}
       </td>
       <td className="mono hidden whitespace-nowrap px-3 py-2 text-right text-xs leading-5 text-fg-muted @[50rem]:table-cell">
@@ -451,7 +426,7 @@ function FileRow({
         {states.length === 0 ? (
           <span className="inline-flex items-center gap-1.5 text-xs leading-5 text-fg-muted">
             <span aria-hidden className={cn('size-1.5 rounded-full', f.in_sync ? 'bg-success' : 'bg-fg-subtle')} />
-            {f.in_sync ? 'Synchron' : 'Geprüft'}
+            {f.in_sync ? tr("Synchron") : tr("Geprüft")}
           </span>
         ) : (
           <ul className="flex flex-col gap-1">
@@ -460,7 +435,7 @@ function FileRow({
                 <Badge variant={s.variant} dot>
                   {s.label}
                 </Badge>
-                <span className="min-w-0 text-2xs leading-snug text-fg-muted">{s.reason}</span>
+                <span className="min-w-0 text-2xs leading-snug text-fg-muted">{localizeMessage(s.reason)}</span>
               </li>
             ))}
           </ul>
@@ -471,7 +446,7 @@ function FileRow({
           {blocker || !f.exists ? (
             <IconButton
               size="xs"
-              label={f.exists ? openLabel : `${name} fehlt – nichts zu öffnen`}
+              label={f.exists ? openLabel : tr("{0} fehlt – nichts zu öffnen", { "0": String(name) })}
               icon={<SquareArrowOutUpRight />}
               aria-disabled
               className="aria-disabled:pointer-events-auto aria-disabled:cursor-not-allowed"
@@ -480,11 +455,11 @@ function FileRow({
             <IconButton size="xs" label={openLabel} icon={<SquareArrowOutUpRight />} onClick={() => void actions.openInAltium(f.path)} />
           )}
           {f.exists ? (
-            <IconButton size="xs" label={revealLabel} icon={<FolderOpen />} onClick={() => void revealPath(f.path, { what: 'Bibliotheksdatei' })} />
+            <IconButton size="xs" label={revealLabel} icon={<FolderOpen />} onClick={() => void revealPath(f.path, { what: tr("Bibliotheksdatei") })} />
           ) : (
             <IconButton
               size="xs"
-              label={`${name} fehlt – nichts im Explorer zu zeigen`}
+              label={tr("{0} fehlt – nichts im Explorer zu zeigen", { "0": String(name) })}
               icon={<FolderOpen />}
               aria-disabled
               className="aria-disabled:pointer-events-auto aria-disabled:cursor-not-allowed"
@@ -497,8 +472,9 @@ function FileRow({
 }
 
 function FilesSkeleton() {
+  const { t: tr } = useI18n()
   return (
-    <div className="divide-y divide-line" aria-busy="true" aria-label="Bibliotheksdateien werden gelesen">
+    <div className="divide-y divide-line" aria-busy="true" aria-label={tr("Bibliotheksdateien werden gelesen")}>
       {[0, 1, 2, 3, 4].map((i) => (
         <div key={i} className="flex items-center gap-3 px-4 py-3">
           <div className="flex-1">

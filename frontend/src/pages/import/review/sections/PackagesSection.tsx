@@ -1,3 +1,5 @@
+import { localizeMessage } from '@/lib/i18n'
+import { t, useI18n } from '@/lib/i18n'
 import { Box, ChevronDown, CircleAlert, Combine, Eye, FileStack, LayoutGrid, Undo2, TriangleAlert } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -31,7 +33,7 @@ import { Section } from './Section'
 
 const FAMILY_LABEL: Record<string, string> = {
   chip: 'Chip',
-  molded: 'Molded (Tantal, Spule)',
+  get molded() { return t("Molded (Tantal, Spule)") },
   melf: 'MELF',
   sod: 'SOD',
   do214: 'DO-214',
@@ -50,49 +52,49 @@ const FAMILY_LABEL: Record<string, string> = {
   radial: 'Radial',
   to92: 'TO-92',
   to220: 'TO-220',
-  pin_header: 'Stiftleiste',
+  get pin_header() { return t("Stiftleiste") },
 }
 
 /** JEDEC-Maßbuchstaben → deutsche Bedeutung (Claude liefert die englische Beschreibung als Tooltip) */
 const DIM_LABEL: Record<string, string> = {
-  A: 'Bauhöhe',
-  A1: 'Abstand zur Platine',
-  A2: 'Körperdicke',
-  A3: 'Anschlussdicke',
-  b: 'Anschlussbreite',
-  b1: 'Anschlussbreite',
-  c: 'Anschlussdicke',
-  D: 'Körperlänge',
-  D1: 'Körperlänge',
-  D2: 'Exposed Pad, Länge',
-  E: 'Breite über Anschlüsse',
-  E1: 'Körperbreite',
-  E2: 'Exposed Pad, Breite',
-  e: 'Raster',
-  e1: 'Raster',
-  H: 'Breite über Anschlüsse',
-  HE: 'Breite über Anschlüsse',
-  k: 'Abstand Anschluss–Pad',
-  K: 'Abstand Anschluss–Pad',
-  L: 'Fußlänge',
-  L1: 'Anschlusslänge',
-  L2: 'Anschlusslänge',
-  theta: 'Fußwinkel',
-  θ: 'Fußwinkel',
+  get A() { return t("Bauhöhe") },
+  get A1() { return t("Abstand zur Platine") },
+  get A2() { return t("Körperdicke") },
+  get A3() { return t("Anschlussdicke") },
+  get b() { return t("Anschlussbreite") },
+  get b1() { return t("Anschlussbreite") },
+  get c() { return t("Anschlussdicke") },
+  get D() { return t("Körperlänge") },
+  get D1() { return t("Körperlänge") },
+  get D2() { return t("Exposed Pad, Länge") },
+  get E() { return t("Breite über Anschlüsse") },
+  get E1() { return t("Körperbreite") },
+  get E2() { return t("Exposed Pad, Breite") },
+  get e() { return t("Anschlussraster") },
+  get e1() { return t("Anschlussraster") },
+  get H() { return t("Breite über Anschlüsse") },
+  get HE() { return t("Breite über Anschlüsse") },
+  get k() { return t("Abstand Anschluss–Pad") },
+  get K() { return t("Abstand Anschluss–Pad") },
+  get L() { return t("Fußlänge") },
+  get L1() { return t("Anschlusslänge") },
+  get L2() { return t("Anschlusslänge") },
+  get theta() { return t("Fußwinkel") },
+  get θ() { return t("Fußwinkel") },
 }
 
 const ROW_REFERENCES: { value: RowReference; label: string }[] = [
-  { value: 'center_to_center', label: 'Mitte–Mitte' },
-  { value: 'inner_edges', label: 'Innenkanten' },
-  { value: 'outer_edges', label: 'Außenkanten' },
-  { value: 'pad_center_to_component_center', label: 'Bauteilmitte–Padmitte' },
-  { value: 'unclear', label: 'unklar (Mitte–Mitte)' },
-  { value: 'not_applicable', label: 'nicht zutreffend' },
+  { value: 'center_to_center', get label() { return t("Mitte–Mitte") } },
+  { value: 'inner_edges', get label() { return t("Innenkanten") } },
+  { value: 'outer_edges', get label() { return t("Außenkanten") } },
+  { value: 'pad_center_to_component_center', get label() { return t("Bauteilmitte–Padmitte") } },
+  { value: 'unclear', get label() { return t("unklar (Mitte–Mitte)") } },
+  { value: 'not_applicable', get label() { return t("nicht zutreffend") } },
 ]
 
 const DENSITY = [
-  { value: 'style', label: 'Hausstil' },
-  { value: 'L', label: 'L – kompakt' },
+  { value: 'style', get label() { return t("Hausstil") } },
+  { value: 'L', get label() { return t("L – kompakt") } },
   { value: 'N', label: 'N – nominal' },
   { value: 'M', label: 'M – robust' },
 ]
@@ -103,8 +105,8 @@ const QUAD_FAMILIES = new Set(['nolead', 'qfp'])
 const FULL_LAYOUT_FAMILIES = new Set(['nolead'])
 
 const PIN1_OPTIONS: { value: TerminalLayout['pin1']; label: string; description: string }[] = [
-  { value: 'left', label: 'Linke Seite, oben', description: 'JEDEC-Standard' },
-  { value: 'top', label: 'Obere Seite, links', description: 'z. B. TI RGY (Pins an den Stirnseiten)' },
+  { value: 'left', get label() { return t("Linke Seite, oben") }, get description() { return t("JEDEC-Standard") } },
+  { value: 'top', get label() { return t("Obere Seite, links") }, get description() { return t("z. B. TI RGY (Pins an den Stirnseiten)") } },
 ]
 
 const EMPTY_LAYOUT: TerminalLayout = { pins_x: null, pins_y: null, pitch_x: null, pin1: 'left', missing: [] }
@@ -115,13 +117,13 @@ function isDefaultLayout(l: TerminalLayout): boolean {
 
 /** „2 oben/unten · 8 links/rechts · Pin 1 oben · ohne 14“ – Kurzfassung einer Anschlussanordnung */
 function layoutSummary(l: TerminalLayout | null | undefined): string {
-  if (!l || isDefaultLayout(l)) return 'gleichmäßig verteilt'
+  if (!l || isDefaultLayout(l)) return t("gleichmäßig verteilt")
   return [
-    l.pins_x !== null ? `${l.pins_x} oben/unten` : null,
-    l.pins_y !== null ? `${l.pins_y} links/rechts` : null,
-    l.pitch_x !== null ? `Raster oben/unten ${formatNumber(l.pitch_x)} mm` : null,
-    l.pin1 === 'top' ? 'Pin 1 oben' : null,
-    l.missing.length ? `ohne ${l.missing.join(', ')}` : null,
+    l.pins_x !== null ? t("{0} oben/unten", { "0": String(l.pins_x) }) : null,
+    l.pins_y !== null ? t("{0} links/rechts", { "0": String(l.pins_y) }) : null,
+    l.pitch_x !== null ? t("Raster oben/unten {0} mm", { "0": String(formatNumber(l.pitch_x)) }) : null,
+    l.pin1 === 'top' ? t("Pin 1 oben") : null,
+    l.missing.length ? t("ohne {0}", { "0": String(l.missing.join(', ')) }) : null,
   ]
     .filter(Boolean)
     .join(' · ')
@@ -142,6 +144,7 @@ function originPages(pkg: PackageData): number[] {
 }
 
 function DimRow({ dim, onChange }: { dim: DimValue; onChange: (field: 'min' | 'nom' | 'max', v: number | null) => void }) {
+  useI18n()
   const label = DIM_LABEL[dim.symbol] ?? DIM_LABEL[dim.symbol.toUpperCase()] ?? dim.description
   const bad = dim.min !== null && dim.max !== null && dim.min > dim.max
   return (
@@ -155,7 +158,7 @@ function DimRow({ dim, onChange }: { dim: DimValue; onChange: (field: 'min' | 'n
       {(['min', 'nom', 'max'] as const).map((k) => (
         <td key={k} className="w-[4.25rem] border-b border-line py-0.5 align-middle">
           <NumberCell
-            aria-label={`${dim.symbol} ${k === 'min' ? 'Minimum' : k === 'nom' ? 'Nennwert' : 'Maximum'}`}
+            aria-label={`${dim.symbol} ${k === 'min' ? 'Minimum' : k === 'nom' ? t("Nennwert") : 'Maximum'}`}
             value={dim[k]}
             onCommit={(v) => onChange(k, v)}
             invalid={bad && k !== 'nom'}
@@ -170,6 +173,7 @@ function DimRow({ dim, onChange }: { dim: DimValue; onChange: (field: 'min' | 'n
 }
 
 function PackageBlock({ code }: { code: string }) {
+  useI18n()
   const { ds, extraction, device, packageOnly, proposal, choices, setChoices, edit } = useReview()
   const setPreviewPackage = useReviewUi((s) => s.setPreviewPackage)
   const setPreviewTab = useReviewUi((s) => s.setPreviewTab)
@@ -212,20 +216,19 @@ function PackageBlock({ code }: { code: string }) {
     })
   const askUnmerge = async (origin: PackageOrigin) => {
     const ok = await confirm({
-      title: 'Übernahme aufheben?',
-      description: `${label} bekommt wieder die Angaben aus diesem Datenblatt – die Maße aus „${origin.file}“ werden entfernt. Die Analyse von „${origin.file}“ bleibt unverändert.`,
-      confirmLabel: 'Aufheben',
+      title: t("Übernahme aufheben?"),
+      description: t("{0} bekommt wieder die Angaben aus diesem Datenblatt – die Maße aus „{1}“ werden entfernt. Die Analyse von „{2}“ bleibt unverändert.", { "0": String(label), "1": String(origin.file), "2": String(origin.file) }),
+      confirmLabel: t("Aufheben"),
       icon: <Undo2 />,
       onConfirm: () => unmerge.mutateAsync(code),
     })
-    if (ok) toast.success('Übernahme aufgehoben', { description: `${label}: wieder die Angaben aus diesem Datenblatt` })
+    if (ok) toast.success(t("Übernahme aufgehoben"), { description: t("{0}: wieder die Angaben aus diesem Datenblatt", { "0": String(label) }) })
   }
 
   if (!pkg) {
     return (
       <div className="rounded-card border border-dashed border-line-strong px-3 py-2.5 text-xs text-fg-muted">
-        Gehäuse „{code}“ ist im Datenblatt nicht beschrieben – bitte einen vorhandenen Footprint wählen.
-      </div>
+        {t("Gehäuse „")}{code}{t("“ ist im Datenblatt nicht beschrieben – bitte einen vorhandenen Footprint wählen.")}</div>
     )
   }
 
@@ -239,12 +242,11 @@ function PackageBlock({ code }: { code: string }) {
           <Badge size="sm">{FAMILY_LABEL[pkg.family] ?? pkg.family}</Badge>
         ) : (
           <Badge size="sm" variant="warning">
-            Familie unbekannt
-          </Badge>
+            {t("Familie unbekannt")}</Badge>
         )}
         <span className="text-2xs text-fg-subtle">
           {[
-            pkg.pin_count ? `${pkg.pin_count} Anschlüsse` : null,
+            pkg.pin_count ? t("{0} Anschlüsse", { "0": String(pkg.pin_count) }) : null,
             pkg.mounting,
             pkg.exposed_pad ? `Exposed Pad${pkg.exposed_pad_number ? ` ${pkg.exposed_pad_number}` : ''}` : null,
             pkg.outline_reference || null,
@@ -262,7 +264,7 @@ function PackageBlock({ code }: { code: string }) {
               onUnmerge={() => void askUnmerge(pkg.origin as PackageOrigin)}
             />
           ) : (
-            <SourceChip pages={pkg.pages} what={`Maßzeichnung ${label}`} />
+            <SourceChip pages={pkg.pages} what={t("Maßzeichnung {0}", { "0": String(label) })} />
           )}
           {canGive && (
             <Button
@@ -270,10 +272,9 @@ function PackageBlock({ code }: { code: string }) {
               variant="ghost"
               leftIcon={<Combine />}
               onClick={() => setTargetOpen(true)}
-              title="Diese Zeichnung in das Datenblatt des Bauteils übernehmen, dem sie gehört"
+              title={t("Diese Zeichnung in das Datenblatt des Bauteils übernehmen, dem sie gehört")}
             >
-              Einem Bauteil geben …
-            </Button>
+              {t("Einem Bauteil geben …")}</Button>
           )}
           {!packageOnly && !pkg.origin && (
             <Button
@@ -281,10 +282,9 @@ function PackageBlock({ code }: { code: string }) {
               variant="ghost"
               leftIcon={<Combine />}
               onClick={() => setSourceOpen(true)}
-              title="Maße, Herstellerempfehlung und Exposed Pad aus einer eigenen Gehäusezeichnung des Herstellers übernehmen"
+              title={t("Maße, Herstellerempfehlung und Exposed Pad aus einer eigenen Gehäusezeichnung des Herstellers übernehmen")}
             >
-              Maße übernehmen …
-            </Button>
+              {t("Maße übernehmen …")}</Button>
           )}
         </div>
       </header>
@@ -303,19 +303,19 @@ function PackageBlock({ code }: { code: string }) {
         <div className="flex flex-wrap items-center gap-2">
           <SegmentedControl<PackageChoice['footprint']>
             size="sm"
-            aria-label={`Footprint für ${packageLabel(pkg)}`}
+            aria-label={t("Footprint für {0}", { "0": String(packageLabel(pkg)) })}
             value={choice.footprint}
             onValueChange={(v) => setChoice({ footprint: v })}
             options={[
               { value: 'ipc', label: 'IPC-7351B' },
-              { value: 'manufacturer', label: 'Hersteller', disabled: !lpComplete },
-              { value: 'existing', label: 'Vorhanden' },
+              { value: 'manufacturer', label: t("Hersteller"), disabled: !lpComplete },
+              { value: 'existing', label: t("Vorhanden") },
             ]}
           />
           {choice.footprint !== 'existing' && (
             <Select
               size="sm"
-              aria-label="Dichte"
+              aria-label={t("Dichte")}
               value={choice.density ?? 'style'}
               onValueChange={(v) => setChoice({ density: v === 'style' ? null : (v as 'L' | 'N' | 'M') })}
               options={DENSITY}
@@ -323,14 +323,14 @@ function PackageBlock({ code }: { code: string }) {
             />
           )}
           {!lpComplete && choice.footprint !== 'existing' && (
-            <span className="text-2xs text-fg-subtle">{lp?.present ? 'Herstellerempfehlung unvollständig' : 'keine Herstellerempfehlung'}</span>
+            <span className="text-2xs text-fg-subtle">{lp?.present ? t("Herstellerempfehlung unvollständig") : t("keine Herstellerempfehlung")}</span>
           )}
         </div>
         {choice.footprint === 'existing' && (
           <Combobox
             size="sm"
-            aria-label="Vorhandenen Footprint wählen"
-            placeholder={library.isLoading ? 'Footprints werden geladen …' : 'Footprint aus der Bibliothek wählen …'}
+            aria-label={t("Vorhandenen Footprint wählen")}
+            placeholder={library.isLoading ? t("Footprints werden geladen …") : t("Footprint aus der Bibliothek wählen …")}
             searchPlaceholder="Footprint suchen …"
             mono
             value={choice.existing ?? null}
@@ -341,7 +341,7 @@ function PackageBlock({ code }: { code: string }) {
               description: [f.family ? FAMILY_LABEL[f.family] ?? f.family : null, f.pad_count ? `${f.pad_count} Pads` : null]
                 .filter(Boolean)
                 .join(' · '),
-              group: f.family && f.family === pkg.family ? 'Passende Familie' : 'Weitere',
+              group: f.family && f.family === pkg.family ? t("Passende Familie") : t("Weitere"),
             }))}
           />
         )}
@@ -360,14 +360,12 @@ function PackageBlock({ code }: { code: string }) {
             </button>
             {!fp.valid ? (
               <Badge variant="danger" size="sm">
-                ungültig
-              </Badge>
+                {t("ungültig")}</Badge>
             ) : fp.exists ? (
-              <Badge size="sm">{fp.status === 'ok' || fp.status === null ? 'vorhanden' : 'vorhanden · ausstehend'}</Badge>
+              <Badge size="sm">{fp.status === 'ok' || fp.status === null ? t("vorhanden") : 'vorhanden · ausstehend'}</Badge>
             ) : (
               <Badge variant="success" size="sm">
-                neu
-              </Badge>
+                {t("neu")}</Badge>
             )}
             {fp.pad_count > 0 && <span className="text-2xs text-fg-subtle">{formatNumber(fp.pad_count)} Pads</span>}
           </div>
@@ -377,7 +375,7 @@ function PackageBlock({ code }: { code: string }) {
             {fp.warnings.slice(0, 4).map((w) => (
               <li key={w} className={cn('flex items-start gap-1.5 text-2xs leading-4', fp.valid ? 'text-warning-text' : 'text-danger-text')}>
                 {fp.valid ? <TriangleAlert aria-hidden className="mt-0.5 size-3 shrink-0" /> : <CircleAlert aria-hidden className="mt-0.5 size-3 shrink-0" />}
-                <span>{w}</span>
+                <span>{localizeMessage(w)}</span>
               </li>
             ))}
           </ul>
@@ -393,7 +391,7 @@ function PackageBlock({ code }: { code: string }) {
                 )}
               >
                 {i.severity === 'error' ? <CircleAlert aria-hidden className="mt-0.5 size-3 shrink-0" /> : <TriangleAlert aria-hidden className="mt-0.5 size-3 shrink-0" />}
-                <span>{i.message}</span>
+                <span>{localizeMessage(i.message)}</span>
               </li>
             ))}
           </ul>
@@ -409,18 +407,15 @@ function PackageBlock({ code }: { code: string }) {
             className="mb-2.5"
             actions={
               <Button size="sm" variant="secondary" leftIcon={<Combine />} onClick={() => setSourceOpen(true)}>
-                Maße übernehmen …
-              </Button>
+                {t("Maße übernehmen …")}</Button>
             }
           >
-            Maße fehlen. Viele Hersteller (z. B. TI) veröffentlichen die Gehäusezeichnung als eigenes PDF – dieses
-            analysieren und die Maße hier übernehmen.
-          </Callout>
+            {t("Maße fehlen. Viele Hersteller (z. B. TI) veröffentlichen die Gehäusezeichnung als eigenes PDF – dieses analysieren und die Maße hier übernehmen.")}</Callout>
         )}
         <div className="mb-1 flex items-center gap-2">
-          <h4 className="micro-label">Maße</h4>
+          <h4 className="micro-label">{t("Maße")}</h4>
           <span className="min-w-0 truncate text-2xs text-fg-subtle">
-            {pkg.dimensions.length} aus {pkg.origin ? `„${pkg.origin.file}“ (${pkg.origin.package})` : 'der Zeichnung'}
+            {pkg.dimensions.length} {t(" aus ")}{pkg.origin ? `„${pkg.origin.file}“ (${pkg.origin.package})` : t("der Zeichnung")}
           </span>
         </div>
         {pkg.dimensions.length ? (
@@ -428,11 +423,9 @@ function PackageBlock({ code }: { code: string }) {
             <thead>
               <tr className="text-left text-2xs font-semibold uppercase tracking-[0.06em] text-fg-subtle">
                 <th scope="col" className="w-12 pb-1 pl-1 pr-2 font-semibold">
-                  Maß
-                </th>
+                  {t("Maß")}</th>
                 <th scope="col" className="hidden pb-1 font-semibold @[26rem]:table-cell">
-                  Bedeutung
-                </th>
+                  {t("Bedeutung")}</th>
                 <th scope="col" className="pb-1 pr-1.5 text-right font-semibold">
                   min
                 </th>
@@ -443,7 +436,7 @@ function PackageBlock({ code }: { code: string }) {
                   max
                 </th>
                 <th scope="col" className="pb-1">
-                  <span className="sr-only">Einheit</span>
+                  <span className="sr-only">{t("Einheit")}</span>
                 </th>
               </tr>
             </thead>
@@ -453,7 +446,7 @@ function PackageBlock({ code }: { code: string }) {
                   key={`${d.symbol}-${k}`}
                   dim={d}
                   onChange={(field, v) =>
-                    patchPkg(`Maß ${d.symbol} (${field})`, (p) => {
+                    patchPkg(t("Maß {0} ({1})", { "0": String(d.symbol), "1": String(field) }), (p) => {
                       p.dimensions[k][field] = v
                     })
                   }
@@ -462,7 +455,7 @@ function PackageBlock({ code }: { code: string }) {
             </tbody>
           </table>
         ) : (
-          <p className="py-1 text-xs text-fg-muted">Keine Maße gefunden – der Footprint entsteht aus der Vorlage der Familie.</p>
+          <p className="py-1 text-xs text-fg-muted">{t("Keine Maße gefunden – der Footprint entsteht aus der Vorlage der Familie.")}</p>
         )}
       </div>
 
@@ -479,53 +472,52 @@ function PackageBlock({ code }: { code: string }) {
         ) : (
           <div className="flex items-center gap-2 border-t border-line px-3 py-2 text-xs">
             <LayoutGrid aria-hidden className="size-3.5 text-fg-subtle" />
-            <span className="text-fg-subtle">Anschlussanordnung:</span>
-            <span className="text-fg-muted">gleichmäßig verteilt</span>
+            <span className="text-fg-subtle">{t("Anschlussanordnung:")}</span>
+            <span className="text-fg-muted">{t("gleichmäßig verteilt")}</span>
             <Button size="xs" variant="ghost" className="ml-auto" onClick={() => setLayoutOpen(true)}>
-              Anpassen …
-            </Button>
+              {t("Anpassen …")}</Button>
           </div>
         ))}
 
       {/* Herstellerempfehlung */}
       <div className="border-t border-line px-3 pb-3 pt-2.5">
         <div className="mb-1.5 flex items-center gap-2">
-          <h4 className="micro-label">Lötflächen laut Hersteller</h4>
+          <h4 className="micro-label">{t("Lötflächen laut Hersteller")}</h4>
           {lp?.present ? (
             <Badge size="sm" variant={lpComplete ? 'success' : 'warning'}>
-              {lpComplete ? 'vollständig' : 'unvollständig'}
+              {lpComplete ? t("vollständig") : t("unvollständig")}
             </Badge>
           ) : null}
           <span className="ml-auto">
-            {lp?.present && !pkg.origin && <SourceChip pages={lp.pages} what="Empfohlene Lötflächen" />}
+            {lp?.present && !pkg.origin && <SourceChip pages={lp.pages} what={t("Empfohlene Lötflächen")} />}
           </span>
         </div>
         {lp?.present ? (
           <dl className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-0.5 text-xs @[30rem]:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)]">
-            <LpNumber label="Padbreite" value={lp.pad_width} onCommit={(v) => patchPkg('Padbreite', (p) => void (p.land_pattern.pad_width = v))} />
-            <LpNumber label="Padlänge" value={lp.pad_length} onCommit={(v) => patchPkg('Padlänge', (p) => void (p.land_pattern.pad_length = v))} />
-            <LpNumber label="Raster" value={lp.pitch} onCommit={(v) => patchPkg('Raster der Lötflächen', (p) => void (p.land_pattern.pitch = v))} />
+            <LpNumber label={t("Padbreite")} value={lp.pad_width} onCommit={(v) => patchPkg(t("Padbreite"), (p) => void (p.land_pattern.pad_width = v))} />
+            <LpNumber label={t("Padlänge")} value={lp.pad_length} onCommit={(v) => patchPkg(t("Padlänge"), (p) => void (p.land_pattern.pad_length = v))} />
+            <LpNumber label={t("Raster der Lötflächen")} value={lp.pitch} onCommit={(v) => patchPkg(t("Raster der Lötflächen"), (p) => void (p.land_pattern.pitch = v))} />
             <LpNumber
-              label={quad ? 'Reihenabstand links/rechts' : 'Reihenabstand'}
+              label={quad ? t("Reihenabstand links/rechts") : t("Reihenabstand")}
               value={lp.row_spacing}
-              onCommit={(v) => patchPkg('Reihenabstand', (p) => void (p.land_pattern.row_spacing = v))}
+              onCommit={(v) => patchPkg(t("Reihenabstand"), (p) => void (p.land_pattern.row_spacing = v))}
             />
             {quad && (
               <LpNumber
-                label="Reihenabstand oben/unten"
+                label={t("Reihenabstand oben/unten")}
                 value={lp.row_spacing_y}
-                placeholder="wie links/rechts"
-                hint="Bei rechteckigem Körper nötig (gleicher Bezug wie links/rechts)"
-                onCommit={(v) => patchPkg('Reihenabstand oben/unten', (p) => void (p.land_pattern.row_spacing_y = v))}
+                placeholder={t("wie links/rechts")}
+                hint={t("Bei rechteckigem Körper nötig (gleicher Bezug wie links/rechts)")}
+                onCommit={(v) => patchPkg(t("Reihenabstand oben/unten"), (p) => void (p.land_pattern.row_spacing_y = v))}
               />
             )}
-            <dt className="text-fg-subtle">Bezug</dt>
+            <dt className="text-fg-subtle">{t("Bezug")}</dt>
             <dd className="min-w-0 @[30rem]:col-span-3">
               <Select
                 size="sm"
-                aria-label="Bezug des Reihenabstands"
+                aria-label={t("Bezug des Reihenabstands")}
                 value={lp.row_spacing_reference}
-                onValueChange={(v) => patchPkg('Bezug des Reihenabstands', (p) => void (p.land_pattern.row_spacing_reference = v))}
+                onValueChange={(v) => patchPkg(t("Bezug des Reihenabstands"), (p) => void (p.land_pattern.row_spacing_reference = v))}
                 options={ROW_REFERENCES}
                 className="h-7 border-transparent bg-transparent px-1.5 text-xs shadow-none hover:border-line-strong"
               />
@@ -533,25 +525,25 @@ function PackageBlock({ code }: { code: string }) {
             {(lp.thermal_pad_width !== null || pkg.exposed_pad) && (
               <>
                 <LpNumber
-                  label="Thermal-Pad B"
+                  label={t("Thermal-Pad B")}
                   value={lp.thermal_pad_width}
-                  onCommit={(v) => patchPkg('Thermal-Pad Breite', (p) => void (p.land_pattern.thermal_pad_width = v))}
+                  onCommit={(v) => patchPkg(t("Thermal-Pad Breite"), (p) => void (p.land_pattern.thermal_pad_width = v))}
                 />
                 <LpNumber
-                  label="Thermal-Pad L"
+                  label={t("Thermal-Pad L")}
                   value={lp.thermal_pad_length}
-                  onCommit={(v) => patchPkg('Thermal-Pad Länge', (p) => void (p.land_pattern.thermal_pad_length = v))}
+                  onCommit={(v) => patchPkg(t("Thermal-Pad Länge"), (p) => void (p.land_pattern.thermal_pad_length = v))}
                 />
               </>
             )}
             {lp.notes && (
               <>
-                <dt className="text-fg-subtle">Notiz</dt>
+                <dt className="text-fg-subtle">{t("Notiz")}</dt>
                 <dd className="min-w-0 @[30rem]:col-span-3">
                   <CellInput
-                    aria-label="Notiz zu den Lötflächen"
+                    aria-label={t("Notiz zu den Lötflächen")}
                     value={lp.notes}
-                    onCommit={(v) => patchPkg('Notiz Lötflächen', (p) => void (p.land_pattern.notes = v))}
+                    onCommit={(v) => patchPkg(t("Notiz Lötflächen"), (p) => void (p.land_pattern.notes = v))}
                     className="text-fg-muted"
                   />
                 </dd>
@@ -559,7 +551,7 @@ function PackageBlock({ code }: { code: string }) {
             )}
           </dl>
         ) : (
-          <p className="text-xs text-fg-muted">Keine Empfehlung im Datenblatt – der Footprint wird nach IPC-7351B berechnet.</p>
+          <p className="text-xs text-fg-muted">{t("Keine Empfehlung im Datenblatt – der Footprint wird nach IPC-7351B berechnet.")}</p>
         )}
       </div>
     </article>
@@ -579,6 +571,7 @@ function LpNumber({
   placeholder?: string
   hint?: string
 }) {
+  useI18n()
   return (
     <>
       <dt className="text-fg-subtle" title={hint}>
@@ -618,53 +611,52 @@ function LayoutBlock({
   pitch: DimValue | undefined
   onChange: (what: string, patch: Partial<TerminalLayout>) => void
 }) {
+  useI18n()
   const count = (v: number | null) => (v === null || !Number.isFinite(v) || v < 1 ? null : Math.round(v))
   const pitchText = pitch ? formatNumber(pitch.nom ?? pitch.max ?? pitch.min ?? 0) : null
   return (
     <div className="border-t border-line px-3 pb-3 pt-2.5">
       <div className="mb-1.5 flex items-center gap-2">
-        <h4 className="micro-label">Anschlussanordnung</h4>
+        <h4 className="micro-label">{t("Anschlussanordnung")}</h4>
         <span className="min-w-0 truncate text-2xs text-fg-subtle">{layoutSummary(layout)}</span>
       </div>
       {needed && isDefaultLayout(layout) && (
         <p className="mb-2 flex items-start gap-1.5 text-2xs leading-4 text-warning-text">
           <TriangleAlert aria-hidden className="mt-0.5 size-3 shrink-0" />
-          Die Anschlüsse lassen sich nicht gleichmäßig auf vier Seiten verteilen – bitte die Anordnung aus der Zeichnung
-          eintragen.
-        </p>
+          {t("Die Anschlüsse lassen sich nicht gleichmäßig auf vier Seiten verteilen – bitte die Anordnung aus der Zeichnung eintragen.")}</p>
       )}
       <dl className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-0.5 text-xs @[30rem]:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)]">
-        <dt className="text-fg-subtle">Oben/unten je Seite</dt>
+        <dt className="text-fg-subtle">{t("Oben/unten je Seite")}</dt>
         <dd className="flex min-w-0 items-center gap-1">
           <NumberCell
-            aria-label="Anschlüsse oben und unten je Seite"
+            aria-label={t("Anschlüsse oben und unten je Seite")}
             digits={0}
             value={layout.pins_x}
-            placeholder="gleichmäßig"
-            onCommit={(v) => onChange('Anschlüsse oben/unten', { pins_x: count(v) })}
+            placeholder={t("gleichmäßig")}
+            onCommit={(v) => onChange(t("Anschlüsse oben/unten"), { pins_x: count(v) })}
             className="max-w-28 text-right"
           />
         </dd>
-        <dt className="text-fg-subtle">Links/rechts je Seite</dt>
+        <dt className="text-fg-subtle">{t("Links/rechts je Seite")}</dt>
         <dd className="flex min-w-0 items-center gap-1">
           <NumberCell
-            aria-label="Anschlüsse links und rechts je Seite"
+            aria-label={t("Anschlüsse links und rechts je Seite")}
             digits={0}
             value={layout.pins_y}
-            placeholder="gleichmäßig"
-            onCommit={(v) => onChange('Anschlüsse links/rechts', { pins_y: count(v) })}
+            placeholder={t("gleichmäßig")}
+            onCommit={(v) => onChange(t("Anschlüsse links/rechts"), { pins_y: count(v) })}
             className="max-w-28 text-right"
           />
         </dd>
         {full && (
           <>
-            <dt className="text-fg-subtle">Raster oben/unten</dt>
+            <dt className="text-fg-subtle">{t("Raster oben/unten")}</dt>
             <dd className="flex min-w-0 items-center gap-1">
               <NumberCell
-                aria-label="Raster der Anschlüsse oben und unten in mm"
+                aria-label={t("Raster der Anschlüsse oben und unten in mm")}
                 value={layout.pitch_x}
-                placeholder={pitchText ? `wie e (${pitchText})` : 'wie e'}
-                onCommit={(v) => onChange('Raster oben/unten', { pitch_x: v !== null && v > 0 ? v : null })}
+                placeholder={pitchText ? t("wie e ({0})", { "0": String(pitchText) }) : t("wie e")}
+                onCommit={(v) => onChange(t("Raster oben/unten"), { pitch_x: v !== null && v > 0 ? v : null })}
                 className="max-w-28 text-right"
               />
               <span className="text-2xs text-fg-subtle">mm</span>
@@ -673,20 +665,20 @@ function LayoutBlock({
             <dd className="min-w-0">
               <Select
                 size="sm"
-                aria-label="Lage von Pin 1"
+                aria-label={t("Lage von Pin 1")}
                 value={layout.pin1}
-                onValueChange={(v) => onChange('Lage von Pin 1', { pin1: v as TerminalLayout['pin1'] })}
+                onValueChange={(v) => onChange(t("Lage von Pin 1"), { pin1: v as TerminalLayout['pin1'] })}
                 options={PIN1_OPTIONS}
                 className="h-7 border-transparent bg-transparent px-1.5 text-xs shadow-none hover:border-line-strong"
               />
             </dd>
-            <dt className="text-fg-subtle">Fehlende Anschlüsse</dt>
+            <dt className="text-fg-subtle">{t("Fehlende Anschlüsse")}</dt>
             <dd className="min-w-0 @[30rem]:col-span-3">
               <CellInput
-                aria-label="Fehlende Anschlüsse (Positionen)"
+                aria-label={t("Fehlende Anschlüsse (Positionen)")}
                 value={layout.missing.join(', ')}
-                placeholder="keine – z. B. „14“"
-                onCommit={(v) => onChange('Fehlende Anschlüsse', { missing: parsePositions(v) })}
+                placeholder={t("keine – z. B. „14“")}
+                onCommit={(v) => onChange(t("Fehlende Anschlüsse"), { missing: parsePositions(v) })}
                 className="mono max-w-56"
               />
             </dd>
@@ -695,9 +687,7 @@ function LayoutBlock({
       </dl>
       {full && (
         <p className="mt-1.5 text-2xs leading-4 text-fg-subtle">
-          Positionen zählen ab Pin 1 gegen den Uhrzeigersinn, als wären alle bestückt; die Pins werden über die übrigen
-          Positionen durchnummeriert.
-        </p>
+          {t("Positionen zählen ab Pin 1 gegen den Uhrzeigersinn, als wären alle bestückt; die Pins werden über die übrigen Positionen durchnummeriert.")}</p>
       )}
     </div>
   )
@@ -717,6 +707,7 @@ function OriginMenu({
   onReplace: () => void
   onUnmerge: () => void
 }) {
+  useI18n()
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -729,22 +720,19 @@ function OriginMenu({
           )}
         >
           <Combine aria-hidden className="size-3 shrink-0" />
-          <span className="truncate">aus {origin.file}</span>
+          <span className="truncate">{t("aus ")}{origin.file}</span>
           <ChevronDown aria-hidden className="size-3 shrink-0" />
-          <span className="sr-only"> – Maße übernommen aus {origin.label || origin.package}, Aktionen</span>
+          <span className="sr-only"> {t(" – Maße übernommen aus ")}{origin.label || origin.package}{t(", Aktionen")}</span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-64">
         <DropdownMenuItem icon={<Eye />} description={origin.label || origin.package} onSelect={onShow}>
-          Zeichnung ansehen
-        </DropdownMenuItem>
-        <DropdownMenuItem icon={<Combine />} description="Maße aus einem anderen Datenblatt übernehmen" onSelect={onReplace}>
-          Andere Zeichnung wählen …
-        </DropdownMenuItem>
+          {t("Zeichnung ansehen")}</DropdownMenuItem>
+        <DropdownMenuItem icon={<Combine />} description={t("Maße aus einem anderen Datenblatt übernehmen")} onSelect={onReplace}>
+          {t("Andere Zeichnung wählen …")}</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem icon={<Undo2 />} description="Wieder die Angaben dieses Datenblatts" onSelect={onUnmerge}>
-          Übernahme aufheben …
-        </DropdownMenuItem>
+        <DropdownMenuItem icon={<Undo2 />} description={t("Wieder die Angaben dieses Datenblatts")} onSelect={onUnmerge}>
+          {t("Übernahme aufheben …")}</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -752,26 +740,24 @@ function OriginMenu({
 
 /** Gehäuse der gewählten Bestellnummern: Footprint-Entscheidung (IPC/Hersteller/vorhanden), Maße, Lötflächen. */
 export function PackagesSection() {
+  useI18n()
   const { extraction, device, codes, packageOnly } = useReview()
   const issues = sectionIssues(extraction.issues, 'gehaeuse', device, codes)
   const others = extraction.packages.filter((p) => !codes.includes(p.code))
   return (
-    <Section id="gehaeuse" title="Gehäuse" icon={<Box />} count={codes.length} issues={issues}>
+    <Section id="gehaeuse" title={t("Gehäuse")} icon={<Box />} count={codes.length} issues={issues}>
       <div className="flex flex-col gap-3">
         {packageOnly && (
-          <Callout tone="info" icon={<FileStack />} title="Gehäusezeichnung ohne Bauteil">
-            Hier entsteht nur der Footprint („Footprint speichern“, in die PcbLib). Für das vollständige Bauteil die Maße
-            mit „Einem Bauteil geben …“ in das Datenblatt des Bauteils übernehmen – oder dort unter „Gehäuse“ mit „Maße
-            übernehmen …“.
-          </Callout>
+          <Callout tone="info" icon={<FileStack />} title={t("Gehäusezeichnung ohne Bauteil")}>
+            {t("Hier entsteht nur der Footprint („Footprint speichern“, in die PcbLib). Für das vollständige Bauteil die Maße mit „Einem Bauteil geben …“ in das Datenblatt des Bauteils übernehmen – oder dort unter „Gehäuse“ mit „Maße übernehmen …“.")}</Callout>
         )}
         {codes.map((code) => (
           <PackageBlock key={code} code={code} />
         ))}
-        {codes.length === 0 && <p className="text-xs text-fg-muted">Keine Bestellnummer gewählt.</p>}
+        {codes.length === 0 && <p className="text-xs text-fg-muted">{t("Keine Bestellnummer gewählt.")}</p>}
         {others.length > 0 && (
           <p className="text-2xs text-fg-subtle">
-            Ohne gewählte Bestellnummer: {others.map((p) => packageLabel(p)).join(', ')}
+            {t("Ohne gewählte Bestellnummer: ")}{others.map((p) => packageLabel(p)).join(', ')}
           </p>
         )}
       </div>

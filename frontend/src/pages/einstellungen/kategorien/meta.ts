@@ -1,3 +1,4 @@
+import { t as translate } from '@/lib/i18n'
 /** Metadaten des Schema-Designers: Feldarten, Einheiten, Symbole, Farbpalette und Namensregeln (wie im Backend). */
 import {
   Binary,
@@ -133,32 +134,32 @@ export function normalizeName(name: string): string {
 
 export function validateTableName(name: string, existing: CategoryDef[], current?: string): string | null {
   const cleaned = normalizeName(name)
-  if (!cleaned) return 'Bitte einen Tabellennamen eingeben.'
+  if (!cleaned) return translate("Bitte einen Tabellennamen eingeben.")
   if (!TABLE_RE.test(cleaned)) {
-    return 'Nur Buchstaben A–Z (ohne Umlaute), Ziffern, Leerzeichen, „-“ und „_“; am Anfang ein Buchstabe, höchstens 64 Zeichen.'
+    return translate("Nur Buchstaben A–Z (ohne Umlaute), Ziffern, Leerzeichen, „-“ und „_“; am Anfang ein Buchstabe, höchstens 64 Zeichen.")
   }
-  if (/^(pf_|sqlite_)/i.test(cleaned)) return 'Namen mit „pf_“ oder „sqlite_“ am Anfang sind für PartForge reserviert.'
+  if (/^(pf_|sqlite_)/i.test(cleaned)) return translate("Namen mit „pf_“ oder „sqlite_“ am Anfang sind für PartForge reserviert.")
   const folded = cleaned.toLowerCase()
   if (existing.some((c) => c.table.toLowerCase() === folded && c.table.toLowerCase() !== current?.toLowerCase())) {
-    return `Eine Tabelle „${cleaned}“ gibt es bereits.`
+    return translate("Eine Tabelle „{value1}“ gibt es bereits.", { value1: cleaned })
   }
   return null
 }
 
 export function validateColumnName(name: string, fields: FieldDef[], current?: string): string | null {
   const cleaned = normalizeName(name)
-  if (!cleaned) return 'Bitte einen Spaltennamen eingeben.'
-  if (cleaned.length > 64) return 'Höchstens 64 Zeichen.'
+  if (!cleaned) return translate("Bitte einen Spaltennamen eingeben.")
+  if (cleaned.length > 64) return translate("Höchstens 64 Zeichen.")
   if (!/^[\x20-\x7E]+$/.test(cleaned)) {
-    return 'Keine Umlaute oder Sonderzeichen – der Spaltenname wird zum Altium-Parameter. Die Beschriftung darf deutsch sein.'
+    return translate("Keine Umlaute oder Sonderzeichen – der Spaltenname wird zum Altium-Parameter. Die Beschriftung ist frei wählbar.")
   }
   const bad = [...new Set(cleaned.split('').filter((ch) => FORBIDDEN_COLUMN_CHARS.has(ch)))]
-  if (bad.length) return `Nicht erlaubt: ${bad.join(' ')} (stört DbLib bzw. Vorlagen).`
-  if (!/^[A-Za-z0-9]/.test(cleaned)) return 'Muss mit einem Buchstaben oder einer Ziffer beginnen.'
-  if (/^pf /i.test(cleaned)) return 'Namen mit „PF “ am Anfang sind für PartForge-Verwaltungsfelder reserviert.'
+  if (bad.length) return translate("Nicht erlaubt: {value1} (stört DbLib bzw. Vorlagen).", { value1: bad.join(' ') })
+  if (!/^[A-Za-z0-9]/.test(cleaned)) return translate("Muss mit einem Buchstaben oder einer Ziffer beginnen.")
+  if (/^pf /i.test(cleaned)) return translate("Namen mit „PF “ am Anfang sind für PartForge-Verwaltungsfelder reserviert.")
   const folded = cleaned.toLowerCase()
   if (fields.some((f) => f.column.toLowerCase() === folded && f.column.toLowerCase() !== current?.toLowerCase())) {
-    return `Das Feld „${cleaned}“ gibt es bereits.`
+    return translate("Das Feld „{value1}“ gibt es bereits.", { value1: cleaned })
   }
   return null
 }

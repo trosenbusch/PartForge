@@ -1,3 +1,4 @@
+import { t, useI18n } from '@/lib/i18n'
 import { ExternalLink, FileScan, MoreHorizontal, RotateCcw, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
@@ -76,6 +77,7 @@ const NO_DEVICE: DeviceData = {
 
 /** Prüfansicht (drei Spalten): PDF-Seiten · extrahierte Daten · Live-Vorschau, darunter die Übernahmeleiste. */
 export function ReviewView({ ds }: { ds: DatasheetDetail }) {
+  useI18n()
   const navigate = useNavigate()
   const ai = useAiStatus().data
   const actions = useImportActions()
@@ -133,15 +135,15 @@ export function ReviewView({ ds }: { ds: DatasheetDetail }) {
 
   const askDelete = async () => {
     const ok = await confirm({
-      title: `„${(ds.has_extraction && ds.title) || ds.original_name}“ löschen?`,
-      description: 'Eintrag, Analyse und Seitenbilder werden entfernt. Angelegte Bauteile bleiben unverändert, ihre PDF-Verknüpfung bleibt erhalten.',
-      confirmLabel: 'Löschen',
+      title: t("„{0}“ löschen?", { "0": String((ds.has_extraction && ds.title) || ds.original_name) }),
+      description: t("Eintrag, Analyse und Seitenbilder werden entfernt. Angelegte Bauteile bleiben unverändert, ihre PDF-Verknüpfung bleibt erhalten."),
+      confirmLabel: t("Löschen"),
       destructive: true,
       onConfirm: () => remove.mutateAsync({ id: ds.id }),
     })
     if (ok) {
       resetDraft(ds.id)
-      toast.success('Datenblatt gelöscht', { description: ds.original_name })
+      toast.success(t("Datenblatt gelöscht"), { description: ds.original_name })
       navigate('/import', { replace: true })
     }
   }
@@ -149,7 +151,7 @@ export function ReviewView({ ds }: { ds: DatasheetDetail }) {
   useRegisterCommands([
     {
       id: 'import.reanalyze',
-      title: 'Datenblatt neu analysieren …',
+      title: t("Datenblatt neu analysieren …"),
       subtitle: ds.original_name,
       group: 'Aktionen',
       icon: FileScan,
@@ -157,16 +159,16 @@ export function ReviewView({ ds }: { ds: DatasheetDetail }) {
       when: () => actions.aiReady,
       run: () => setReanalyzeOpen(true),
     },
-    { id: 'import.pdf', title: 'PDF des Datenblatts öffnen', group: 'Aktionen', icon: ExternalLink, run: () => void openPdf(ds) },
+    { id: 'import.pdf', title: t("PDF des Datenblatts öffnen"), group: 'Aktionen', icon: ExternalLink, run: () => void openPdf(ds) },
   ])
 
   const title = device?.base_part || (ds.has_extraction && ds.title) || ds.original_name
   const subtitle = [
-    packageOnly ? 'Gehäusezeichnung' : null,
+    packageOnly ? t("Gehäusezeichnung") : null,
     extraction?.manufacturer || ds.manufacturer,
     ds.original_name,
-    plural(ds.page_count, 'Seite', 'Seiten'),
-    ds.extracted ? `analysiert ${formatRelativeTime(ds.extracted)}` : null,
+    plural(ds.page_count, t("Seite"), t("Seiten")),
+    ds.extracted ? t("analysiert {0}", { "0": String(formatRelativeTime(ds.extracted)) }) : null,
   ]
     .filter(Boolean)
     .join(' · ')
@@ -180,32 +182,28 @@ export function ReviewView({ ds }: { ds: DatasheetDetail }) {
         ) : null}
         {ds.has_extraction && (
           <Button variant="spark" leftIcon={<FileScan />} disabled={!actions.aiReady} onClick={() => setReanalyzeOpen(true)}>
-            Neu analysieren
-          </Button>
+            {t("Neu analysieren")}</Button>
         )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <IconButton label="Weitere Aktionen" icon={<MoreHorizontal />} tooltip={false} />
+            <IconButton label={t("Weitere Aktionen")} icon={<MoreHorizontal />} tooltip={false} />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="min-w-56">
             <DropdownMenuItem icon={<ExternalLink />} onSelect={() => void openPdf(ds)}>
-              PDF öffnen
-            </DropdownMenuItem>
+              {t("PDF öffnen")}</DropdownMenuItem>
             <DropdownMenuItem
               icon={<RotateCcw />}
               disabled={!ds.has_extraction}
-              description="Kategorie, Auswahl, Werte und Footprint-Wahl"
+              description={t("Kategorie, Auswahl, Werte und Footprint-Wahl")}
               onSelect={() => {
                 resetDraft(ds.id)
-                toast.info('Entscheidungen zurückgesetzt', { description: 'Es gilt wieder der Vorschlag von Claude.' })
+                toast.info(t("Entscheidungen zurückgesetzt"), { description: t("Es gilt wieder der Vorschlag von Claude.") })
               }}
             >
-              Entscheidungen zurücksetzen
-            </DropdownMenuItem>
+              {t("Entscheidungen zurücksetzen")}</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem icon={<Trash2 />} destructive onSelect={() => void askDelete()}>
-              Datenblatt löschen …
-            </DropdownMenuItem>
+              {t("Datenblatt löschen …")}</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </PageActions>
@@ -225,7 +223,7 @@ export function ReviewView({ ds }: { ds: DatasheetDetail }) {
           minSize={360}
           maxSize={720}
           minRest={260}
-          label="Breite des Hinweises"
+          label={t("Breite des Hinweises")}
           start={<PdfColumn ds={ds} />}
           end={<NotAnalyzedPanel ds={ds} aiReady={actions.aiReady} aiStatus={ai} onAnalyze={() => setReanalyzeOpen(true)} />}
           className="min-h-0 flex-1"
@@ -243,12 +241,11 @@ export function ReviewView({ ds }: { ds: DatasheetDetail }) {
           <EmptyState
             illustration="offline"
             titleAs="h2"
-            title="Analyse konnte nicht geladen werden"
+            title={t("Analyse konnte nicht geladen werden")}
             description={errorMessage(extractionQ.error)}
             actions={
               <Button variant="secondary" onClick={() => void extractionQ.refetch()}>
-                Erneut versuchen
-              </Button>
+                {t("Erneut versuchen")}</Button>
             }
           />
         </div>
@@ -284,19 +281,18 @@ export function ReviewView({ ds }: { ds: DatasheetDetail }) {
           minSize={360}
           maxSize={720}
           minRest={260}
-          label="Breite des Hinweises"
+          label={t("Breite des Hinweises")}
           start={<PdfColumn ds={ds} extraction={extraction} />}
           end={
             <div className="flex h-full items-center justify-center bg-bg p-6">
               <EmptyState
                 illustration="search-empty"
                 titleAs="h2"
-                title="Kein Bauteil erkannt"
-                description="Claude hat in den gelesenen Seiten kein bestellbares Bauteil gefunden. Am besten die Seiten mit Pinbelegung und Bestellangaben selbst auswählen und erneut analysieren."
+                title={t("Kein Bauteil erkannt")}
+                description={t("Claude hat in den gelesenen Seiten kein bestellbares Bauteil gefunden. Am besten die Seiten mit Pinbelegung und Bestellangaben selbst auswählen und erneut analysieren.")}
                 actions={
                   <Button variant="spark" leftIcon={<FileScan />} disabled={!actions.aiReady} onClick={() => setReanalyzeOpen(true)}>
-                    Seiten wählen und analysieren
-                  </Button>
+                    {t("Seiten wählen und analysieren")}</Button>
                 }
               />
             </div>
@@ -358,7 +354,7 @@ export function ReviewView({ ds }: { ds: DatasheetDetail }) {
             collapsible
             collapsed={pdfCollapsed}
             onCollapsedChange={(c) => useReviewUi.getState().setPdfCollapsed(c)}
-            label="Breite der PDF-Seiten"
+            label={t("Breite der PDF-Seiten")}
             start={<PdfColumn ds={ds} extraction={extraction} device={device} onCollapse={() => useReviewUi.getState().setPdfCollapsed(true)} />}
             end={
               // Die Datenspalte bekommt den Rest (mindestens 384 px), die Vorschau hat eine feste, einklappbare Breite.
@@ -372,7 +368,7 @@ export function ReviewView({ ds }: { ds: DatasheetDetail }) {
                 collapsible
                 collapsed={previewCollapsed}
                 onCollapsedChange={(c) => useReviewUi.getState().setPreviewCollapsed(c)}
-                label="Breite der Vorschau"
+                label={t("Breite der Vorschau")}
                 start={<DataColumn state={state} pdfCollapsed={pdfCollapsed} />}
                 end={<PreviewColumn />}
                 className="h-full"
@@ -390,6 +386,7 @@ export function ReviewView({ ds }: { ds: DatasheetDetail }) {
 
 /** Vollflächiger Arbeitsbereich unter der Topbar (kein Seiten-Scroll – die Spalten scrollen selbst). */
 function Workspace({ children }: { children: ReactNode }) {
+  useI18n()
   return (
     <PageBody width="full" flush className="flex h-[calc(100dvh-var(--pf-topbar-height,3.5rem))] min-h-[36rem] flex-col border-t border-line">
       {children}

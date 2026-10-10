@@ -1,3 +1,5 @@
+import { useLocalizedMemo } from '@/components/preview/useLocalizedMemo'
+import { t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Footprint als SVG (mm, +Y oben, Draufsicht) auf dunkler Leiterplatten-Leinwand (beide Themes):
  * Pads (alle Formen, Drehung, Bohrungen/Langlöcher), Linien/Bögen/Flächen/Texte je logischer Lage in Altium-nahen
@@ -11,7 +13,6 @@ import {
   useEffect,
   useId,
   useImperativeHandle,
-  useMemo,
   useRef,
   useState,
   type KeyboardEvent,
@@ -546,6 +547,7 @@ function DimLabel({ x, y, width, text, rotate }: { x: number; y: number; width: 
 }
 
 function DimensionLayer({ layout }: { layout: DimLayout[] }) {
+  useI18n()
   return (
     <g style={{ pointerEvents: 'none' }} aria-hidden>
       {layout.map((l, i) => {
@@ -559,7 +561,7 @@ function DimensionLayer({ layout }: { layout: DimLayout[] }) {
         }
         return (
           <g key={i}>
-            <title>{d.title}</title>
+            <title>{tr(d.title)}</title>
             {/* Hilfslinien: von der Padkante bis knapp über die Maßlinie */}
             {isH ? (
               <path
@@ -586,7 +588,7 @@ function DimensionLayer({ layout }: { layout: DimLayout[] }) {
             <path d={arrowsOut ? arrow(lo, 1) : arrow(lo, -1)} fill={DIM_COLOR} />
             <path d={arrowsOut ? arrow(hi, -1) : arrow(hi, 1)} fill={DIM_COLOR} />
             {/* Beschriftung (senkrechte Maße gedreht auf der Linie – stapelt sich nicht seitlich) */}
-            <DimLabel x={l.lx} y={l.ly} width={l.labelW} text={d.label} rotate={!isH} />
+            <DimLabel x={l.lx} y={l.ly} width={l.labelW} text={tr(d.label)} rotate={!isH} />
           </g>
         )
       })}
@@ -715,29 +717,30 @@ export function FootprintCanvas({
   'aria-label': ariaLabel,
   ref,
 }: FootprintCanvasProps) {
+  useI18n()
   const uid = useId().replace(/:/g, '')
   const [sizeRef, size, node] = useElementSize<HTMLDivElement>()
-  const parsedCalc: FootprintCalc | null = useMemo(() => parseFootprintCalc(calc), [calc])
+  const parsedCalc: FootprintCalc | null = useLocalizedMemo(() => parseFootprintCalc(calc), [calc])
 
   const [innerLayers, setInnerLayers] = useState<LayerVisibility>(defaultLayers ?? {})
   const overrides = layersProp ?? innerLayers
-  const visible = useMemo(() => ({ ...DEFAULT_LAYER_VISIBILITY, ...overrides }), [overrides])
+  const visible = useLocalizedMemo(() => ({ ...DEFAULT_LAYER_VISIBILITY, ...overrides }), [overrides])
   const toggleLayer = (layer: CanvasLayer) => {
     const next = { ...overrides, [layer]: !visible[layer] }
     if (layersProp === undefined) setInnerLayers(next)
     onLayersChange?.(next)
   }
 
-  const present = useMemo(() => (spec ? footprintLayers(spec) : []), [spec])
+  const present = useLocalizedMemo(() => (spec ? footprintLayers(spec) : []), [spec])
 
-  const box = useMemo(() => {
+  const box = useLocalizedMemo(() => {
     if (!spec) return null
     const b = footprintBBox(spec, { bodies: true })
     if (parsedCalc?.courtyard) boxAddBox(b, parsedCalc.courtyard)
     return isEmptyBox(b) ? null : b
   }, [spec, parsedCalc])
 
-  const dims = useMemo(
+  const dims = useLocalizedMemo(
     () => (spec && (showDimensions ?? Boolean(parsedCalc)) ? footprintDimensions(spec, parsedCalc) : null),
     [spec, parsedCalc, showDimensions],
   )
@@ -784,13 +787,13 @@ export function FootprintCanvas({
     onZoomChangeRef.current?.(zoomRounded)
   }, [zoomRounded])
 
-  const highlightSet = useMemo(() => new Set(highlight ?? []), [highlight])
-  const pads = useMemo(() => spec?.pads ?? [], [spec])
+  const highlightSet = useLocalizedMemo(() => new Set(highlight ?? []), [highlight])
+  const pads = useLocalizedMemo(() => spec?.pads ?? [], [spec])
 
   // ------------------------------------------------------------------ Hover / Tastatur
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   const [keyIndex, setKeyIndex] = useState<number | null>(null)
-  const sortedPads = useMemo(
+  const sortedPads = useLocalizedMemo(
     () =>
       pads
         .map((p, i) => [p, i] as const)
@@ -829,7 +832,7 @@ export function FootprintCanvas({
 
   const [announce, setAnnounce] = useState('')
   const describePad = (p: Pad) =>
-    `Pad ${p.designator}, ${PAD_SHAPE_LABEL[p.shape] ?? p.shape}, ${formatMm(p.width)} mal ${formatMm(p.height)} Millimeter`
+    tr("Pad {value0}, {value1}, {value2} mal {value3} Millimeter", { value0: String(p.designator), value1: String(tr(PAD_SHAPE_LABEL[p.shape]) ?? p.shape), value2: String(formatMm(p.width)), value3: String(formatMm(p.height)) })
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (pz.handleKey(e)) {
@@ -865,12 +868,12 @@ export function FootprintCanvas({
   const hasSpec = Boolean(spec && (pads.length || (spec.tracks ?? []).length))
   const courtyard = parsedCalc?.courtyard ?? (spec ? footprintBBox(spec, { layers: ['courtyard'], bodies: false }) : null)
   const sizeBox: Box | null = courtyard && !isEmptyBox(courtyard) ? courtyard : box
-  const label = ariaLabel ?? (spec ? `Footprint ${spec.name}, ${pads.length} Pads` : 'Footprintvorschau')
+  const label = ariaLabel ?? (spec ? tr("Footprint {value0}, {value1} Pads", { value0: String(spec.name), value1: String(pads.length) }) : tr('Footprintvorschau'))
 
   const tooltipAnchor = activePad ? pz.toScreen(activePad.x, activePad.y) : null
 
   // BGA: Ballnummern erst ab lesbarer Größe – darunter ein Hinweis im Info-Etikett
-  const ballGrid = useMemo(() => (spec ? isBallGrid(spec, parsedCalc) : false), [spec, parsedCalc])
+  const ballGrid = useLocalizedMemo(() => (spec ? isBallGrid(spec, parsedCalc) : false), [spec, parsedCalc])
   const ballNumbersHidden =
     ballGrid && showPadNumbers && pads.length > 0 && pads.every((p) => padNumberLayout(p).size * bucket < BALL_NUMBER_MIN_PX)
 
@@ -902,7 +905,7 @@ export function FootprintCanvas({
         pz.wheelRef(el)
       }}
       role="application"
-      aria-roledescription="Footprintvorschau"
+      aria-roledescription={tr("Footprintvorschau")}
       aria-label={label}
       aria-describedby={`${uid}-help`}
       // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex
@@ -973,23 +976,23 @@ export function FootprintCanvas({
             hasSpec &&
             calloutLayout.map(({ c, target, rect, anchor }, i) => (
               <g key={i} style={{ pointerEvents: 'none' }} aria-hidden>
-                <title>{c.title}</title>
+                <title>{tr(c.title)}</title>
                 <path d={`M ${target.x} ${target.y} L ${anchor.x} ${anchor.y}`} stroke={DIM_COLOR} strokeOpacity={0.7} strokeWidth={1} />
                 <circle cx={target.x} cy={target.y} r={2.2} fill={DIM_COLOR} stroke="rgba(8,11,16,0.9)" strokeWidth={1} />
-                <DimLabel x={rect.x + rect.w / 2} y={rect.y + rect.h / 2} width={rect.w} text={c.label} />
+                <DimLabel x={rect.x + rect.w / 2} y={rect.y + rect.h / 2} width={rect.w} text={tr(c.label)} />
               </g>
             ))}
         </svg>
       )}
 
-      {!hasSpec && <div className="absolute inset-0 flex items-center justify-center text-ui text-[#9AA4B6]">Kein Footprint</div>}
+      {!hasSpec && <div className="absolute inset-0 flex items-center justify-center text-ui text-[#9AA4B6]">{tr("Kein Footprint")}</div>}
 
       {showInfo && hasSpec && spec && (
         <div className="pointer-events-none absolute left-3 top-3 z-10 flex max-w-[calc(100%-1.5rem)] flex-wrap items-center gap-2">
           <CanvasBadge tone="board">
             <span className="mono truncate font-medium text-[#EEF2F8]">{spec.name}</span>
             <span className={cn('whitespace-nowrap', CHROME_MUTED.board)}>
-              {pads.length} {pads.length === 1 ? 'Pad' : 'Pads'}
+              {pads.length} {pads.length === 1 ? tr('Pad') : tr('Pads')}
               {size.width >= 460 && sizeBox && ` · ${formatMm(boxWidth(sizeBox))} × ${formatMm(boxHeight(sizeBox))} mm`}
               {size.width >= 460 && (spec.height ?? parsedCalc?.height)
                 ? ` · H ${formatMm(spec.height ?? parsedCalc?.height ?? 0)}`
@@ -1016,7 +1019,7 @@ export function FootprintCanvas({
         <div
           ref={legendRef}
           role="group"
-          aria-label="Lagen"
+          aria-label={tr("Lagen")}
           className={cn(
             'absolute bottom-3 left-3 z-10 flex max-w-[calc(100%-1.5rem)] flex-wrap items-center gap-1 rounded-control p-1',
             CHROME_SURFACE.board,
@@ -1031,7 +1034,7 @@ export function FootprintCanvas({
                 key={layer}
                 type="button"
                 aria-pressed={on}
-                title={`${LAYERS[layer].label} (${LAYERS[layer].altium}) ${on ? 'ausblenden' : 'einblenden'}`}
+                title={`${LAYERS[layer].label} (${LAYERS[layer].altium}) ${on ? tr('ausblenden') : tr('einblenden')}`}
                 onClick={() => toggleLayer(layer)}
                 className={cn(
                   'flex h-6 items-center gap-1.5 rounded-[6px] px-2 text-2xs font-medium outline-none transition-colors focus-ring',
@@ -1039,7 +1042,7 @@ export function FootprintCanvas({
                 )}
               >
                 <LegendSwatch layer={layer} on={on} />
-                {LAYERS[layer].label}
+                {tr(LAYERS[layer].label)}
               </button>
             )
           })}
@@ -1065,11 +1068,11 @@ export function FootprintCanvas({
                       <span key={l} className="size-2 rounded-full ring-1 ring-[#0D1118]" style={{ background: layerColor(l) }} />
                     ))}
                 </span>
-                Lagen
+                {tr("Lagen")}
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" side="top" className="min-w-56">
-              <DropdownMenuLabel>Lagen</DropdownMenuLabel>
+              <DropdownMenuLabel>{tr("Lagen")}</DropdownMenuLabel>
               {present.map((l) => (
                 <DropdownMenuCheckboxItem
                   key={l}
@@ -1079,7 +1082,7 @@ export function FootprintCanvas({
                 >
                   <span className="flex items-center gap-2">
                     <span aria-hidden className="size-2.5 rounded-[3px]" style={{ background: layerColor(l) }} />
-                    {LAYERS[l].label}
+                    {tr(LAYERS[l].label)}
                   </span>
                 </DropdownMenuCheckboxItem>
               ))}
@@ -1093,7 +1096,7 @@ export function FootprintCanvas({
         <div className="pointer-events-none absolute bottom-3 left-3 z-10">
           <CanvasBadge tone="board">
             <ZoomIn aria-hidden className="size-3.5 text-[#9AA4B6]" />
-            <span className={CHROME_MUTED.board}>Zum Lesen der Ballnummern hineinzoomen</span>
+            <span className={CHROME_MUTED.board}>{tr("Zum Lesen der Ballnummern hineinzoomen")}</span>
           </CanvasBadge>
         </div>
       )}
@@ -1118,7 +1121,7 @@ export function FootprintCanvas({
           <div className="flex items-baseline gap-2">
             <span className="mono rounded-sm bg-white/12 px-1.5 text-2xs font-semibold text-white">{activePad.designator}</span>
             <span className="text-ui font-semibold text-white">
-              {PAD_SHAPE_LABEL[activePad.shape] ?? activePad.shape}
+              {tr(PAD_SHAPE_LABEL[activePad.shape]) ?? activePad.shape}
               {activePad.shape === 'roundrect' && ` (${activePad.corner_radius_pct ?? 50} %)`}
             </span>
           </div>
@@ -1132,32 +1135,32 @@ export function FootprintCanvas({
           {activePad.hole ? (
             <div className="mono tabular-nums text-[#9AA4B6]">
               {(activePad.hole_length ?? 0) > activePad.hole
-                ? `Langloch ${formatMm(activePad.hole_length ?? 0)} × ${formatMm(activePad.hole)}`
-                : `Bohrung Ø ${formatMm(activePad.hole)}`}
-              {activePad.plated === false ? ' · nicht durchkontaktiert' : ''}
+                ? tr("Langloch {value0} × {value1}", { value0: String(formatMm(activePad.hole_length ?? 0)), value1: String(formatMm(activePad.hole)) })
+                : tr("Bohrung Ø {value0}", { value0: String(formatMm(activePad.hole)) })}
+              {activePad.plated === false ? tr(' · nicht durchkontaktiert') : ''}
             </div>
           ) : (
             <div className="text-[#9AA4B6]">
-              {activePad.side === 'bottom' ? 'Unterseite' : 'Oberseite'} (SMD)
-              {activePad.thermal ? ' · Thermal-Pad' : ''}
-              {activePad.paste === false ? ' · ohne Paste' : ''}
+              {activePad.side === 'bottom' ? tr('Unterseite') : tr('Oberseite')} (SMD)
+              {activePad.thermal ? tr(' · Thermal-Pad') : ''}
+              {activePad.paste === false ? tr(' · ohne Paste') : ''}
             </div>
           )}
         </CanvasTooltip>
       )}
 
       {interactive && hasSpec && (
-        <CanvasKeyHint tone="board">Pfeiltasten verschieben · +/− zoomen · 0 einpassen · N nächstes Pad</CanvasKeyHint>
+        <CanvasKeyHint tone="board">{tr("Pfeiltasten verschieben · +/− zoomen · 0 einpassen · N nächstes Pad")}</CanvasKeyHint>
       )}
 
       <p id={`${uid}-help`} className="sr-only">
         {spec
-          ? `${pads.length} Pads: ${sortedPads
+          ? tr("{value0} Pads: {value1}{value2}. Maße in Millimeter. ", { value0: String(pads.length), value1: String(sortedPads
               .slice(0, 64)
               .map((i) => pads[i].designator)
-              .join(', ')}${pads.length > 64 ? ' …' : ''}. Maße in Millimeter. `
+              .join(', ')), value2: String(pads.length > 64 ? ' …' : '') })
           : ''}
-        Mit N das nächste Pad ansagen, Pfeiltasten verschieben, Plus und Minus zoomen, 0 passt ein.
+        {tr("Mit N das nächste Pad ansagen, Pfeiltasten verschieben, Plus und Minus zoomen, 0 passt ein.")}
       </p>
       <div className="sr-only" aria-live="polite">
         {announce}

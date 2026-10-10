@@ -1,3 +1,4 @@
+import { metadataLabel, t as translate, useI18n } from '@/lib/i18n'
 /**
  * Texte einer Kategorie: Wertfeld, Kommentar- und Beschreibungsvorlage mit Live-Vorschau an einem echten Bauteil.
  * Beides rendert das Backend exakt: die gespeicherten Vorlagen über `render-templates`, der Entwurf über
@@ -121,6 +122,7 @@ export function TemplatesPanel({
   onChange: (patch: Partial<CategoryDraft>) => void
   dirty: boolean
 }) {
+  const { t: translate } = useI18n()
   const table = category.table
   const fields = category.fields
   const samples = useSampleParts(table)
@@ -133,8 +135,8 @@ export function TemplatesPanel({
 
   const renderFields: RenderField[] = useMemo(() => fields.map((f) => ({ column: f.column, unit: f.unit })), [fields])
   const tplFields: TemplateField[] = useMemo(
-    () => fields.map((f) => ({ name: f.column, label: f.label, kind: f.kind, unit: f.unit })),
-    [fields],
+    () => fields.map((f) => ({ name: f.column, label: metadataLabel(f.label, translate), kind: f.kind, unit: f.unit })),
+    [fields, translate],
   )
   const templatesChanged =
     draft.value_field !== saved.value_field ||
@@ -150,18 +152,18 @@ export function TemplatesPanel({
   const differences = templatesChanged && savedResult && draftResult ? AUTO.filter((c) => (savedResult[c] ?? '') !== (draftResult[c] ?? '')) : []
 
   const valueGroups: SelectGroupDef[] = [
-    { label: '', options: [{ value: NONE, label: 'Kein Wertfeld', description: '„Value“ bleibt leer bzw. wird von Hand gepflegt' }] },
+    { label: '', options: [{ value: NONE, label: translate("Kein Wertfeld"), description: translate("„Value“ bleibt leer bzw. wird von Hand gepflegt") }] },
     {
-      label: 'Messwerte',
+      label: translate("Messwerte"),
       options: fields
         .filter((f) => f.kind === 'quantity' || f.kind === 'range')
-        .map((f) => ({ value: f.column, label: f.label, description: `${f.column}${f.unit ? ` · ${f.unit}` : ''}` })),
+        .map((f) => ({ value: f.column, label: metadataLabel(f.label, translate), description: `${f.column}${f.unit ? ` · ${f.unit}` : ''}` })),
     },
     {
-      label: 'Weitere Felder',
+      label: translate("Weitere Felder"),
       options: fields
         .filter((f) => f.kind !== 'quantity' && f.kind !== 'range' && !f.system && !['Value', 'Comment', 'Description'].includes(f.column))
-        .map((f) => ({ value: f.column, label: f.label, description: f.column })),
+        .map((f) => ({ value: f.column, label: metadataLabel(f.label, translate), description: f.column })),
     },
   ].filter((g) => g.options.length > 0)
 
@@ -169,11 +171,9 @@ export function TemplatesPanel({
     const count = category.part_count ?? 0
     let result = null as RegenerateTextsResult | null
     const ok = await confirm({
-      title: `Texte von ${plural(count, 'Bauteil', 'Bauteilen')} neu erzeugen?`,
-      description: `Wert, Kommentar und Beschreibung entstehen neu aus den gespeicherten Vorlagen. Von Hand geänderte Texte werden dabei überschrieben – direkt danach nimmt „Rückgängig“ das zurück.${
-        count > AUTO_BACKUP_THRESHOLD ? ' Vorher legt PartForge automatisch eine Sicherung der Datenbank an.' : ''
-      }`,
-      confirmLabel: 'Texte überschreiben',
+      title: translate("Texte von {value1} neu erzeugen?", { value1: plural(count, translate("Bauteil"), translate("Bauteilen")) }),
+      description: translate("Wert, Kommentar und Beschreibung entstehen neu aus den gespeicherten Vorlagen. Von Hand geänderte Texte werden dabei überschrieben – direkt danach nimmt „Rückgängig“ das zurück.{value1}", { value1: count > AUTO_BACKUP_THRESHOLD ? translate(" Vorher legt PartForge automatisch eine Sicherung der Datenbank an.") : '' }),
+      confirmLabel: translate("Texte überschreiben"),
       destructive: true,
       icon: <RefreshCw />,
       onConfirm: async () => {
@@ -182,14 +182,14 @@ export function TemplatesPanel({
     })
     if (!ok || !result) return
     if (result.updated === 0) {
-      toast.info('Keine Änderungen', { description: `Alle Texte in „${category.label}“ entsprachen bereits den Vorlagen.` })
+      toast.info(translate("Keine Änderungen"), { description: translate("Alle Texte in „{value1}“ entsprachen bereits den Vorlagen.", { value1: metadataLabel(category.label, translate) }) })
     } else {
       showChangeToast(
         qc,
         table,
         result,
-        `Texte von ${plural(result.updated, 'Bauteil', 'Bauteilen')} neu erzeugt`,
-        `${category.label}: Wert, Kommentar und Beschreibung aus den Vorlagen.`,
+        translate("Texte von {value1} neu erzeugt", { value1: plural(result.updated, translate("Bauteil"), translate("Bauteilen")) }),
+        translate("{value1}: Wert, Kommentar und Beschreibung aus den Vorlagen.", { value1: metadataLabel(category.label, translate) }),
       )
     }
   }
@@ -206,13 +206,13 @@ export function TemplatesPanel({
     <div className="flex flex-col">
       {/* Beispielbauteil für alle Vorschauen */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line bg-surface-2/30 px-5 py-2.5">
-        <span className="text-xs text-fg-muted">Vorschau mit</span>
+        <span className="text-xs text-fg-muted">{translate("Vorschau mit")}</span>
         {samples.isPending ? (
           <Skeleton className="h-7 w-64 rounded-control" />
         ) : rows.length > 0 ? (
           <Select
             size="sm"
-            aria-label="Bauteil für die Vorschau"
+            aria-label={translate("Bauteil für die Vorschau")}
             value={part?.['Part Number'] ?? ''}
             onValueChange={setPn}
             options={partOptions}
@@ -220,13 +220,13 @@ export function TemplatesPanel({
             contentClassName="max-w-[28rem]"
           />
         ) : (
-          <span className="text-xs text-fg-subtle">noch keinem Bauteil – die Vorschau erscheint, sobald „{category.label}“ Bauteile hat.</span>
+          <span className="text-xs text-fg-subtle">{translate("noch keinem Bauteil – die Vorschau erscheint, sobald „")}{metadataLabel(category.label, translate)}{translate("“ Bauteile hat.")}</span>
         )}
-        {(server.isFetching || samples.isFetching || draftServer.isFetching) && <Spinner size={12} label="Vorschau wird berechnet" />}
+        {(server.isFetching || samples.isFetching || draftServer.isFetching) && <Spinner size={12} label={translate("Vorschau wird berechnet")} />}
       </div>
 
       <div className="flex flex-col divide-y divide-line px-5">
-        <TextRow label="Wertfeld" help="Sein formatierter Wert landet in der Spalte „Value“ (z. B. Widerstand → 10kΩ).">
+        <TextRow label={translate("Wertfeld")} help={translate("Sein formatierter Wert landet in der Spalte „Value“ (z. B. Widerstand → 10kΩ).")}>
           <div className="flex max-w-[22rem] flex-col gap-1">
             <Select
               value={draft.value_field ?? NONE}
@@ -236,16 +236,15 @@ export function TemplatesPanel({
             <PreviewLine
               loading={loading}
               value={draft.value_field ? previewOf('Value') : undefined}
-              empty={draft.value_field ? '–' : 'von Hand gepflegt'}
+              empty={draft.value_field ? '–' : translate("von Hand gepflegt")}
             />
           </div>
         </TextRow>
         <TextRow
-          label="Kommentar"
+          label={translate("Kommentar")}
           help={
             <>
-              Steht im Schaltplan neben dem Bezeichner. Format <span className="mono">:rkm</span> ergibt 4k7, 100n, 6V3.
-            </>
+              {translate("Steht im Schaltplan neben dem Bezeichner. Format")}{' '}<span className="mono">:rkm</span> {' '}{translate("ergibt 4k7, 100n, 6V3.")}</>
           }
         >
           <TemplateTokenInput
@@ -254,17 +253,17 @@ export function TemplatesPanel({
             fields={tplFields}
             preview={previewOf('Comment')}
             previewLoading={loading}
-            placeholder="z. B. {Resistance:rkm}"
+            placeholder={translate("z. B. {Resistance:rkm}")}
           />
         </TextRow>
-        <TextRow label="Beschreibung" help="Erscheint in Altium und in der Bauteiltabelle. Teile, deren Felder leer sind, fallen weg.">
+        <TextRow label={translate("Beschreibung")} help={translate("Erscheint in Altium und in der Bauteiltabelle. Teile, deren Felder leer sind, fallen weg.")}>
           <TemplateTokenInput
             value={draft.description_template}
             onValueChange={(v) => onChange({ description_template: v })}
             fields={tplFields}
             preview={previewOf('Description')}
             previewLoading={loading}
-            placeholder="z. B. RES {Size} {Resistance} {Tolerance}"
+            placeholder={translate("z. B. RES {Size} {Resistance} {Tolerance}")}
           />
         </TextRow>
       </div>
@@ -273,37 +272,34 @@ export function TemplatesPanel({
       {part && differences.length > 0 && savedResult && draftResult && (
         <div className="border-t border-line bg-surface-2/30 px-5 py-4">
           <h3 className="mb-2 text-ui font-semibold text-fg">
-            Änderung an <span className="mono font-medium">{part['Part Number']}</span>
+            {translate("Änderung an")}{' '}<span className="mono font-medium">{part['Part Number']}</span>
           </h3>
-          <div role="table" aria-label="Gespeichert und Entwurf im Vergleich" className="flex flex-col divide-y divide-line">
+          <div role="table" aria-label={translate("Gespeichert und Entwurf im Vergleich")} className="flex flex-col divide-y divide-line">
             <div role="row" className="grid grid-cols-[6.5rem_minmax(0,1fr)_1rem_minmax(0,1fr)] gap-3 pb-1.5">
               <span role="columnheader" className="micro-label">
-                Spalte
-              </span>
+                {translate("Spalte")}</span>
               <span role="columnheader" className="micro-label">
-                Bisher
-              </span>
+                {translate("Bisher")}</span>
               <span aria-hidden />
               <span role="columnheader" className="micro-label">
-                Mit Entwurf
-              </span>
+                {translate("Mit Entwurf")}</span>
             </div>
             {differences.map((col) => (
               <div key={col} role="row" className="grid grid-cols-[6.5rem_minmax(0,1fr)_1rem_minmax(0,1fr)] items-baseline gap-3 py-2">
                 <span role="rowheader" className="text-xs text-fg-muted">
-                  {AUTO_LABEL[col]}
+                  {translate(AUTO_LABEL[col])}
                 </span>
                 <span
                   role="cell"
                   className={cn('mono min-w-0 break-words text-xs text-fg-subtle', savedResult[col] && 'line-through decoration-fg-subtle/60')}
                 >
-                  {savedResult[col] || <span className="font-sans">leer</span>}
+                  {savedResult[col] || <span className="font-sans">{translate("leer")}</span>}
                 </span>
                 <span aria-hidden className="self-center">
                   <ArrowRight className="size-3.5 text-accent" />
                 </span>
                 <span role="cell" className="mono min-w-0 break-words text-xs text-fg">
-                  {draftResult[col] || <span className="font-sans text-fg-subtle">leer</span>}
+                  {draftResult[col] || <span className="font-sans text-fg-subtle">{translate("leer")}</span>}
                 </span>
               </div>
             ))}
@@ -313,19 +309,16 @@ export function TemplatesPanel({
 
       <div className="flex flex-wrap items-center gap-3 border-t border-line px-5 py-3">
         <p className="min-w-0 flex-1 text-xs text-fg-muted">
-          Neue und geänderte Bauteile erhalten die Texte automatisch. Bestehende Bauteile behalten ihre Texte, bis Sie sie neu
-          erzeugen.
-        </p>
+          {translate("Neue und geänderte Bauteile erhalten die Texte automatisch. Bestehende Bauteile behalten ihre Texte, bis Sie sie neu erzeugen.")}</p>
         <Button
           size="sm"
           variant="secondary"
           leftIcon={<RefreshCw />}
           onClick={() => void runRegenerate()}
           disabled={dirty || !(category.part_count ?? 0)}
-          title={dirty ? 'Zuerst speichern' : !(category.part_count ?? 0) ? 'Noch keine Bauteile' : undefined}
+          title={dirty ? translate("Zuerst speichern") : !(category.part_count ?? 0) ? translate("Noch keine Bauteile") : undefined}
         >
-          Texte neu erzeugen …
-        </Button>
+          {translate("Texte neu erzeugen …")}</Button>
       </div>
     </div>
   )
@@ -336,6 +329,7 @@ export function TemplatesPanel({
  * Standardzeile (`Field layout="row"`, Eingabe höchstens 22 rem) würde sie abschneiden.
  */
 function TextRow({ label, help, children }: { label: string; help: ReactNode; children: ReactNode }) {
+  useI18n()
   const id = `tx-${useId().replace(/:/g, '')}`
   const helpId = `${id}-help`
   return (
@@ -359,9 +353,10 @@ function TextRow({ label, help, children }: { label: string; help: ReactNode; ch
 
 /** Vorschauzeile unter dem Wertfeld – im Stil der Vorschau des TemplateTokenInput */
 function PreviewLine({ loading, value, empty }: { loading: boolean; value: string | undefined; empty: string }) {
+  useI18n()
   return (
     <div className="flex min-h-6 items-center gap-2 text-xs" aria-live="polite">
-      <span className="micro-label shrink-0">Vorschau</span>
+      <span className="micro-label shrink-0">{translate("Vorschau")}</span>
       {loading ? (
         <Spinner size={12} tone="accent" />
       ) : value ? (

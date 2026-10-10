@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { Check } from 'lucide-react'
 import { ToggleGroup } from 'radix-ui'
 import type { ReactNode } from 'react'
@@ -38,6 +39,7 @@ export function ChipGroup<V extends string = string>({
   className,
   'aria-label': ariaLabel,
 }: ChipGroupProps<V>) {
+  useI18n()
   return (
     <ToggleGroup.Root
       type="multiple"

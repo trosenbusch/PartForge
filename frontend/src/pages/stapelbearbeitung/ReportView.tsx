@@ -1,9 +1,4 @@
-/**
- * Bericht der Stapelbearbeitung: Zusammenfassung („12 von 340 Bauteilen weichen vom Hausstil ab“, je Regel die Anzahl –
- * die Chips filtern die Bauteilliste), die Bibliotheken (Lagenrollen, Lagen-Kopf, Schriften) und die Bauteile mit
- * ihren Änderungen. Ist der Bericht veraltet (Auswahl, Regeln, Rollen oder Hausstil seit der Prüfung geändert),
- * klebt ein Hinweis mit „Erneut prüfen“ oben; während einer neuen Prüfung bleibt der alte Bericht gedimmt stehen.
- */
+import { useI18n } from '@/lib/i18n'
 import { CircleCheck, FolderInput, RefreshCw, TriangleAlert } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
@@ -48,6 +43,7 @@ export function ReportView({
   allSources,
   onWidenSources,
 }: ReportViewProps) {
+  const { t: tr } = useI18n()
   const { report } = stored
   const stats = reportStats(report)
   const [filter, setFilter] = useState<string[]>([])
@@ -62,7 +58,7 @@ export function ReportView({
             <Callout
               tone="warning"
               live
-              title="Der Bericht ist veraltet"
+              title={tr("Der Bericht ist veraltet")}
               actions={
                 <Button
                   size="sm"
@@ -71,13 +67,10 @@ export function ReportView({
                   disabled={Boolean(recheckBlocked)}
                   loading={recheckPending}
                 >
-                  Erneut prüfen
-                </Button>
+                  {tr("Erneut prüfen")}</Button>
               }
             >
-              Auswahl, Regeln, Lagenrollen oder Hausstil haben sich seit der Prüfung geändert – „Anwenden“ ist erst nach
-              erneutem Prüfen möglich.
-              {recheckBlocked && <span className="block text-warning-text">{recheckBlocked}</span>}
+              {tr("Auswahl, Regeln, Lagenrollen oder Hausstil haben sich seit der Prüfung geändert – „Anwenden“ ist erst nach erneutem Prüfen möglich.")}{recheckBlocked && <span className="block text-warning-text">{recheckBlocked}</span>}
             </Callout>
           </div>
         </div>
@@ -92,24 +85,22 @@ export function ReportView({
           <Card>
             <EmptyState
               illustration="search-empty"
-              title="Keine passenden Symbole oder Footprints"
+              title={tr("Keine passenden Symbole oder Footprints")}
               description={
                 allSources
-                  ? 'In der Auswahl gibt es keine registrierten Symbole oder Footprints dieser Bibliothek. Vorhandene Altium-Bibliotheken lassen sich mit dem Bibliotheksimport übernehmen.'
-                  : 'Die Auswahl umfasst nur die gewählte Herkunft – die Bauteile stammen vielleicht aus dem Generator oder aus Datenblättern. Weitere Herkunft wählen oder Bibliotheken übernehmen.'
+                  ? tr("In der Auswahl gibt es keine registrierten Symbole oder Footprints dieser Bibliothek. Vorhandene Altium-Bibliotheken lassen sich mit dem Bibliotheksimport übernehmen.")
+                  : tr("Die Auswahl umfasst nur die gewählte Herkunft – die Bauteile stammen vielleicht aus dem Generator oder aus Datenblättern. Weitere Herkunft wählen oder Bibliotheken übernehmen.")
               }
               actions={
                 <>
                   {!allSources && (
                     <Button size="sm" onClick={onWidenSources}>
-                      Alle Herkünfte wählen
-                    </Button>
+                      {tr("Alle Herkünfte wählen")}</Button>
                   )}
                   <Button asChild size="sm" variant="ghost">
                     <Link to="/bibliotheksimport">
                       <FolderInput aria-hidden />
-                      Bibliotheksimport öffnen
-                    </Link>
+                      {tr("Bibliotheksimport öffnen")}</Link>
                   </Button>
                 </>
               }
@@ -152,10 +143,11 @@ function Summary({
   filter: string[]
   onFilterChange: (filter: string[]) => void
 }) {
+  const { t: tr } = useI18n()
   const { report } = stored
   const when = (
     <time dateTime={new Date(stored.finished).toISOString()} title={formatDateTime(stored.finished)}>
-      geprüft {formatRelativeTime(stored.finished)}
+      {tr("geprüft ")}{formatRelativeTime(stored.finished)}
     </time>
   )
   const meta = (
@@ -169,12 +161,10 @@ function Summary({
       <Card>
         <EmptyState
           illustration="all-good"
-          title="Alles im Hausstil"
-          description={`${plural(stats.checked, 'Bauteil', 'Bauteile')} geprüft – keine eingeschaltete Regel ändert etwas.${
-            stats.problemComponents || stats.unreadable
-              ? ' Einzelne Dateien oder Bauteile ließen sich nicht lesen (siehe unten).'
-              : ''
-          }`}
+          title={tr("Alles im Hausstil")}
+          description={tr("{0} geprüft – keine eingeschaltete Regel ändert etwas.{1}", { "0": String(plural(stats.checked, tr("Bauteil"), tr("Bauteile"))), "1": String(stats.problemComponents || stats.unreadable
+              ? tr(" Einzelne Dateien oder Bauteile ließen sich nicht lesen (siehe unten).")
+              : '') })}
         >
           <p className="text-xs text-fg-subtle">{meta}</p>
         </EmptyState>
@@ -188,19 +178,19 @@ function Summary({
   const options = [
     ...rules.map(([rule, n]) => ({ value: rule, label: ruleLabel(rule), meta: formatNumber(n) })),
     ...(stats.problemComponents
-      ? [{ value: PROBLEMS_FILTER, label: 'Probleme', meta: formatNumber(stats.problemComponents) }]
+      ? [{ value: PROBLEMS_FILTER, label: tr("Probleme"), meta: formatNumber(stats.problemComponents) }]
       : []),
   ]
   const ok = Math.max(0, stats.checked - stats.affected)
   const notes = [
     stats.headerLibraries > 0 &&
-      `Der Lagen-Kopf weicht in ${plural(stats.headerLibraries, 'Bibliothek', 'Bibliotheken')} ab – „Anwenden“ erneuert ihn.`,
+      tr("Der Lagen-Kopf weicht in {0} ab – „Anwenden“ erneuert ihn.", { "0": String(plural(stats.headerLibraries, tr("Bibliothek"), tr("Bibliotheken"))) }),
     stats.refused > 0 &&
-      `${plural(stats.refused, 'Bibliothek wird', 'Bibliotheken werden')} beim Anwenden übersprungen.`,
+      tr("{0} beim Anwenden übersprungen.", { "0": String(plural(stats.refused, tr("Bibliothek wird"), tr("Bibliotheken werden"))) }),
     stats.unreadable > 0 &&
       (stats.unreadable === 1
-        ? '1 Bibliothek ist nicht prüfbar und bleibt unverändert.'
-        : `${formatNumber(stats.unreadable)} Bibliotheken sind nicht prüfbar und bleiben unverändert.`),
+        ? tr("1 Bibliothek ist nicht prüfbar und bleibt unverändert.")
+        : tr("{0} Bibliotheken sind nicht prüfbar und bleiben unverändert.", { "0": String(formatNumber(stats.unreadable)) })),
   ].filter((n): n is string => Boolean(n))
 
   return (
@@ -208,14 +198,12 @@ function Summary({
       <h2 className="text-md font-semibold tracking-[-0.01em] text-fg">
         {stats.affected > 0 ? (
           <>
-            <span className="mono">{formatNumber(stats.affected)}</span> von{' '}
-            <span className="mono">{formatNumber(stats.checked)}</span> {stats.checked === 1 ? 'Bauteil' : 'Bauteilen'}{' '}
-            {stats.affected === 1 ? 'weicht' : 'weichen'} vom Hausstil ab
-          </>
+            <span className="mono">{formatNumber(stats.affected)}</span> {tr(" von")}{' '}
+            <span className="mono">{formatNumber(stats.checked)}</span> {stats.checked === 1 ? tr("Bauteil") : tr("Bauteilen")}{' '}
+            {stats.affected === 1 ? tr("weicht") : tr("weichen")} {tr(" vom Hausstil ab")}</>
         ) : (
           <>
-            Alle Bauteile im Hausstil – {plural(stats.headerLibraries, 'Lagen-Kopf weicht', 'Lagen-Köpfe weichen')} ab
-          </>
+            {tr("Alle Bauteile im Hausstil – ")}{plural(stats.headerLibraries, tr("Lagen-Kopf weicht"), tr("Lagen-Köpfe weichen"))} {' '}{tr("ab")}</>
         )}
       </h2>
       <p className="mt-0.5 text-xs text-fg-subtle">{meta}</p>
@@ -237,29 +225,25 @@ function Summary({
       <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-fg-muted">
         <li className="flex items-center gap-1.5">
           <CircleCheck aria-hidden className="size-3.5 text-success-text" />
-          <span className="mono font-medium text-fg">{formatNumber(ok)}</span> im Hausstil
-        </li>
+          <span className="mono font-medium text-fg">{formatNumber(ok)}</span> {tr(" im Hausstil")}</li>
         <li className="flex items-center gap-1.5">
           <span aria-hidden className="size-2 rounded-full bg-accent" />
           <span className="mono font-medium text-fg">{formatNumber(stats.affected)}</span>{' '}
-          {stats.affected === 1 ? 'weicht' : 'weichen'} ab
-        </li>
+          {stats.affected === 1 ? tr("weicht") : tr("weichen")} {' '}{tr("ab")}</li>
         {stats.problemComponents > 0 && (
           <li className="flex items-center gap-1.5">
             <TriangleAlert aria-hidden className="size-3.5 text-warning-text" />
-            <span className="mono font-medium text-fg">{formatNumber(stats.problemComponents)}</span> mit Problemen
-          </li>
+            <span className="mono font-medium text-fg">{formatNumber(stats.problemComponents)}</span> {tr(" mit Problemen")}</li>
         )}
       </ul>
 
       {options.length > 0 && (
         <div className="mt-4 flex flex-col gap-1.5">
           <span className="text-2xs text-fg-subtle" aria-hidden>
-            Bauteile je Regel – die Auswahl filtert die Liste unten
-          </span>
+            {tr("Bauteile je Regel – die Auswahl filtert die Liste unten")}</span>
           <ChipGroup
             size="sm"
-            aria-label="Bauteilliste nach Regel filtern"
+            aria-label={tr("Bauteilliste nach Regel filtern")}
             value={filter}
             onValueChange={onFilterChange}
             options={options}

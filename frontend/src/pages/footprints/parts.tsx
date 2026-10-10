@@ -1,3 +1,4 @@
+import { t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Kleine Bausteine des Footprint-Moduls: Abschnittskopf, aufleuchtende Messwerte, Kopierknopf.
  */
@@ -66,6 +67,7 @@ export function FlashValue({ value, children, className }: { value: string; chil
 
 /** Text in die Zwischenablage kopieren (Häkchen als Bestätigung) */
 export function CopyButton({ text, label, className }: { text: string | null | undefined; label: string; className?: string }) {
+  useI18n()
   const [done, setDone] = useState(false)
   useEffect(() => {
     if (!done) return
@@ -75,7 +77,7 @@ export function CopyButton({ text, label, className }: { text: string | null | u
   return (
     <IconButton
       size="xs"
-      label={done ? 'Kopiert' : label}
+      label={done ? tr('Kopiert') : label}
       icon={done ? <Check className="text-success-text" /> : <Copy />}
       disabled={!text}
       className={className}
@@ -85,7 +87,7 @@ export function CopyButton({ text, label, className }: { text: string | null | u
           await navigator.clipboard.writeText(text)
           setDone(true)
         } catch {
-          toast.error('Kopieren nicht möglich', { description: 'Die Zwischenablage ist in diesem Fenster gesperrt.' })
+          toast.error(tr('Kopieren nicht möglich'), { description: tr('Die Zwischenablage ist in diesem Fenster gesperrt.') })
         }
       }}
     />

@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { Separator as SeparatorPrimitive } from 'radix-ui'
 import type { ComponentProps } from 'react'
 import { cn } from '@/lib/cn'
@@ -8,6 +9,7 @@ export interface SeparatorProps extends ComponentProps<typeof SeparatorPrimitive
 }
 
 export function Separator({ className, orientation = 'horizontal', decorative = true, fade, ...props }: SeparatorProps) {
+  useI18n()
   return (
     <SeparatorPrimitive.Root
       orientation={orientation}

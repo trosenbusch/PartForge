@@ -1,3 +1,4 @@
+import { t, useI18n } from '@/lib/i18n'
 import { Fingerprint, RotateCcw, Sparkles } from 'lucide-react'
 import { useId } from 'react'
 import { CategoryIcon } from '@/components/data'
@@ -22,6 +23,7 @@ function identitySource(runs: readonly { kind: string; pages: number[]; error?: 
 }
 
 export function IdentitySection() {
+  useI18n()
   const { ds, extractionOut, extraction, device, proposal, choices, setChoices, categories, category } = useReview()
   const id = useId()
   const sourcePage = identitySource(extractionOut.runs, extractionOut.selected_pages.length ? extractionOut.selected_pages : ds.selected_pages)
@@ -59,17 +61,17 @@ export function IdentitySection() {
   return (
     <Section
       id="identitaet"
-      title="Identität"
+      title={t("Identität")}
       icon={<Fingerprint />}
       issues={issues}
-      aside={sourcePage ? <SourceChip pages={[sourcePage]} what={sourcePage === 1 ? 'Titelseite' : 'Angaben zum Bauteil'} /> : undefined}
+      aside={sourcePage ? <SourceChip pages={[sourcePage]} what={sourcePage === 1 ? t("Titelseite") : t("Angaben zum Bauteil")} /> : undefined}
     >
       {devices.length > 1 && (
         <div className="mb-3">
-          <FieldLabel hint={`${devices.length} Bauteile in diesem Datenblatt`}>Bauteil</FieldLabel>
+          <FieldLabel hint={t("{0} Bauteile in diesem Datenblatt", { "0": String(devices.length) })}>{t("Bauteil")}</FieldLabel>
           {devices.length <= 3 ? (
             <SegmentedControl
-              aria-label="Bauteil"
+              aria-label={t("Bauteil")}
               size="sm"
               value={device.base_part}
               onValueChange={switchDevice}
@@ -77,7 +79,7 @@ export function IdentitySection() {
             />
           ) : (
             <Select
-              aria-label="Bauteil"
+              aria-label={t("Bauteil")}
               size="sm"
               value={device.base_part}
               onValueChange={switchDevice}
@@ -89,15 +91,14 @@ export function IdentitySection() {
 
       <div className="grid gap-x-3 gap-y-3 @[30rem]:grid-cols-2">
         <div className="min-w-0">
-          <FieldLabel htmlFor={`${id}-cat`} hint={chosen && chosen === aiCategory ? undefined : aiCategory ? `Claude: ${aiCategory}` : 'nicht erkannt'}>
-            Kategorie
-          </FieldLabel>
+          <FieldLabel htmlFor={`${id}-cat`} hint={chosen && chosen === aiCategory ? undefined : aiCategory ? `Claude: ${aiCategory}` : t("nicht erkannt")}>
+            {t("Kategorie")}</FieldLabel>
           <div className="flex items-center gap-1.5">
             <Select
               id={`${id}-cat`}
               size="sm"
               value={chosen ?? undefined}
-              placeholder="Kategorie wählen …"
+              placeholder={t("Kategorie wählen …")}
               invalid={!chosen}
               onValueChange={(v) => setChoices((c) => ({ ...c, category: v }))}
               options={categories.map((c) => ({
@@ -109,8 +110,7 @@ export function IdentitySection() {
                   c.table === aiCategory ? (
                     <Badge variant="spark" size="sm">
                       <Sparkles />
-                      KI
-                    </Badge>
+                      {t("KI")}</Badge>
                   ) : undefined,
               }))}
               className="min-w-0 flex-1"
@@ -118,7 +118,7 @@ export function IdentitySection() {
             {choices.category && choices.category !== aiCategory && aiCategory && (
               <IconButton
                 size="sm"
-                label="Vorschlag von Claude wiederherstellen"
+                label={t("Vorschlag von Claude wiederherstellen")}
                 icon={<RotateCcw />}
                 onClick={() => setChoices((c) => ({ ...c, category: null }))}
               />
@@ -127,15 +127,13 @@ export function IdentitySection() {
           {category && chosen === aiCategory && (
             <p className="mt-1 flex items-center gap-1 text-2xs text-spark-text">
               <Sparkles aria-hidden className="size-3" />
-              Von Claude zugeordnet
-            </p>
+              {t("Von Claude zugeordnet")}</p>
           )}
         </div>
 
         <div className="min-w-0">
-          <FieldLabel htmlFor={`${id}-mfr`} hint={choices.values.Manufacturer ? 'geändert' : undefined}>
-            Hersteller
-          </FieldLabel>
+          <FieldLabel htmlFor={`${id}-mfr`} hint={choices.values.Manufacturer ? t("geändert") : undefined}>
+            {t("Hersteller")}</FieldLabel>
           <div className="flex items-center gap-1.5">
             <CommitInput
               id={`${id}-mfr`}
@@ -145,7 +143,7 @@ export function IdentitySection() {
               containerClassName="flex-1"
             />
             {choices.values.Manufacturer && (
-              <IconButton size="sm" label="Wert aus dem Datenblatt verwenden" icon={<RotateCcw />} onClick={() => setValue('Manufacturer', null)} />
+              <IconButton size="sm" label={t("Wert aus dem Datenblatt verwenden")} icon={<RotateCcw />} onClick={() => setValue('Manufacturer', null)} />
             )}
           </div>
         </div>
@@ -153,50 +151,49 @@ export function IdentitySection() {
         <div className="min-w-0 @[30rem]:col-span-2">
           <FieldLabel
             htmlFor={`${id}-desc`}
-            hint={choices.values.Description ? 'eigener Text' : generatedDescription ? 'aus der Vorlage der Kategorie' : undefined}
+            hint={choices.values.Description ? t("eigener Text") : generatedDescription ? t("aus der Vorlage der Kategorie") : undefined}
           >
-            Beschreibung
-          </FieldLabel>
+            {t("Beschreibung")}</FieldLabel>
           <div className="flex items-center gap-1.5">
             <CommitInput
               id={`${id}-desc`}
               size="sm"
               value={description}
-              placeholder={generatedDescription === null ? 'Eigener Text für alle Bestellnummern …' : undefined}
+              placeholder={generatedDescription === null ? t("Eigener Text für alle Bestellnummern …") : undefined}
               onCommit={(v) => setValue('Description', v === generatedDescription ? null : v)}
               containerClassName="flex-1"
             />
             {choices.values.Description && (
-              <IconButton size="sm" label="Beschreibung aus der Vorlage" icon={<RotateCcw />} onClick={() => setValue('Description', null)} />
+              <IconButton size="sm" label={t("Beschreibung aus der Vorlage")} icon={<RotateCcw />} onClick={() => setValue('Description', null)} />
             )}
           </div>
           {generatedDescription === null && !choices.values.Description && generated.length > 0 && (
             <ul className="mt-1 flex flex-col gap-0.5 text-2xs leading-4 text-fg-subtle">
               {generated.slice(0, 3).map((g) => (
                 <li key={g} className="truncate">
-                  Vorlage: <span className="mono text-fg-muted">{g}</span>
+                  {t("Vorlage: ")}<span className="mono text-fg-muted">{g}</span>
                 </li>
               ))}
             </ul>
           )}
           {device.description && (
             <p className="mt-1 line-clamp-2 text-2xs leading-4 text-fg-subtle">
-              Im Datenblatt: <span className="text-fg-muted">{device.description}</span>
+              {t("Im Datenblatt: ")}<span className="text-fg-muted">{device.description}</span>
             </p>
           )}
         </div>
 
         <div className="min-w-0 @[30rem]:col-span-2">
-          <FieldLabel>Datenblatt-Link der Bauteile</FieldLabel>
+          <FieldLabel>{t("Datenblatt-Link der Bauteile")}</FieldLabel>
           {ds.source_url ? (
             <SegmentedControl
-              aria-label="Datenblatt-Link"
+              aria-label={t("Datenblatt-Link")}
               size="sm"
               value={choices.link === 'file' ? 'file' : 'url'}
               onValueChange={(v) => setChoices((c) => ({ ...c, link: v === 'file' ? 'file' : 'auto' }))}
               options={[
-                { value: 'url', label: 'Hersteller-Adresse' },
-                { value: 'file', label: 'PDF in der Bibliothek' },
+                { value: 'url', label: t("Hersteller-Adresse") },
+                { value: 'file', label: t("PDF in der Bibliothek") },
               ]}
             />
           ) : null}
@@ -210,13 +207,13 @@ export function IdentitySection() {
         <dl className="mt-3 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 border-t border-line pt-3 text-2xs">
           {extraction.title && (
             <>
-              <dt className="text-fg-subtle">Titel</dt>
+              <dt className="text-fg-subtle">{t("Titel")}</dt>
               <dd className="line-clamp-2 text-fg-muted">{extraction.title}</dd>
             </>
           )}
           {extraction.document_id && (
             <>
-              <dt className="text-fg-subtle">Dokument</dt>
+              <dt className="text-fg-subtle">{t("Dokument")}</dt>
               <dd className="mono text-fg-muted">
                 {extraction.document_id}
                 {extraction.date ? ` · ${extraction.date}` : ''}

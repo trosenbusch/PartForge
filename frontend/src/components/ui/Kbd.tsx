@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 import { formatHotkey, hotkeyLabels, type Hotkey } from '@/lib/hotkeys'
@@ -27,6 +28,7 @@ const keyClass = {
 
 /** Tastenkappe(n): <Kbd hotkey="mod+k" /> oder <Kbd>Esc</Kbd> */
 export function Kbd({ hotkey, keys, children, size = 'sm', tone = 'default', decorative = true, className }: KbdProps) {
+  useI18n()
   const list = hotkey ? hotkeyLabels(hotkey) : keys
   const cap = cn(
     'inline-flex select-none items-center justify-center font-sans font-medium leading-none tabular-nums',

@@ -1,3 +1,4 @@
+import { metadataLabel, useI18n } from '@/lib/i18n'
 /**
  * Arbeitsbereich einer Kategorie: Werkzeugleiste (Suche, Filter, Ansichten, Spalten, Export, Import), aktive Filter,
  * Tabelle mit Mehrfachauswahl und Leiste, Detailbereich – plus Massenbearbeitung, Duplizieren, Löschen, Befehle
@@ -72,6 +73,7 @@ const filterKey = (filters: PartFilter[]) =>
 const sortKey = (sort: SortSpec[]) => sort.map((s) => `${s.column}:${s.desc ? 'desc' : 'asc'}`).join(',')
 
 export function CategoryWorkspace({ category, newPns, onNewPns, onNewPart, onImport, onTotalChange }: CategoryWorkspaceProps) {
+  const { t } = useI18n()
   const table = category.table
   const navigate = useNavigate()
   const qc = useQueryClient()
@@ -167,17 +169,17 @@ export function CategoryWorkspace({ category, newPns, onNewPns, onNewPart, onImp
     let cancelled = false
     const report = (result: LocateResult) => {
       if (result === 'hidden') {
-        toast.info('Bauteil ist durch Suche oder Filter ausgeblendet', {
+        toast.info(t("Bauteil ist durch Suche oder Filter ausgeblendet"), {
           id: 'pn-hidden',
           description: detailPn,
-          action: { label: 'Zurücksetzen', onClick: resetQuery },
+          action: { label: t("Zurücksetzen"), onClick: resetQuery },
         })
       } else if (result === 'unsorted') {
-        toast.info('Bauteil geöffnet – in der Tabelle nicht markiert', {
+        toast.info(t("Bauteil geöffnet – in der Tabelle nicht markiert"), {
           id: 'pn-unsorted',
-          description: 'Bei dieser Sortierung lässt sich die Zeile nicht anspringen.',
+          description: t("Bei dieser Sortierung lässt sich die Zeile nicht anspringen."),
           action: {
-            label: 'Nach Teilenummer sortieren',
+            label: t("Nach Teilenummer sortieren"),
             onClick: () => {
               grid.current?.sortByPartNumber()
               window.setTimeout(() => void grid.current?.locate(detailPn), 400)
@@ -194,12 +196,12 @@ export function CategoryWorkspace({ category, newPns, onNewPns, onNewPart, onImp
       else report(result)
     }
     // erst nach dem ersten Laden der Tabelle
-    const t = window.setTimeout(() => void attempt(8), 120)
+    const locateTimer = window.setTimeout(() => void attempt(8), 120)
     return () => {
       cancelled = true
-      window.clearTimeout(t)
+      window.clearTimeout(locateTimer)
     }
-  }, [detailPn, resetQuery])
+  }, [detailPn, resetQuery, t])
 
   // ------------------------------------------------------------------ Breite (kompakte Werkzeugleiste)
   useEffect(() => {
@@ -251,10 +253,10 @@ export function CategoryWorkspace({ category, newPns, onNewPns, onNewPart, onImp
     try {
       const res = await partsApi.regenerateTexts(table, [pn])
       invalidateParts(qc, table, { counts: false })
-      if (res.updated) showChangeToast(qc, table, res, 'Texte aus den Vorlagen erzeugt', pn)
-      else toast.success('Texte entsprechen bereits den Vorlagen', { description: pn })
+      if (res.updated) showChangeToast(qc, table, res, t("Texte aus den Vorlagen erzeugt"), pn)
+      else toast.success(t("Texte entsprechen bereits den Vorlagen"), { description: pn })
     } catch (err) {
-      toast.error('Texte konnten nicht erzeugt werden', { description: errorMessage(err) })
+      toast.error(t("Texte konnten nicht erzeugt werden"), { description: errorMessage(err) })
     }
   }
 
@@ -316,13 +318,13 @@ export function CategoryWorkspace({ category, newPns, onNewPns, onNewPart, onImp
       setQuery(table, { search: '', filters: [], viewId: null })
       grid.current?.resetColumns()
       setLayoutDiffers(false)
-      if (!opts.silent) toast.success('Standardansicht', { id: 'view-applied', description: 'Ohne Suche und Filter, Standardspalten', duration: 1800 })
+      if (!opts.silent) toast.success(t("Standardansicht"), { id: 'view-applied', description: t("Ohne Suche und Filter, Standardspalten"), duration: 1800 })
       return
     }
     setQuery(table, { search: view.search ?? '', filters: fromPartFilters(view.filters, category.fields), viewId: view.id })
     grid.current?.applyView(view.columns, view.sort)
     setLayoutDiffers(false)
-    if (!opts.silent) toast.success(`Ansicht „${view.name}“`, { id: 'view-applied', duration: 1800 })
+    if (!opts.silent) toast.success(t("Ansicht „{1}“", { 1: view.name }), { id: 'view-applied', duration: 1800 })
   }
 
   // ------------------------------------------------------------------ Befehle (Strg+K) und Kürzel
@@ -349,7 +351,7 @@ export function CategoryWorkspace({ category, newPns, onNewPns, onNewPart, onImp
   useRegisterCommands([
     {
       id: 'parts.search',
-      title: `${category.label} durchsuchen`,
+      title: t("{1} durchsuchen", { 1: metadataLabel(category.label, t) }),
       group: 'Aktionen',
       icon: Search,
       hotkey: 'mod+f',
@@ -362,8 +364,8 @@ export function CategoryWorkspace({ category, newPns, onNewPns, onNewPart, onImp
     },
     {
       id: 'parts.export',
-      title: `${category.label} als Excel exportieren`,
-      subtitle: hasQuery ? 'Mit aktueller Suche und Filtern' : 'Alle Bauteile der Kategorie',
+      title: t("{1} als Excel exportieren", { 1: metadataLabel(category.label, t) }),
+      subtitle: hasQuery ? t("Mit aktueller Suche und Filtern") : t("Alle Bauteile der Kategorie"),
       group: 'Aktionen',
       icon: Download,
       priority: 40,
@@ -372,7 +374,7 @@ export function CategoryWorkspace({ category, newPns, onNewPns, onNewPart, onImp
     },
     {
       id: 'parts.export.csv',
-      title: `${category.label} als CSV exportieren`,
+      title: t("{1} als CSV exportieren", { 1: metadataLabel(category.label, t) }),
       group: 'Aktionen',
       icon: Download,
       priority: 39,
@@ -381,12 +383,12 @@ export function CategoryWorkspace({ category, newPns, onNewPns, onNewPart, onImp
     },
     {
       id: 'parts.filter',
-      title: 'Filter bearbeiten',
-      subtitle: category.label,
+      title: t("Filter bearbeiten"),
+      subtitle: metadataLabel(category.label, t),
       group: 'Aktionen',
       icon: ListFilter,
       priority: 35,
-      keywords: ['filter', 'bedingung', 'größer', 'kleiner'],
+      keywords: ['filter', 'bedingung', t("größer"), 'kleiner'],
       run: ({ close }) => {
         close()
         window.setTimeout(() => setFilterOpen(true), 0)
@@ -394,7 +396,7 @@ export function CategoryWorkspace({ category, newPns, onNewPns, onNewPart, onImp
     },
     {
       id: 'parts.filter.clear',
-      title: 'Suche und Filter zurücksetzen',
+      title: t("Suche und Filter zurücksetzen"),
       group: 'Aktionen',
       icon: FilterX,
       priority: 34,
@@ -403,7 +405,7 @@ export function CategoryWorkspace({ category, newPns, onNewPns, onNewPart, onImp
     },
     {
       id: 'parts.bulk',
-      title: `Auswahl bearbeiten (${selectionCount})`,
+      title: t("Auswahl bearbeiten ({1})", { 1: selectionCount }),
       group: 'Aktionen',
       icon: PencilLine,
       priority: 33,
@@ -412,8 +414,8 @@ export function CategoryWorkspace({ category, newPns, onNewPns, onNewPart, onImp
     },
     {
       id: 'parts.delete',
-      title: `Auswahl löschen (${selectionCount})`,
-      subtitle: 'Entf in der Tabelle',
+      title: t("Auswahl löschen ({1})", { 1: selectionCount }),
+      subtitle: t("Entf in der Tabelle"),
       group: 'Aktionen',
       icon: Trash2,
       priority: 32,
@@ -422,8 +424,8 @@ export function CategoryWorkspace({ category, newPns, onNewPns, onNewPart, onImp
     },
     {
       id: 'parts.columns.reset',
-      title: 'Spalten zurücksetzen',
-      subtitle: category.label,
+      title: t("Spalten zurücksetzen"),
+      subtitle: metadataLabel(category.label, t),
       group: 'Darstellung',
       icon: Columns3,
       keywords: ['spalten', 'breite', 'standard'],
@@ -431,8 +433,8 @@ export function CategoryWorkspace({ category, newPns, onNewPns, onNewPart, onImp
     },
     {
       id: 'parts.sort.pn',
-      title: 'Nach Teilenummer sortieren',
-      subtitle: category.label,
+      title: t("Nach Teilenummer sortieren"),
+      subtitle: metadataLabel(category.label, t),
       group: 'Darstellung',
       icon: ArrowDownAZ,
       keywords: ['sortierung', 'standard'],
@@ -440,7 +442,7 @@ export function CategoryWorkspace({ category, newPns, onNewPns, onNewPart, onImp
     },
     {
       id: 'parts.tree',
-      title: tree.collapsed ? 'Kategoriebaum einblenden' : 'Kategoriebaum ausblenden',
+      title: tree.collapsed ? t("Kategoriebaum einblenden") : t("Kategoriebaum ausblenden"),
       group: 'Darstellung',
       icon: PanelLeft,
       run: () => tree.setCollapsed(!tree.collapsed),
@@ -450,42 +452,42 @@ export function CategoryWorkspace({ category, newPns, onNewPns, onNewPart, onImp
   // ------------------------------------------------------------------ Leere Zustände
   const emptyState = useMemo<GridEmptyState>(
     () => ({
-      title: `Noch keine ${category.label}`,
-      description: 'Einzeln anlegen, als komplette Serie erzeugen, aus einem Datenblatt lesen oder aus einer Tabelle übernehmen.',
+      title: t("Noch keine {1}", { 1: metadataLabel(category.label, t) }),
+      description: t("Einzeln anlegen, als komplette Serie erzeugen, aus einem Datenblatt lesen oder aus einer Tabelle übernehmen."),
       illustration: 'no-parts',
       actions: (
         <>
           <Button variant="secondary" size="sm" leftIcon={<Layers />} onClick={() => navigate('/serien')}>
-            Serien-Assistent
+            {t("Serien-Assistent")}
           </Button>
           <Button variant="spark" size="sm" leftIcon={<FileScan />} onClick={() => navigate('/import')}>
-            Aus Datenblatt
+            {t("Aus Datenblatt")}
           </Button>
           <Button variant="secondary" size="sm" leftIcon={<Upload />} onClick={onImport}>
-            Tabelle importieren
+            {t("Tabelle importieren")}
           </Button>
           <Button variant="ghost" size="sm" leftIcon={<Plus />} onClick={onNewPart}>
-            Bauteil anlegen
+            {t("Bauteil anlegen")}
           </Button>
         </>
       ),
     }),
-    [category.label, navigate, onImport, onNewPart],
+    [category.label, navigate, onImport, onNewPart, t],
   )
   const noMatchState = useMemo<GridEmptyState>(
     () => ({
-      title: 'Keine Treffer',
+      title: t("Keine Treffer"),
       description: query.search.trim()
-        ? `Kein Bauteil in „${category.label}“ passt zu „${query.search.trim()}“${partFilters.length ? ' und den Filtern' : ''}.`
-        : `Kein Bauteil in „${category.label}“ erfüllt die Filter.`,
+        ? t("Kein Bauteil in „{1}“ passt zu „{2}“{3}.", { 1: metadataLabel(category.label, t), 2: query.search.trim(), 3: partFilters.length ? t(" und den Filtern") : '' })
+        : t("Kein Bauteil in „{1}“ erfüllt die Filter.", { 1: metadataLabel(category.label, t) }),
       illustration: 'search-empty',
       actions: (
         <Button variant="secondary" size="sm" leftIcon={<FilterX />} onClick={() => setQuery(table, { search: '', filters: [], viewId: null })}>
-          Suche und Filter zurücksetzen
+          {t("Suche und Filter zurücksetzen")}
         </Button>
       ),
     }),
-    [category.label, query.search, partFilters.length, setQuery, table],
+    [category.label, query.search, partFilters.length, setQuery, table, t],
   )
 
   // ------------------------------------------------------------------ Darstellung
@@ -494,7 +496,7 @@ export function CategoryWorkspace({ category, newPns, onNewPns, onNewPart, onImp
       setTotal(t)
       onTotalChange?.(t)
     },
-    [onTotalChange],
+    [onTotalChange, t],
   )
   const handleLoadError = useCallback((err: unknown) => setLoadFailed(err !== null), [])
   const loadedAll = coversLoaded && total !== null && selection.length < total
@@ -502,7 +504,7 @@ export function CategoryWorkspace({ category, newPns, onNewPns, onNewPart, onImp
   return (
     <div ref={rootRef} className={cn('flex h-full min-h-0 min-w-0 flex-col', tree.collapsed ? 'pl-2' : 'pl-4')}>
       <PartsToolbar
-        label={category.label}
+        label={metadataLabel(category.label, t)}
         search={query.search}
         onSearchChange={(s) => setSearch(table, s)}
         searchRef={searchRef}
@@ -552,8 +554,8 @@ export function CategoryWorkspace({ category, newPns, onNewPns, onNewPart, onImp
           const row = grid.current?.getFocusedRow() ?? selection[0]
           if (row) openDetail(row)
           else
-            toast.info('Zuerst eine Zeile wählen', {
-              description: 'Doppelklick auf eine Zeile, Klick auf die Teilenummer oder Enter öffnet die Details.',
+            toast.info(t("Zuerst eine Zeile wählen"), {
+              description: t("Doppelklick auf eine Zeile, Klick auf die Teilenummer oder Enter öffnet die Details."),
               id: 'detail-hint',
             })
         }}
@@ -588,7 +590,7 @@ export function CategoryWorkspace({ category, newPns, onNewPns, onNewPart, onImp
               onDatasheet={(row) => {
                 const link = String(row[DATASHEET] ?? '')
                 void openDatasheet(link, root).then((ok) => {
-                  if (!ok) toast.info('Datenblatt liegt als Datei vor', { description: `${link} – im Desktop-Programm öffnen.` })
+                  if (!ok) toast.info(t("Datenblatt liegt als Datei vor"), { description: t("{1} – im Desktop-Programm öffnen.", { 1: link }) })
                 })
               }}
               onDuplicate={async (rows) => setDuplicateRows(rows === 'selection' ? await resolveRows(selection) : rows)}

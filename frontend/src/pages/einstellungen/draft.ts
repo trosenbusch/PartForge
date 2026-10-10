@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 /**
  * Entwurfszustand der Einstellungsbereiche: Eingaben bleiben lokal, bis gespeichert wird.
  *
@@ -59,6 +60,7 @@ export function useWorkspaceDraft<T>(
   apply: (settings: WorkspaceSettings, value: T) => WorkspaceSettings,
   { label, savedDescription }: WorkspaceDraftOptions,
 ) {
+  const { t } = useI18n()
   const workspace = useWorkspace()
   const settings = workspace.data?.settings
   const root = workspace.data?.root ?? null
@@ -72,7 +74,7 @@ export function useWorkspaceDraft<T>(
     try {
       const info = await mutation.mutateAsync({ change: (current) => apply(current, value), root })
       d.commit(select(info.settings))
-      toast.success(`${label} gespeichert`, { id: `settings-saved-${label}`, description: savedDescription })
+      toast.success(t("{0} gespeichert", { "0": label }), { id: `settings-saved-${label}`, description: savedDescription })
       return true
     } catch {
       return false

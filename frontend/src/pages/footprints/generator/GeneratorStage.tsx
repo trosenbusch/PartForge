@@ -1,3 +1,4 @@
+import { localizeMessage, t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Bühne des Generators: große Footprint-Leinwand mit Bemaßung aus dem Rechenprotokoll, ein 3D-Reiter und – bei
  * schmalen Fenstern – der Reiter „Berechnung“ plus Messleiste unter der Leinwand. Die Ansicht bleibt beim Ändern
@@ -100,6 +101,7 @@ export function GeneratorStage({
   allowFullscreen = true,
   className,
 }: GeneratorStageProps) {
+  useI18n()
   const prefs = usePreviewPrefs()
   const [ownTab, setOwnTab] = useState<StageTab>(defaultTab)
   const requested = tabProp ?? ownTab
@@ -124,20 +126,20 @@ export function GeneratorStage({
 
   return (
     <div className={cn('@container/stage flex min-h-0 flex-col overflow-hidden rounded-card border border-line bg-surface shadow-card', className)}>
-      <h2 className="sr-only">Vorschau</h2>
+      <h2 className="sr-only">{tr("Vorschau")}</h2>
       <Tabs value={tab} onValueChange={(v) => setTab(v as StageTab)} variant="pill" className="flex min-h-0 flex-1 flex-col">
         <div className="flex h-11 shrink-0 items-center gap-2 border-b border-line px-2">
-          <TabsList aria-label="Ansicht">
+          <TabsList aria-label={tr("Ansicht")}>
             <TabsTrigger value="footprint" icon={<CircuitBoard />} className="h-7 px-2.5 text-xs [&_svg]:size-3.5">
               Footprint
             </TabsTrigger>
             <TabsTrigger value="3d" icon={<BoxIcon />} className="h-7 px-2.5 text-xs [&_svg]:size-3.5">
               3D
-              {spec && bodies === 0 && <span className="sr-only"> (keine 3D-Körper)</span>}
+              {spec && bodies === 0 && <span className="sr-only"> {tr("(keine 3D-Körper)")}</span>}
             </TabsTrigger>
             {calcPanel && (
               <TabsTrigger value="calc" icon={<Calculator />} className="h-7 px-2.5 text-xs [&_svg]:size-3.5">
-                Berechnung
+                {tr("Berechnung")}
                 {calcBadge}
               </TabsTrigger>
             )}
@@ -145,20 +147,20 @@ export function GeneratorStage({
           <div className="ml-auto flex items-center gap-0.5">
             {tab === 'footprint' && present.length > 0 && (
               <DropdownMenu>
-                <Tooltip content="Lagen ein- und ausblenden">
+                <Tooltip content={tr("Lagen ein- und ausblenden")}>
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      aria-label="Lagen"
+                      aria-label={tr("Lagen")}
                       className="flex h-7 items-center gap-1.5 rounded-control px-2 text-xs font-medium text-fg-muted outline-none transition-colors focus-ring hover:bg-surface-2 hover:text-fg data-[state=open]:bg-surface-2 data-[state=open]:text-fg"
                     >
                       <Layers aria-hidden className="size-3.5" />
-                      <span className="hidden @[40rem]/stage:inline">Lagen</span>
+                      <span className="hidden @[40rem]/stage:inline">{tr("Lagen")}</span>
                     </button>
                   </DropdownMenuTrigger>
                 </Tooltip>
                 <DropdownMenuContent align="end" className="min-w-60">
-                  <DropdownMenuLabel>Lagen</DropdownMenuLabel>
+                  <DropdownMenuLabel>{tr("Lagen")}</DropdownMenuLabel>
                   {present.map((l) => (
                     <DropdownMenuCheckboxItem
                       key={l}
@@ -168,7 +170,7 @@ export function GeneratorStage({
                     >
                       <span className="flex items-center gap-2">
                         <span aria-hidden className="size-2.5 rounded-sm" style={{ background: layerColor(l) }} />
-                        {LAYERS[l].label}
+                        {tr(LAYERS[l].label)}
                         <span className="text-2xs text-fg-subtle">{LAYERS[l].altium}</span>
                       </span>
                     </DropdownMenuCheckboxItem>
@@ -179,14 +181,14 @@ export function GeneratorStage({
                     onCheckedChange={(on) => prefs.set({ padNumbers: on === true })}
                     onSelect={(e) => e.preventDefault()}
                   >
-                    Pad-Nummern
+                    {tr("Pad-Nummern")}
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem
                     checked={prefs.dimensions}
                     onCheckedChange={(on) => prefs.set({ dimensions: on === true })}
                     onSelect={(e) => e.preventDefault()}
                   >
-                    Bemaßung (IPC‑7351)
+                    {tr("Bemaßung (IPC‑7351)")}
                   </DropdownMenuCheckboxItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -195,7 +197,7 @@ export function GeneratorStage({
               <>
                 <IconButton
                   size="sm"
-                  label={prefs.dimensions ? 'Bemaßung ausblenden' : 'Bemaßung einblenden'}
+                  label={prefs.dimensions ? tr('Bemaßung ausblenden') : tr('Bemaßung einblenden')}
                   icon={<Ruler />}
                   aria-pressed={prefs.dimensions}
                   className={pressed(prefs.dimensions)}
@@ -203,7 +205,7 @@ export function GeneratorStage({
                 />
                 <IconButton
                   size="sm"
-                  label={prefs.padNumbers ? 'Pad-Nummern ausblenden' : 'Pad-Nummern einblenden'}
+                  label={prefs.padNumbers ? tr('Pad-Nummern ausblenden') : tr('Pad-Nummern einblenden')}
                   icon={<Hash />}
                   aria-pressed={prefs.padNumbers}
                   className={pressed(prefs.padNumbers)}
@@ -215,31 +217,31 @@ export function GeneratorStage({
               <>
                 <IconButton
                   size="sm"
-                  label={prefs.autoRotate ? 'Drehung anhalten' : 'Automatisch drehen'}
+                  label={prefs.autoRotate ? tr('Drehung anhalten') : tr('Automatisch drehen')}
                   icon={<Rotate3d />}
                   aria-pressed={prefs.autoRotate}
                   className={pressed(prefs.autoRotate)}
                   onClick={() => prefs.set({ autoRotate: !prefs.autoRotate })}
                 />
-                <IconButton size="sm" label="Ansicht zurücksetzen" icon={<RotateCcw />} onClick={() => threeRef.current?.fit()} />
+                <IconButton size="sm" label={tr("Ansicht zurücksetzen")} icon={<RotateCcw />} onClick={() => threeRef.current?.fit()} />
               </>
             )}
             {drawing && (
               <>
                 <span aria-hidden className="mx-1 h-4 w-px bg-line-strong" />
                 <div className={cn('hidden items-center gap-0.5', calcPanel ? '@[40rem]/stage:flex' : '@[28rem]/stage:flex')}>
-                  <IconButton size="sm" label="Verkleinern" icon={<Minus />} onClick={() => active.current?.zoomOut()} />
+                  <IconButton size="sm" label={tr("Verkleinern")} icon={<Minus />} onClick={() => active.current?.zoomOut()} />
                   {tab === 'footprint' && (
                     <span className="mono w-10 text-center text-2xs text-fg-muted tabular-nums" aria-hidden>
                       {Math.round(zoom * 100)} %
                     </span>
                   )}
-                  <IconButton size="sm" label="Vergrößern" icon={<Plus />} onClick={() => active.current?.zoomIn()} />
+                  <IconButton size="sm" label={tr("Vergrößern")} icon={<Plus />} onClick={() => active.current?.zoomIn()} />
                 </div>
-                {tab === 'footprint' && <IconButton size="sm" label="Einpassen" icon={<Scan />} onClick={() => canvasRef.current?.fit()} />}
+                {tab === 'footprint' && <IconButton size="sm" label={tr("Einpassen")} icon={<Scan />} onClick={() => canvasRef.current?.fit()} />}
               </>
             )}
-            {allowFullscreen && drawing && <IconButton size="sm" label="Vollbild" icon={<Maximize2 />} onClick={() => setFullscreen(true)} />}
+            {allowFullscreen && drawing && <IconButton size="sm" label={tr("Vollbild")} icon={<Maximize2 />} onClick={() => setFullscreen(true)} />}
           </div>
         </div>
 
@@ -283,7 +285,7 @@ export function GeneratorStage({
 
           {drawing && !spec && loading && <StageSkeleton family={family} />}
           {drawing && !spec && !loading && !error && (
-            <div className={cn('absolute inset-0 flex items-center justify-center text-ui', CHROME_MUTED.board)}>Gehäusefamilie wählen</div>
+            <div className={cn('absolute inset-0 flex items-center justify-center text-ui', CHROME_MUTED.board)}>{tr("Gehäusefamilie wählen")}</div>
           )}
 
           {updating && spec && drawing && (
@@ -304,9 +306,9 @@ export function GeneratorStage({
                   <TriangleAlert aria-hidden className="size-3.5" />
                 </span>
                 <div className="min-w-0">
-                  <div className="font-semibold">Mit diesen Maßen entsteht kein Footprint</div>
-                  <p className={cn('mt-0.5 text-xs leading-relaxed', CHROME_MUTED.board)}>{error}</p>
-                  {spec && <p className={cn('mt-1.5 text-2xs', CHROME_MUTED.board)}>Angezeigt wird der letzte gültige Stand.</p>}
+                  <div className="font-semibold">{tr("Mit diesen Maßen entsteht kein Footprint")}</div>
+                  <p className={cn('mt-0.5 text-xs leading-relaxed', CHROME_MUTED.board)}>{localizeMessage(error)}</p>
+                  {spec && <p className={cn('mt-1.5 text-2xs', CHROME_MUTED.board)}>{tr("Angezeigt wird der letzte gültige Stand.")}</p>}
                 </div>
               </div>
             </div>
@@ -318,7 +320,7 @@ export function GeneratorStage({
       {allowFullscreen && (
         <Dialog open={fullscreen} onOpenChange={setFullscreen}>
           <DialogContent size="full" aria-describedby={undefined}>
-            <DialogHeader icon={<PackageGlyph family={family} />} title={spec?.name ?? 'Vorschau'} />
+            <DialogHeader icon={<PackageGlyph family={family} />} title={spec?.name ?? tr('Vorschau')} />
             <div className="flex min-h-0 flex-1 flex-col px-6 pb-6">
               {fullscreen && (
                 <GeneratorStage
@@ -326,7 +328,7 @@ export function GeneratorStage({
                   calc={calc}
                   loading={loading}
                   updating={updating}
-                  error={error}
+                  error={error ? localizeMessage(error) : error}
                   resetKey={resetKey}
                   family={family}
                   defaultTab={tab === 'calc' ? 'footprint' : tab}
@@ -345,6 +347,7 @@ export function GeneratorStage({
 }
 
 function StageSkeleton({ family }: { family: string | null }) {
+  useI18n()
   return (
     <div className="absolute inset-0 flex items-center justify-center">
       <Skeleton className="absolute inset-8 rounded-card opacity-[0.08]" />
@@ -354,7 +357,7 @@ function StageSkeleton({ family }: { family: string | null }) {
         </span>
         <CanvasBadge tone="board" className="h-8 rounded-full px-3.5 text-xs">
           <Spinner size={14} tone="accent" />
-          Footprint wird berechnet …
+          {tr("Footprint wird berechnet …")}
         </CanvasBadge>
       </div>
     </div>

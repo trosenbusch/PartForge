@@ -1,3 +1,4 @@
+import { localizeMessage, useI18n } from '@/lib/i18n'
 /**
  * Schnellstart: eine Teilenummer einfügen – PartForge erkennt Hersteller-Serie, Baugröße und Codes
  * (`/api/series/decode`) und übernimmt sie als Auswahl.
@@ -45,6 +46,7 @@ export function QuickStart({
   onDecodedChange?: (decoded: DecodedMpn | null) => void
   onCustomTemplate: () => void
 }) {
+  const { t: tr } = useI18n()
   const id = useId()
   const [text, setText] = useState('')
   const query = useDebounced(text.trim(), 380)
@@ -80,9 +82,9 @@ export function QuickStart({
 
   const chips: Chip[] = best
     ? [
-        best.size ? { label: 'Baugröße', value: best.size, mono: true } : null,
+        best.size ? { label: tr("Baugröße"), value: best.size, mono: true } : null,
         best.jumper
-          ? { value: '0-Ω-Brücke', mono: false }
+          ? { value: tr('0-Ω-Brücke'), mono: false }
           : best.value_text
             ? { value: formatQuantityText(best.value_text), mono: true }
             : null,
@@ -101,11 +103,9 @@ export function QuickStart({
         </span>
         <div className="min-w-0 flex-1">
           <h3 id={`${id}-title`} className="text-sm font-semibold text-fg">
-            Schnellstart aus einer Teilenummer
-          </h3>
+            {tr("Schnellstart aus einer Teilenummer")}</h3>
           <p className="mt-0.5 text-xs text-fg-muted">
-            Teilenummer einfügen – Serie, Baugröße, Toleranz und Verpackung werden übernommen.
-          </p>
+            {tr("Teilenummer einfügen – Serie, Baugröße, Toleranz und Verpackung werden übernommen.")}</p>
         </div>
       </div>
       <div className="flex flex-col gap-3 px-4 pb-4">
@@ -121,7 +121,7 @@ export function QuickStart({
           mono
           spellCheck={false}
           autoComplete="off"
-          placeholder="z. B. CRCW060310K0FKEA"
+          placeholder={tr("z. B. CRCW060310K0FKEA")}
           aria-labelledby={`${id}-title`}
           aria-describedby={`${id}-result`}
           prefix={<ScanLine className="size-4" />}
@@ -130,7 +130,7 @@ export function QuickStart({
         <div id={`${id}-result`} aria-live="polite">
           {query.length < 4 ? (
             <div className="flex flex-wrap items-center gap-1.5 text-xs text-fg-subtle">
-              <span>Beispiele:</span>
+              <span>{tr("Beispiele:")}</span>
               {EXAMPLES.map((ex) => (
                 <button
                   key={ex}
@@ -154,13 +154,11 @@ export function QuickStart({
                 {best.valid ? (
                   <Badge variant="success">
                     <CircleCheck />
-                    Lieferbar laut Datenblatt
-                  </Badge>
+                    {tr("Lieferbar laut Datenblatt")}</Badge>
                 ) : (
                   <Badge variant="warning">
                     <TriangleAlert />
-                    Nicht lieferbar
-                  </Badge>
+                    {tr("Nicht lieferbar")}</Badge>
                 )}
               </div>
               <MpnAnatomy mpn={best.mpn} segments={segments} labels size="md" />
@@ -174,24 +172,22 @@ export function QuickStart({
                   ))}
                 </div>
               )}
-              {best.messages.length > 0 && <p className="text-xs text-fg-muted">{best.messages[0]}</p>}
+              {best.messages.length > 0 && <p className="text-xs text-fg-muted">{localizeMessage(best.messages[0])}</p>}
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-2xs text-fg-subtle">
-                  {others.length > 0 ? `Passt auch zu: ${others.map((o) => o.template_title).join(', ')}` : ''}
+                  {others.length > 0 ? tr("Passt auch zu: {v0}", { v0: others.map((o) => o.template_title).join(', ') }) : ''}
                 </span>
                 <Button variant="secondary" size="sm" rightIcon={<ArrowRight />} onClick={() => onApply({ decoded: best })}>
-                  Serie übernehmen
-                </Button>
+                  {tr("Serie übernehmen")}</Button>
               </div>
             </div>
           ) : decode.isSuccess && !pending ? (
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-control border border-dashed border-line-strong px-3 py-2.5">
               <p className="text-xs text-fg-muted">
-                Keine Hersteller-Serie erkennt <span className="mono text-fg">{query}</span>.
+                {tr("Keine Hersteller-Serie erkennt")} <span className="mono text-fg">{query}</span>.
               </p>
               <Button variant="ghost" size="sm" leftIcon={<FilePlus2 />} onClick={onCustomTemplate}>
-                Eigene Vorlage anlegen
-              </Button>
+                {tr("Eigene Vorlage anlegen")}</Button>
             </div>
           ) : null}
         </div>

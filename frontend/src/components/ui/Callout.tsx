@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { CircleAlert, CircleCheck, Info, Sparkles, TriangleAlert } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
@@ -50,6 +51,7 @@ export function Callout({
   urgent,
   className,
 }: CalloutProps) {
+  useI18n()
   const t = toneClass[tone]
   return (
     <div

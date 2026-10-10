@@ -1,3 +1,5 @@
+import { localizeMessage } from '@/lib/i18n'
+import { t, useI18n } from '@/lib/i18n'
 import { motion, useReducedMotion } from 'motion/react'
 import { Check, CircleAlert, Minus, TriangleAlert, X } from 'lucide-react'
 import { cn } from '@/lib/cn'
@@ -8,24 +10,25 @@ import type { StepInfo } from '../lib/analysis'
  * Funkenring. Wechsel und Abschluss sagt die Analyseansicht über ihre eigene Live-Region an.
  */
 export function StepTimeline({ steps, live }: { steps: StepInfo[]; live: boolean }) {
+  useI18n()
   const reduce = useReducedMotion()
   return (
-    <ol aria-label="Schritte der Analyse" className="relative flex flex-col">
+    <ol aria-label={t("Schritte der Analyse")} className="relative flex flex-col">
       {steps.map((step, i) => {
         const last = i === steps.length - 1
         const doneLine = step.state === 'done' || step.state === 'warn'
         const stateText =
           step.state === 'done'
-            ? 'erledigt'
+            ? t("erledigt")
             : step.state === 'warn'
-              ? 'erledigt mit Hinweisen'
+              ? t("erledigt mit Hinweisen")
               : step.state === 'active'
-                ? 'läuft'
+                ? t("läuft")
                 : step.state === 'error'
-                  ? 'fehlgeschlagen'
+                  ? t("fehlgeschlagen")
                   : step.state === 'cancelled'
-                    ? 'abgebrochen'
-                    : 'ausstehend'
+                    ? t("abgebrochen")
+                    : t("ausstehend")
         return (
           <li key={step.key} className="relative flex gap-3.5 pb-5 last:pb-0" aria-current={step.state === 'active' ? 'step' : undefined}>
             {!last && (
@@ -67,7 +70,7 @@ export function StepTimeline({ steps, live }: { steps: StepInfo[]; live: boolean
                 {step.state === 'active' && !step.detail
                   ? `${step.hint} …`
                   : step.state === 'cancelled'
-                    ? 'Hier abgebrochen'
+                    ? t("Hier abgebrochen")
                     : (step.detail ?? step.hint)}
               </p>
               {step.notes.length > 0 && (
@@ -87,7 +90,7 @@ export function StepTimeline({ steps, live }: { steps: StepInfo[]; live: boolean
                       ) : (
                         <span aria-hidden className="mt-1.5 size-1 shrink-0 rounded-full bg-current" />
                       )}
-                      <span className="line-clamp-2">{n.text}</span>
+                      <span className="line-clamp-2">{localizeMessage(n.text)}</span>
                     </li>
                   ))}
                 </ul>
@@ -101,6 +104,7 @@ export function StepTimeline({ steps, live }: { steps: StepInfo[]; live: boolean
 }
 
 function StepDot({ state, index, live }: { state: StepInfo['state']; index: number; live: boolean }) {
+  useI18n()
   if (state === 'active') {
     return (
       <span aria-hidden className="relative z-10 flex size-7 shrink-0 items-center justify-center">

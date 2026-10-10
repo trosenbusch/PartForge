@@ -1,24 +1,4 @@
-/**
- * Brücke zum Desktop-Fenster (pywebview). Im normalen Browser sind diese Funktionen nicht verfügbar –
- * Aufrufer zeigen dann nur das Textfeld.
- *
- * Erwartete (optionale) Python-API (`webview.create_window(..., js_api=Api())`, `partforge/desktop.py`):
- *   pick_folder(initial: str | None) -> str | None
- *   pick_file(initial: str | None, filters: list[str] | None) -> str | None   # z. B. ["Programme (*.exe)"]
- *   save_file(suggested_name: str, content: str, filters: list[str] | None) -> str | None
- *       # content = Text (UTF-8) oder "base64:<daten>" für Binärdateien; Rückgabe = Pfad bzw. None (abgebrochen)
- *   pick_save_path(suggested_name: str, filters: list[str] | None) -> str | None
- *       # nur der Speichern-Dialog (schreibt nichts): Zielpfad bzw. None – das Backend schreibt dann selbst dorthin
- *       # (z. B. der Export-Job), ohne den Inhalt als Base64 durch die Brücke zu schicken
- *   open_path(path: str) -> None          # Ordner öffnen bzw. Dokument mit der zugeordneten Anwendung
- *   reveal_path(path: str) -> None        # im Explorer zeigen (Datei markiert), öffnet nie die Datei selbst
- *
- * Dateien speichern: **`saveFile`/`saveBlob` aus `@/lib/download`** (Brücke → Speichern-Dialog → Download-Link).
- * „Im Explorer zeigen“: **`revealPath(pfad)`** (außerhalb des Desktop-Programms: Pfad kopieren + Hinweis).
- *
- * pywebview stellt `window.pywebview.api` erst nach dem Laden bereit (Ereignis `pywebviewready`) –
- * deshalb in Komponenten `useNativeBridge()` verwenden, nicht einmalig beim Rendern prüfen.
- */
+import { t as tr } from '@/lib/i18n'
 import { useSyncExternalStore } from 'react'
 import { toast } from 'sonner'
 
@@ -81,7 +61,7 @@ export async function pickFolder(initial?: string | null): Promise<string | null
     return (await fn(initial ?? null)) ?? null
   } catch (e) {
     // wie Abbrechen behandeln – aber sichtbar für die Fehlersuche (Details im Protokoll des Programms)
-    console.error('Ordnerdialog fehlgeschlagen', e)
+    console.error(tr("Ordnerdialog fehlgeschlagen"), e)
     return null
   }
 }
@@ -93,7 +73,7 @@ export async function pickFile(initial?: string | null, filters?: string[]): Pro
     return (await fn(initial ?? null, filters ?? null)) ?? null
   } catch (e) {
     // wie Abbrechen behandeln – aber sichtbar für die Fehlersuche (Details im Protokoll des Programms)
-    console.error('Dateidialog fehlgeschlagen', e)
+    console.error(tr("Dateidialog fehlgeschlagen"), e)
     return null
   }
 }
@@ -140,7 +120,7 @@ const parentDir = (path: string) => path.replace(/[\\/]+$/, '').replace(/[\\/][^
  *   <Button leftIcon={<FolderOpen />} onClick={() => void revealPath(file.path)}>Im Explorer zeigen</Button>
  */
 export async function revealPath(path: string, opts: RevealOptions = {}): Promise<RevealResult> {
-  const { toast: notify = true, what = 'Pfad' } = opts
+  const { toast: notify = true, what = tr("Pfad") } = opts
   const bridge = api()
   if (bridge?.reveal_path || bridge?.open_path) {
     try {
@@ -152,11 +132,11 @@ export async function revealPath(path: string, opts: RevealOptions = {}): Promis
         // pywebview lehnt mit einem Error bzw. einem Objekt { name, message } der Python-Ausnahme ab
         const raw = typeof err === 'string' ? err : err && typeof err === 'object' ? (err as { message?: unknown }).message : null
         const message = typeof raw === 'string' ? raw : ''
-        toast.error(`${what} konnte nicht im Explorer gezeigt werden`, {
+        toast.error(tr("{0} konnte nicht im Explorer gezeigt werden", { "0": String(what) }), {
           id: 'pf-reveal-path',
           description: /nicht gefunden|not found|no such/i.test(message)
-            ? `Nicht gefunden: ${path}`
-            : `${message || 'Unbekannter Fehler'} – ${path}`,
+            ? tr("Nicht gefunden: {0}", { "0": String(path) })
+            : `${message || tr("Unbekannter Fehler")} – ${path}`,
         })
       }
       return 'failed'
@@ -165,9 +145,9 @@ export async function revealPath(path: string, opts: RevealOptions = {}): Promis
   try {
     await navigator.clipboard.writeText(path)
     if (notify) {
-      toast.success(`${what} kopiert`, {
+      toast.success(tr("{0} kopiert", { "0": String(what) }), {
         id: 'pf-reveal-path',
-        description: `${path} – den Explorer kann PartForge nur im Desktop-Programm öffnen.`,
+        description: tr("{0} – den Explorer kann PartForge nur im Desktop-Programm öffnen.", { "0": String(path) }),
       })
     }
     return 'copied'
@@ -175,7 +155,7 @@ export async function revealPath(path: string, opts: RevealOptions = {}): Promis
     if (notify) {
       toast.info(what, {
         id: 'pf-reveal-path',
-        description: `${path} – der Explorer lässt sich nur im Desktop-Programm öffnen.`,
+        description: tr("{0} – der Explorer lässt sich nur im Desktop-Programm öffnen.", { "0": String(path) }),
         duration: 9000,
       })
     }

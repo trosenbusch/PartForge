@@ -1,3 +1,4 @@
+import { metadataLabel, localizeMessage, useI18n } from '@/lib/i18n'
 /**
  * Bauteiltabelle mit **Server-Paging** (AG Grid Infinite Row Model, Blöcke à 100 Zeilen): Suche, Filter und
  * Sortierung rechnet das Backend (Werte mit Einheiten werden verglichen), nur sichtbare Blöcke werden geladen –
@@ -213,6 +214,7 @@ export function PartsGrid({
   handleRef,
   className,
 }: PartsGridProps) {
+  const { t } = useI18n()
   const table = category.table
   const persistKey = `parts:${table}`
   const apiRef = useRef<GridApi<PartRow> | null>(null)
@@ -268,8 +270,8 @@ export function PartsGrid({
     }),
     [table, scheme, cells],
   )
-  const columnDefs = useMemo(() => buildColumnDefs(category, ctx), [category, ctx])
-  const labelOf = useCallback((col: string) => category.fields.find((f) => f.column === col)?.label ?? col, [category])
+  const columnDefs = useMemo(() => buildColumnDefs(category, ctx, t), [category, ctx, t])
+  const labelOf = useCallback((col: string) => metadataLabel(category.fields.find((f) => f.column === col)?.label ?? col, t), [category, t])
 
   const refreshCell = (node: IRowNode<PartRow>, col: string) =>
     apiRef.current?.refreshCells({ rowNodes: [node], columns: [col], force: true })
@@ -489,7 +491,7 @@ export function PartsGrid({
         const field = category.fields.find((f) => f.column === col)
         const rest = field ? otherWarnings([field], res.warnings) : res.warnings
         if (rest.length) {
-          toast.warning(`${labelOf(col)} gespeichert – bitte prüfen`, { description: rest.join(' · ') })
+          toast.warning(t("{1} gespeichert – bitte prüfen", { 1: labelOf(col) }), { description: rest.map(localizeMessage).join(' · ') })
         }
       })
       .catch((err: unknown) => {
@@ -497,7 +499,7 @@ export function PartsGrid({
         cells.failed(pn, col, message)
         node.setDataValue(col, oldValue, SOURCE_REVERT)
         refreshCell(node, col)
-        toast.error(`${labelOf(col)} nicht gespeichert`, { id: `cell:${key}`, description: message })
+        toast.error(t("{1} nicht gespeichert", { 1: labelOf(col) }), { id: `cell:${key}`, description: message })
       })
   }
 
@@ -774,8 +776,8 @@ export function PartsGrid({
   // ------------------------------------------------------------------ Darstellung
   const hasQuery = Boolean(search.trim() || filters.length)
   const overlayParams = useMemo(
-    () => ({ empty: hasQuery ? noMatchState : emptyState, noMatch: noMatchState, loadingText: 'Bauteile werden geladen …' }),
-    [hasQuery, emptyState, noMatchState],
+    () => ({ empty: hasQuery ? noMatchState : emptyState, noMatch: noMatchState, loadingText: t("Bauteile werden geladen …") }),
+    [hasQuery, emptyState, noMatchState, t],
   )
   const rowSelection = useMemo<RowSelectionOptions<PartRow>>(
     () => ({
@@ -823,7 +825,7 @@ export function PartsGrid({
     <div
       ref={rootRef}
       role="region"
-      aria-label={`Bauteile: ${category.label}`}
+      aria-label={t("Bauteile: {1}", { 1: metadataLabel(category.label, t) })}
       aria-busy={((refreshing || !loadedOnce) && !loadError) || undefined}
       className={cn(
         'pf-grid pf-parts-grid relative isolate min-h-0 overflow-hidden rounded-card border border-line bg-surface shadow-card',
@@ -898,16 +900,16 @@ export function PartsGrid({
               size="sm"
               titleAs="h2"
               illustration="offline"
-              title="Bauteile konnten nicht geladen werden"
+              title={t("Bauteile konnten nicht geladen werden")}
               description={errorMessage(loadError.error)}
               actions={
                 <Button variant="secondary" size="sm" leftIcon={<RotateCw />} onClick={retry}>
-                  Erneut versuchen
+                  {t("Erneut versuchen")}
                 </Button>
               }
             />
             <p role="alert" className="sr-only">
-              Bauteile konnten nicht geladen werden. {errorMessage(loadError.error)}
+              {t("Bauteile konnten nicht geladen werden.")} {errorMessage(loadError.error)}
             </p>
           </div>
         ) : (
@@ -917,11 +919,11 @@ export function PartsGrid({
           >
             <TriangleAlert aria-hidden className="size-4 shrink-0 text-danger-text" />
             <p role="alert" className="min-w-0 flex-1 text-ui text-fg">
-              <span className="font-medium">Einige Zeilen konnten nicht geladen werden.</span>{' '}
+              <span className="font-medium">{t("Einige Zeilen konnten nicht geladen werden.")}</span>{' '}
               <span className="text-fg-muted">{errorMessage(loadError.error)}</span>
             </p>
             <Button size="sm" variant="secondary" leftIcon={<RotateCw />} onClick={retry}>
-              Erneut versuchen
+              {t("Erneut versuchen")}
             </Button>
           </div>
         ))}

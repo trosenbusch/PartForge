@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import type { ReactNode } from 'react'
 import { usePageHeading } from '@/app/topbar'
 import { cn } from '@/lib/cn'
@@ -21,6 +22,7 @@ export interface PageHeaderProps {
  * ohne Überschrift). Für Tabellen-Seiten weglassen und nur Topbar + `<PageActions>` nutzen.
  */
 export function PageHeader({ title, description, eyebrow, icon, actions, children, className }: PageHeaderProps) {
+  useI18n()
   usePageHeading()
   return (
     <header className={cn('flex flex-col gap-4', className)}>

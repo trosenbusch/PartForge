@@ -26,6 +26,8 @@ before(async () => {
     server: { middlewareMode: true, hmr: false, watch: null },
     optimizeDeps: { noDiscovery: true, include: [] },
   })
+  const i18n = await server.ssrLoadModule('/src/lib/i18n.ts')
+  i18n.setLanguage('de')
   jobs = await server.ssrLoadModule('/src/api/jobs.ts')
   model = await server.ssrLoadModule('/src/pages/altium/model.ts')
   navigation = await server.ssrLoadModule('/src/app/navigation.ts')

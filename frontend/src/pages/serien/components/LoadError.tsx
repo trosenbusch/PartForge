@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 /**
  * Ladefehler im Assistenten (Vorlagen, Vorlagendetails): deutscher Text des Backends, „Erneut versuchen“ und
  * optional weitere Aktionen (z. B. „Andere Serie wählen“). Nie ein leerer Zustand, der wie „keine Daten“ aussieht.
@@ -20,6 +21,7 @@ export interface LoadErrorProps {
 }
 
 export function LoadError({ title, error, description, onRetry, retrying, actions, className }: LoadErrorProps) {
+  const { t: tr } = useI18n()
   const offline = error instanceof ApiError && error.status === 0
   return (
     <div
@@ -43,8 +45,7 @@ export function LoadError({ title, error, description, onRetry, retrying, action
         <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
           {onRetry && (
             <Button variant="secondary" leftIcon={<RefreshCw />} loading={retrying} onClick={onRetry}>
-              Erneut versuchen
-            </Button>
+              {tr("Erneut versuchen")}</Button>
           )}
           {actions}
         </div>

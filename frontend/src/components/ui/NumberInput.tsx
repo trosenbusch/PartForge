@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { useState, type KeyboardEvent, type ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 import { formatDecimal, parseDecimal } from '@/lib/format'
@@ -62,6 +63,7 @@ export function NumberInput({
   containerClassName,
   'aria-label': ariaLabel,
 }: NumberInputProps) {
+  const { t, locale } = useI18n()
   const field = useFieldContext()
   // technisch: „4,7k“ statt „4.700“ (Präfix direkt am Wert, Einheit steht rechts im Feld)
   const display = (v: number | null) =>
@@ -69,10 +71,12 @@ export function NumberInput({
   const [text, setText] = useState(() => display(value))
   const [editing, setEditing] = useState(false)
   const [lastValue, setLastValue] = useState(value)
+  const [lastLocale, setLastLocale] = useState(locale)
 
   // Wert von außen geändert (z. B. „Verwerfen“) und gerade nicht in Bearbeitung → Anzeige übernehmen
-  if (value !== lastValue) {
+  if (value !== lastValue || locale !== lastLocale) {
     setLastValue(value)
+    setLastLocale(locale)
     if (!editing) setText(display(value))
   }
 
@@ -133,7 +137,7 @@ export function NumberInput({
         aria-valuenow={value ?? undefined}
         aria-valuemin={min}
         aria-valuemax={max}
-        aria-valuetext={value === null ? 'leer' : `${display(value)}${typeof unit === 'string' ? ` ${unit}` : ''}`}
+        aria-valuetext={value === null ? t('leer') : `${display(value)}${typeof unit === 'string' ? ` ${unit}` : ''}`}
         aria-invalid={isInvalid || undefined}
         aria-describedby={field?.describedBy}
         aria-required={field?.required || undefined}

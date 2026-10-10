@@ -1,8 +1,4 @@
-/**
- * Zustände der rechten Spalte ohne Bericht: Einstieg (was die Stapelbearbeitung tut – verlustfrei, mit Sicherung),
- * „noch nichts registriert“ (Weg zum Bibliotheksimport), Platzhalter während der ersten Prüfung und das Scheitern
- * einer Prüfung.
- */
+import { useI18n } from '@/lib/i18n'
 import { FolderInput, RefreshCw, ScanSearch } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
@@ -21,6 +17,7 @@ interface CheckActionProps {
 }
 
 function Step({ n, title, children }: { n: number; title: string; children: ReactNode }) {
+  useI18n()
   return (
     <li className="flex items-start gap-2.5">
       <span
@@ -44,13 +41,14 @@ export function IntroState({
   checkPending,
   actions = true,
 }: CheckActionProps & { actions?: boolean }) {
+  const { t: tr } = useI18n()
   return (
     <Card className="@container">
       <EmptyState
         illustration="forge"
         titleAs="h2"
-        title="Symbole und Footprints an den Hausstil angleichen"
-        description="Bringt registrierte Symbole und Footprints – etwa aus übernommenen Hersteller- oder Celestial-Bibliotheken – in einem Arbeitsgang auf den Hausstil: Schriften, Pinlängen, Bezeichner, Lagen, Linienbreiten und Texte."
+        title={tr("Symbole und Footprints an den Hausstil angleichen")}
+        description={tr("Bringt registrierte Symbole und Footprints – etwa aus übernommenen Hersteller- oder Celestial-Bibliotheken – in einem Arbeitsgang auf den Hausstil: Schriften, Pinlängen, Bezeichner, Lagen, Linienbreiten und Texte.")}
         actions={
           actions && (
             <>
@@ -61,28 +59,23 @@ export function IntroState({
                 disabled={Boolean(checkBlocked)}
                 loading={checkPending}
               >
-                Prüfen
-              </Button>
+                {tr("Prüfen")}</Button>
               <Button asChild size="sm" variant="ghost">
                 <Link to="/bibliotheksimport">
                   <FolderInput aria-hidden />
-                  Bibliotheksimport
-                </Link>
+                  {tr("Bibliotheksimport")}</Link>
               </Button>
             </>
           )
         }
       >
-        <ol className="grid w-full max-w-2xl gap-3 pt-1 text-left @[38rem]:grid-cols-3" aria-label="Ablauf">
-          <Step n={1} title="Auswählen">
-            Art, Herkunft, Bibliotheken und Regeln links festlegen.
-          </Step>
-          <Step n={2} title="Prüfen">
-            Zeigt je Bauteil, was sich ändern würde – geändert wird dabei nichts.
-          </Step>
-          <Step n={3} title="Anwenden">
-            Verlustfrei: Namen bleiben, jede Datei wird vorher gesichert, Rückgängig ist möglich.
-          </Step>
+        <ol className="grid w-full max-w-2xl gap-3 pt-1 text-left @[38rem]:grid-cols-3" aria-label={tr("Ablauf")}>
+          <Step n={1} title={tr("Auswählen")}>
+            {tr("Art, Herkunft, Bibliotheken und Regeln links festlegen.")}</Step>
+          <Step n={2} title={tr("Prüfen")}>
+            {tr("Zeigt je Bauteil, was sich ändern würde – geändert wird dabei nichts.")}</Step>
+          <Step n={3} title={tr("Anwenden")}>
+            {tr("Verlustfrei: Namen bleiben, jede Datei wird vorher gesichert, Rückgängig ist möglich.")}</Step>
         </ol>
         {actions && checkBlocked && <p className="text-xs text-warning-text">{checkBlocked}</p>}
       </EmptyState>
@@ -92,19 +85,19 @@ export function IntroState({
 
 /** Die Bibliothek hat (noch) keine registrierten Symbole oder Footprints */
 export function NoComponentsState() {
+  const { t: tr } = useI18n()
   return (
     <Card>
       <EmptyState
         illustration="no-parts"
         titleAs="h2"
-        title="Noch keine Symbole oder Footprints"
-        description="Die Stapelbearbeitung gleicht vorhandene Symbole und Footprints an den Hausstil an – verlustfrei, Namen bleiben, jede Datei wird vorher gesichert. Zuerst eine Altium-Bibliothek übernehmen, z. B. eine Celestial- oder Herstellerbibliothek."
+        title={tr("Noch keine Symbole oder Footprints")}
+        description={tr("Die Stapelbearbeitung gleicht vorhandene Symbole und Footprints an den Hausstil an – verlustfrei, Namen bleiben, jede Datei wird vorher gesichert. Zuerst eine Altium-Bibliothek übernehmen, z. B. eine Celestial- oder Herstellerbibliothek.")}
         actions={
           <Button asChild size="sm">
             <Link to="/bibliotheksimport">
               <FolderInput aria-hidden />
-              Bibliotheksimport öffnen
-            </Link>
+              {tr("Bibliotheksimport öffnen")}</Link>
           </Button>
         }
       />
@@ -114,6 +107,7 @@ export function NoComponentsState() {
 
 /** Platzhalter, solange die erste Prüfung läuft (kein Springen, wenn der Bericht kommt) */
 export function ReportSkeleton() {
+  useI18n()
   return (
     <div className="flex flex-col gap-4" aria-hidden>
       <Card className="px-5 py-4">
@@ -146,19 +140,20 @@ export function CheckIssue({
   hasReport,
   ...action
 }: CheckActionProps & { state: RunState; job: Job<ConformReport> | undefined; hasReport: boolean }) {
+  const { t: tr } = useI18n()
   const failed = state === 'failed'
   const title = failed
-    ? 'Prüfung fehlgeschlagen'
+    ? tr("Prüfung fehlgeschlagen")
     : state === 'cancelled'
-      ? 'Prüfung abgebrochen'
-      : 'Prüfung nicht mehr verfügbar'
+      ? tr("Prüfung abgebrochen")
+      : tr("Prüfung nicht mehr verfügbar")
   const text = failed
-    ? cleanErrorText(job?.error ?? '') || 'Unbekannter Fehler.'
+    ? cleanErrorText(job?.error ?? '') || tr("Unbekannter Fehler.")
     : state === 'cancelled' && job
       ? isLibrarySwitchCancel(job)
         ? jobCancelText(job)
-        : 'Geändert wurde nichts – die Prüfung liest nur.'
-      : 'Das Ergebnis liegt nicht mehr vor (z. B. nach einem Neustart von PartForge).'
+        : tr("Geändert wurde nichts – die Prüfung liest nur.")
+      : tr("Das Ergebnis liegt nicht mehr vor (z. B. nach einem Neustart von PartForge).")
   return (
     <Callout
       tone={failed ? 'danger' : 'neutral'}
@@ -172,12 +167,11 @@ export function CheckIssue({
           disabled={Boolean(action.checkBlocked)}
           loading={action.checkPending}
         >
-          Erneut prüfen
-        </Button>
+          {tr("Erneut prüfen")}</Button>
       }
     >
       {text}
-      {hasReport && <span className="block">Unten steht weiter der letzte Bericht.</span>}
+      {hasReport && <span className="block">{tr("Unten steht weiter der letzte Bericht.")}</span>}
     </Callout>
   )
 }

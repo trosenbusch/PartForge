@@ -1,14 +1,4 @@
-/**
- * Bibliotheksimport – reine Logik der Seite (ohne React): Dateiansichten, Filter, Zeilen des Dateibaums, der Importplan
- * (Vorschau dessen, was `run_import` im Backend tun wird) und die Nachbildung der Zielordner des Backends
- * (`partforge/altium/libimport.py`: `safe_folder_name`, `_target_rel`).
- *
- * Der Plan rechnet wie das Backend: Dateien in Scan-Reihenfolge; ein Name, der woanders registriert ist („Name
- * vergeben“), wird nie übernommen; ein Name, den eine **ausgewählte** frühere Datei schon übernimmt, ist doppelt; eine
- * Datei ohne übernehmbare Namen wird nicht kopiert; eine schon importierte, seither geänderte Datei nur mit „Ersetzen“.
- * Mit einem anderen Zielordner als dem vorgeschlagenen gelten schon importierte Namen als vergeben (sie stehen im
- * alten Ordner), und ob eine Zieldatei schon existiert, weiß erst das Backend.
- */
+import { getLocale, t } from '@/lib/i18n'
 import type { ImportComponentState, ImportRunResult, ImportScan, ImportSourceComponent, ImportSourceFile } from '@/api/libimport'
 import { plural } from '@/lib/format'
 
@@ -21,14 +11,14 @@ export const COMPONENT_STATES: readonly ImportComponentState[] = ['new', 'import
 /** Texte je Bibliotheksart */
 export const KIND_TEXT = {
   schlib: {
-    group: 'Symbolbibliotheken',
+    get group() { return t("Symbolbibliotheken") },
     one: 'Symbol',
-    many: 'Symbole',
+    get many() { return t("Symbole") },
     countOne: 'Pin',
     countMany: 'Pins',
   },
   pcblib: {
-    group: 'Footprint-Bibliotheken',
+    get group() { return t("Footprint-Bibliotheken") },
     one: 'Footprint',
     many: 'Footprints',
     countOne: 'Pad',
@@ -50,10 +40,15 @@ export function folderOf(path: string): string {
 
 // --------------------------------------------------------------------------- Pfade
 
-const collator = new Intl.Collator('de', { numeric: true, sensitivity: 'base' })
+const collators = new Map<string, Intl.Collator>()
 
 /** Natürliche Sortierung („Lib2“ vor „Lib10“), ohne Rücksicht auf Groß/klein */
-export function compareNatural(a: string, b: string): number {
+export function compareNatural(a: string, b: string, locale = getLocale()): number {
+  let collator = collators.get(locale)
+  if (!collator) {
+    collator = new Intl.Collator(locale, { numeric: true, sensitivity: 'base' })
+    collators.set(locale, collator)
+  }
   return collator.compare(a, b)
 }
 
@@ -78,10 +73,10 @@ const isAbsolutePath = (path: string) => /^[a-z]:[\\/]/i.test(path) || /^\\\\[^\
 /** Grund, warum eine Quelle nicht eingelesen werden kann (vor der Anfrage) – sonst `null` */
 export function sourceProblem(raw: string): string | null {
   const path = cleanSourcePath(raw)
-  if (!path) return 'Bitte einen Ordner oder eine Bibliotheksdatei angeben.'
-  if (!isAbsolutePath(path)) return 'Bitte den vollständigen Pfad angeben, z. B. C:\\Bibliotheken\\Hersteller.'
+  if (!path) return t("Bitte einen Ordner oder eine Bibliotheksdatei angeben.")
+  if (!isAbsolutePath(path)) return t("Bitte den vollständigen Pfad angeben, z. B. C:\\Bibliotheken\\Hersteller.")
   if (/\.(svn)?dblib$/i.test(path)) {
-    return 'Datenbankbibliotheken (.DbLib) lassen sich nicht übernehmen – ihre Bauteildaten liegen in einer Datenbank. Bitte den Ordner mit den SchLib- und PcbLib-Dateien wählen.'
+    return t("Datenbankbibliotheken (.DbLib) lassen sich nicht übernehmen – ihre Bauteildaten liegen in einer Datenbank. Bitte den Ordner mit den SchLib- und PcbLib-Dateien wählen.")
   }
   return null
 }
@@ -156,7 +151,7 @@ export interface ScanIndex {
   defaultSelection: Set<string>
 }
 
-export function indexScan(scan: ImportScan): ScanIndex {
+export function indexScan(scan: ImportScan, locale = getLocale()): ScanIndex {
   const byKind: Record<LibKind, FileView[]> = { schlib: [], pcblib: [] }
   const stateCounts: Record<LibKind, Record<ImportComponentState, number>> = { schlib: emptyCounts(), pcblib: emptyCounts() }
   const defaultSelection = new Set<string>()
@@ -182,7 +177,7 @@ export function indexScan(scan: ImportScan): ScanIndex {
       selectable,
     })
   })
-  for (const kind of LIB_KINDS) byKind[kind].sort((a, b) => compareNatural(a.file.rel, b.file.rel))
+  for (const kind of LIB_KINDS) byKind[kind].sort((a, b) => compareNatural(a.file.rel, b.file.rel, locale))
   return { views: [...byKind.schlib, ...byKind.pcblib], byKind, stateCounts, unreadable, defaultSelection }
 }
 
@@ -440,13 +435,13 @@ export function importProblem(result: ImportRunResult | null | undefined): strin
   const parts: string[] = []
   if (result.errors.length) {
     const first = result.errors[0]
-    parts.push(`${plural(result.errors.length, 'Fehler', 'Fehler')} – ${splitRel(first.rel).name}: ${first.message}`)
+    parts.push(`${plural(result.errors.length, t("Fehler"), t("Fehler"))} – ${splitRel(first.rel).name}: ${first.message}`)
   }
-  if (result.conflicts.length) parts.push(`${plural(result.conflicts.length, 'Name', 'Namen')} nicht übernommen (vergeben oder doppelt)`)
-  if (result.skipped.length) parts.push(`${plural(result.skipped.length, 'Datei', 'Dateien')} übersprungen`)
+  if (result.conflicts.length) parts.push(t("{0} nicht übernommen (vergeben oder doppelt)", { "0": String(plural(result.conflicts.length, 'Name', t("Namen"))) }))
+  if (result.skipped.length) parts.push(t("{0} übersprungen", { "0": String(plural(result.skipped.length, t("Datei"), t("Dateien"))) }))
   const conversion = result.conversion
   if (conversion && (conversion.errors.length || conversion.skipped.length)) {
-    parts.push(`Angleichen an den Hausstil: ${plural(conversion.errors.length + conversion.skipped.length, 'Bibliothek', 'Bibliotheken')} nicht geändert`)
+    parts.push(t("Angleichen an den Hausstil: {0} nicht geändert", { "0": String(plural(conversion.errors.length + conversion.skipped.length, t("Bibliothek"), t("Bibliotheken"))) }))
   }
   return parts.length ? parts.join(' · ') : null
 }

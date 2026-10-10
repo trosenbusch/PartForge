@@ -1,10 +1,4 @@
-/**
- * Vorschaubild, das erst lädt, wenn es in den Sichtbereich kommt (IntersectionObserver), mit Shimmer-Platzhalter.
- * Quelle: `src` (Bild-URL), `svg`-Lader (z. B. Backend-Renderer) oder `render` (React-Inhalt, z. B. <SymbolCanvas>).
- * SVG-Markup wird als Bild (Blob-URL) eingebunden – nie direkt ins DOM.
- *
- *   <LazyThumbnail queryKey={['footprints', 'thumb', name]} loadSvg={(signal) => renderFootprint(spec, signal)} />
- */
+import { useI18n } from '@/lib/i18n'
 import { useQuery } from '@tanstack/react-query'
 import { ImageOff } from 'lucide-react'
 import { useEffect, useId, useMemo, useState, type ReactNode } from 'react'
@@ -49,12 +43,14 @@ function useInView<T extends Element>(rootMargin: string): [(el: T | null) => vo
 }
 
 function SvgBlobImage({ svg, alt, className }: { svg: string; alt: string; className?: string }) {
+  useI18n()
   const url = useMemo(() => URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' })), [svg])
   useEffect(() => () => URL.revokeObjectURL(url), [url])
   return <FadeImage key={url} src={url} alt={alt} className={className} />
 }
 
 function FadeImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  useI18n()
   const [loaded, setLoaded] = useState(false)
   return (
     <img
@@ -77,6 +73,7 @@ export function LazyThumbnail({
   className,
   inset = 'p-3',
 }: LazyThumbnailProps) {
+  const { t: tr } = useI18n()
   const [ref, inView] = useInView<HTMLDivElement>(rootMargin)
   const id = useId()
   const q = useQuery({
@@ -105,7 +102,7 @@ export function LazyThumbnail({
     else if (loadSvg) {
       if (q.isError)
         content = (
-          <div className="flex size-full items-center justify-center text-fg-subtle" title="Vorschau nicht verfügbar">
+          <div className="flex size-full items-center justify-center text-fg-subtle" title={tr("Vorschau nicht verfügbar")}>
             <ImageOff aria-hidden className="size-5" />
           </div>
         )

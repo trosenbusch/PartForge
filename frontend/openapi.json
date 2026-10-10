@@ -8297,6 +8297,15 @@
             "type": "array",
             "title": "Recent Workspaces"
           },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "de"
+            ],
+            "title": "Language",
+            "default": "en"
+          },
           "theme": {
             "type": "string",
             "enum": [

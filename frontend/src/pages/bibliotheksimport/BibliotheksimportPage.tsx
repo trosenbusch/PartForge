@@ -1,16 +1,4 @@
-/**
- * Bibliotheksimport (`/bibliotheksimport`): Symbole und Footprints aus vorhandenen Altium-Bibliotheken übernehmen.
- *
- * Ablauf: Quelle einlesen (Job `library-import.scan`, liest nur) → Dateien wählen, Zielordner und Optionen →
- * Importieren (Job `libraries.import`, schreibt und hält die Bibliothek) → Ergebnis mit den nächsten Schritten
- * („Bauteile anlegen …“ über den Tabellen-Import, „An Hausstil angleichen …“ in der Stapelbearbeitung).
- * Beide Jobs zeigt die Seite selbst (nicht in der Pille des Job-Docks, kein Toast); wird sie verlassen, übernimmt
- * das Dock (`useInlineJob`).
- *
- * Adresse: `?scan=<id>` – der angezeigte Scan (Neuladen zeigt ihn wieder; nach einigen Stunden ist er im Backend
- * abgelaufen → „Erneut einlesen“). Laufendes Einlesen und der Import-Job stehen in der Sitzung (`useImportSession`):
- * Zurückkommen über die Navigation zeigt wieder den Stand. Ein Bibliothekswechsel verwirft beides.
- */
+import { t, useI18n } from '@/lib/i18n'
 import { useQueryClient } from '@tanstack/react-query'
 import { FolderInput, RotateCw } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
@@ -41,6 +29,7 @@ import { useImportSession, useRecentSources } from './store'
 const focusSource = () => requestAnimationFrame(() => document.getElementById(SOURCE_INPUT_ID)?.focus())
 
 export default function BibliotheksimportPage() {
+  useI18n()
   const qc = useQueryClient()
   const [params, setParams] = useSearchParams()
   const workspace = useWorkspace().data
@@ -205,12 +194,12 @@ export default function BibliotheksimportPage() {
   useRegisterCommands([
     {
       id: 'libimport.source',
-      title: 'Andere Quelle einlesen …',
-      subtitle: 'Ordner oder Bibliotheksdatei für den Bibliotheksimport',
+      title: t("Andere Quelle einlesen …"),
+      subtitle: t("Ordner oder Bibliotheksdatei für den Bibliotheksimport"),
       group: 'Aktionen',
       icon: FolderInput,
       keywords: ['bibliotheksimport', 'schlib', 'pcblib', 'intlib', 'quelle'],
-      disabled: () => (running ? 'Erst nach dem laufenden Import' : false),
+      disabled: () => (running ? t("Erst nach dem laufenden Import") : false),
       run: ({ close }) => {
         close()
         focusSource()
@@ -221,12 +210,11 @@ export default function BibliotheksimportPage() {
   // ------------------------------------------------------------------ Ansicht
 
   const runStartErrorNode = runStartError ? (
-    <Callout tone="danger" title="Import nicht gestartet" urgent className="px-3 py-2.5">
+    <Callout tone="danger" title={t("Import nicht gestartet")} urgent className="px-3 py-2.5">
       <span className="block">{cleanErrorText(errorMessage(runStartError))}</span>
       {isScanGone(runStartError) && rescan && (
         <Button size="xs" variant="secondary" leftIcon={<RotateCw />} className="mt-2" onClick={rescan}>
-          Erneut einlesen
-        </Button>
+          {t("Erneut einlesen")}</Button>
       )}
     </Callout>
   ) : null
@@ -253,35 +241,33 @@ export default function BibliotheksimportPage() {
         onStart={startImport}
         starting={startRun.isPending}
         startError={runStartErrorNode}
-        blocked={scanning ? 'Es wird gerade eine Quelle eingelesen …' : null}
+        blocked={scanning ? t("Es wird gerade eine Quelle eingelesen …") : null}
       />
     )
   } else if (scanId && scanQ.isError) {
     content = isScanGone(scanQ.error) ? (
       <Callout
         tone="warning"
-        title="Diese Quelle ist nicht mehr eingelesen"
+        title={t("Diese Quelle ist nicht mehr eingelesen")}
         actions={
           rescan ? (
             <Button size="sm" leftIcon={<RotateCw />} loading={scanning} onClick={rescan}>
-              Erneut einlesen
-            </Button>
+              {t("Erneut einlesen")}</Button>
           ) : undefined
         }
       >
         {knownSource
-          ? `„${baseName(knownSource)}“ wurde vor einiger Zeit eingelesen – PartForge hält eingelesene Quellen einige Stunden bereit.`
-          : 'PartForge hält eingelesene Quellen einige Stunden bereit. Bitte die Quelle oben erneut einlesen.'}
+          ? t("„{0}“ wurde vor einiger Zeit eingelesen – PartForge hält eingelesene Quellen einige Stunden bereit.", { "0": String(baseName(knownSource)) })
+          : t("PartForge hält eingelesene Quellen einige Stunden bereit. Bitte die Quelle oben erneut einlesen.")}
       </Callout>
     ) : (
       <Callout
         tone="danger"
-        title="Die Quelle konnte nicht geladen werden"
+        title={t("Die Quelle konnte nicht geladen werden")}
         urgent
         actions={
           <Button size="sm" leftIcon={<RotateCw />} onClick={() => void scanQ.refetch()}>
-            Erneut versuchen
-          </Button>
+            {t("Erneut versuchen")}</Button>
         }
       >
         {cleanErrorText(errorMessage(scanQ.error))}
@@ -300,13 +286,13 @@ export default function BibliotheksimportPage() {
   }
 
   const subtitle = scan
-    ? `${scan.name} · ${plural(scan.files.length, 'Datei', 'Dateien')}`
-    : 'Symbole und Footprints aus Altium-Bibliotheken übernehmen'
+    ? `${scan.name} · ${plural(scan.files.length, t("Datei"), t("Dateien"))}`
+    : t("Symbole und Footprints aus Altium-Bibliotheken übernehmen")
 
   return (
     // unten Platz für die Pille des Job-Docks, solange sie zu sehen ist
     <PageBody className="pb-[max(3rem,var(--pf-dock-reserve))]">
-      <PageTitle title="Bibliotheksimport" subtitle={subtitle} />
+      <PageTitle title={t("Bibliotheksimport")} subtitle={subtitle} />
       <div className="flex flex-col gap-5">
         <SourceCard
           path={path}
@@ -328,7 +314,7 @@ export default function BibliotheksimportPage() {
             if (s.scanJobId && scanJob.job && !isJobActive(scanJob.job)) s.setScanJob(null)
           }}
           currentSource={scan?.source ?? null}
-          locked={running ? 'Während des Imports gesperrt – danach lässt sich eine weitere Quelle einlesen.' : null}
+          locked={running ? t("Während des Imports gesperrt – danach lässt sich eine weitere Quelle einlesen.") : null}
           primary={!scan && !run}
         />
         {content}
@@ -338,8 +324,9 @@ export default function BibliotheksimportPage() {
 }
 
 function ScanSkeleton() {
+  useI18n()
   return (
-    <div className="flex flex-col gap-4" aria-busy="true" aria-label="Quelle wird geladen">
+    <div className="flex flex-col gap-4" aria-busy="true" aria-label={t("Quelle wird geladen")}>
       <Skeleton className="h-[7.25rem] rounded-card" />
       <div className="grid grid-cols-[minmax(0,1fr)_18rem] gap-4 @[76rem]:grid-cols-[minmax(0,1fr)_22rem]">
         <Skeleton className="h-[32rem] rounded-card" />

@@ -1,3 +1,4 @@
+import { getLocale, t as tr } from '@/lib/i18n'
 /**
  * Werte im Serien-Assistenten: E-Reihen-Zugehörigkeit (wie engine.py `in_series`), Wertcodes der Teilenummern lesen
  * (wie formats.py `decode_value`), Werteliste einfügen („10k, 4k7; 1M“), Anzeige- und Anfragetexte.
@@ -97,7 +98,7 @@ export function decodeValueCode(code: string, fmt: ValueFormat): number | null {
 
 // --------------------------------------------------------------------------- Anzeige und Anfrage
 
-const compactFormat = new Intl.NumberFormat('de-DE', { maximumSignificantDigits: 4 })
+const compactFormat = () => new Intl.NumberFormat(getLocale(), { maximumSignificantDigits: 4 })
 const PREFIXES: [number, string][] = [
   [1e12, 'T'],
   [1e9, 'G'],
@@ -116,7 +117,7 @@ export function compactValue(value: number): string {
   if (value === 0) return '0'
   const abs = Math.abs(value)
   const [factor, prefix] = PREFIXES.find(([f]) => abs >= f * 0.9995) ?? PREFIXES[PREFIXES.length - 1]
-  return `${compactFormat.format(value / factor)}${prefix}`
+  return `${compactFormat().format(value / factor)}${prefix}`
 }
 
 /** Anzeige mit Einheit: „4,7 kΩ“, „100 nF“, „0 Ω“ */
@@ -203,25 +204,25 @@ export function parseValueList(text: string, unit: string, opts: { jumper: boole
     const result: ParsedValue = { raw, value: null, error: null, duplicate: false, jumper: false }
     const u = unitOf(raw)
     if (u && u !== unit) {
-      result.error = `Einheit passt nicht – die Serie erwartet ${unit}.`
+      result.error = tr("Einheit passt nicht – die Serie erwartet {v0}.", { v0: unit })
       return result
     }
     if (unit !== 'Ω' && /\d[Rr]\d|^[Rr]\d|\d[Rr]$/.test(raw)) {
-      result.error = 'Die R-Schreibweise gibt es nur bei Widerständen.'
+      result.error = tr("Die R-Schreibweise gibt es nur bei Widerständen.")
       return result
     }
     const value = parseEngineering(raw)
     if (value === null || !Number.isFinite(value)) {
-      result.error = 'Kein gültiger Wert (z. B. 4k7, 100n, 2,2 µ).'
+      result.error = tr("Kein gültiger Wert (z. B. 4k7, 100n, 2,2 µ).")
       return result
     }
     if (value < 0) {
-      result.error = 'Negative Werte gibt es nicht.'
+      result.error = tr("Negative Werte gibt es nicht.")
       return result
     }
     if (value === 0) {
       if (unit !== 'Ω' || !opts.jumper) {
-        result.error = unit === 'Ω' ? 'Diese Serie hat keine 0-Ω-Brücke.' : '0 ist kein gültiger Wert.'
+        result.error = unit === 'Ω' ? tr("Diese Serie hat keine 0-Ω-Brücke.") : tr("0 ist kein gültiger Wert.")
         return result
       }
       result.jumper = true

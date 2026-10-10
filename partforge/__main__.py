@@ -12,7 +12,7 @@ open (``partforge.lock``, :func:`partforge.workspace.lock_library`), which also 
 
 The server socket is bound once (preferred port 48765 – a stable origin keeps browser storage such as
 theme and layout –, else a free one) and handed to uvicorn, so the port cannot be taken in between; an
-explicit ``--port`` that is in use ends with a German message (exit code 2).
+explicit ``--port`` that is in use ends with a localized message (exit code 2).
 
 Logs: ``%LOCALAPPDATA%\\PartForge\\logs\\partforge.log`` (rotating, 5 × 2 MB); WebView2 profile:
 ``%LOCALAPPDATA%\\PartForge\\webview`` (moved there from the roaming folder of older versions).
@@ -40,6 +40,7 @@ import uvicorn
 from . import __version__
 from .app import create_app, http_protocol
 from .config import app_data_dir, load_settings, local_data_dir, log_dir
+from .desktop import DesktopApi, native_text, webview_localization
 from .logsafe import RedactTokenFilter
 
 PREFERRED_PORT = 48765  # stable origin -> browser storage (theme, layout) survives restarts
@@ -56,7 +57,7 @@ _mutex: Any = None  # keeps the single-instance mutex alive for the whole proces
 
 
 class PortInUse(RuntimeError):
-    """The requested port is taken (German message)."""
+    """The requested port is taken (localized message)."""
 
 
 # --------------------------------------------------------------------------- single instance
@@ -154,9 +155,13 @@ def _already_running(args: argparse.Namespace) -> int:
     info = _running_instance()
     url = info.get("url")
     pid = info.get("pid")
-    where = f" (Prozess {pid}, {url})" if pid and url else ""
-    text = (f"PartForge läuft bereits{where}. Es wird kein zweites PartForge mit denselben Einstellungen gestartet – "
-            "zwei Programme würden sich gegenseitig Bibliothek und Einstellungen überschreiben.")
+    where = native_text(" (process {pid}, {url})", " (Prozess {pid}, {url})").format(pid=pid, url=url) if pid and url else ""
+    text = native_text(
+        "PartForge is already running{where}. A second PartForge with the same settings will not start — "
+        "two programs would overwrite each other's library and settings.",
+        "PartForge läuft bereits{where}. Es wird kein zweites PartForge mit denselben Einstellungen gestartet – "
+        "zwei Programme würden sich gegenseitig Bibliothek und Einstellungen überschreiben.",
+    ).format(where=where)
     log.warning(text)
     if args.server_only or args.dev:
         print(text, file=sys.stderr, flush=True)
@@ -191,8 +196,12 @@ def bind_server_socket(port: int | None, *, fixed: bool) -> socket.socket:
             sock.close()
             if fixed:
                 raise PortInUse(
-                    f"Port {port} ist belegt (vermutlich läuft dort schon ein Programm, z. B. ein anderes PartForge). "
-                    "Bitte einen anderen Port mit --port angeben oder das andere Programm beenden."
+                    native_text(
+                        "Port {port} is in use (another program, such as PartForge, may already be running there). "
+                        "Choose another port with --port or stop the other program.",
+                        "Port {port} ist belegt (vermutlich läuft dort schon ein Programm, z. B. ein anderes PartForge). "
+                        "Bitte einen anderen Port mit --port angeben oder das andere Programm beenden.",
+                    ).format(port=port)
                 ) from exc
     sock = _new_socket()
     sock.bind(("127.0.0.1", 0))
@@ -220,13 +229,13 @@ def _reopen_workspace(path: str | None) -> None:
         return
     try:
         activate_workspace(Workspace.open(path))
-        log.info("Bibliothek geöffnet: %s", path)
+        log.info(native_text("Library opened: %s", "Bibliothek geöffnet: %s"), path)
     except Exception as exc:  # noqa: BLE001 - start without a library instead of crashing
         detail = getattr(exc, "detail", None)
         if detail:  # e.g. HTTP 409: open in another PartForge
-            log.warning("Bibliothek nicht geöffnet (%s): %s", path, detail)
+            log.warning(native_text("Library not opened (%s): %s", "Bibliothek nicht geöffnet (%s): %s"), path, detail)
         else:
-            log.exception("Bibliothek konnte nicht geöffnet werden: %s", path)
+            log.exception(native_text("Could not open library: %s", "Bibliothek konnte nicht geöffnet werden: %s"), path)
 
 
 def _configure_logging(verbose: bool) -> None:
@@ -270,9 +279,10 @@ def _webview_storage() -> Path:
     if not target.exists() and legacy.is_dir() and legacy.resolve() != target.resolve():
         try:
             shutil.move(str(legacy), str(target))
-            log.info("WebView-Profil verschoben: %s -> %s", legacy, target)
+            log.info(native_text("WebView profile moved: %s -> %s", "WebView-Profil verschoben: %s -> %s"), legacy, target)
         except OSError:
-            log.warning("WebView-Profil konnte nicht verschoben werden – es bleibt in %s", legacy, exc_info=True)
+            log.warning(native_text("Could not move WebView profile — keeping it in %s",
+                                    "WebView-Profil konnte nicht verschoben werden – es bleibt in %s"), legacy, exc_info=True)
             return legacy
     target.mkdir(parents=True, exist_ok=True)
     return target
@@ -291,12 +301,15 @@ def server_config(app: Any, port: int, *, verbose: bool = False) -> uvicorn.Conf
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="partforge", description="PartForge – Altium-Datenbankbibliotheken")
-    parser.add_argument("--browser", action="store_true", help="im Standardbrowser statt im Desktop-Fenster öffnen")
-    parser.add_argument("--server-only", action="store_true", help="nur den API-Server starten")
-    parser.add_argument("--dev", action="store_true", help="Entwicklungsmodus: Port 8765, Token 'dev'")
+    parser = argparse.ArgumentParser(prog="partforge", description=native_text(
+        "PartForge — Altium database libraries", "PartForge – Altium-Datenbankbibliotheken"))
+    parser.add_argument("--browser", action="store_true", help=native_text(
+        "open in the default browser instead of the desktop window", "im Standardbrowser statt im Desktop-Fenster öffnen"))
+    parser.add_argument("--server-only", action="store_true", help=native_text("start only the API server", "nur den API-Server starten"))
+    parser.add_argument("--dev", action="store_true", help=native_text(
+        "development mode: port 8765, token 'dev'", "Entwicklungsmodus: Port 8765, Token 'dev'"))
     parser.add_argument("--port", type=int, default=None)
-    parser.add_argument("--workspace", help="Bibliotheksordner öffnen")
+    parser.add_argument("--workspace", help=native_text("open a library folder", "Bibliotheksordner öffnen"))
     parser.add_argument("--verbose", action="store_true")
     parser.add_argument("--version", action="version", version=f"PartForge {__version__}")
     args = parser.parse_args(argv)
@@ -339,7 +352,9 @@ def main(argv: list[str] | None = None) -> int:
 def _serve(args: argparse.Namespace, app: Any, server: uvicorn.Server, sock: socket.socket, url: str,
            settings: Any) -> int:
     if args.server_only or args.dev:
-        print(f"PartForge API läuft auf {url} (Token: {app.state.token if args.dev else 'versteckt'})", flush=True)
+        token_label = app.state.token if args.dev else native_text("hidden", "versteckt")
+        print(native_text("PartForge API is running at {url} (token: {token})",
+                          "PartForge API läuft auf {url} (Token: {token})").format(url=url, token=token_label), flush=True)
         server.run(sockets=[sock])
         return 0
 
@@ -349,8 +364,9 @@ def _serve(args: argparse.Namespace, app: Any, server: uvicorn.Server, sock: soc
     while not server.started and thread.is_alive() and time.time() < deadline:
         time.sleep(0.05)
     if not server.started:
-        text = (f"Der PartForge-Server ist nicht gestartet ({url}). Details stehen in "
-                f"{log_dir() / 'partforge.log'}.")
+        text = native_text("The PartForge server did not start ({url}). See {log} for details.",
+                           "Der PartForge-Server ist nicht gestartet ({url}). Details stehen in {log}.").format(
+                               url=url, log=log_dir() / "partforge.log")
         log.error(text)
         _message_box(text)
         server.should_exit = True
@@ -368,8 +384,7 @@ def _serve(args: argparse.Namespace, app: Any, server: uvicorn.Server, sock: soc
 
     import webview
 
-    from .desktop import DesktopApi
-
+    localization = webview_localization(settings.language)
     webview.create_window(
         WINDOW_TITLE,
         url,
@@ -379,11 +394,13 @@ def _serve(args: argparse.Namespace, app: Any, server: uvicorn.Server, sock: soc
         min_size=(1120, 720),
         background_color="#090B10" if settings.theme != "light" else "#F5F6FA",
         text_select=True,
+        localization=localization,
     )
     storage = _webview_storage()
     webview.settings["ALLOW_DOWNLOADS"] = True  # browser-style downloads (exports) in WebView2
     icon = Path(__file__).parent / "assets" / "app.ico"
-    webview.start(private_mode=False, storage_path=str(storage), icon=str(icon) if icon.is_file() else None)
+    webview.start(private_mode=False, storage_path=str(storage), icon=str(icon) if icon.is_file() else None,
+                  localization=localization)
     server.should_exit = True
     thread.join(timeout=5)
     return 0

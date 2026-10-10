@@ -1,9 +1,4 @@
-/**
- * Ein eingelesener Scan: Übersicht und Hinweise, links der Dateibaum (Auswahl, Filter, Bauteile), rechts Optionen mit
- * Live-Zusammenfassung und Start sowie die Vorschau des gewählten bzw. überfahrenen Bauteils. Die Auswahl gilt je Scan
- * (die Seite rendert die Ansicht mit `key={scan.id}`); vorausgewählt sind alle lesbaren Dateien. Für einen anderen
- * Zielordner als den Vorschlag holt die Ansicht den Scan für diesen Ordner (`GET …/scans/{id}?target=`).
- */
+import { t, useI18n } from '@/lib/i18n'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { motion } from 'motion/react'
 import { useMemo, useState, type ReactNode } from 'react'
@@ -33,6 +28,7 @@ export interface ScanViewProps {
 }
 
 export function ScanView({ scan: proposed, bases, onStart, starting, startError, blocked }: ScanViewProps) {
+  const { locale } = useI18n()
   const [options, setOptions] = useState<ImportOptionsState>(() => ({ target: proposed.name, replace: false, extract3d: false, convert: false }))
   const folder = safeFolderName(options.target.trim() || proposed.name)
   /** anderer Zielordner als der Vorschlag des Scans */
@@ -52,7 +48,7 @@ export function ScanView({ scan: proposed, bases, onStart, starting, startError,
   const scan = exact && targeted.data ? targeted.data : proposed
   /** Zustände sind für den gewählten Ordner nur geschätzt */
   const retargeted = custom && !exact
-  const index = useMemo(() => indexScan(scan), [scan])
+  const index = useMemo(() => indexScan(scan, locale), [scan, locale])
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => index.defaultSelection)
   const [pinned, setPinned] = useState<PreviewTarget | null>(null)
   const [hovered, setHovered] = useState<PreviewTarget | null>(null)
@@ -101,17 +97,15 @@ export function ScanView({ scan: proposed, bases, onStart, starting, startError,
         <Card>
           <EmptyState
             illustration="search-empty"
-            title="Keine Bibliotheken gefunden"
-            description="In dieser Quelle liegen keine SchLib-, PcbLib- oder IntLib-Dateien – Ordner werden mit allen Unterordnern durchsucht. Bibliothekspakete (LibPkg) und ZIP-Archive bitte direkt als Datei wählen."
+            title={t("Keine Bibliotheken gefunden")}
+            description={t("In dieser Quelle liegen keine SchLib-, PcbLib- oder IntLib-Dateien – Ordner werden mit allen Unterordnern durchsucht. Bibliothekspakete (LibPkg) und ZIP-Archive bitte direkt als Datei wählen.")}
           />
         </Card>
       ) : (
         <>
           {importable === 0 && scan.taken > 0 && (
-            <Callout tone="warning" title="Nichts zu übernehmen">
-              Alle Namen dieser Quelle sind in der Bibliothek schon vergeben – Altium findet Symbole und Footprints nur über ihren Namen,
-              deshalb übernimmt PartForge keinen zweiten mit demselben Namen.
-            </Callout>
+            <Callout tone="warning" title={t("Nichts zu übernehmen")}>
+              {t("Alle Namen dieser Quelle sind in der Bibliothek schon vergeben – Altium findet Symbole und Footprints nur über ihren Namen, deshalb übernimmt PartForge keinen zweiten mit demselben Namen.")}</Callout>
           )}
           <div className="grid grid-cols-[minmax(0,1fr)_18rem] items-start gap-4 @[76rem]:grid-cols-[minmax(0,1fr)_22rem]">
             <div ref={treeRef} className="min-w-0">
@@ -130,7 +124,7 @@ export function ScanView({ scan: proposed, bases, onStart, starting, startError,
             </div>
             {/* bleibt beim Blättern neben der Liste; ist das Fenster niedriger als Optionen und Vorschau, scrollt sie selbst */}
             <aside
-              aria-label="Optionen und Vorschau"
+              aria-label={t("Optionen und Vorschau")}
               className="sticky top-[calc(var(--pf-topbar-height)+0.75rem)] -mx-1 -mb-3 flex max-h-[calc(100dvh-var(--pf-topbar-height)-var(--pf-dock-reserve)-1.5rem)] min-w-0 flex-col gap-4 overflow-y-auto overscroll-contain px-1 pb-3 [scrollbar-width:thin]"
             >
               <OptionsCard

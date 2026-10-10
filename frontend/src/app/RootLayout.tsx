@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { useQueryClient } from '@tanstack/react-query'
 import { RotateCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -15,6 +16,7 @@ import { ShellCommands } from './shell/ShellCommands'
 
 /** Startbildschirm, solange die erste Abfrage läuft (erscheint erst nach kurzer Verzögerung). */
 export function Splash() {
+  const { t: tr } = useI18n()
   return (
     <div className="flex h-screen flex-col items-center justify-center gap-6 opacity-0 [animation:pf-fade-in_.4s_.25s_ease-out_forwards]">
       <div className="relative">
@@ -28,8 +30,8 @@ export function Splash() {
         <span className="text-lg font-semibold tracking-[-0.02em] text-fg">
           Part<span className="text-gradient-forge">Forge</span>
         </span>
-        <ProgressBar indeterminate size="xs" label="PartForge wird gestartet" hideLabel />
-        <span className="text-xs text-fg-subtle">Werkstatt wird angeheizt …</span>
+        <ProgressBar indeterminate size="xs" label={tr("PartForge wird gestartet")} hideLabel />
+        <span className="text-xs text-fg-subtle">{tr("Werkstatt wird angeheizt …")}</span>
       </div>
     </div>
   )
@@ -44,6 +46,7 @@ function FullscreenProblem({
   description: string
   onRetry?: () => void
 }) {
+  const { t: tr } = useI18n()
   return (
     <div className="flex h-screen items-center justify-center p-8">
       <div className="w-full max-w-lg rounded-panel border border-line bg-surface shadow-raised">
@@ -57,12 +60,10 @@ function FullscreenProblem({
             <>
               {onRetry && (
                 <Button variant="primary" leftIcon={<RotateCw />} onClick={onRetry}>
-                  Erneut versuchen
-                </Button>
+                  {tr("Erneut versuchen")}</Button>
               )}
               <Button variant="secondary" onClick={() => window.location.reload()}>
-                Neu laden
-              </Button>
+                {tr("Neu laden")}</Button>
             </>
           }
         />
@@ -76,6 +77,7 @@ function FullscreenProblem({
  * und stellt die globalen Overlays bereit (Befehlspalette, Drop-Zone, Dialoge, Job-Dock).
  */
 export function RootLayout() {
+  const { t: tr } = useI18n()
   const workspace = useWorkspace()
   const qc = useQueryClient()
   const [sessionInvalid, setSessionInvalid] = useState(false)
@@ -88,20 +90,20 @@ export function RootLayout() {
         } else if (err.isNoWorkspace) {
           qc.setQueryData(systemKeys.workspace, null)
           // feste ID: mehrere gleichzeitige 409-Antworten ergeben genau einen Hinweis
-          toast.info('Keine Bibliothek geöffnet', {
+          toast.info(tr("Keine Bibliothek geöffnet"), {
             id: 'no-workspace',
-            description: 'Bitte eine Bibliothek öffnen oder neu anlegen.',
+            description: tr("Bitte eine Bibliothek öffnen oder neu anlegen."),
           })
         }
       }),
-    [qc],
+    [qc, tr],
   )
 
   if (sessionInvalid) {
     return (
       <FullscreenProblem
-        title="Sitzung ungültig"
-        description="Diese Oberfläche gehört zu einer beendeten PartForge-Sitzung. Bitte PartForge neu starten oder die Seite neu laden."
+        title={tr("Sitzung ungültig")}
+        description={tr("Diese Oberfläche gehört zu einer beendeten PartForge-Sitzung. Bitte PartForge neu starten oder die Seite neu laden.")}
       />
     )
   }
@@ -109,8 +111,8 @@ export function RootLayout() {
   if (workspace.isError) {
     return (
       <FullscreenProblem
-        title="Backend nicht erreichbar"
-        description={`${errorMessage(workspace.error)} Prüfen Sie, ob PartForge noch läuft.`}
+        title={tr("Backend nicht erreichbar")}
+        description={tr("{0} Prüfen Sie, ob PartForge noch läuft.", { "0": String(errorMessage(workspace.error)) })}
         onRetry={() => void workspace.refetch()}
       />
     )

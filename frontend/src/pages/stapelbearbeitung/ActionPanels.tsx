@@ -1,11 +1,4 @@
-/**
- * Fortschritt und Ergebnis der Jobs auf der Seite: laufender Job (Fortschritt, bei der Prüfung „Abbrechen“), Ergebnis
- * von „Anwenden“ (angepasste Bauteile und Bibliotheken, je Regel, übersprungene und fehlerhafte Dateien) und von
- * „Rückgängig machen“, dazu der Hinweis auf die letzte Stapelbearbeitung, die sich rückgängig machen lässt.
- *
- * Anwenden und Rückgängig bieten bewusst kein „Abbrechen“: ein Abbruch mitten im Lauf hinterließe geänderte Dateien
- * ohne Rückgängig-Datensatz (das Backend schreibt ihn erst am Ende).
- */
+import { useI18n, localizeMessage } from '@/lib/i18n'
 import { CircleCheck, CircleX, Info, PaintbrushVertical, RefreshCw, TriangleAlert, Undo2 } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { cleanErrorText } from '@/api/client'
@@ -31,15 +24,16 @@ export interface JobProgressProps {
 }
 
 export function JobProgress({ job, title, icon, note, onCancel, cancelling }: JobProgressProps) {
+  const { t: tr } = useI18n()
   const stopping = Boolean(job?.cancel_requested)
   const waiting = !job || job.status === 'queued'
   const status = stopping
-    ? 'Wird abgebrochen …'
+    ? tr("Wird abgebrochen …")
     : job?.message
-      ? formatNumbersInText(job.message)
+      ? formatNumbersInText(localizeMessage(job.message))
       : waiting
-        ? 'Wartet auf den Start …'
-        : 'Läuft …'
+        ? tr("Wartet auf den Start …")
+        : tr("Läuft …")
   return (
     <Card className="px-5 py-4" aria-busy="true">
       <div className="flex items-start gap-4">
@@ -58,7 +52,7 @@ export function JobProgress({ job, title, icon, note, onCancel, cancelling }: Jo
             indeterminate={waiting}
             live
             label={
-              <span aria-live="polite" title={job?.message || undefined}>
+              <span aria-live="polite" title={job?.message ? localizeMessage(job.message) : undefined}>
                 {status}
               </span>
             }
@@ -68,8 +62,7 @@ export function JobProgress({ job, title, icon, note, onCancel, cancelling }: Jo
         </div>
         {onCancel && (
           <Button size="sm" variant="ghost" onClick={onCancel} loading={cancelling} disabled={stopping}>
-            Abbrechen
-          </Button>
+            {tr("Abbrechen")}</Button>
         )}
       </div>
     </Card>
@@ -89,6 +82,7 @@ function IssueList({
   tone: 'warning' | 'danger'
   items: { library: string; message: string }[]
 }) {
+  const { t: tr } = useI18n()
   const [all, setAll] = useState(false)
   const shown = all ? items : items.slice(0, LIST_PAGE)
   const Icon = tone === 'danger' ? CircleX : TriangleAlert
@@ -114,7 +108,7 @@ function IssueList({
       </ul>
       {items.length > LIST_PAGE && (
         <Button size="xs" variant="ghost" className="mt-1" onClick={() => setAll((v) => !v)}>
-          {all ? 'Weniger anzeigen' : `${formatNumber(items.length - LIST_PAGE)} weitere anzeigen`}
+          {all ? tr("Weniger anzeigen") : tr("{0} weitere anzeigen", { "0": String(formatNumber(items.length - LIST_PAGE)) })}
         </Button>
       )}
     </section>
@@ -131,6 +125,7 @@ function OutcomeHead({
   title: string
   children?: ReactNode
 }) {
+  useI18n()
   const icon = tone === 'success' ? <CircleCheck /> : tone === 'warning' ? <TriangleAlert /> : <Info />
   const ring =
     tone === 'success'
@@ -162,6 +157,7 @@ interface RecheckProps {
 }
 
 function RecheckButton({ onRecheck, recheckBlocked, recheckPending }: RecheckProps) {
+  const { t: tr } = useI18n()
   return (
     <Button
       size="sm"
@@ -172,8 +168,7 @@ function RecheckButton({ onRecheck, recheckBlocked, recheckPending }: RecheckPro
       loading={recheckPending}
       title={recheckBlocked ?? undefined}
     >
-      Erneut prüfen
-    </Button>
+      {tr("Erneut prüfen")}</Button>
   )
 }
 
@@ -189,22 +184,21 @@ export interface ApplyOutcomeProps extends RecheckProps {
 }
 
 export function ApplyOutcome({ view, plan, result, onUndo, ...recheck }: ApplyOutcomeProps) {
+  const { t: tr } = useI18n()
   const { job, state } = view
   if (state === 'running') {
     return (
       <JobProgress
         job={job}
-        title="Hausstil wird angewendet"
+        title={tr("Hausstil wird angewendet")}
         icon={<PaintbrushVertical />}
         note={
           <>
             {plan &&
               (plan.components > 0
-                ? `${plural(plan.components, 'Bauteil', 'Bauteile')} in ${plural(plan.libraries, 'Bibliothek', 'Bibliotheken')}. `
-                : `Lagen-Kopf von ${plural(plan.libraries, 'Bibliothek', 'Bibliotheken')}. `)}
-            Jede Datei wird vorher nach <span className="mono">Backups\lib</span> gesichert; Bibliotheken, die in Altium
-            geöffnet und geändert sind, werden übersprungen.
-          </>
+                ? `${plural(plan.components, tr("Bauteil"), tr("Bauteile"))} in ${plural(plan.libraries, tr("Bibliothek"), tr("Bibliotheken"))}. `
+                : tr("Lagen-Kopf von {0}. ", { "0": String(plural(plan.libraries, tr("Bibliothek"), tr("Bibliotheken"))) }))}
+            {tr("Jede Datei wird vorher nach ")}<span className="mono">Backups\lib</span> {tr(" gesichert; Bibliotheken, die in Altium geöffnet und geändert sind, werden übersprungen.")}</>
         }
       />
     )
@@ -214,23 +208,20 @@ export function ApplyOutcome({ view, plan, result, onUndo, ...recheck }: ApplyOu
       <Callout
         tone={state === 'failed' ? 'danger' : 'warning'}
         urgent
-        title={state === 'failed' ? 'Anwenden fehlgeschlagen' : 'Anwenden abgebrochen'}
+        title={state === 'failed' ? tr("Anwenden fehlgeschlagen") : tr("Anwenden abgebrochen")}
         actions={<RecheckButton {...recheck} />}
       >
-        {state === 'failed' ? cleanErrorText(job.error ?? '') || 'Unbekannter Fehler.' : jobCancelText(job)}
+        {state === 'failed' ? cleanErrorText(job.error ?? '') || tr("Unbekannter Fehler.") : jobCancelText(job)}
         <span className="block">
-          Bereits angepasste Bibliotheken bleiben geändert – ihre Sicherungen liegen unter{' '}
-          <span className="mono">Backups\lib</span>. Erneut prüfen zeigt den aktuellen Stand.
-        </span>
+          {tr("Bereits angepasste Bibliotheken bleiben geändert – ihre Sicherungen liegen unter")}{' '}
+          <span className="mono">Backups\lib</span>{tr(". Erneut prüfen zeigt den aktuellen Stand.")}</span>
       </Callout>
     )
   }
   if (!result) {
     return (
-      <Callout tone="neutral" title="Ergebnis nicht mehr verfügbar" actions={<RecheckButton {...recheck} />}>
-        Das Ergebnis des letzten Anwendens liegt nicht mehr vor (z. B. nach einem Neustart von PartForge). Erneut prüfen
-        zeigt den aktuellen Stand.
-      </Callout>
+      <Callout tone="neutral" title={tr("Ergebnis nicht mehr verfügbar")} actions={<RecheckButton {...recheck} />}>
+        {tr("Das Ergebnis des letzten Anwendens liegt nicht mehr vor (z. B. nach einem Neustart von PartForge). Erneut prüfen zeigt den aktuellen Stand.")}</Callout>
     )
   }
 
@@ -240,19 +231,19 @@ export function ApplyOutcome({ view, plan, result, onUndo, ...recheck }: ApplyOu
   const tone = errors.length || skipped.length ? 'warning' : nothing ? 'neutral' : 'success'
   const title = nothing
     ? errors.length || skipped.length
-      ? 'Nichts angepasst'
-      : 'Nichts zu ändern'
-    : `${plural(result.components, 'Bauteil', 'Bauteile')} in ${plural(result.libraries.length, 'Bibliothek', 'Bibliotheken')} angepasst`
+      ? tr("Nichts angepasst")
+      : tr("Nichts zu ändern")
+    : tr("{0} in {1} angepasst", { "0": String(plural(result.components, tr("Bauteil"), tr("Bauteile"))), "1": String(plural(result.libraries.length, tr("Bibliothek"), tr("Bibliotheken"))) })
   const perRule = result.report ? Object.entries(result.report.summary).filter(([, n]) => n > 0) : []
   const stats = [
     {
-      label: 'Bauteile angepasst',
+      label: tr("Bauteile angepasst"),
       value: result.components,
       tone: result.components ? 'text-success-text' : undefined,
     },
-    { label: 'Bibliotheken geändert', value: result.libraries.length },
-    { label: 'Übersprungen', value: skipped.length, tone: skipped.length ? 'text-warning-text' : undefined },
-    { label: 'Fehler', value: errors.length, tone: errors.length ? 'text-danger-text' : undefined },
+    { label: tr("Bibliotheken geändert"), value: result.libraries.length },
+    { label: tr("Übersprungen"), value: skipped.length, tone: skipped.length ? 'text-warning-text' : undefined },
+    { label: tr("Fehler"), value: errors.length, tone: errors.length ? 'text-danger-text' : undefined },
   ]
 
   return (
@@ -260,12 +251,12 @@ export function ApplyOutcome({ view, plan, result, onUndo, ...recheck }: ApplyOu
       <OutcomeHead tone={tone} title={title}>
         {/* bei Erfolg sagt der Titel schon alles; sonst nennt die Meldung, was übersprungen wurde */}
         {result.message && tone !== 'success' && (
-          <p className="mt-0.5 text-xs text-fg-muted">{formatNumbersInText(result.message)}</p>
+          <p className="mt-0.5 text-xs text-fg-muted">{formatNumbersInText(localizeMessage(result.message))}</p>
         )}
         {!nothing && (
           <p className="mt-1 text-xs leading-snug text-fg-subtle">
-            Die vorherigen Dateien liegen unter <span className="mono">Backups\lib</span>
-            {result.undo ? ' – „Rückgängig machen“ stellt sie wieder her.' : '.'}
+            {tr("Die vorherigen Dateien liegen unter ")}<span className="mono">Backups\lib</span>
+            {result.undo ? tr(" – „Rückgängig machen“ stellt sie wieder her.") : '.'}
           </p>
         )}
       </OutcomeHead>
@@ -289,7 +280,7 @@ export function ApplyOutcome({ view, plan, result, onUndo, ...recheck }: ApplyOu
       </dl>
       {perRule.length > 0 && (
         <section className="border-t border-line px-5 py-3">
-          <h3 className="text-xs font-medium text-fg">Angepasst je Regel</h3>
+          <h3 className="text-xs font-medium text-fg">{tr("Angepasst je Regel")}</h3>
           <ul className="mt-1.5 flex flex-wrap gap-1.5">
             {perRule.map(([rule, n]) => (
               <li key={rule}>
@@ -302,15 +293,14 @@ export function ApplyOutcome({ view, plan, result, onUndo, ...recheck }: ApplyOu
           </ul>
         </section>
       )}
-      {skipped.length > 0 && <IssueList title="Übersprungen" tone="warning" items={skipped} />}
-      {errors.length > 0 && <IssueList title="Fehler" tone="danger" items={errors} />}
+      {skipped.length > 0 && <IssueList title={tr("Übersprungen")} tone="warning" items={skipped} />}
+      {errors.length > 0 && <IssueList title={tr("Fehler")} tone="danger" items={errors} />}
       <CardFooter className="flex-wrap">
         <RecheckButton {...recheck} />
-        <span className="text-2xs text-fg-subtle">zeigt, ob jetzt alles im Hausstil ist</span>
+        <span className="text-2xs text-fg-subtle">{tr("zeigt, ob jetzt alles im Hausstil ist")}</span>
         {result.undo && onUndo && (
           <Button size="sm" variant="ghost" leftIcon={<Undo2 />} className="ml-auto" onClick={onUndo}>
-            Rückgängig machen
-          </Button>
+            {tr("Rückgängig machen")}</Button>
         )}
       </CardFooter>
     </Card>
@@ -325,14 +315,15 @@ export interface UndoOutcomeProps extends RecheckProps {
 }
 
 export function UndoOutcome({ view, result, ...recheck }: UndoOutcomeProps) {
+  const { t: tr } = useI18n()
   const { job, state } = view
   if (state === 'running') {
     return (
       <JobProgress
         job={job}
-        title="Stapelbearbeitung wird rückgängig gemacht"
+        title={tr("Stapelbearbeitung wird rückgängig gemacht")}
         icon={<Undo2 />}
-        note="Nur Bibliotheken, die seit der Stapelbearbeitung unverändert sind, bekommen ihre Sicherung zurück."
+        note={tr("Nur Bibliotheken, die seit der Stapelbearbeitung unverändert sind, bekommen ihre Sicherung zurück.")}
       />
     )
   }
@@ -341,56 +332,53 @@ export function UndoOutcome({ view, result, ...recheck }: UndoOutcomeProps) {
       <Callout
         tone={state === 'failed' ? 'danger' : 'warning'}
         urgent
-        title={state === 'failed' ? 'Rückgängig machen fehlgeschlagen' : 'Rückgängig machen abgebrochen'}
+        title={state === 'failed' ? tr("Rückgängig machen fehlgeschlagen") : tr("Rückgängig machen abgebrochen")}
         actions={<RecheckButton {...recheck} />}
       >
-        {state === 'failed' ? cleanErrorText(job.error ?? '') || 'Unbekannter Fehler.' : jobCancelText(job)}
+        {state === 'failed' ? cleanErrorText(job.error ?? '') || tr("Unbekannter Fehler.") : jobCancelText(job)}
       </Callout>
     )
   }
   if (!result) {
     return (
-      <Callout tone="neutral" title="Ergebnis nicht mehr verfügbar" actions={<RecheckButton {...recheck} />}>
-        Das Ergebnis liegt nicht mehr vor (z. B. nach einem Neustart von PartForge). Erneut prüfen zeigt den aktuellen
-        Stand.
-      </Callout>
+      <Callout tone="neutral" title={tr("Ergebnis nicht mehr verfügbar")} actions={<RecheckButton {...recheck} />}>
+        {tr("Das Ergebnis liegt nicht mehr vor (z. B. nach einem Neustart von PartForge). Erneut prüfen zeigt den aktuellen Stand.")}</Callout>
     )
   }
   const restored = result.restored ?? []
   const skipped = result.skipped ?? []
   const tone = skipped.length ? 'warning' : restored.length ? 'success' : 'neutral'
   const title = restored.length
-    ? `${plural(restored.length, 'Bibliothek', 'Bibliotheken')} wiederhergestellt`
-    : 'Nichts wiederhergestellt'
+    ? tr("{0} wiederhergestellt", { "0": String(plural(restored.length, tr("Bibliothek"), tr("Bibliotheken"))) })
+    : tr("Nichts wiederhergestellt")
   return (
     <Card className="overflow-hidden">
       <OutcomeHead tone={tone} title={title}>
         {result.message && tone !== 'success' && (
-          <p className="mt-0.5 text-xs text-fg-muted">{formatNumbersInText(result.message)}</p>
+          <p className="mt-0.5 text-xs text-fg-muted">{formatNumbersInText(localizeMessage(result.message))}</p>
         )}
         {restored.length > 0 && (
           <p className="mt-1 text-xs leading-snug text-fg-subtle">
-            Auch die Einträge in PartForge haben ihren vorherigen Stand zurück.
-            {skipped.length > 0 && ' Die übersprungenen lassen sich später erneut zurücksetzen.'}
+            {tr("Auch die Einträge in PartForge haben ihren vorherigen Stand zurück.")}{skipped.length > 0 && tr(" Die übersprungenen lassen sich später erneut zurücksetzen.")}
           </p>
         )}
       </OutcomeHead>
       {restored.length > 0 && (
         <section className="border-t border-line px-5 py-3">
-          <h3 className="text-xs font-medium text-fg">Wiederhergestellt</h3>
+          <h3 className="text-xs font-medium text-fg">{tr("Wiederhergestellt")}</h3>
           <p className="mt-1 text-xs leading-snug text-fg-muted [overflow-wrap:anywhere]">
             {restored
               .slice(0, 12)
               .map((rel) => splitPath(rel).name)
               .join(' · ')}
-            {restored.length > 12 && ` und ${formatNumber(restored.length - 12)} weitere`}
+            {restored.length > 12 && tr(" und {0} weitere", { "0": String(formatNumber(restored.length - 12)) })}
           </p>
         </section>
       )}
-      {skipped.length > 0 && <IssueList title="Nicht zurückgesetzt" tone="warning" items={skipped} />}
+      {skipped.length > 0 && <IssueList title={tr("Nicht zurückgesetzt")} tone="warning" items={skipped} />}
       <CardFooter className="flex-wrap">
         <RecheckButton {...recheck} />
-        <span className="text-2xs text-fg-subtle">zeigt den Stand nach dem Zurücksetzen</span>
+        <span className="text-2xs text-fg-subtle">{tr("zeigt den Stand nach dem Zurücksetzen")}</span>
       </CardFooter>
     </Card>
   )
@@ -409,13 +397,14 @@ export function UndoNotice({
   disabled: boolean
   pending: boolean
 }) {
+  const { t: tr } = useI18n()
   const libraries = info.libraries ?? []
-  const when = info.created ? ` vom ${formatDateTime(info.created)}` : ''
+  const when = info.created ? tr(" vom {0}", { "0": String(formatDateTime(info.created)) }) : ''
   return (
     <Callout
       tone="neutral"
       icon={<Undo2 />}
-      title={`Letzte Stapelbearbeitung${when} (${plural(libraries.length, 'Bibliothek', 'Bibliotheken')})`}
+      title={tr("Letzte Stapelbearbeitung{0} ({1})", { "0": String(when), "1": String(plural(libraries.length, tr("Bibliothek"), tr("Bibliotheken"))) })}
       actions={
         <Button
           size="sm"
@@ -425,18 +414,16 @@ export function UndoNotice({
           disabled={disabled}
           loading={pending}
         >
-          Rückgängig machen
-        </Button>
+          {tr("Rückgängig machen")}</Button>
       }
     >
-      Stellt die Bibliotheken aus ihren Sicherungen wieder her – nur solche, die seitdem unverändert sind.
-      {libraries.length > 0 && (
+      {tr("Stellt die Bibliotheken aus ihren Sicherungen wieder her – nur solche, die seitdem unverändert sind.")}{libraries.length > 0 && (
         <span className="block text-fg-subtle [overflow-wrap:anywhere]">
           {libraries
             .slice(0, 3)
             .map((rel) => splitPath(rel).name)
             .join(' · ')}
-          {libraries.length > 3 && ` und ${formatNumber(libraries.length - 3)} weitere`}
+          {libraries.length > 3 && tr(" und {0} weitere", { "0": String(formatNumber(libraries.length - 3)) })}
         </span>
       )}
     </Callout>

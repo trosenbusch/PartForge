@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 /**
  * Schritt 3 – Werte und Varianten: Bauformen (mit Leistung/Spannung je Baugröße), E-Reihe und logarithmischer
  * Bereich (oder eingefügte Werteliste), Varianten der Vorlage (Toleranz, TK, Spannung, Verpackung, 0-Ω-Brücke) und
@@ -90,6 +91,7 @@ function Section({ title, aside, children, id }: { title: string; aside?: ReactN
 }
 
 export function ValuesStep({ template: t, settings: s, onChange, estimate, sizeCounts, summary, houseDensity }: ValuesStepProps) {
+  const { t: tr } = useI18n()
   const uid = useId().replace(/:/g, '')
   const [advanced, setAdvanced] = useState(false)
   const mode = templateMode(t)
@@ -113,7 +115,7 @@ export function ValuesStep({ template: t, settings: s, onChange, estimate, sizeC
     if (!tolerances.length) return null
     const options =
       mode === 'catalog'
-        ? [{ value: AUTO, label: 'Alle' }, ...tolerances]
+        ? [{ value: AUTO, label: tr("Alle") }, ...tolerances]
         : tolerances.map((o) => ({ value: o.value, label: o.label }))
     const value = mode === 'catalog' ? (s.tolerance ?? AUTO) : (s.tolerance ?? tolEffective ?? options[0]?.value)
     const set = (v: string) => onChange({ tolerance: v === AUTO ? null : v })
@@ -121,12 +123,11 @@ export function ValuesStep({ template: t, settings: s, onChange, estimate, sizeC
     return options.length <= 5 ? (
       <div className="flex flex-col gap-1.5">
         <span aria-hidden className="flex min-h-5 items-baseline text-ui font-medium text-fg">
-          Toleranz
-        </span>
-        <SegmentedControl size="sm" fullWidth aria-label="Toleranz" value={value ?? ''} onValueChange={set} options={options} />
+          {tr("Toleranz")}</span>
+        <SegmentedControl size="sm" fullWidth aria-label={tr("Toleranz")} value={value ?? ''} onValueChange={set} options={options} />
       </div>
     ) : (
-      <Field label="Toleranz">
+      <Field label={tr("Toleranz")}>
         <Select size="sm" value={value ?? undefined} onValueChange={set} options={options} />
       </Field>
     )
@@ -136,41 +137,38 @@ export function ValuesStep({ template: t, settings: s, onChange, estimate, sizeC
     <section aria-labelledby="serien-werte" className="flex flex-col gap-5">
       <StepHeading
         id="serien-werte"
-        title="Werte und Varianten"
-        description={`${t.title}. Bauformen und Bereich wählen – der Zähler rechnet sofort, PartForge prüft jede Teilenummer gegen die Daten der Serie.`}
+        title={tr("Werte und Varianten")}
+        description={tr("{v0}. Bauformen und Bereich wählen – der Zähler rechnet sofort, PartForge prüft jede Teilenummer gegen die Daten der Serie.", { v0: t.builtin ? tr(t.title) : t.title })}
       />
       <div className="grid grid-cols-1 items-start gap-5 @[68rem]:grid-cols-[minmax(0,1fr)_21.5rem]">
         <div className="flex min-w-0 flex-col divide-y divide-line rounded-card border border-line bg-surface shadow-card">
           <Section
             id={`${uid}-sizes`}
-            title="Bauformen"
+            title={tr("Bauformen")}
             aside={
               <>
                 <span className="mr-1 text-2xs text-fg-subtle">
-                  {formatNumber(s.sizes.length)} von {formatNumber(sizes.length)}
+                  {formatNumber(s.sizes.length)} {tr("von")} {formatNumber(sizes.length)}
                 </span>
                 {common.length > 0 && common.length < sizes.length && (
                   <Button size="xs" variant="ghost" onClick={() => onChange({ sizes: common })}>
-                    Gängige
-                  </Button>
+                    {tr("Gängige")}</Button>
                 )}
                 <Button size="xs" variant="ghost" onClick={() => onChange({ sizes: sizes.map((x) => x.size) })}>
-                  Alle
-                </Button>
+                  {tr("Alle")}</Button>
                 <Button size="xs" variant="ghost" disabled={!s.sizes.length} onClick={() => onChange({ sizes: [] })}>
-                  Keine
-                </Button>
+                  {tr("Keine")}</Button>
               </>
             }
           >
             <SizeTiles
-              aria-label="Bauformen"
+              aria-label={tr("Bauformen")}
               sizes={sizes}
               value={s.sizes}
               onValueChange={(v) => onChange({ sizes: v })}
               counts={sizeCounts}
             />
-            {!s.sizes.length && <p className="text-xs text-warning-text">Mindestens eine Bauform wählen.</p>}
+            {!s.sizes.length && <p className="text-xs text-warning-text">{tr("Mindestens eine Bauform wählen.")}</p>}
           </Section>
 
           <Section
@@ -179,12 +177,12 @@ export function ValuesStep({ template: t, settings: s, onChange, estimate, sizeC
             aside={
               <SegmentedControl<ValueMode>
                 size="sm"
-                aria-label="Werte festlegen"
+                aria-label={tr("Werte festlegen")}
                 value={s.valueMode}
                 onValueChange={(v) => onChange({ valueMode: v })}
                 options={[
-                  { value: 'range', label: 'E-Reihe und Bereich' },
-                  { value: 'list', label: 'Werteliste' },
+                  { value: 'range', label: tr("E-Reihe und Bereich") },
+                  { value: 'list', label: tr("Werteliste") },
                 ]}
               />
             }
@@ -193,10 +191,9 @@ export function ValuesStep({ template: t, settings: s, onChange, estimate, sizeC
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-2">
                   <span id={`${uid}-series`} className="text-ui font-medium text-fg">
-                    E-Reihe
-                  </span>
+                    {tr("E-Reihe")}</span>
                   <ESeriesControl
-                    aria-label="E-Reihe"
+                    aria-label={tr("E-Reihe")}
                     value={s.series}
                     onValueChange={(v) => onChange({ series: v })}
                     datasheet={datasheet}
@@ -204,22 +201,22 @@ export function ValuesStep({ template: t, settings: s, onChange, estimate, sizeC
                     fallbackTip={
                       mode === 'catalog' || mode === 'matrix'
                         ? undefined
-                        : 'Das Datenblatt nennt keine Reihe – PartForge nimmt E24.'
+                        : tr("Das Datenblatt nennt keine Reihe – PartForge nimmt E24.")
                     }
                   />
                   <div className="flex min-h-6 flex-wrap items-center justify-between gap-x-4 gap-y-1">
                     <span className="text-xs text-fg-muted">
                       {datasheet.length ? (
                         <>
-                          Laut Datenblatt{tolLabel ? ` für ${tolLabel}` : ''}:{' '}
+                          {tr("Laut Datenblatt")}{tolLabel ? tr(" für {v0}", { v0: tolLabel }) : ''}:{' '}
                           <span className="mono text-fg">{datasheet.join(' + ')}</span>
                           <span aria-hidden className="ml-1.5 inline-block size-1 translate-y-[-2px] rounded-full bg-success" />
                         </>
                       ) : mode === 'catalog' || mode === 'matrix' ? (
-                        'Ohne Reihe: alle Werte, die laut Datenblatt lieferbar sind.'
+                        tr("Ohne Reihe: alle Werte, die laut Datenblatt lieferbar sind.")
                       ) : (
                         <>
-                          Das Datenblatt nennt keine Reihe – ohne Wahl: <span className="mono text-fg">E24</span>
+                          {tr("Das Datenblatt nennt keine Reihe – ohne Wahl:")} <span className="mono text-fg">E24</span>
                         </>
                       )}
                     </span>
@@ -227,7 +224,7 @@ export function ValuesStep({ template: t, settings: s, onChange, estimate, sizeC
                       <Checkbox
                         checked={s.addE24}
                         onCheckedChange={(v) => onChange({ addE24: v === true })}
-                        label="E24-Werte ergänzen (4k7, 2k2 …)"
+                        label={tr("E24-Werte ergänzen (4k7, 2k2 …)")}
                       />
                     )}
                   </div>
@@ -243,7 +240,7 @@ export function ValuesStep({ template: t, settings: s, onChange, estimate, sizeC
                   />
                 ) : (
                   <p className="text-xs text-fg-subtle">
-                    {s.sizes.length ? 'Für diese Auswahl gibt es keinen Wertebereich.' : 'Bauform wählen, um den Bereich zu sehen.'}
+                    {s.sizes.length ? tr("Für diese Auswahl gibt es keinen Wertebereich.") : tr("Bauform wählen, um den Bereich zu sehen.")}
                   </p>
                 )}
               </div>
@@ -260,37 +257,37 @@ export function ValuesStep({ template: t, settings: s, onChange, estimate, sizeC
           </Section>
 
           {(tolerances.length > 0 || tcr || voltages.length > 0 || packaging.length > 1 || dielectric || hasJumper) && (
-            <Section id={`${uid}-variants`} title="Varianten">
+            <Section id={`${uid}-variants`} title={tr("Varianten")}>
               <div className="grid grid-cols-1 gap-x-5 gap-y-4 @[40rem]:grid-cols-2">
                 {toleranceControl}
                 {tcr && (
                   <Field
-                    label="Temperaturkoeffizient"
-                    help={tcr.kind === 'code' ? 'Ohne Wahl passend zur Toleranz laut Datenblatt.' : 'Nur Werte mit diesem TK.'}
+                    label={tr("Temperaturkoeffizient")}
+                    help={tcr.kind === 'code' ? tr("Ohne Wahl passend zur Toleranz laut Datenblatt.") : tr("Nur Werte mit diesem TK.")}
                   >
                     <Select
                       size="sm"
                       value={s.tcr ?? AUTO}
                       onValueChange={(v) => onChange({ tcr: v === AUTO ? null : v })}
                       options={[
-                        { value: AUTO, label: tcr.kind === 'code' ? 'Laut Datenblatt' : 'Beliebig' },
+                        { value: AUTO, label: tcr.kind === 'code' ? tr("Laut Datenblatt") : tr("Beliebig") },
                         ...tcr.options.map((o) => ({ value: o.value, label: o.label })),
                       ]}
                     />
                   </Field>
                 )}
                 {packaging.length > 1 && (
-                  <Field label="Verpackung" help="Ohne Wahl die Standardverpackung je Baugröße.">
+                  <Field label={tr("Verpackung")} help={tr("Ohne Wahl die Standardverpackung je Baugröße.")}>
                     <Select
                       size="sm"
                       value={s.packaging ?? AUTO}
                       onValueChange={(v) => onChange({ packaging: v === AUTO ? null : v })}
                       options={[
-                        { value: AUTO, label: 'Standard je Baugröße' },
+                        { value: AUTO, label: tr("Standard je Baugröße") },
                         ...packaging.map((o) => ({
                           value: o.value,
                           label: o.label,
-                          description: o.sizes.length ? `nur ${o.sizes.join(', ')}` : undefined,
+                          description: o.sizes.length ? tr("nur {v0}", { v0: o.sizes.join(', ') }) : undefined,
                         })),
                       ]}
                       contentClassName="max-w-[28rem]"
@@ -298,7 +295,7 @@ export function ValuesStep({ template: t, settings: s, onChange, estimate, sizeC
                   </Field>
                 )}
                 {dielectric && (
-                  <Group id={`${uid}-dielectric`} label="Dielektrikum" hint="laut Vorlage">
+                  <Group id={`${uid}-dielectric`} label={tr("Dielektrikum")} hint={tr("laut Vorlage")}>
                     <div className="flex h-7 items-center gap-1.5">
                       {dielectric.split(', ').map((d) => (
                         <Badge key={d} variant="neutral" size="md" className="mono">
@@ -312,14 +309,13 @@ export function ValuesStep({ template: t, settings: s, onChange, estimate, sizeC
                   <div className="flex flex-col gap-1.5 @[40rem]:col-span-2">
                     <div className="flex items-baseline justify-between gap-3">
                       <span id={`${uid}-voltage`} className="text-ui font-medium text-fg">
-                        Nennspannung
-                      </span>
+                        {tr("Nennspannung")}</span>
                       <span className="text-2xs text-fg-subtle">
-                        {s.voltages.length ? `${s.voltages.length} gewählt` : 'keine Auswahl = alle'}
+                        {s.voltages.length ? tr("{v0} gewählt", { v0: s.voltages.length }) : tr("keine Auswahl = alle")}
                       </span>
                     </div>
                     <ChipGroup
-                      aria-label="Nennspannung"
+                      aria-label={tr("Nennspannung")}
                       value={s.voltages}
                       onValueChange={(v) => onChange({ voltages: v })}
                       options={voltages.map((o) => {
@@ -334,8 +330,8 @@ export function ValuesStep({ template: t, settings: s, onChange, estimate, sizeC
                     <Switch
                       checked={s.includeJumper}
                       onCheckedChange={(v) => onChange({ includeJumper: v })}
-                      label="0-Ω-Brücken mit anlegen"
-                      description={`Je Bauform eine Brücke (Wertcode ${t.jumper?.value_code}) mit 0 Ω. Toleranz, TK, Leistung und Spannung gelten für Brücken nicht – Maximalwiderstand und Nennstrom laut Datenblatt stehen in den Notizen.`}
+                      label={tr("0-Ω-Brücken mit anlegen")}
+                      description={tr("Je Bauform eine Brücke (Wertcode {v0}) mit 0 Ω. Toleranz, TK, Leistung und Spannung gelten für Brücken nicht – Maximalwiderstand und Nennstrom laut Datenblatt stehen in den Notizen.", { v0: t.jumper?.value_code ?? '' })}
                     />
                   </div>
                 )}
@@ -353,10 +349,10 @@ export function ValuesStep({ template: t, settings: s, onChange, estimate, sizeC
               className="-mx-2 flex w-[calc(100%+1rem)] items-center gap-2 rounded-control px-2 py-1.5 text-left outline-none transition-colors hover:bg-surface-2 focus-ring"
             >
               <CircuitBoard aria-hidden className="size-4 text-fg-subtle" />
-              <span className="micro-label">Footprints</span>
+              <span className="micro-label">{tr("Footprints")}</span>
               <span className="ml-1 truncate text-xs text-fg-muted">
-                IPC-Dichte {s.density ?? `${houseDensity} (Hausstil)`}
-                {showHeight ? ` · ${s.footprintHeight === 'class' ? 'Höhenklassen' : s.footprintHeight === 'exact' ? 'exakte Höhe' : 'ein Footprint je Baugröße'}` : ''}
+                {tr("IPC-Dichte")} {s.density ?? tr("{v0} (Hausstil)", { v0: houseDensity })}
+                {showHeight ? ` · ${s.footprintHeight === 'class' ? tr("Höhenklassen") : s.footprintHeight === 'exact' ? tr("exakte Höhe") : tr("ein Footprint je Baugröße")}` : ''}
               </span>
               <ChevronDown
                 aria-hidden
@@ -365,15 +361,15 @@ export function ValuesStep({ template: t, settings: s, onChange, estimate, sizeC
             </button>
             {advanced && (
               <div id={`${uid}-adv-body`} className="grid grid-cols-1 gap-x-5 gap-y-4 pb-2 pt-3 @[40rem]:grid-cols-2">
-                <Field label="IPC-Dichte" help="L kompakt · N nominal · M robust (IPC-7351B).">
+                <Field label={tr("IPC-Dichte")} help={tr("L kompakt · N nominal · M robust (IPC-7351B).")}>
                   <SegmentedControl<string>
                     size="sm"
                     fullWidth
-                    aria-label="IPC-Dichte"
+                    aria-label={tr("IPC-Dichte")}
                     value={s.density ?? AUTO}
                     onValueChange={(v) => onChange({ density: v === AUTO ? null : (v as Density) })}
                     options={[
-                      { value: AUTO, label: `Hausstil (${houseDensity})` },
+                      { value: AUTO, label: tr("Hausstil ({v0})", { v0: houseDensity }) },
                       { value: 'L', label: 'L' },
                       { value: 'N', label: 'N' },
                       { value: 'M', label: 'M' },
@@ -381,28 +377,28 @@ export function ValuesStep({ template: t, settings: s, onChange, estimate, sizeC
                   />
                 </Field>
                 {showHeight && (
-                  <Field label="Footprint-Höhe" help="Höhenklassen: kleinste Standardhöhe ≥ Bauteilhöhe (wenige Footprints, korrekte 3D‑Höhe).">
+                  <Field label={tr("Footprint-Höhe")} help={tr("Höhenklassen: kleinste Standardhöhe ≥ Bauteilhöhe (wenige Footprints, korrekte 3D‑Höhe).")}>
                     <SegmentedControl<FootprintHeight>
                       size="sm"
                       fullWidth
-                      aria-label="Footprint-Höhe"
+                      aria-label={tr("Footprint-Höhe")}
                       value={s.footprintHeight}
                       onValueChange={(v) => onChange({ footprintHeight: v })}
                       options={[
-                        { value: 'standard', label: 'Je Baugröße' },
-                        { value: 'class', label: 'Höhenklassen' },
-                        { value: 'exact', label: 'Exakt' },
+                        { value: 'standard', label: tr("Je Baugröße") },
+                        { value: 'class', label: tr("Höhenklassen") },
+                        { value: 'exact', label: tr("Exakt") },
                       ]}
                     />
                   </Field>
                 )}
                 {packaging.length === 1 && (
                   <p className="text-xs text-fg-muted @[40rem]:col-span-2">
-                    Verpackung: {packaging[0].label}
+                    {tr("Verpackung:")} {packaging[0].label}
                   </p>
                 )}
                 {tolerances.length === 0 && tolVar && (
-                  <p className="text-xs text-fg-muted">Toleranz: {tolVar.options.map(optionText).join(', ')}</p>
+                  <p className="text-xs text-fg-muted">{tr("Toleranz:")} {tolVar.options.map((o) => optionText(o, t.builtin)).join(', ')}</p>
                 )}
               </div>
             )}

@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import type { ComponentProps, ReactNode, Ref } from 'react'
 import { cn } from '@/lib/cn'
 import { useFieldContext } from './fieldContext'
@@ -28,6 +29,7 @@ export function Input({
   id,
   ...props
 }: InputProps) {
+  useI18n()
   const field = useFieldContext()
   const isInvalid = invalid ?? field?.invalid ?? false
   const isDisabled = disabled ?? field?.disabled

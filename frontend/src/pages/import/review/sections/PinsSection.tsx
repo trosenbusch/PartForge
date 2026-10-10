@@ -1,3 +1,4 @@
+import { t, useI18n } from '@/lib/i18n'
 import { Cable, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { PinData } from '@/api/datasheets'
@@ -13,10 +14,9 @@ import { packageLabel, useReview } from '../context'
 import { sectionIssues } from '../issues'
 import { Section } from './Section'
 
-const TYPES = Object.entries(ELECTRICAL_LABEL).map(([value, label]) => ({ value: value as ElectricalType, label }))
-
 /** Pinname: Anzeige mit Überstrich, Bearbeiten in Altium-Syntax (`R\E\S\E\T\`). */
 function PinNameCell({ pin, onCommit }: { pin: PinData; onCommit: (name: string) => void }) {
+  useI18n()
   const [editing, setEditing] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
@@ -27,7 +27,7 @@ function PinNameCell({ pin, onCommit }: { pin: PinData; onCommit: (name: string)
       <CellInput
         ref={inputRef}
         mono
-        aria-label={`Name von Pin ${pin.number} (Überstrich: \\ nach jedem Zeichen)`}
+        aria-label={t("Name von Pin {0} (Überstrich: \\ nach jedem Zeichen)", { "0": String(pin.number) })}
         value={pin.name}
         onCommit={onCommit}
         onBlur={() => setEditing(false)}
@@ -40,7 +40,7 @@ function PinNameCell({ pin, onCommit }: { pin: PinData; onCommit: (name: string)
       type="button"
       onClick={() => setEditing(true)}
       onFocus={() => setEditing(true)}
-      aria-label={`Name von Pin ${pin.number}: ${displayText(pin.name) || 'leer'} – bearbeiten`}
+      aria-label={t("Name von Pin {0}: {1} – bearbeiten", { "0": String(pin.number), "1": String(displayText(pin.name) || t("leer")) })}
       className="mono flex h-7 w-full min-w-0 items-center rounded-md border border-transparent px-1.5 text-left text-xs text-fg outline-none transition-colors hover:border-line-strong hover:bg-control focus-ring"
     >
       <OverbarName name={pin.name} className="max-w-full" />
@@ -50,6 +50,8 @@ function PinNameCell({ pin, onCommit }: { pin: PinData; onCommit: (name: string)
 
 /** Pintabellen je Gehäuse: Nummer, Name mit Überstrich, elektrischer Typ, Funktion, Gruppe, Teil – editierbar. */
 export function PinsSection() {
+  useI18n()
+  const types = Object.entries(ELECTRICAL_LABEL).map(([value, label]) => ({ value: value as ElectricalType, label }))
   const { extraction, device, deviceIndex, edit, codes } = useReview()
   const setHighlight = useReviewUi((s) => s.setHighlight)
   const setPreviewPackage = useReviewUi((s) => s.setPreviewPackage)
@@ -80,7 +82,7 @@ export function PinsSection() {
   const maxPart = table ? Math.max(1, ...table.pins.map((p) => p.part)) : 1
   const partOptions = Array.from({ length: Math.min(26, maxPart + 1) + 1 }, (_, n) => ({
     value: String(n),
-    label: n === 0 ? 'alle' : partLetter(n),
+    label: n === 0 ? t("alle") : partLetter(n),
   }))
 
   const change = (label: string, i: number, patch: (pin: PinData) => void) =>
@@ -92,7 +94,7 @@ export function PinsSection() {
   if (!table) {
     return (
       <Section id="pins" title="Pins" icon={<Cable />} issues={issues}>
-        <p className="text-xs text-fg-muted">Keine Pintabelle gefunden. Für ein IC-Symbol bitte die Seite mit der Pinbelegung erneut analysieren lassen.</p>
+        <p className="text-xs text-fg-muted">{t("Keine Pintabelle gefunden. Für ein IC-Symbol bitte die Seite mit der Pinbelegung erneut analysieren lassen.")}</p>
       </Section>
     )
   }
@@ -106,27 +108,22 @@ export function PinsSection() {
           <thead>
             <tr className="text-left text-2xs font-semibold uppercase tracking-[0.06em] text-fg-subtle">
               <th scope="col" className="w-12 pb-1.5 pl-1.5 font-semibold">
-                Nr.
-              </th>
+                {t("Nr.")}</th>
               <th scope="col" className="w-[28%] pb-1.5 pl-1.5 font-semibold">
                 Name
               </th>
               <th scope="col" className="w-[7.5rem] pb-1.5 pl-1.5 font-semibold">
-                Typ
-              </th>
+                {t("Typ")}</th>
               <th scope="col" className="hidden pb-1.5 pl-1.5 font-semibold @[34rem]:table-cell">
-                Funktion
-              </th>
+                {t("Funktion")}</th>
               <th scope="col" className="hidden w-24 pb-1.5 pl-1.5 font-semibold @[44rem]:table-cell">
-                Gruppe
-              </th>
+                {t("Gruppe")}</th>
               {wide && (
                 <th scope="col" className="w-16 pb-1.5 pl-1.5 font-semibold">
-                  Teil
-                </th>
+                  {t("Teil")}</th>
               )}
               <th scope="col" className="w-7 pb-1.5">
-                <span className="sr-only">Aktionen</span>
+                <span className="sr-only">{t("Aktionen")}</span>
               </th>
             </tr>
           </thead>
@@ -144,9 +141,9 @@ export function PinsSection() {
                 <td className="border-b border-line py-0.5 align-middle">
                   <CellInput
                     mono
-                    aria-label={`Nummer von Pin ${i + 1}`}
+                    aria-label={t("Nummer von Pin {0}", { "0": String(i + 1) })}
                     value={pin.number}
-                    onCommit={(v) => change(`Pinnummer ${pin.number} → ${v}`, i, (p) => void (p.number = v.trim()))}
+                    onCommit={(v) => change(t("Pinnummer {0} → {1}", { "0": String(pin.number), "1": String(v) }), i, (p) => void (p.number = v.trim()))}
                   />
                 </td>
                 <td className="max-w-0 border-b border-line py-0.5 align-middle">
@@ -155,7 +152,7 @@ export function PinsSection() {
                       <PinNameCell
                         pin={pin}
                         onCommit={(v) =>
-                          change(`Pin ${pin.number} umbenannt`, i, (p) => {
+                          change(t("Pin {0} umbenannt", { "0": String(pin.number) }), i, (p) => {
                             p.name = v
                             p.active_low = v.includes('\\')
                           })
@@ -169,26 +166,26 @@ export function PinsSection() {
                 <td className="border-b border-line py-0.5 pl-1 align-middle">
                   <Select
                     size="sm"
-                    aria-label={`Elektrischer Typ von Pin ${pin.number}`}
+                    aria-label={t("Elektrischer Typ von Pin {0}", { "0": String(pin.number) })}
                     value={pin.electrical}
-                    onValueChange={(v) => change(`Typ von Pin ${pin.number}`, i, (p) => void (p.electrical = v))}
-                    options={TYPES}
+                    onValueChange={(v) => change(t("Typ von Pin {0}", { "0": String(pin.number) }), i, (p) => void (p.electrical = v))}
+                    options={types}
                     className="h-7 border-transparent bg-transparent px-1.5 text-xs shadow-none hover:border-line-strong"
                   />
                 </td>
                 <td className="hidden max-w-0 border-b border-line py-0.5 pl-1 align-middle @[34rem]:table-cell">
                   <CellInput
-                    aria-label={`Funktion von Pin ${pin.number}`}
+                    aria-label={t("Funktion von Pin {0}", { "0": String(pin.number) })}
                     value={pin.function}
-                    onCommit={(v) => change(`Funktion von Pin ${pin.number}`, i, (p) => void (p.function = v))}
+                    onCommit={(v) => change(t("Funktion von Pin {0}", { "0": String(pin.number) }), i, (p) => void (p.function = v))}
                     className="text-fg-muted"
                   />
                 </td>
                 <td className="hidden max-w-0 border-b border-line py-0.5 pl-1 align-middle @[44rem]:table-cell">
                   <CellInput
-                    aria-label={`Gruppe von Pin ${pin.number}`}
+                    aria-label={t("Gruppe von Pin {0}", { "0": String(pin.number) })}
                     value={pin.group}
-                    onCommit={(v) => change(`Gruppe von Pin ${pin.number}`, i, (p) => void (p.group = v))}
+                    onCommit={(v) => change(t("Gruppe von Pin {0}", { "0": String(pin.number) }), i, (p) => void (p.group = v))}
                     className="text-fg-muted"
                   />
                 </td>
@@ -196,9 +193,9 @@ export function PinsSection() {
                   <td className="border-b border-line py-0.5 pl-1 align-middle">
                     <Select
                       size="sm"
-                      aria-label={`Teil von Pin ${pin.number}`}
+                      aria-label={t("Teil von Pin {0}", { "0": String(pin.number) })}
                       value={String(pin.part)}
-                      onValueChange={(v) => change(`Teil von Pin ${pin.number}`, i, (p) => void (p.part = Number(v)))}
+                      onValueChange={(v) => change(t("Teil von Pin {0}", { "0": String(pin.number) }), i, (p) => void (p.part = Number(v)))}
                       options={partOptions}
                       className="h-7 border-transparent bg-transparent px-1.5 text-xs shadow-none hover:border-line-strong"
                     />
@@ -208,10 +205,10 @@ export function PinsSection() {
                   <div className="flex justify-end opacity-0 transition-opacity group-focus-within/pin:opacity-100 group-hover/pin:opacity-100">
                     <IconButton
                       size="xs"
-                      label={`Pin ${pin.number} entfernen`}
+                      label={t("Pin {0} entfernen", { "0": String(pin.number) })}
                       icon={<Trash2 />}
                       onClick={() =>
-                        edit.apply(`Pin ${pin.number} entfernt`, (d) => {
+                        edit.apply(t("Pin {0} entfernt", { "0": String(pin.number) }), (d) => {
                           d.devices[deviceIndex].pin_tables[index].pins.splice(i, 1)
                         })
                       }
@@ -229,7 +226,7 @@ export function PinsSection() {
           variant="ghost"
           leftIcon={<Plus />}
           onClick={() =>
-            edit.apply('Pin hinzugefügt', (d) => {
+            edit.apply(t("Pin hinzugefügt"), (d) => {
               const pins = d.devices[deviceIndex].pin_tables[index].pins
               const numbers = pins.map((p) => Number(p.number)).filter((n) => Number.isFinite(n))
               pins.push({
@@ -246,13 +243,12 @@ export function PinsSection() {
             })
           }
         >
-          Pin hinzufügen
-        </Button>
+          {t("Pin hinzufügen")}</Button>
         <TipButton
-          tip="Überstrich (low-aktiv): Backslash nach jedem Zeichen, z. B. R\E\S\E\T\ – angezeigt als RESET mit Strich darüber"
+          tip={t("Überstrich (low-aktiv): Backslash nach jedem Zeichen, z. B. R\\E\\S\\E\\T\\ – angezeigt als RESET mit Strich darüber")}
           className="ml-auto rounded-sm text-2xs text-fg-subtle"
         >
-          {table.pins.some((p) => hasOverbar(p.name)) ? 'Überstrich = low-aktiv' : 'Tipp: R\\E\\S\\E\\T\\ = Überstrich'}
+          {table.pins.some((p) => hasOverbar(p.name)) ? t("Überstrich = low-aktiv") : t("Tipp: R\\E\\S\\E\\T\\ = Überstrich")}
         </TipButton>
       </div>
     </>
@@ -265,7 +261,7 @@ export function PinsSection() {
       icon={<Cable />}
       count={table.pins.length}
       issues={issues}
-      aside={<SourceChip pages={table.pages} what={`Pintabelle ${packageLabel(pkg, table.package)}`} />}
+      aside={<SourceChip pages={table.pages} what={t("Pintabelle {0}", { "0": String(packageLabel(pkg, table.package)) })} />}
     >
       {tables.length > 1 ? (
         <Tabs
@@ -277,7 +273,7 @@ export function PinsSection() {
             if (tables[i]) setPreviewPackage(tables[i].package)
           }}
         >
-          <TabsList aria-label="Pintabelle" className="mb-2 w-fit max-w-full flex-wrap">
+          <TabsList aria-label={t("Pintabelle")} className="mb-2 w-fit max-w-full flex-wrap">
             {tables.map((t, i) => (
               <TabsTrigger
                 key={`${t.package}-${i}`}

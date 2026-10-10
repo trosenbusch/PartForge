@@ -1,3 +1,5 @@
+import { useLocalizedMemo } from '@/components/preview/useLocalizedMemo'
+import { localizeMessage, t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * IC-Editor: Eigenschaften (Name, Präfix, Beschreibung, Teile, Sortierung), Pinliste als Tabelle oder als
  * Seiten-Editor (Drag & Drop), Einfügen aus der Zwischenablage, Seiten automatisch anordnen bzw. festlegen
@@ -24,7 +26,7 @@ import {
   Undo2,
   Wand,
 } from 'lucide-react'
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type ClipboardEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useId, useRef, useState, type ClipboardEvent, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { errorMessage } from '@/api/client'
 import { symbolsApi, type GeneratedSpec, type IcSide } from '@/api/symbols'
@@ -124,16 +126,16 @@ const EXAMPLE: { name: string; pins: [string, string, PinRow['electrical']][] } 
 }
 
 function toTsv(pins: readonly PinRow[]): string {
-  const head = ['Nr', 'Name', 'Typ', 'Seite', 'Gruppe', 'Teil', 'Verborgen', 'Beschreibung'].join('\t')
+  const head = [tr('Nr'), tr('Name'), tr('Typ'), tr('Seite'), tr('Gruppe'), tr('Teil'), tr('Verborgen'), tr('Beschreibung')].join('\t')
   const rows = pins.map((p) =>
     [
       p.designator,
       p.name,
       ELECTRICAL_OPTIONS.find((o) => o.value === p.electrical)?.label.replace(' / Drain', '').replace(' / Source', '') ?? p.electrical,
-      p.side ? SIDE_LABEL[p.side] : 'Automatisch',
+      p.side ? tr(SIDE_LABEL[p.side]) : tr('Automatisch'),
       p.group,
       String(p.part),
-      p.hidden ? 'ja' : '',
+      p.hidden ? tr('ja') : '',
       p.description,
     ].join('\t'),
   )
@@ -164,6 +166,7 @@ export function IcEditor({
   onNewIc,
   onShowInLibrary,
 }: IcEditorProps) {
+  useI18n()
   const uid = useId().replace(/:/g, '')
   const ic = useGenerator((s) => s.ic)
   const updateIc = useGenerator((s) => s.updateIc)
@@ -180,7 +183,7 @@ export function IcEditor({
   // ein neues Objekt je Render ließe jede (memoisierte) Tabellenzeile bei jedem Tastendruck neu zeichnen.
   const roomy = rootSize.width === 0 || rootSize.width >= 720
   const colPrefs = prefs.columns
-  const columns = useMemo<Record<PinColumn, boolean>>(
+  const columns = useLocalizedMemo<Record<PinColumn, boolean>>(
     () => ({
       group: colPrefs.group ?? roomy,
       part: colPrefs.part ?? roomy,
@@ -305,10 +308,10 @@ export function IcEditor({
         return { ...d, order: 'input', pins: [...rest.slice(0, at), { ...moving, side }, ...rest.slice(at)] }
       })
       if (switchOrder) {
-        toast.info('Sortierung: Wie in der Liste', {
+        toast.info(tr('Sortierung: Wie in der Liste'), {
           id: 'symbole-order',
-          description: 'Die Reihenfolge auf den Seiten folgt jetzt der Pinliste – sie wurde dafür in die Reihenfolge des Symbols gebracht.',
-          action: { label: 'Rückgängig', onClick: () => useGenerator.getState().undo() },
+          description: tr('Die Reihenfolge auf den Seiten folgt jetzt der Pinliste – sie wurde dafür in die Reihenfolge des Symbols gebracht.'),
+          action: { label: tr('Rückgängig'), onClick: () => useGenerator.getState().undo() },
         })
       }
     },
@@ -317,9 +320,9 @@ export function IcEditor({
 
   const applyPaste = (rows: PinRow[], mode: 'replace' | 'append') => {
     updateIc((d) => ({ ...d, pins: mode === 'replace' ? rows : [...d.pins, ...rows] }))
-    toast.success(`${plural(rows.length, 'Pin', 'Pins')} ${mode === 'replace' ? 'übernommen' : 'angehängt'}`, {
+    toast.success(`${plural(rows.length, tr('Pin'), tr('Pins'))} ${mode === 'replace' ? tr('übernommen') : tr('angehängt')}`, {
       id: 'symbole-paste',
-      action: { label: 'Rückgängig', onClick: () => useGenerator.getState().undo() },
+      action: { label: tr('Rückgängig'), onClick: () => useGenerator.getState().undo() },
     })
   }
 
@@ -346,13 +349,13 @@ export function IcEditor({
       }))
       const counts = { left: 0, right: 0, top: 0, bottom: 0 }
       for (const s of sides) if (s) counts[s] += 1
-      toast.success(`${plural(fixed, 'Seite', 'Seiten')} festgelegt`, {
+      toast.success(tr("{value0} festgelegt", { value0: String(plural(fixed, tr('Seite'), tr('Seiten'))) }), {
         id: 'symbole-arrange',
-        description: `Die Anordnung bleibt jetzt auch bei neuen Pins erhalten: ${counts.left} links · ${counts.right} rechts · ${counts.top} oben · ${counts.bottom} unten.`,
-        action: { label: 'Rückgängig', onClick: () => useGenerator.getState().undo() },
+        description: tr("Die Anordnung bleibt jetzt auch bei neuen Pins erhalten: {value0} links · {value1} rechts · {value2} oben · {value3} unten.", { value0: String(counts.left), value1: String(counts.right), value2: String(counts.top), value3: String(counts.bottom) }),
+        action: { label: tr('Rückgängig'), onClick: () => useGenerator.getState().undo() },
       })
     } catch (error) {
-      toast.error('Seiten festlegen fehlgeschlagen', { id: 'symbole-arrange', description: errorMessage(error) })
+      toast.error(tr('Seiten festlegen fehlgeschlagen'), { id: 'symbole-arrange', description: errorMessage(error) })
     } finally {
       setArranging(false)
     }
@@ -363,18 +366,18 @@ export function IcEditor({
     const count = useGenerator.getState().ic.pins.filter((p) => p.side !== null).length
     if (!count) return
     updateIc((d) => ({ ...d, pins: d.pins.map((p) => (p.side ? { ...p, side: null } : p)) }))
-    toast.success('Automatisch angeordnet', {
+    toast.success(tr('Automatisch angeordnet'), {
       id: 'symbole-arrange',
-      description: `${plural(count, 'festgelegte Seite', 'festgelegte Seiten')} freigegeben – der Generator verteilt alle Pins neu.`,
-      action: { label: 'Rückgängig', onClick: () => useGenerator.getState().undo() },
+      description: tr("{value0} freigegeben – der Generator verteilt alle Pins neu.", { value0: String(plural(count, tr('festgelegte Seite'), tr('festgelegte Seiten'))) }),
+      action: { label: tr('Rückgängig'), onClick: () => useGenerator.getState().undo() },
     })
   }
 
   const clearAll = async () => {
     const ok = await confirm({
-      title: 'Alle Pins entfernen?',
-      description: `${plural(ic.pins.length, 'Pin wird', 'Pins werden')} aus dem Entwurf gelöscht. Mit Rückgängig (Strg+Z) lässt sich das zurückholen.`,
-      confirmLabel: 'Alle entfernen',
+      title: tr('Alle Pins entfernen?'),
+      description: tr("{value0} aus dem Entwurf gelöscht. Mit Rückgängig (Strg+Z) lässt sich das zurückholen.", { value0: String(plural(ic.pins.length, tr('Pin wird'), tr('Pins werden'))) }),
+      confirmLabel: tr('Alle entfernen'),
       destructive: true,
     })
     if (ok) updateIc((d) => ({ ...d, pins: [] }))
@@ -383,10 +386,10 @@ export function IcEditor({
   const newIc = () => {
     useGenerator.getState().loadIc(EMPTY_IC)
     onNewIc()
-    toast('Neues IC-Symbol', {
+    toast(tr('Neues IC-Symbol'), {
       id: 'symbole-new-ic',
-      description: 'Der bisherige Entwurf lässt sich mit Rückgängig zurückholen.',
-      action: { label: 'Rückgängig', onClick: () => useGenerator.getState().undo() },
+      description: tr('Der bisherige Entwurf lässt sich mit Rückgängig zurückholen.'),
+      action: { label: tr('Rückgängig'), onClick: () => useGenerator.getState().undo() },
     })
     requestAnimationFrame(() => nameRef.current?.focus())
   }
@@ -425,8 +428,8 @@ export function IcEditor({
   }
 
   // ------------------------------------------------------------------ abgeleitete Daten
-  const validation = useMemo(() => validatePins(ic.pins, { partsMode: ic.partsMode }), [ic.pins, ic.partsMode])
-  const effectiveSide = useMemo(() => {
+  const validation = useLocalizedMemo(() => validatePins(ic.pins, { partsMode: ic.partsMode }), [ic.pins, ic.partsMode])
+  const effectiveSide = useLocalizedMemo(() => {
     const bySpec = new Map((spec?.pins ?? []).map((p) => [p.designator, p]))
     const map = new Map<string, IcSide>()
     for (const row of ic.pins) {
@@ -437,7 +440,7 @@ export function IcEditor({
   }, [ic.pins, spec])
   // Teile verteilt der Generator nur, wenn die Pinliste selbst keine Teile festlegt
   const userParts = ic.pins.some((p) => p.part !== 1)
-  const autoParts = useMemo(() => {
+  const autoParts = useLocalizedMemo(() => {
     if (ic.partsMode === '1' || userParts) return null
     const bySpec = new Map((spec?.pins ?? []).map((p) => [p.designator, p.part]))
     const map = new Map<string, number>()
@@ -447,11 +450,11 @@ export function IcEditor({
     }
     return map
   }, [ic.partsMode, ic.pins, spec, userParts])
-  const groupSuggestions = useMemo(
+  const groupSuggestions = useLocalizedMemo(
     () => [...new Set([...ic.pins.map((p) => p.group.trim()).filter(Boolean), ...ROLE_GROUPS])],
     [ic.pins],
   )
-  const sideWarnings: PinIssue[] = useMemo(() => {
+  const sideWarnings: PinIssue[] = useLocalizedMemo(() => {
     if (!spec || ic.partsMode !== '1') return []
     const counts: Record<IcSide, number> = { left: 0, right: 0, top: 0, bottom: 0 }
     for (const p of spec.pins) if (p.part === 1 || p.part === 0) counts[SIDE_OF_ORIENTATION[p.orientation]] += 1
@@ -459,63 +462,63 @@ export function IcEditor({
       .filter((s) => counts[s] > ic.maxPinsPerSide)
       .map((s) => ({
         level: 'warning' as const,
-        message: `${SIDE_LABEL[s]} ${counts[s]} Pins – mehr als ${ic.maxPinsPerSide} je Seite. Mit „Teile: Automatisch“ aufteilen.`,
+        message: tr("{value0} {value1} Pins – mehr als {value2} je Seite. Mit „Teile: Automatisch“ aufteilen.", { value0: String(tr(SIDE_LABEL[s])), value1: String(counts[s]), value2: String(ic.maxPinsPerSide) }),
       }))
   }, [spec, ic.partsMode, ic.maxPinsPerSide])
   const issues = [...validation.issues.filter((i) => i.level === 'error'), ...sideWarnings, ...validation.issues.filter((i) => i.level !== 'error')]
   const errorCount = validation.errorCount
   const warnCount = issues.filter((i) => i.level === 'warning').length
-  const nameProblem = symbolNameError(ic.name) ?? (nameMissing ? 'Bitte einen Namen eingeben – unter ihm steht das Symbol in der Bibliothek.' : undefined)
+  const nameProblem = symbolNameError(ic.name) ?? (nameMissing ? tr('Bitte einen Namen eingeben – unter ihm steht das Symbol in der Bibliothek.') : undefined)
   const prefixProblem = prefixError(ic.prefix)
 
   const entry = library.entry
   const plan = library.plan
   const libraryHint: ReactNode = !library.available || !valid ? undefined : plan?.error ? (
-    <span className="text-danger-text" title={plan.error}>
-      nicht speicherbar
+    <span className="text-danger-text" title={plan.error ? localizeMessage(plan.error) : undefined}>
+      {tr("nicht speicherbar")}
     </span>
   ) : entry ? (
     <button
       type="button"
-      title={`${entry.library} – in der Bibliothek zeigen`}
+      title={tr("{value0} – in der Bibliothek zeigen", { value0: String(entry.library) })}
       onClick={() => onShowInLibrary(entry.name)}
       className={cn(
         'rounded-sm underline-offset-2 outline-none hover:underline focus-ring',
         plan?.changes.length ? 'text-warning-text' : 'text-success-text',
       )}
     >
-      {plan?.changes.length ? 'Pinbelegung ändert sich · ' : plan?.unchanged ? 'aktuell · ' : ''}in {baseName(entry.library)}
-      {entry.usage ? ` · ${plural(entry.usage, 'Bauteil', 'Bauteile')}` : ''}
+      {plan?.changes.length ? tr('Pinbelegung ändert sich · ') : plan?.unchanged ? tr('aktuell · ') : ''}{tr("in")}{' '}{baseName(entry.library)}
+      {entry.usage ? ` · ${plural(entry.usage, tr('Bauteil'), tr('Bauteile'))}` : ''}
     </button>
   ) : (
     <span className="text-accent-text" title={plan?.library ?? undefined}>
-      neu{plan?.library ? ` · ${baseName(plan.library)}` : ''}
+      {tr("neu")}{plan?.library ? ` · ${baseName(plan.library)}` : ''}
     </span>
   )
 
   const summary = [
-    ic.name.trim() || 'ohne Namen',
+    ic.name.trim() || tr('ohne Namen'),
     ic.prefix.trim() || 'U',
-    ic.partsMode === '1' ? '1 Teil' : ic.partsMode === 'auto' ? 'Teile automatisch' : `${ic.partCount} Teile`,
-    ic.order === 'name' ? 'nach Name' : ic.order === 'designator' ? 'nach Nummer' : 'wie eingegeben',
+    ic.partsMode === '1' ? tr('1 Teil') : ic.partsMode === 'auto' ? tr('Teile automatisch') : tr("{value0} Teile", { value0: String(ic.partCount) }),
+    ic.order === 'name' ? tr('nach Name') : ic.order === 'designator' ? tr('nach Nummer') : tr('wie eingegeben'),
   ].join(' · ')
 
   const empty = ic.pins.length === 0
   const emptyState = (
     <EmptyState
       icon={<Rows3 />}
-      title="Noch keine Pins"
-      description="Pin-Tabelle aus dem Datenblatt oder aus Excel kopieren und einfügen – Nummer, Name und Typ werden erkannt. Oder Pins einzeln anlegen."
+      title={tr("Noch keine Pins")}
+      description={tr("Pin-Tabelle aus dem Datenblatt oder aus Excel kopieren und einfügen – Nummer, Name und Typ werden erkannt. Oder Pins einzeln anlegen.")}
       actions={
         <>
           <Button variant="secondary" leftIcon={<ClipboardPaste />} onClick={() => setPaste({ open: true })}>
-            Pinliste einfügen …
+            {tr("Pinliste einfügen …")}
           </Button>
           <Button variant="ghost" leftIcon={<Plus />} onClick={() => onFocusRow(onAdd())}>
-            Pin hinzufügen
+            {tr("Pin hinzufügen")}
           </Button>
           <Button variant="ghost" leftIcon={<FlaskConical />} onClick={loadExample}>
-            Beispiel laden
+            {tr("Beispiel laden")}
           </Button>
         </>
       }
@@ -526,10 +529,10 @@ export function IcEditor({
   // Hauptknopf „Anordnen“: mit festgelegten Seiten → wieder automatisch, sonst → aktuelle Anordnung festlegen
   const arrangeMain =
     explicitCount > 0
-      ? { label: 'Automatisch anordnen', short: 'Automatisch', icon: <Wand />, run: releaseSides, hint: `${plural(explicitCount, 'festgelegte Seite', 'festgelegte Seiten')} freigeben – der Generator verteilt alle Pins` }
-      : { label: 'Seiten festlegen', short: 'Festlegen', icon: <Pin />, run: () => void fixSides(), hint: 'Aktuelle automatische Anordnung fest übernehmen – neue Pins verschieben sie nicht mehr' }
+      ? { label: tr('Automatisch anordnen'), short: tr('Automatisch'), icon: <Wand />, run: releaseSides, hint: tr("{value0} freigeben – der Generator verteilt alle Pins", { value0: String(plural(explicitCount, tr('festgelegte Seite'), tr('festgelegte Seiten'))) }) }
+      : { label: tr('Seiten festlegen'), short: tr('Festlegen'), icon: <Pin />, run: () => void fixSides(), hint: tr('Aktuelle automatische Anordnung fest übernehmen – neue Pins verschieben sie nicht mehr') }
 
-  const footerMessage = issues[0]?.message ?? (generatorError ? generatorError : plural(ic.pins.length, 'Pin', 'Pins'))
+  const footerMessage = issues[0]?.message ?? (generatorError ? generatorError : plural(ic.pins.length, tr('Pin'), tr('Pins')))
 
   return (
     <div ref={rootRef} className="@container flex h-full min-h-0 flex-col" onPaste={onPaste}>
@@ -545,7 +548,7 @@ export function IcEditor({
               className="-ml-1 flex items-center gap-1.5 rounded-control px-1 py-0.5 outline-none focus-ring"
             >
               <ChevronDown aria-hidden className={cn('size-3.5 shrink-0 text-fg-subtle transition-transform duration-200', propsCollapsed && '-rotate-90')} />
-              IC-Eigenschaften
+              {tr("IC-Eigenschaften")}
             </button>
           </h2>
           {propsCollapsed && (
@@ -554,41 +557,41 @@ export function IcEditor({
         </div>
         <div id={`${uid}-props-body`} hidden={propsCollapsed} className="@container px-4 pb-4">
           <div className="grid grid-cols-[minmax(0,1fr)_6.5rem] gap-x-3 gap-y-3 @[38rem]:grid-cols-[minmax(0,1.3fr)_6.5rem_minmax(0,1.2fr)]">
-            <Field label="Name" required error={nameProblem} hint={nameProblem ? undefined : libraryHint}>
+            <Field label={tr("Name")} required error={nameProblem} hint={nameProblem ? undefined : libraryHint}>
               <Input
                 ref={nameRef}
                 mono
                 value={ic.name}
-                placeholder="z. B. TPS54331"
+                placeholder={tr("z. B. TPS54331")}
                 maxLength={64}
                 onChange={(e) => set({ name: e.target.value }, 'name')}
               />
             </Field>
-            <Field label="Präfix" error={prefixProblem}>
+            <Field label={tr("Präfix")} error={prefixProblem}>
               <Input mono value={ic.prefix} placeholder="U" maxLength={10} onChange={(e) => set({ prefix: e.target.value.replace(/\s/g, '') }, 'prefix')} />
             </Field>
-            <Field label="Beschreibung" className="col-span-2 @[38rem]:col-span-1">
-              <Input value={ic.description} placeholder="z. B. Buck-Regler 3 A, 28 V" onChange={(e) => set({ description: e.target.value }, 'description')} />
+            <Field label={tr("Beschreibung")} className="col-span-2 @[38rem]:col-span-1">
+              <Input value={ic.description} placeholder={tr("z. B. Buck-Regler 3 A, 28 V")} onChange={(e) => set({ description: e.target.value }, 'description')} />
             </Field>
           </div>
           <div className="mt-3 flex flex-wrap items-start gap-x-2.5 gap-y-3">
-            <LabeledGroup label="Teile">
+            <LabeledGroup label={tr("Teile")}>
               <div className="flex items-center gap-2">
                 <SegmentedControl
                   size="sm"
-                  aria-label="Teile"
+                  aria-label={tr("Teile")}
                   value={ic.partsMode}
                   onValueChange={(v: PartsMode) => set({ partsMode: v })}
                   options={[
-                    { value: '1', label: 'Ein Teil' },
-                    { value: 'auto', label: 'Automatisch' },
-                    { value: 'fixed', label: 'Anzahl' },
+                    { value: '1', label: tr('Ein Teil') },
+                    { value: 'auto', label: tr('Automatisch') },
+                    { value: 'fixed', label: tr('Anzahl') },
                   ]}
                 />
                 {ic.partsMode === 'fixed' && (
                   <NumberInput
                     size="sm"
-                    aria-label="Anzahl der Teile"
+                    aria-label={tr("Anzahl der Teile")}
                     value={ic.partCount}
                     onValueChange={(v) => set({ partCount: Math.max(2, Math.round(v ?? 2)) })}
                     min={2}
@@ -599,20 +602,20 @@ export function IcEditor({
                 )}
               </div>
             </LabeledGroup>
-            <Field label="Sortierung" className="w-36">
+            <Field label={tr("Sortierung")} className="w-36">
               <Select<IcOrder>
                 size="sm"
                 value={ic.order}
                 onValueChange={(v) => set({ order: v })}
                 options={[
-                  { value: 'name', label: 'Nach Pinname' },
-                  { value: 'designator', label: 'Nach Pin-Nummer' },
-                  { value: 'input', label: 'Wie in der Liste' },
+                  { value: 'name', label: tr('Nach Pinname') },
+                  { value: 'designator', label: tr('Nach Pin-Nummer') },
+                  { value: 'input', label: tr('Wie in der Liste') },
                 ]}
               />
             </Field>
             {ic.partsMode === 'auto' && (
-              <Field label="Pins je Seite" hint="max." className="w-32">
+              <Field label={tr("Pins je Seite")} hint={tr("max.")} className="w-32">
                 <NumberInput
                   size="sm"
                   value={ic.maxPinsPerSide}
@@ -628,9 +631,9 @@ export function IcEditor({
             <p className={cn('mt-2 text-xs leading-snug', userParts ? 'text-warning-text' : 'text-fg-muted')}>
               {userParts
                 ? ic.partsMode === 'fixed'
-                  ? 'Die Spalte „Teil“ legt die Teile schon fest – eine feste Anzahl geht nur, wenn alle Pins Teil 1 haben.'
-                  : 'Die Spalte „Teil“ legt die Teile schon fest – die automatische Aufteilung entfällt.'
-                : 'Der Generator verteilt die Pins; Versorgung und Masse kommen in eigene Teile.'}
+                  ? tr('Die Spalte „Teil“ legt die Teile schon fest – eine feste Anzahl geht nur, wenn alle Pins Teil 1 haben.')
+                  : tr('Die Spalte „Teil“ legt die Teile schon fest – die automatische Aufteilung entfällt.')
+                : tr('Der Generator verteilt die Pins; Versorgung und Masse kommen in eigene Teile.')}
             </p>
           )}
         </div>
@@ -643,17 +646,17 @@ export function IcEditor({
         className="min-h-0 flex-1"
       >
         <div className="flex shrink-0 items-center gap-2 border-b border-line pl-2 pr-3">
-          <TabsList aria-label="Pin-Editor" className="border-b-0">
+          <TabsList aria-label={tr("Pin-Editor")} className="border-b-0">
             <TabsTrigger value="pins" icon={<Rows3 />} count={formatNumber(ic.pins.length)}>
-              Pinliste
+              {tr("Pinliste")}
             </TabsTrigger>
             <TabsTrigger value="sides" icon={<Columns3 />}>
-              Seiten
+              {tr("Seiten")}
             </TabsTrigger>
           </TabsList>
           <div className="ml-auto flex shrink-0 items-center gap-1">
             <Button size="sm" variant="ghost" leftIcon={<ClipboardPaste />} onClick={() => setPaste({ open: true })} className="hidden @[44rem]:inline-flex">
-              Einfügen …
+              {tr("Einfügen …")}
             </Button>
             <div className="flex items-center">
               <Tooltip content={arrangeMain.hint}>
@@ -666,13 +669,13 @@ export function IcEditor({
                   onClick={arrangeMain.run}
                   className="rounded-r-none"
                 >
-                  <span className="hidden @[40rem]:inline">{arrangeMain.label}</span>
+                  <span className="hidden @[40rem]:inline">{tr(arrangeMain.label)}</span>
                   <span className="@[40rem]:hidden">{arrangeMain.short}</span>
                 </Button>
               </Tooltip>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="secondary" iconOnly aria-label="Weitere Optionen zum Anordnen" disabled={empty} className="-ml-px rounded-l-none">
+                  <Button size="sm" variant="secondary" iconOnly aria-label={tr("Weitere Optionen zum Anordnen")} disabled={empty} className="-ml-px rounded-l-none">
                     <ChevronDown />
                   </Button>
                 </DropdownMenuTrigger>
@@ -680,46 +683,46 @@ export function IcEditor({
                   <DropdownMenuItem
                     icon={<Wand />}
                     disabled={explicitCount === 0}
-                    description={explicitCount ? `${plural(explicitCount, 'festgelegte Seite', 'festgelegte Seiten')} freigeben` : 'Alle Seiten sind bereits automatisch'}
+                    description={explicitCount ? tr("{value0} freigeben", { value0: String(plural(explicitCount, tr('festgelegte Seite'), tr('festgelegte Seiten'))) }) : tr('Alle Seiten sind bereits automatisch')}
                     onSelect={releaseSides}
                   >
-                    Automatisch anordnen
+                    {tr("Automatisch anordnen")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     icon={<Pin />}
                     disabled={openCount === 0}
-                    description={openCount ? `${plural(openCount, 'automatische Seite', 'automatische Seiten')} fest übernehmen` : 'Alle Seiten sind festgelegt'}
+                    description={openCount ? tr("{value0} fest übernehmen", { value0: String(plural(openCount, tr('automatische Seite'), tr('automatische Seiten'))) }) : tr('Alle Seiten sind festgelegt')}
                     onSelect={() => void fixSides()}
                   >
-                    Seiten festlegen
+                    {tr("Seiten festlegen")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
             <span aria-hidden className="mx-0.5 h-4 w-px bg-line-strong" />
-            <IconButton size="sm" label="Rückgängig" hotkey="mod+z" icon={<Undo2 />} disabled={!canUndo} onClick={undo} />
-            <IconButton size="sm" label="Wiederholen" hotkey="mod+shift+z" icon={<Redo2 />} disabled={!canRedo} onClick={redo} />
+            <IconButton size="sm" label={tr("Rückgängig")} hotkey="mod+z" icon={<Undo2 />} disabled={!canUndo} onClick={undo} />
+            <IconButton size="sm" label={tr("Wiederholen")} hotkey="mod+shift+z" icon={<Redo2 />} disabled={!canRedo} onClick={redo} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="ghost" iconOnly aria-label="Weitere Aktionen">
+                <Button size="sm" variant="ghost" iconOnly aria-label={tr("Weitere Aktionen")}>
                   <Ellipsis />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64">
                 <DropdownMenuItem icon={<Plus />} onSelect={() => onFocusRow(onAdd())}>
-                  Pin hinzufügen
+                  {tr("Pin hinzufügen")}
                 </DropdownMenuItem>
                 <DropdownMenuItem icon={<ClipboardPaste />} onSelect={() => setPaste({ open: true })}>
-                  Pinliste einfügen …
+                  {tr("Pinliste einfügen …")}
                 </DropdownMenuItem>
-                <DropdownMenuItem icon={<ClipboardCopy />} disabled={empty} onSelect={() => void copyText(toTsv(ic.pins), 'Pinliste')}>
-                  Pinliste kopieren (Tabelle)
+                <DropdownMenuItem icon={<ClipboardCopy />} disabled={empty} onSelect={() => void copyText(toTsv(ic.pins), tr('Pinliste'))}>
+                  {tr("Pinliste kopieren (Tabelle)")}
                 </DropdownMenuItem>
                 <DropdownMenuItem icon={<ListOrdered />} disabled={empty} onSelect={() => updateIc((d) => ({ ...d, pins: sortByDesignator(d.pins) }))}>
-                  Nach Pin-Nummer sortieren
+                  {tr("Nach Pin-Nummer sortieren")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuLabel>Spalten der Pinliste</DropdownMenuLabel>
+                <DropdownMenuLabel>{tr("Spalten der Pinliste")}</DropdownMenuLabel>
                 {(Object.keys(COLUMN_LABEL) as PinColumn[]).map((c) => (
                   <DropdownMenuCheckboxItem
                     key={c}
@@ -727,18 +730,18 @@ export function IcEditor({
                     onCheckedChange={(on) => prefs.set({ columns: { ...prefs.columns, [c]: on === true } })}
                     onSelect={(e) => e.preventDefault()}
                   >
-                    {COLUMN_LABEL[c]}
+                    {tr(COLUMN_LABEL[c])}
                   </DropdownMenuCheckboxItem>
                 ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem icon={<FilePlus2 />} onSelect={newIc}>
-                  Neues IC-Symbol
+                  {tr("Neues IC-Symbol")}
                 </DropdownMenuItem>
                 <DropdownMenuItem icon={<FlaskConical />} onSelect={loadExample}>
-                  Beispiel laden
+                  {tr("Beispiel laden")}
                 </DropdownMenuItem>
                 <DropdownMenuItem icon={<Trash2 />} destructive disabled={empty} onSelect={() => void clearAll()}>
-                  Alle Pins entfernen
+                  {tr("Alle Pins entfernen")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -771,10 +774,10 @@ export function IcEditor({
               />
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-3 pt-2">
                 <Button size="sm" variant="ghost" leftIcon={<Plus />} onClick={() => onFocusRow(onAdd())}>
-                  Pin hinzufügen
+                  {tr("Pin hinzufügen")}
                 </Button>
                 <span className="text-2xs text-fg-subtle">
-                  Enter in der letzten Zeile: neuer Pin · Strg+D dupliziert · Strg+Entf löscht · Strg+V fügt ein
+                  {tr("Enter in der letzten Zeile: neuer Pin · Strg+D dupliziert · Strg+Entf löscht · Strg+V fügt ein")}
                 </span>
               </div>
             </div>
@@ -813,20 +816,20 @@ export function IcEditor({
           >
             {errorCount > 0 ? (
               <Badge variant="danger" dot>
-                {plural(errorCount, 'Fehler', 'Fehler')}
+                {plural(errorCount, tr('Fehler'), tr('Fehler'))}
               </Badge>
             ) : generatorError ? (
               <Badge variant="danger" dot>
-                Generator-Fehler
+                {tr("Generator-Fehler")}
               </Badge>
             ) : (
               <Badge variant="success" dot>
-                Pinliste gültig
+                {tr("Pinliste gültig")}
               </Badge>
             )}
             {warnCount > 0 && (
               <Badge variant="warning" dot>
-                {plural(warnCount, 'Hinweis', 'Hinweise')}
+                {plural(warnCount, tr('Hinweis'), tr('Hinweise'))}
               </Badge>
             )}
             <span className={cn('min-w-0 flex-1 truncate', !errorCount && generatorError ? 'text-danger-text' : 'text-fg-muted')} title={footerMessage}>
@@ -839,7 +842,7 @@ export function IcEditor({
           {issuesOpen && issues.length > 0 && (
             <ul id={`${uid}-issues`} className="max-h-40 overflow-y-auto border-t border-line px-2 py-1.5">
               {issues.map((issue, i) => (
-                <li key={`${issue.message}-${i}`}>
+                <li key={`${localizeMessage(issue.message)}-${i}`}>
                   <button
                     type="button"
                     disabled={!issue.rowId}
@@ -847,8 +850,8 @@ export function IcEditor({
                     className="flex w-full items-start gap-2 rounded-control px-2 py-1 text-left text-xs text-fg-muted outline-none transition-colors focus-ring-inset enabled:hover:bg-surface-2 enabled:hover:text-fg"
                   >
                     <IssueIcon level={issue.level} />
-                    <span className="flex-1">{issue.message}</span>
-                    {issue.rowId && <span className="shrink-0 text-2xs text-accent-text">Zeigen</span>}
+                    <span className="flex-1">{localizeMessage(issue.message)}</span>
+                    {issue.rowId && <span className="shrink-0 text-2xs text-accent-text">{tr("Zeigen")}</span>}
                   </button>
                 </li>
               ))}

@@ -1,12 +1,4 @@
-/**
- * Virtualisierte Galerie (TanStack Virtual, Zeilen mit dynamischer Spaltenzahl) für Symbole/Footprints u. ä.
- * Listbox-Semantik mit aktivem Element: ←/→/↑/↓, Pos1/Ende, Bild↑/↓, Enter (öffnen), Leertaste (auswählen).
- * Nur sichtbare Karten werden gerendert; Vorschaubilder laden mit <LazyThumbnail> erst im Sichtbereich.
- *
- *   <VirtualGallery items={footprints} getKey={(f) => f.name} minItemWidth={180} itemHeight={196}
- *     selectedKey={sel} onSelect={(f) => setSel(f.name)} onActivate={open}
- *     renderItem={(f, s) => <GalleryCard title={f.name} selected={s.selected} active={s.active} thumbnail={…} />} />
- */
+import { useI18n } from '@/lib/i18n'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { cn } from '@/lib/cn'
@@ -58,6 +50,7 @@ export function VirtualGallery<T>({
   className,
   overscan = 3,
 }: VirtualGalleryProps<T>) {
+  const { t: tr } = useI18n()
   const uid = useId().replace(/:/g, '')
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const [sizeRef, size] = useElementSize<HTMLDivElement>()
@@ -167,7 +160,7 @@ export function VirtualGallery<T>({
       className={cn('relative min-h-0 overflow-y-auto overflow-x-hidden rounded-card outline-none', className)}
     >
       {items.length === 0 ? (
-        (empty ?? <div className="flex h-full items-center justify-center p-8 text-ui text-fg-subtle">Keine Einträge</div>)
+        (empty ?? <div className="flex h-full items-center justify-center p-8 text-ui text-fg-subtle">{tr("Keine Einträge")}</div>)
       ) : (
         <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
           {virtualizer.getVirtualItems().map((row) => {

@@ -1,3 +1,5 @@
+import { useI18n } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { ChevronRight, Monitor, Moon, Search, Sun } from 'lucide-react'
 import { useEffect, useState, type RefObject } from 'react'
 import { Link, useLocation } from 'react-router'
@@ -24,6 +26,7 @@ import { useTheme } from '../theme'
  * <PageBody>, damit Titel und Inhalt bündig sind. Beim Scrollen erscheinen Haarlinie und Unschärfe.
  */
 export function Topbar({ scrollRef }: { scrollRef: RefObject<HTMLElement | null> }) {
+  const { t: tr } = useI18n()
   const { pathname } = useLocation()
   const nav = navItemForPath(pathname)
   const meta = useTopbar((s) => s.meta)
@@ -59,7 +62,7 @@ export function Topbar({ scrollRef }: { scrollRef: RefObject<HTMLElement | null>
         <div className="flex min-w-0 flex-1 flex-col justify-center">
           <div className="flex min-w-0 items-center gap-1.5 text-sm">
             {crumbs.length > 0 && (
-              <nav aria-label="Brotkrumen" className="flex min-w-0 shrink items-center">
+              <nav aria-label={tr("Brotkrumen")} className="flex min-w-0 shrink items-center">
                 <ol className="flex min-w-0 items-center gap-1.5">
                   {crumbs.map((c) => (
                     <li key={`${c.label}-${c.to ?? ''}`} className="flex min-w-0 items-center gap-1.5">
@@ -101,8 +104,8 @@ export function Topbar({ scrollRef }: { scrollRef: RefObject<HTMLElement | null>
             <Search aria-hidden className="size-3.5 shrink-0" />
             {/* Name aus dem sichtbaren Text („Suchen oder Befehl ausführen“) – Kbd ist Zierde (aria-keyshortcuts) */}
             <span className="flex-1 truncate">
-              Suchen oder Befehl<span aria-hidden> …</span>
-              <span className="sr-only"> ausführen</span>
+              {tr("Suchen oder Befehl")}<span aria-hidden> …</span>
+              <span className="sr-only"> {tr(" ausführen")}</span>
             </span>
             <Kbd hotkey="mod+k" size="xs" />
           </button>
@@ -128,25 +131,26 @@ function useScrolled(ref: RefObject<HTMLElement | null>): boolean {
 }
 
 const THEME_OPTIONS: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
-  { value: 'dark', label: 'Dunkel', icon: Moon },
-  { value: 'light', label: 'Hell', icon: Sun },
-  { value: 'system', label: 'Wie System', icon: Monitor },
+  { value: 'dark', get label() { return tr("Dunkel") }, icon: Moon },
+  { value: 'light', get label() { return tr("Hell") }, icon: Sun },
+  { value: 'system', get label() { return tr("Wie System") }, icon: Monitor },
 ]
 
 export function ThemeMenu({ size = 'sm' }: { size?: 'sm' | 'md' }) {
+  const { t: tr } = useI18n()
   const { theme, resolvedTheme, setTheme } = useTheme()
   const Icon = resolvedTheme === 'dark' ? Moon : Sun
   return (
     <DropdownMenu>
-      <Tooltip content="Darstellung" side="bottom">
+      <Tooltip content={tr("Darstellung")} side="bottom">
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size={size} iconOnly aria-label="Darstellung wählen">
+          <Button variant="ghost" size={size} iconOnly aria-label={tr("Darstellung wählen")}>
             <Icon />
           </Button>
         </DropdownMenuTrigger>
       </Tooltip>
       <DropdownMenuContent align="end" className="min-w-[11rem]">
-        <DropdownMenuLabel>Darstellung</DropdownMenuLabel>
+        <DropdownMenuLabel>{tr("Darstellung")}</DropdownMenuLabel>
         <DropdownMenuRadioGroup value={theme} onValueChange={(v) => setTheme(v as ThemePreference)}>
           {THEME_OPTIONS.map((o) => (
             <DropdownMenuRadioItem key={o.value} value={o.value} icon={<o.icon />}>

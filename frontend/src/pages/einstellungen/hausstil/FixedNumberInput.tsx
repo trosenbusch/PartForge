@@ -6,17 +6,19 @@
  * Wunsch an das UI-Kit: `NumberInput` mit Option `fixedDecimals` – dann entfällt diese Datei.
  */
 import { useState, type KeyboardEvent } from 'react'
+import { getLocale, useI18n } from '@/lib/i18n'
 import { useFieldContext } from '@/components/ui/fieldContext'
 import { controlShell } from '@/components/ui/variants'
 import { cn } from '@/lib/cn'
 import { parseDecimal } from '@/lib/format'
 
-const formats = new Map<number, Intl.NumberFormat>()
+const formats = new Map<string, Intl.NumberFormat>()
 function formatFixed(value: number, decimals: number): string {
-  let f = formats.get(decimals)
+  const key = `${getLocale()}:${decimals}`
+  let f = formats.get(key)
   if (!f) {
-    f = new Intl.NumberFormat('de-DE', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
-    formats.set(decimals, f)
+    f = new Intl.NumberFormat(getLocale(), { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
+    formats.set(key, f)
   }
   return f.format(value)
 }
@@ -36,14 +38,17 @@ export interface FixedNumberInputProps {
 }
 
 export function FixedNumberInput({ value, onValueChange, min, max, step, decimals, unit, className, 'aria-label': ariaLabel }: FixedNumberInputProps) {
+  const { locale } = useI18n()
   const field = useFieldContext()
   const display = (v: number) => formatFixed(v, decimals)
   const [text, setText] = useState(() => display(value))
   const [editing, setEditing] = useState(false)
   const [lastValue, setLastValue] = useState(value)
+  const [lastLocale, setLastLocale] = useState(locale)
 
   // Wert von außen geändert (Zurücksetzen, Verwerfen) und gerade nicht in Bearbeitung → Anzeige übernehmen
-  if (value !== lastValue) {
+  if (value !== lastValue || locale !== lastLocale) {
+    setLastLocale(locale)
     setLastValue(value)
     if (!editing) setText(display(value))
   }
@@ -96,7 +101,7 @@ export function FixedNumberInput({ value, onValueChange, min, max, step, decimal
         aria-valuetext={`${display(value)} ${unit}`}
         aria-invalid={invalid || undefined}
         aria-describedby={field?.describedBy}
-        value={text}
+        value={editing ? text : display(value)}
         onChange={(e) => setText(e.target.value)}
         onFocus={() => setEditing(true)}
         onBlur={() => {

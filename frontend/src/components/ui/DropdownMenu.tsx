@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { Check, ChevronRight, Dot } from 'lucide-react'
 import { DropdownMenu as Menu } from 'radix-ui'
 import type { ComponentProps, ReactNode } from 'react'
@@ -24,6 +25,7 @@ export function DropdownMenuContent({
   collisionPadding = 10,
   ...props
 }: ComponentProps<typeof Menu.Content>) {
+  useI18n()
   return (
     <Menu.Portal>
       <Menu.Content
@@ -38,6 +40,7 @@ export function DropdownMenuContent({
 
 /** Tastenkürzel-Hinweis rechts in einem Menüeintrag */
 export function MenuShortcut({ hotkey, children }: { hotkey?: Hotkey; children?: ReactNode }) {
+  useI18n()
   return (
     <span className="ml-auto pl-6 text-2xs tracking-wide text-fg-subtle tabular-nums">
       {hotkey ? formatHotkey(hotkey) : children}
@@ -78,6 +81,7 @@ export function DropdownMenuItem({
   children,
   ...props
 }: DropdownMenuItemProps) {
+  useI18n()
   return (
     <Menu.Item
       className={cn(menuItemClass, description && 'h-auto py-1.5', destructive && menuItemDangerClass, className)}
@@ -101,6 +105,7 @@ export function DropdownMenuCheckboxItem({
   children,
   ...props
 }: ComponentProps<typeof Menu.CheckboxItem>) {
+  useI18n()
   return (
     <Menu.CheckboxItem className={cn(menuItemClass, 'pr-2', className)} {...props}>
       <span className="flex-1 truncate">{children}</span>
@@ -117,6 +122,7 @@ export function DropdownMenuRadioItem({
   icon,
   ...props
 }: ComponentProps<typeof Menu.RadioItem> & { icon?: ReactNode }) {
+  useI18n()
   return (
     <Menu.RadioItem className={cn(menuItemClass, className)} {...props}>
       {icon}
@@ -129,10 +135,12 @@ export function DropdownMenuRadioItem({
 }
 
 export function DropdownMenuLabel({ className, ...props }: ComponentProps<typeof Menu.Label>) {
+  useI18n()
   return <Menu.Label className={cn(menuLabelClass, className)} {...props} />
 }
 
 export function DropdownMenuSeparator({ className, ...props }: ComponentProps<typeof Menu.Separator>) {
+  useI18n()
   return <Menu.Separator className={cn(menuSeparatorClass, className)} {...props} />
 }
 
@@ -142,6 +150,7 @@ export function DropdownMenuSubTrigger({
   children,
   ...props
 }: ComponentProps<typeof Menu.SubTrigger> & { icon?: ReactNode }) {
+  useI18n()
   return (
     <Menu.SubTrigger
       className={cn(menuItemClass, 'data-[state=open]:bg-[color-mix(in_oklab,var(--pf-fg)_8%,transparent)]', className)}
@@ -155,6 +164,7 @@ export function DropdownMenuSubTrigger({
 }
 
 export function DropdownMenuSubContent({ className, ...props }: ComponentProps<typeof Menu.SubContent>) {
+  useI18n()
   return (
     <Menu.Portal>
       <Menu.SubContent sideOffset={6} className={cn(menuContentClass, className)} {...props} />

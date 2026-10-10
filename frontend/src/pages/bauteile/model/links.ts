@@ -1,3 +1,4 @@
+import { t } from '@/lib/i18n'
 /** Dateien und Links der Bibliothek öffnen (Datenblatt-URL im Browser, Dateien über die Desktop-Brücke). */
 import { openPath } from '@/lib/native'
 
@@ -11,7 +12,7 @@ export function resolveLibraryPath(root: string | undefined, value: string): str
 
 /** Was ein Pfadfeld enthält – für die Meldungen von „Im Explorer zeigen“ */
 export function pathLabel(column: string): string {
-  return /^(Library|Footprint) Path( \d+)?$/.test(column) ? 'Bibliotheksdatei' : 'Datei'
+  return /^(Library|Footprint) Path( \d+)?$/.test(column) ? t("Bibliotheksdatei") : t("Datei")
 }
 
 export function isHttpUrl(value: string): boolean {

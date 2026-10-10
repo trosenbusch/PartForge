@@ -1,3 +1,4 @@
+import { t as tr } from '@/components/preview/i18n'
 /**
  * Helfer rund um Gehäusefamilien und Vorlagen: Suche (wortweise, normalisiert wie im Backend), bevorzugte Vorlage,
  * Facetten (Bauart/Gehäusetyp), passende Vorlage zu Selektorwerten (wie `best_preset` im Backend), Kurzinfos und
@@ -72,7 +73,7 @@ export function groupFamilies(families: readonly FootprintFamily[]): { group: st
 }
 
 /** Kurzname der Familie für Kopfzeilen („SOIC / SSOP / …“ bleibt, Klammerzusätze entfallen) */
-export const familyShortLabel = (f: FootprintFamily): string => f.label.replace(/\s*\([^)]*\)\s*$/, '')
+export const familyShortLabel = (f: FootprintFamily): string => tr(f.label).replace(/\s*\([^)]*\)\s*$/, '')
 
 /** Vorlage, mit der eine Familie startet (Chip-Bauteile: 0603 statt 01005) */
 export function preferredPreset(f: FootprintFamily): FootprintPreset | null {
@@ -82,12 +83,12 @@ export function preferredPreset(f: FootprintFamily): FootprintPreset | null {
 
 /** Vorlagen-Untertitel ohne Wiederholung des Schlüssels: „SOIC-8 (3,9 mm, JEDEC MS-012)“ → „3,9 mm, JEDEC MS-012“ */
 export function presetSubtitle(p: FootprintPreset): string {
-  let label = p.label.trim()
+  let label = tr(p.label).trim()
   const key = p.key.trim()
   if (label.toLowerCase().startsWith(key.toLowerCase())) label = label.slice(key.length).trim()
   label = label.replace(/^[,–-]\s*/, '')
   if (label.startsWith('(') && label.endsWith(')')) label = label.slice(1, -1)
-  return label || p.label
+  return label || tr(p.label)
 }
 
 /** Facette zum schnellen Filtern der Vorlagen (Bauteilart oder Gehäusetyp), falls sinnvoll */
@@ -114,7 +115,7 @@ export function familySubtitle(f: FootprintFamily): string {
   const short = familyShortLabel(f)
   const extra = /\(([^)]*)\)\s*$/.exec(f.label)?.[1]
   const lead = f.group !== short ? f.group : (extra ?? f.group)
-  return `${lead} · ${f.presets.length} ${f.presets.length === 1 ? 'Vorlage' : 'Vorlagen'}`
+  return `${tr(lead)} · ${f.presets.length} ${f.presets.length === 1 ? tr('Vorlage') : tr('Vorlagen')}`
 }
 
 const FACET_LABEL: Record<string, Record<string, string>> = {
@@ -133,7 +134,7 @@ const FACET_LABEL: Record<string, Record<string, string>> = {
   rows: { '1': '1 Reihe', '2': '2 Reihen' },
 }
 
-export const facetLabel = (param: string, value: string): string => FACET_LABEL[param]?.[value] ?? value
+export const facetLabel = (param: string, value: string): string => tr(FACET_LABEL[param]?.[value] ?? value)
 
 /** Werte einer Vorlage als Formularwerte */
 export function presetValues(f: FootprintFamily, p: FootprintPreset): ParamValues {
@@ -259,7 +260,7 @@ export function presetFactsShort(f: FootprintFamily, p: FootprintPreset): string
   const { pins, pitch, body } = presetFacts(f, p)
   const key = p.key.toLowerCase()
   const out: string[] = []
-  if (pins && !new RegExp(`(^|[^0-9])${pins}([^0-9]|$)`).test(key)) out.push(`${pins} Pins`)
+  if (pins && !new RegExp(`(^|[^0-9])${pins}([^0-9]|$)`).test(key)) out.push(tr("{value0} Pins", { value0: String(pins) }))
   if (pitch !== null && !key.includes(`p${String(pitch)}`)) out.push(`e ${formatPlain(pitch, 2)}`)
   if (body && !/\d(\.\d+)?x\d/.test(key)) out.push(body)
   return out.join(' · ')
@@ -269,9 +270,9 @@ export function presetFactsShort(f: FootprintFamily, p: FootprintPreset): string
 export function presetFactsText(f: FootprintFamily, p: FootprintPreset): string {
   const { pins, pitch, body } = presetFacts(f, p)
   const out: string[] = []
-  if (pins) out.push(`${pins} Anschlüsse`)
-  if (pitch !== null) out.push(`Raster ${formatDim(pitch)} mm`)
-  if (body) out.push(`Körper ${body} mm`)
+  if (pins) out.push(tr("{value0} Anschlüsse", { value0: String(pins) }))
+  if (pitch !== null) out.push(tr("Raster {value0} mm", { value0: String(formatDim(pitch)) }))
+  if (body) out.push(tr("Körper {value0} mm", { value0: String(body) }))
   return out.join(' · ')
 }
 
@@ -332,9 +333,9 @@ export function familyMatches(f: FootprintFamily, query: string): number {
   const tokens = queryTokens(query)
   if (!tokens.length) return 1
   const key = normalizeTerm(f.key)
-  const label = words(f.label)
-  const group = words(f.group)
-  const desc = words(f.description)
+  const label = words(`${f.label} ${tr(f.label)}`)
+  const group = words(`${f.group} ${tr(f.group)}`)
+  const desc = words(`${f.description} ${tr(f.description)}`)
   const aliases = familyAliases(f).map(normalizeTerm)
   let score = 0
   for (const t of tokens) {
@@ -357,7 +358,7 @@ export function presetMatches(p: FootprintPreset, query: string): number {
   if (!tokens.length) return 1
   const key = normalizeTerm(p.key)
   const keyWords = words(p.key)
-  const label = words(p.label)
+  const label = words(`${p.label} ${tr(p.label)}`)
   const source = words(p.source)
   let score = 0
   for (const t of tokens) {

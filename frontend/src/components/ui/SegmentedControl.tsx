@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { motion } from 'motion/react'
 import { RadioGroup } from 'radix-ui'
 import { useId, type ReactNode } from 'react'
@@ -47,6 +48,7 @@ export function SegmentedControl<V extends string = string>({
   'aria-label': ariaLabel,
   'aria-labelledby': ariaLabelledBy,
 }: SegmentedControlProps<V>) {
+  useI18n()
   const layoutId = `seg-${useId()}`
   const field = useFieldContext()
   const labelledBy = ariaLabel ? undefined : (ariaLabelledBy ?? field?.labelId)

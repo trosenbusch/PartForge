@@ -1,0 +1,18 @@
+export default {
+  "angelegt": "created",
+  "bearbeitet": "edited",
+  "wiederhergestellt": "restored",
+  "importiert": "imported",
+  'eingeklappt': 'collapsed',
+  'kleinbuchstaben': 'lowercase',
+  'in die Bibliotheksdatei': 'to the library file',
+  '1 Eintrag': '1 entry',
+  '{0} Einträge': '{0} entries',
+  'teilweise invertiert': 'partially inverted',
+  ', höchstens {0}': ', at most {0}',
+  ' · mehrere Dateien möglich': ' · multiple files allowed',
+  'weitere': 'more',
+  'Außerhalb des lieferbaren Bereichs ({0}).': 'Outside the available range ({0}).',
+  'Kein Wert der Reihe {0}.': 'Not a value in series {0}.',
+  'Mit dieser Auswahl nicht lieferbar.': 'Not available with this selection.',
+} satisfies Record<string, string>

@@ -1,3 +1,4 @@
+import { t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Vorlagen-Katalog, nach Familien gegliedert: je Familie eine Überschrift (Glyphe, Name, Anzahl) und ein Raster aus
  * Karten. Tastatur: je Familie ein Tab-Halt (Listbox), Pfeile bewegen sich im Raster und über Familiengrenzen
@@ -36,6 +37,7 @@ function columnsOf(el: Element | null): number {
 }
 
 export function CatalogGrid({ groups, onOpen, empty }: CatalogGridProps) {
+  useI18n()
   const rootRef = useRef<HTMLDivElement>(null)
   // Tab-Halt je Familie (zuletzt fokussierte Karte)
   const [active, setActive] = useState<Record<string, number>>({})
@@ -119,8 +121,8 @@ export function CatalogGrid({ groups, onOpen, empty }: CatalogGridProps) {
                 {familyShortLabel(group.family)}
               </h2>
               <span className="text-2xs tabular-nums text-fg-subtle">
-                {group.items.length} {group.items.length === 1 ? 'Vorlage' : 'Vorlagen'}
-                {group.family.group !== familyShortLabel(group.family) && ` · ${group.family.group}`}
+                {group.items.length} {group.items.length === 1 ? tr('Vorlage') : tr('Vorlagen')}
+                {group.family.group !== familyShortLabel(group.family) && ` · ${tr(group.family.group)}`}
               </span>
               <span aria-hidden className="ml-1 h-px flex-1 bg-line" />
             </div>

@@ -1,12 +1,5 @@
-/**
- * Aktionen rund um DbLib, Bibliotheksdateien und Altium – mit Rückfragen, Toasts und Job-Dock.
- * Genutzt von der Altium-Seite (Knöpfe, Befehle, Aktion im Router-State) und der Übersicht (Karten, Schnellaktionen,
- * „Beheben“).
- *
- * Jobs erscheinen im Job-Dock (Fortschritt, Log, Abschluss-Toast); nach erfolgreichen Jobs lädt das Dock alle
- * Modul-Abfragen neu. `pending[key]` ist true, solange der Start läuft **oder** ein Job dieser Art aktiv ist –
- * auch nach einem Seitenwechsel (Job-Liste des Docks).
- */
+import { useI18n, localizeMessage } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { useQueryClient } from '@tanstack/react-query'
 import { useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
@@ -45,7 +38,7 @@ import {
   NEEDS_ALTIUM,
   uninstallWarning,
   VERIFY_SAMPLE,
-  WRITER_MISSING_TEXT,
+  writerMissingText,
   writerLabel,
   type ActionKey,
   type UninstallResult,
@@ -159,9 +152,9 @@ function formatExample(items: HealthItem[]): string | null {
 
 /** Rückmeldung von „DbLib neu erzeugen“: Grund in den Worten des Backends (`reason_text`), Hinweise dahinter */
 function regenerateToast(result: DbLibRegenerateResult): void {
-  const description = [result.reason_text, ...result.warnings].filter(Boolean).join(' ')
-  if (result.written) toast.success('DbLib neu erzeugt', { id: 'dblib-regenerate', description })
-  else toast.success('DbLib geprüft', { id: 'dblib-regenerate', description })
+  const description = [result.reason_text, ...result.warnings].filter(Boolean).map(localizeMessage).join(' ')
+  if (result.written) toast.success(tr("DbLib neu erzeugt"), { id: 'dblib-regenerate', description })
+  else toast.success(tr("DbLib geprüft"), { id: 'dblib-regenerate', description })
 }
 
 /** Zuletzt ausgeführtes „DbLib neu erzeugen“ dieser Sitzung (Kette der Altium-Seite) */
@@ -171,6 +164,7 @@ export interface RegenerateReceipt {
 }
 
 export function useAltiumActions() {
+  const { t: tr } = useI18n()
   const qc = useQueryClient()
   const navigate = useNavigate()
   const regen = useRegenerateDblib()
@@ -213,17 +207,17 @@ export function useAltiumActions() {
     }
     if (!status) return true
     if (!status.altium_exe) {
-      toast.warning('Altium Designer wurde nicht gefunden', {
+      toast.warning(tr("Altium Designer wurde nicht gefunden"), {
         id: 'altium-missing',
-        description: `Pfad zu X2.EXE unter ${SETTINGS_PLACE.altium.label} festlegen.`,
-        action: { label: 'Einstellungen', onClick: () => navigate(SETTINGS_PLACE.altium.to) },
+        description: tr("Pfad zu X2.EXE unter {0} festlegen.", { "0": String(SETTINGS_PLACE.altium.label) }),
+        action: { label: tr("Einstellungen"), onClick: () => navigate(SETTINGS_PLACE.altium.to) },
       })
       return false
     }
     if (!status.altium_running) {
-      toast.warning('Altium Designer ist nicht gestartet', {
+      toast.warning(tr("Altium Designer ist nicht gestartet"), {
         id: 'altium-not-running',
-        description: 'Installieren, Aktualisieren und Prüfen brauchen ein laufendes Altium Designer – bitte starten und erneut versuchen.',
+        description: tr("Installieren, Aktualisieren und Prüfen brauchen ein laufendes Altium Designer – bitte starten und erneut versuchen."),
       })
       return false
     }
@@ -246,11 +240,11 @@ export function useAltiumActions() {
       }
     }
     if (ready(status)) return true
-    toast.warning('Kein Bibliotheks-Writer verfügbar', {
+    toast.warning(tr("Kein Bibliotheks-Writer verfügbar"), {
       id: 'writer-missing',
-      description: `${WRITER_MISSING_TEXT}.`,
+      description: `${writerMissingText()}.`,
       duration: 10_000,
-      action: { label: 'Writer einrichten', onClick: () => navigate(SETTINGS_PLACE.altium.to) },
+      action: { label: tr("Writer einrichten"), onClick: () => navigate(SETTINGS_PLACE.altium.to) },
     })
     return false
   }
@@ -300,31 +294,31 @@ export function useAltiumActions() {
    * „ODBC-Test fehlgeschlagen: …“) – sie ist der Text des Toasts; ein fehlgeschlagener Test ist eine Warnung.
    */
   const odbc = (opts?: Omit<StartOptions<OdbcReport>, 'warnWhen'>) =>
-    start<OdbcReport>('odbc', 'ODBC-Test konnte nicht starten', () => altiumApi.odbcTest(), {
+    start<OdbcReport>('odbc', tr("ODBC-Test konnte nicht starten"), () => altiumApi.odbcTest(), {
       ...opts,
-      warnWhen: (j) => (j.result && j.result.ok === false ? j.message || j.result.summary || 'ODBC-Test fehlgeschlagen' : null),
+      warnWhen: (j) => (j.result && j.result.ok === false ? j.message || j.result.summary || tr("ODBC-Test fehlgeschlagen") : null),
     })
 
   // ------------------------------------------------------------------ Bibliotheksdateien
 
   async function sync() {
     if (!(await ensureWriter())) return null
-    return start('sync', 'Synchronisieren konnte nicht starten', librariesApi.sync)
+    return start('sync', tr("Synchronisieren konnte nicht starten"), librariesApi.sync)
   }
   const scan = (registerUnknown = false) =>
-    start('scan', 'Prüfen konnte nicht starten', () => librariesApi.scan(registerUnknown))
+    start('scan', tr("Prüfen konnte nicht starten"), () => librariesApi.scan(registerUnknown))
 
   /** Erst prüfen (fehlende Einträge werden vorgemerkt), dann synchronisieren – auch wenn die Seite gewechselt wird */
   async function scanThenSync() {
     if (!(await ensureWriter())) return
-    const job = await start('scanSync', 'Prüfen konnte nicht starten', () => librariesApi.scan(false))
+    const job = await start('scanSync', tr("Prüfen konnte nicht starten"), () => librariesApi.scan(false))
     if (!job) return
     whenFinished(job.id, (done) => {
       if (done.status !== 'done') return
       librariesApi
         .sync()
         .then(({ job: next }) => trackJob(next))
-        .catch((err: unknown) => toast.error('Synchronisieren konnte nicht starten', { description: cleanErrorText(errorMessage(err)) }))
+        .catch((err: unknown) => toast.error(tr("Synchronisieren konnte nicht starten"), { description: cleanErrorText(errorMessage(err)) }))
     })
   }
 
@@ -333,7 +327,7 @@ export function useAltiumActions() {
    * (außerhalb geänderte Bibliotheken überspringt das Backend). Ohne Namen alle betroffenen.
    */
   const repairHeights = (names?: string[]) =>
-    start<HeightRepairResult>('repairHeights', 'Footprint-Höhen konnten nicht nachgetragen werden', () => librariesApi.repairHeights(names), {
+    start<HeightRepairResult>('repairHeights', tr("Footprint-Höhen konnten nicht nachgetragen werden"), () => librariesApi.repairHeights(names), {
       warnWhen: (j) => {
         const r = j.result
         if (!r) return null
@@ -352,7 +346,7 @@ export function useAltiumActions() {
     const next = async (): Promise<void> => {
       const library = queue.shift()
       if (!library) return
-      const job = await start<LibraryRestoreResult>('restoreBackup', 'Wiederherstellen konnte nicht starten', () => librariesApi.restoreBackup(library), {
+      const job = await start<LibraryRestoreResult>('restoreBackup', tr("Wiederherstellen konnte nicht starten"), () => librariesApi.restoreBackup(library), {
         warnWhen: (j) => (j.result?.errors?.length ? j.message || j.result.message : null),
       })
       if (job && queue.length) whenFinished(job.id, () => void next())
@@ -369,21 +363,21 @@ export function useAltiumActions() {
   async function checkLibrary(): Promise<void> {
     if (busy.current.check) return
     setFlag('check', true)
-    const id = toast.loading('Bibliothek wird geprüft …', { id: 'library-check', description: undefined })
+    const id = toast.loading(tr("Bibliothek wird geprüft …"), { id: 'library-check', description: undefined })
     try {
       const [data, files, status] = await Promise.allSettled([
         qc.fetchQuery({ queryKey: librariesKeys.dataHealth, queryFn: ({ signal }) => librariesApi.dataHealth(signal), staleTime: 0 }),
         qc.fetchQuery({ queryKey: librariesKeys.fileHealth, queryFn: ({ signal }) => librariesApi.fileHealth(signal), staleTime: 0 }),
         qc.fetchQuery({ queryKey: altiumKeys.status, queryFn: ({ signal }) => altiumApi.status(signal), staleTime: 0 }),
       ])
-      const retry = { label: 'Erneut prüfen', onClick: () => void checkLibrary() }
+      const retry = { label: tr("Erneut prüfen"), onClick: () => void checkLibrary() }
       const failures = [
-        data.status === 'rejected' ? `Datenprüfung: ${errorMessage(data.reason)}` : null,
-        files.status === 'rejected' ? `Dateiprüfung: ${errorMessage(files.reason)}` : null,
-        status.status === 'rejected' ? `DbLib-Status: ${errorMessage(status.reason)}` : null,
+        data.status === 'rejected' ? tr("Datenprüfung: {0}", { "0": String(errorMessage(data.reason)) }) : null,
+        files.status === 'rejected' ? tr("Dateiprüfung: {0}", { "0": String(errorMessage(files.reason)) }) : null,
+        status.status === 'rejected' ? tr("DbLib-Status: {0}", { "0": String(errorMessage(status.reason)) }) : null,
       ].filter((f): f is string => f !== null)
       if (data.status === 'rejected' && files.status === 'rejected') {
-        toast.error('Prüfung fehlgeschlagen', { id, description: failures.join(' · '), action: retry, duration: 10_000 })
+        toast.error(tr("Prüfung fehlgeschlagen"), { id, description: failures.join(' · '), action: retry, duration: 10_000 })
         return
       }
       const report = mergeHealth(
@@ -393,22 +387,22 @@ export function useAltiumActions() {
       )
       const { error, warning, info } = report.counts
       const counts = [
-        error && `${formatNumber(error)} Fehler`,
-        warning && plural(warning, 'Warnung', 'Warnungen'),
-        info && plural(info, 'Hinweis', 'Hinweise'),
+        error && tr("{0} Fehler", { "0": String(formatNumber(error)) }),
+        warning && plural(warning, tr("Warnung"), tr("Warnungen")),
+        info && plural(info, tr("Hinweis"), tr("Hinweise")),
       ].filter(Boolean)
-      const summary = counts.length ? counts.join(' · ') : 'keine Befunde'
+      const summary = counts.length ? counts.join(' · ') : tr("keine Befunde")
       if (failures.length) {
-        toast.warning('Bibliothek nur teilweise geprüft', {
+        toast.warning(tr("Bibliothek nur teilweise geprüft"), {
           id,
-          description: `${failures.join(' · ')}. Bisher: ${summary}.`,
+          description: tr("{0}. Bisher: {1}.", { "0": String(failures.join(' · ')), "1": String(summary) }),
           action: retry,
           duration: 10_000,
         })
       } else if (error + warning === 0) {
-        toast.success('Bibliothek geprüft', { id, description: info ? `Keine Fehler oder Warnungen · ${summary}` : 'Keine Probleme gefunden' })
+        toast.success(tr("Bibliothek geprüft"), { id, description: info ? tr("Keine Fehler oder Warnungen · {0}", { "0": String(summary) }) : tr("Keine Probleme gefunden") })
       } else {
-        toast.warning('Bibliothek geprüft', { id, description: summary })
+        toast.warning(tr("Bibliothek geprüft"), { id, description: summary })
       }
     } finally {
       setFlag('check', false)
@@ -418,7 +412,7 @@ export function useAltiumActions() {
   // ------------------------------------------------------------------ Altium
 
   const checkInstallState = () =>
-    start('installState', 'Installationsstatus konnte nicht geprüft werden', altiumApi.installState)
+    start('installState', tr("Installationsstatus konnte nicht geprüft werden"), altiumApi.installState)
 
   /** Installieren; gleichnamige alte Installationen dieser Bibliothek werden nur nach Rückfrage ersetzt */
   async function install(replace = false) {
@@ -428,38 +422,38 @@ export function useAltiumActions() {
     let replaceOthers = replace
     if (conflict) {
       if (!duplicatesReplaceable(dblib)) {
-        toast.error('DbLib kann nicht installiert werden', { id: 'dblib-duplicates', description: conflict.message })
+        toast.error(tr("DbLib kann nicht installiert werden"), { id: 'dblib-duplicates', description: conflict.message })
         return null
       }
       const ok = await confirm({
-        title: 'Alte Installation ersetzen?',
+        title: tr("Alte Installation ersetzen?"),
         description: conflict.message,
-        confirmLabel: 'Ersetzen und installieren',
+        confirmLabel: tr("Ersetzen und installieren"),
       })
       if (!ok) return null
       replaceOthers = true
     }
-    return start(replaceOthers ? 'installReplace' : 'install', 'Installation konnte nicht starten', () => altiumApi.install(replaceOthers))
+    return start(replaceOthers ? 'installReplace' : 'install', tr("Installation konnte nicht starten"), () => altiumApi.install(replaceOthers))
   }
 
   async function uninstall() {
     if (!(await ensureAltium())) return null
     const ok = await confirm({
-      title: 'DbLib aus Altium deinstallieren?',
+      title: tr("DbLib aus Altium deinstallieren?"),
       description:
-        'Altium gibt die Datenbank frei und entfernt die DbLib aus den installierten Bibliotheken. Bereits platzierte Bauteile bleiben im Schaltplan, lassen sich aber erst nach erneutem Installieren aktualisieren.',
-      confirmLabel: 'Deinstallieren',
+        tr("Altium gibt die Datenbank frei und entfernt die DbLib aus den installierten Bibliotheken. Bereits platzierte Bauteile bleiben im Schaltplan, lassen sich aber erst nach erneutem Installieren aktualisieren."),
+      confirmLabel: tr("Deinstallieren"),
     })
     if (!ok) return null
     // Hält Altium die Datenbank noch offen, ist das ein Hinweis (gelb, „Fertig mit Hinweisen“) mit dem vollen Text –
     // kein grüner, auf 200 Zeichen gekürzter Erfolg (E2EREG-2)
-    return start<UninstallResult>('uninstall', 'Deinstallieren konnte nicht starten', altiumApi.uninstall, {
+    return start<UninstallResult>('uninstall', tr("Deinstallieren konnte nicht starten"), altiumApi.uninstall, {
       warnWhen: (j) => uninstallWarning(j),
     })
   }
 
   const refresh = (rebuildIndex: boolean | null = null) =>
-    start(rebuildIndex ? 'refreshRebuild' : 'refresh', 'Aktualisieren konnte nicht starten', () => altiumApi.refresh(rebuildIndex))
+    start(rebuildIndex ? 'refreshRebuild' : 'refresh', tr("Aktualisieren konnte nicht starten"), () => altiumApi.refresh(rebuildIndex))
 
   /**
    * In Altium prüfen (Standard: Stichprobe über alle Kategorien). Mit `resultAction` (Start außerhalb der Altium-Seite)
@@ -467,7 +461,7 @@ export function useAltiumActions() {
    */
   async function verify(input: VerifyInput = VERIFY_SAMPLE_INPUT, opts: StartOptions & { resultAction?: boolean } = {}) {
     const { resultAction, ...rest } = opts
-    const job = await start('verify', 'Prüfung in Altium konnte nicht starten', () => altiumApi.verify(input), {
+    const job = await start('verify', tr("Prüfung in Altium konnte nicht starten"), () => altiumApi.verify(input), {
       ...rest,
       toast: resultAction ? false : rest.toast,
     })
@@ -475,7 +469,7 @@ export function useAltiumActions() {
       whenFinished(job.id, (done) => {
         const outcome = jobOutcome(done)
         if (!outcome) return
-        const show = { label: 'Ergebnis ansehen', onClick: () => navigate('/altium?bereich=altium') }
+        const show = { label: tr("Ergebnis ansehen"), onClick: () => navigate('/altium?bereich=altium') }
         const id = `job:${done.id}`
         if (outcome.tone === 'success') toast.success(outcome.title, { id, description: outcome.description, action: show })
         else if (outcome.tone === 'warning') toast.warning(outcome.title, { id, description: outcome.description, action: show, duration: 9000 })
@@ -486,7 +480,7 @@ export function useAltiumActions() {
     return job
   }
 
-  const openInAltium = (path?: string) => start('open', 'Datei konnte nicht in Altium geöffnet werden', () => altiumApi.open(path))
+  const openInAltium = (path?: string) => start('open', tr("Datei konnte nicht in Altium geöffnet werden"), () => altiumApi.open(path))
 
   /** Status, Dateiliste und Prüfbericht neu laden (nach einem Lesefehler) */
   function reload() {
@@ -520,12 +514,12 @@ export function useAltiumActions() {
     try {
       const example = formatExample(items)
       const ok = await confirm({
-        title: `${plural(values, 'Wert', 'Werte')} vereinheitlichen?`,
-        description: `PartForge speichert ${values === 1 ? 'den Wert' : 'die Werte'} von ${plural(parts.length, 'Bauteil', 'Bauteilen')} im Standardformat${example ? ` (z. B. ${example})` : ''}. Jede Änderung steht in der Historie des Bauteils.`,
-        confirmLabel: 'Vereinheitlichen',
+        title: tr("{0} vereinheitlichen?", { "0": String(plural(values, tr("Wert"), tr("Werte"))) }),
+        description: tr("PartForge speichert {0} von {1} im Standardformat{2}. Jede Änderung steht in der Historie des Bauteils.", { "0": String(values === 1 ? tr("den Wert") : tr("die Werte")), "1": String(plural(parts.length, tr("Bauteil"), tr("Bauteilen"))), "2": String(example ? tr(" (z. B. {0})", { 0: String(example) }) : '') }),
+        confirmLabel: tr("Vereinheitlichen"),
       })
       if (!ok) return
-      const id = toast.loading(`Werte werden vereinheitlicht … 0 von ${formatNumber(parts.length)}`)
+      const id = toast.loading(tr("Werte werden vereinheitlicht … 0 von {0}", { "0": String(formatNumber(parts.length)) }))
       let done = 0
       let failed = 0
       let firstError = ''
@@ -542,13 +536,13 @@ export function useAltiumActions() {
             firstError ||= `${p.pn}: ${cleanErrorText(errorMessage(err))}`
           } finally {
             done += 1
-            toast.loading(`Werte werden vereinheitlicht … ${formatNumber(done)} von ${formatNumber(parts.length)}`, { id })
+            toast.loading(tr("Werte werden vereinheitlicht … {0} von {1}", { "0": String(formatNumber(done)), "1": String(formatNumber(parts.length)) }), { id })
           }
         }
       }
       await Promise.all([worker(), worker(), worker()])
-      if (failed) toast.error(`${plural(failed, 'Bauteil', 'Bauteile')} nicht geändert`, { id, description: firstError })
-      else toast.success(`${plural(values, 'Wert', 'Werte')} vereinheitlicht`, { id })
+      if (failed) toast.error(tr("{0} nicht geändert", { "0": String(plural(failed, tr("Bauteil"), tr("Bauteile"))) }), { id, description: firstError })
+      else toast.success(tr("{0} vereinheitlicht", { "0": String(plural(values, tr("Wert"), tr("Werte"))) }), { id })
       void qc.invalidateQueries({ queryKey: librariesKeys.all })
       void qc.invalidateQueries({ queryKey: ['parts'] })
       void qc.invalidateQueries({ queryKey: libraryKeys.stats })

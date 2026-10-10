@@ -1,9 +1,5 @@
-/**
- * Bibliotheken des Berichts: je Datei eine aufklappbare Zeile mit Art, Pfad, geprüften und abweichenden Bauteilen und
- * Kennzeichen (nicht prüfbar, wird übersprungen, Lagen-Kopf, nicht erkannte Lagen, eigene Rollen). Aufgeklappt: Grund
- * für das Überspringen bzw. den Lesefehler, Abweichungen des Lagen-Kopfs, die Schrifttabelle nach der Umstellung
- * (SchLib) und der Editor der Lagenrollen (PcbLib). Viele Dateien (eine je Bauteil): Filter, Suche, seitenweise.
- */
+import { useI18n, localizeMessage } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { AnimatePresence, motion } from 'motion/react'
 import { ChevronRight, CircuitBoard, Layers, Search, Shapes, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -39,8 +35,8 @@ const hasChanges = (l: ConformLibraryReport) => !l.problem && (l.affected > 0 ||
 const hasNotes = (l: ConformLibraryReport) => Boolean(l.problem || l.refusal) || undeterminedLayers(l) > 0
 
 const KIND = {
-  schlib: { title: 'Symbolbibliotheken', icon: Shapes },
-  pcblib: { title: 'Footprint-Bibliotheken', icon: CircuitBoard },
+  schlib: { get title() { return tr("Symbolbibliotheken") }, icon: Shapes },
+  pcblib: { get title() { return tr("Footprint-Bibliotheken") }, icon: CircuitBoard },
 } as const
 
 /** Rollen, die im Entwurf anders sind als im Bericht (wirken erst nach erneutem Prüfen) */
@@ -64,6 +60,7 @@ export interface LibrarySectionProps {
 }
 
 export function LibrarySection({ libraries, rules, fontsChecked, onRoleChange, layers }: LibrarySectionProps) {
+  const { t: tr } = useI18n()
   const [filter, setFilter] = useState<Filter>('all')
   const [query, setQuery] = useState('')
   const [limit, setLimit] = useState(LIB_PAGE)
@@ -96,24 +93,24 @@ export function LibrarySection({ libraries, rules, fontsChecked, onRoleChange, l
   return (
     <Card className="overflow-hidden">
       <CardHeader
-        title="Bibliotheken"
-        description={`${plural(libraries.length, 'Datei', 'Dateien')} in der Auswahl – aufklappen für Lagenrollen, Lagen-Kopf und Schriften`}
+        title={tr("Bibliotheken")}
+        description={tr("{0} in der Auswahl – aufklappen für Lagenrollen, Lagen-Kopf und Schriften", { "0": String(plural(libraries.length, tr("Datei"), tr("Dateien"))) })}
       />
       {(libraries.length > 1 || libraries.length >= SEARCH_FROM) && (
         <div className="flex flex-wrap items-center gap-2 border-t border-line px-4 py-2.5">
           {libraries.length > 1 && (
             <SegmentedControl<Filter>
               size="sm"
-              aria-label="Bibliotheken filtern"
+              aria-label={tr("Bibliotheken filtern")}
               value={effectiveFilter}
               onValueChange={(v) => {
                 setFilter(v)
                 setLimit(LIB_PAGE)
               }}
               options={[
-                { value: 'all', label: `Alle ${formatNumber(libraries.length)}` },
-                { value: 'changes', label: `Mit Änderungen ${formatNumber(changed.length)}` },
-                { value: 'notes', label: `Mit Hinweisen ${formatNumber(notes.length)}` },
+                { value: 'all', label: tr("Alle {0}", { "0": String(formatNumber(libraries.length)) }) },
+                { value: 'changes', label: tr("Mit Änderungen {0}", { "0": String(formatNumber(changed.length)) }) },
+                { value: 'notes', label: tr("Mit Hinweisen {0}", { "0": String(formatNumber(notes.length)) }) },
               ]}
             />
           )}
@@ -132,14 +129,14 @@ export function LibrarySection({ libraries, rules, fontsChecked, onRoleChange, l
                   setQuery('')
                 }
               }}
-              placeholder="Datei suchen …"
-              aria-label="Bibliotheken durchsuchen"
+              placeholder={tr("Datei suchen …")}
+              aria-label={tr("Bibliotheken durchsuchen")}
               prefix={<Search />}
               suffix={
                 query ? (
                   <IconButton
                     size="xs"
-                    label="Suche leeren"
+                    label={tr("Suche leeren")}
                     icon={<X />}
                     onClick={() => setQuery('')}
                     tooltip={false}
@@ -157,8 +154,8 @@ export function LibrarySection({ libraries, rules, fontsChecked, onRoleChange, l
           <EmptyState
             size="sm"
             illustration="search-empty"
-            title="Keine Treffer"
-            description={needle ? `Keine Bibliothek passt zu „${query.trim()}“.` : 'Keine Bibliothek in diesem Filter.'}
+            title={tr("Keine Treffer")}
+            description={needle ? tr("Keine Bibliothek passt zu „{0}“.", { "0": String(query.trim()) }) : tr("Keine Bibliothek in diesem Filter.")}
             actions={
               <Button
                 size="sm"
@@ -167,8 +164,7 @@ export function LibrarySection({ libraries, rules, fontsChecked, onRoleChange, l
                   setFilter('all')
                 }}
               >
-                Filter zurücksetzen
-              </Button>
+                {tr("Filter zurücksetzen")}</Button>
             }
           />
         </div>
@@ -207,11 +203,9 @@ export function LibrarySection({ libraries, rules, fontsChecked, onRoleChange, l
       {rest > 0 && (
         <div className="flex items-center gap-3 border-t border-line px-4 py-2">
           <Button size="xs" variant="ghost" onClick={() => setLimit((l) => l + LIB_PAGE * 4)}>
-            {formatNumber(Math.min(LIB_PAGE * 4, rest))} weitere anzeigen
-          </Button>
+            {formatNumber(Math.min(LIB_PAGE * 4, rest))} {tr(" weitere anzeigen")}</Button>
           <span className="text-2xs text-fg-subtle">
-            {formatNumber(shown.length)} von {plural(visible.length, 'Datei', 'Dateien')} angezeigt
-          </span>
+            {formatNumber(shown.length)} {tr(" von ")}{plural(visible.length, tr("Datei"), tr("Dateien"))} {' '}{tr("angezeigt")}</span>
         </div>
       )}
     </Card>
@@ -237,20 +231,19 @@ function LibraryRow({
   layers: StyleInfo['layers'] | null
   onRoleChange: (layer: string, role: LayerRoleName | null) => void
 }) {
+  const { t: tr } = useI18n()
   const { folder, name } = splitPath(lib.library)
   const detailId = `lib-${libraryKey(lib.library).replace(/[^a-z0-9]+/gi, '-')}`
   const undetermined = undeterminedLayers(lib)
   const manualCount = Object.keys(manual).length
   const pending = pendingRoles(lib, manual)
   const status = lib.problem
-    ? 'nicht prüfbar'
-    : `${plural(lib.selected, 'Bauteil', 'Bauteile')} geprüft${
-        lib.affected > 0
-          ? `, ${formatNumber(lib.affected)} ${lib.affected === 1 ? 'weicht' : 'weichen'} ab`
+    ? tr("nicht prüfbar")
+    : tr("{0} geprüft{1}{2}", { "0": String(plural(lib.selected, tr("Bauteil"), tr("Bauteile"))), "1": String(lib.affected > 0
+          ? tr(", {0} {1} ab", { 0: String(formatNumber(lib.affected)), 1: String(lib.affected === 1 ? tr("weicht") : tr("weichen")) })
           : lib.header.length
             ? ''
-            : ', im Hausstil'
-      }${lib.components > lib.selected ? ` · Datei enthält ${formatNumber(lib.components)}` : ''}`
+            : tr(", im Hausstil")), "2": String(lib.components > lib.selected ? tr(" · Datei enthält {0}", { 0: String(formatNumber(lib.components)) }) : '') })
 
   return (
     <li>
@@ -270,33 +263,29 @@ function LibraryRow({
             <span className="text-ui font-medium text-fg [overflow-wrap:anywhere]">{name}</span>
             {lib.problem && (
               <Badge variant="danger" dot>
-                Nicht prüfbar
-              </Badge>
+                {tr("Nicht prüfbar")}</Badge>
             )}
             {lib.refusal && (
               <Badge variant="warning" dot>
-                Wird übersprungen
-              </Badge>
+                {tr("Wird übersprungen")}</Badge>
             )}
             {lib.header.length > 0 && (
               <Badge variant="info" dot>
-                Lagen-Kopf
-              </Badge>
+                {tr("Lagen-Kopf")}</Badge>
             )}
             {undetermined > 0 && (
               <Badge variant="warning">
-                {undetermined === 1 ? '1 Lage nicht erkannt' : `${formatNumber(undetermined)} Lagen nicht erkannt`}
+                {undetermined === 1 ? tr("1 Lage nicht erkannt") : tr("{0} Lagen nicht erkannt", { "0": String(formatNumber(undetermined)) })}
               </Badge>
             )}
             {manualCount > 0 && (
               <Badge variant="outline" className="font-normal">
-                {manualCount === 1 ? '1 Rolle von Hand' : `${formatNumber(manualCount)} Rollen von Hand`}
+                {manualCount === 1 ? tr("1 Rolle von Hand") : tr("{0} Rollen von Hand", { "0": String(formatNumber(manualCount)) })}
               </Badge>
             )}
             {pending > 0 && (
               <Badge variant="accent" dot>
-                Rollen geändert
-              </Badge>
+                {tr("Rollen geändert")}</Badge>
             )}
           </span>
           <span className="mt-0.5 block text-2xs leading-snug text-fg-subtle">
@@ -322,28 +311,27 @@ function LibraryRow({
           >
             <div className="flex flex-col gap-4 pb-4 pl-[2.625rem] pr-4 pt-0.5">
               {lib.problem && (
-                <Callout tone="danger" title="Nicht prüfbar – bleibt unverändert">
-                  {lib.problem}
+                <Callout tone="danger" title={tr("Nicht prüfbar – bleibt unverändert")}>
+                  {localizeMessage(lib.problem)}
                 </Callout>
               )}
               {lib.refusal && (
-                <Callout tone="warning" title="Wird beim Anwenden übersprungen">
-                  {lib.refusal}
+                <Callout tone="warning" title={tr("Wird beim Anwenden übersprungen")}>
+                  {localizeMessage(lib.refusal)}
                 </Callout>
               )}
               {lib.header.length > 0 && (
                 <div className="flex flex-col gap-1">
-                  <h4 className="text-xs font-medium text-fg">Lagen-Kopf weicht ab</h4>
+                  <h4 className="text-xs font-medium text-fg">{tr("Lagen-Kopf weicht ab")}</h4>
                   <p className="text-2xs leading-snug text-fg-subtle">
-                    „Anwenden“ übernimmt Lagenaufbau und Lagensatz des Hausstils.
-                  </p>
+                    {tr("„Anwenden“ übernimmt Lagenaufbau und Lagensatz des Hausstils.")}</p>
                   <HeaderDeviations items={lib.header} />
                 </div>
               )}
               {lib.kind === 'schlib' && lib.fonts.length > 0 && (
                 <div className="flex flex-col gap-1">
                   <h4 className="text-xs font-medium text-fg">
-                    {fontsChecked ? 'Schrifttabelle nach der Umstellung' : 'Schrifttabelle'}
+                    {fontsChecked ? tr("Schrifttabelle nach der Umstellung") : tr("Schrifttabelle")}
                   </h4>
                   <ol className="mt-1 flex flex-wrap gap-1.5">
                     {lib.fonts.map((f, i) => (
@@ -368,10 +356,10 @@ function LibraryRow({
                     inactive={rolesInactive}
                   />
                 ) : (
-                  <p className="text-xs text-fg-muted">Die Footprints dieser Datei nutzen keine mechanischen Lagen.</p>
+                  <p className="text-xs text-fg-muted">{tr("Die Footprints dieser Datei nutzen keine mechanischen Lagen.")}</p>
                 ))}
               {lib.kind === 'schlib' && !lib.problem && !lib.fonts.length && !lib.refusal && (
-                <p className="text-xs text-fg-muted">Keine weiteren Angaben zu dieser Datei.</p>
+                <p className="text-xs text-fg-muted">{tr("Keine weiteren Angaben zu dieser Datei.")}</p>
               )}
             </div>
           </motion.div>
@@ -384,6 +372,7 @@ function LibraryRow({
 
 /** Abweichungen des Lagen-Kopfs: die ersten {@link HEADER_FIRST}, der Rest auf Wunsch */
 function HeaderDeviations({ items }: { items: string[] }) {
+  const { t: tr } = useI18n()
   const [all, setAll] = useState(false)
   const shown = all ? items : items.slice(0, HEADER_FIRST)
   const hidden = items.length - shown.length
@@ -393,13 +382,13 @@ function HeaderDeviations({ items }: { items: string[] }) {
         {shown.map((h, i) => (
           <li key={i} className="flex items-start gap-1.5">
             <Layers aria-hidden className="mt-px size-3.5 shrink-0 text-info-text" />
-            <span className="min-w-0 [overflow-wrap:anywhere]">{h}</span>
+            <span className="min-w-0 [overflow-wrap:anywhere]">{localizeMessage(h)}</span>
           </li>
         ))}
       </ul>
       {(hidden > 0 || all) && items.length > HEADER_FIRST && (
         <Button size="xs" variant="ghost" className="self-start" onClick={() => setAll((v) => !v)} aria-expanded={all}>
-          {all ? 'Weniger anzeigen' : `${plural(hidden, 'weitere Abweichung', 'weitere Abweichungen')} anzeigen`}
+          {all ? tr("Weniger anzeigen") : tr("{0} anzeigen", { "0": String(plural(hidden, tr("weitere Abweichung"), tr("weitere Abweichungen"))) })}
         </Button>
       )}
     </>

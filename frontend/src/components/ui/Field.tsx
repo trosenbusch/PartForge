@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { CircleAlert } from 'lucide-react'
 import { useId, type ReactNode } from 'react'
 import { cn } from '@/lib/cn'
@@ -38,6 +39,7 @@ export function Field({
   layout = 'stacked',
   className,
 }: FieldProps) {
+  useI18n()
   const auto = useId()
   const id = htmlFor ?? `field-${auto.replace(/:/g, '')}`
   const labelId = `${id}-label`

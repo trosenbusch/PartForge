@@ -1,7 +1,4 @@
-/**
- * Zellen-Renderer für den DataGrid (AG Grid React). Parameter kommen über `cellRendererParams` bzw. die
- * Spaltentypen in `columnTypes.ts` (z. B. `type: 'quantity'`).
- */
+import { useI18n, metadataLabel } from '@/lib/i18n'
 import { useQuery } from '@tanstack/react-query'
 import type { CustomCellRendererProps } from 'ag-grid-react'
 import { CircuitBoard, Component as SymbolIcon, ExternalLink, FolderOpen } from 'lucide-react'
@@ -30,26 +27,30 @@ export interface QuantityCellParams {
 
 /** Technischer Wert: „10 kΩ“, „0,1 W“, „±1 %“ (Monospace, tabellarische Ziffern) */
 export function QuantityCell({ value, unit, digits }: CustomCellRendererProps & QuantityCellParams) {
+  useI18n()
   if (value === null || value === undefined || value === '') return EMPTY
   const text = typeof value === 'number' ? formatEngineering(value, unit ?? '', digits ?? 3) : formatQuantityText(String(value))
   return <span className="mono">{text}</span>
 }
 
 export interface EnumBadgeCellParams {
+  /** Explicit display labels for declared options; arbitrary user values are preserved. */
+  labels?: Record<string, string>
   /** Wert → Badge-Variante (Standard: neutral) */
   tones?: Record<string, BadgeVariant>
   mono?: boolean
 }
 
 /** Aufzählungswert(e) als Badge (Komma-/Semikolon-getrennte Werte als mehrere Badges) */
-export function EnumBadgeCell({ value, tones, mono }: CustomCellRendererProps & EnumBadgeCellParams) {
+export function EnumBadgeCell({ value, tones, mono, labels }: CustomCellRendererProps & EnumBadgeCellParams) {
+  useI18n()
   const values = splitEnum(value)
   if (!values.length) return EMPTY
   return (
     <span className="pf-cell-inline min-w-0 gap-1 overflow-hidden">
       {values.map((v) => (
         <Badge key={v} variant={tones?.[v] ?? 'neutral'} className={cn(mono && 'mono')}>
-          {v}
+          {labels?.[v] ?? v}
         </Badge>
       ))}
     </span>
@@ -83,13 +84,14 @@ const TEXT: Record<StatusTone, string> = {
 
 /** Status mit Farbpunkt (Lebenszyklus, Synchronisation, Import-Ergebnis) */
 export function StatusCell({ value, tones, labels }: CustomCellRendererProps & StatusCellParams) {
+  useI18n()
   if (value === null || value === undefined || value === '') return EMPTY
   const text = String(value)
   const tone = statusTone(text, tones)
   return (
     <span className={cn('pf-cell-inline min-w-0 gap-2', TEXT[tone])}>
       <span aria-hidden className={cn('size-2 shrink-0 rounded-full', DOT[tone], (tone === 'success' || tone === 'danger') && 'shadow-[0_0_6px_currentColor]')} />
-      <span className="truncate">{labels?.[text] ?? text}</span>
+      <span className="truncate">{metadataLabel(labels?.[text] ?? text)}</span>
     </span>
   )
 }
@@ -103,6 +105,7 @@ export interface LinkCellParams {
 
 /** Link (Datenblatt-URL) oder Pfad (öffnet im Explorer, sofern die Desktop-Brücke es anbietet) */
 export function LinkCell({ value, kind, label }: CustomCellRendererProps & LinkCellParams) {
+  const { t: tr } = useI18n()
   if (value === null || value === undefined || value === '') return EMPTY
   const text = String(value)
   const asUrl = kind ? kind === 'url' : isUrl(text)
@@ -133,7 +136,7 @@ export function LinkCell({ value, kind, label }: CustomCellRendererProps & LinkC
     <button
       type="button"
       tabIndex={-1}
-      title={`${text} – im Explorer öffnen`}
+      title={tr("{0} – im Explorer öffnen", { "0": String(text) })}
       onClick={(e) => {
         e.stopPropagation()
         void openPath(text)
@@ -172,6 +175,7 @@ export interface RefCellParams<TData = unknown> {
 }
 
 function SvgImage({ svg, alt }: { svg: string; alt: string }) {
+  useI18n()
   const url = useMemo(() => URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' })), [svg])
   useEffect(() => () => URL.revokeObjectURL(url), [url])
   return <img src={url} alt={alt} className="size-full object-contain p-3" />
@@ -188,6 +192,7 @@ function RefPreviewBody({
   row: unknown
   loader?: RefCellParams['loadPreview']
 }) {
+  const { t: tr } = useI18n()
   const q = useQuery({
     queryKey: [kind === 'symbol' ? 'symbols' : 'footprints', 'ref-preview', name],
     queryFn: ({ signal }) => (loader ? loader(name, row, signal) : Promise.resolve(null)),
@@ -196,7 +201,7 @@ function RefPreviewBody({
   })
   const board = kind === 'footprint'
   if (!loader) {
-    return <div className="flex h-full items-center justify-center px-4 text-center text-xs text-fg-subtle">Keine Vorschau verfügbar</div>
+    return <div className="flex h-full items-center justify-center px-4 text-center text-xs text-fg-subtle">{tr("Keine Vorschau verfügbar")}</div>
   }
   if (q.isPending) return <Skeleton className="m-3 h-[calc(100%-24px)]" />
   if (q.isError) return <div className="flex h-full items-center justify-center px-4 text-center text-xs text-danger-text">{errorMessage(q.error)}</div>
@@ -217,7 +222,7 @@ function RefPreviewBody({
     )
   }
   if (data?.svg) return <SvgImage svg={data.svg} alt={name} />
-  return <div className="flex h-full items-center justify-center text-xs text-fg-subtle">Keine Vorschau verfügbar</div>
+  return <div className="flex h-full items-center justify-center text-xs text-fg-subtle">{tr("Keine Vorschau verfügbar")}</div>
 }
 
 function RefCell({
@@ -232,9 +237,10 @@ function RefCell({
     kind: 'symbol' | 'footprint'
     icon: ReactNode
   }) {
+  const { t: tr } = useI18n()
   const [open, setOpen] = useState(false)
   const timer = useRef<number | undefined>(undefined)
-  useEffect(() => () => window.clearTimeout(timer.current), [])
+  useEffect(() => () => window.clearTimeout(timer.current), [tr])
   if (value === null || value === undefined || value === '') return EMPTY
   const name = String(value)
   const library =
@@ -255,7 +261,7 @@ function RefCell({
           tabIndex={-1}
           aria-haspopup="dialog"
           aria-expanded={open}
-          aria-label={`${kind === 'symbol' ? 'Symbol' : 'Footprint'} ${name} – Vorschau`}
+          aria-label={tr("{0} {1} – Vorschau", { "0": String(kind === 'symbol' ? 'Symbol' : 'Footprint'), "1": String(name) })}
           onPointerEnter={enter}
           onPointerLeave={leave}
           onClick={(e) => {
@@ -300,10 +306,12 @@ function RefCell({
 
 /** Symbolverweis („Library Ref“) mit Vorschau beim Überfahren (bzw. Enter auf der Zelle) */
 export function SymbolRefCell(props: CustomCellRendererProps & RefCellParams) {
+  useI18n()
   return <RefCell {...props} kind="symbol" icon={<SymbolIcon />} />
 }
 
 /** Footprintverweis („Footprint Ref“) mit Vorschau beim Überfahren (bzw. Enter auf der Zelle) */
 export function FootprintRefCell(props: CustomCellRendererProps & RefCellParams) {
+  useI18n()
   return <RefCell {...props} kind="footprint" icon={<CircuitBoard />} />
 }

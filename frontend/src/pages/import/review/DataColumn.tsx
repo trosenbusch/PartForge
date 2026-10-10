@@ -1,3 +1,4 @@
+import { t, useI18n } from '@/lib/i18n'
 import { useReducedMotion } from 'motion/react'
 import { Check, ChevronDown, PanelLeftOpen, PanelRightOpen, PencilLine, Undo2 } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
@@ -32,18 +33,19 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { id: 'identitaet', label: 'Identität' },
-  { id: 'varianten', label: 'Varianten' },
-  { id: 'parameter', label: 'Parameter' },
+  { id: 'identitaet', get label() { return t("Identität") } },
+  { id: 'varianten', get label() { return t("Varianten") } },
+  { id: 'parameter', get label() { return t("Parameter") } },
   { id: 'pins', label: 'Pins' },
-  { id: 'gehaeuse', label: 'Gehäuse' },
-  { id: 'hinweise', label: 'Hinweise' },
+  { id: 'gehaeuse', get label() { return t("Gehäuse") } },
+  { id: 'hinweise', get label() { return t("Hinweise") } },
 ]
 /** Gehäusezeichnung ohne Bauteil: nur Gehäuse und Hinweise */
 const PACKAGE_NAV: NavItem[] = NAV.filter((n) => n.id === 'gehaeuse' || n.id === 'hinweise')
 
 /** Spalte 2: extrahierte Daten in Abschnitten (klebende Navigation, Sprünge aus Fundstellen und Prüfliste). */
 export function DataColumn({ state, pdfCollapsed }: { state: Readiness; pdfCollapsed: boolean }) {
+  useI18n()
   const { ds, edit, extractionOut, device, packageOnly, proposal } = useReview()
   const focus = useReviewUi((s) => s.focusSection)
   const previewCollapsed = useReviewUi((s) => s.previewCollapsed)
@@ -88,7 +90,7 @@ export function DataColumn({ state, pdfCollapsed }: { state: Readiness; pdfColla
   useHotkey('mod+z', () => edit.undo(), { enabled: edit.canUndo, allowInInputs: false })
 
   const nav = packageOnly ? PACKAGE_NAV : NAV
-  const items: NavItem[] = needsCheck ? [{ id: 'pruefen', label: 'Prüfen', check: true }, ...nav] : nav
+  const items: NavItem[] = needsCheck ? [{ id: 'pruefen', label: t("Prüfen"), check: true }, ...nav] : nav
 
   return (
     <div className="@container flex h-full min-h-0 flex-col bg-bg">
@@ -96,7 +98,7 @@ export function DataColumn({ state, pdfCollapsed }: { state: Readiness; pdfColla
         {pdfCollapsed && (
           <IconButton
             size="sm"
-            label="PDF-Seiten einblenden"
+            label={t("PDF-Seiten einblenden")}
             icon={<PanelLeftOpen />}
             onClick={() => useReviewUi.getState().setPdfCollapsed(false)}
           />
@@ -106,19 +108,18 @@ export function DataColumn({ state, pdfCollapsed }: { state: Readiness; pdfColla
           {edit.saving ? (
             <span className="flex items-center gap-1.5 text-2xs text-fg-subtle">
               <Spinner size={12} />
-              <span className="hidden @[30rem]:inline">Wird gespeichert …</span>
-              <span className="sr-only @[30rem]:hidden">Wird gespeichert …</span>
+              <span className="hidden @[30rem]:inline">{t("Wird gespeichert …")}</span>
+              <span className="sr-only @[30rem]:hidden">{t("Wird gespeichert …")}</span>
             </span>
           ) : extractionOut.edited ? (
             <TipButton
-              tip="Sie haben die Extraktion korrigiert – die Originalantwort von Claude bleibt im Datenblatt gespeichert."
-              label="Korrigiert"
+              tip={t("Sie haben die Extraktion korrigiert – die Originalantwort von Claude bleibt im Datenblatt gespeichert.")}
+              label={t("Korrigiert")}
               className="gap-1 rounded-sm text-2xs text-fg-subtle"
             >
               {edit.count > 0 ? <Check aria-hidden className="size-3 text-success-text" /> : <PencilLine aria-hidden className="size-3" />}
               <span aria-hidden className="hidden @[38rem]:inline">
-                Korrigiert
-              </span>
+                {t("Korrigiert")}</span>
             </TipButton>
           ) : null}
           {edit.canUndo && (
@@ -128,16 +129,16 @@ export function DataColumn({ state, pdfCollapsed }: { state: Readiness; pdfColla
               leftIcon={<Undo2 />}
               onClick={edit.undo}
               aria-keyshortcuts="Control+Z"
-              title={edit.lastLabel ? `Rückgängig: ${edit.lastLabel}` : undefined}
+              title={edit.lastLabel ? t("Rückgängig: {0}", { "0": String(edit.lastLabel) }) : undefined}
             >
-              <span className="hidden @[34rem]:inline">Rückgängig</span>
-              <span className="sr-only @[34rem]:hidden">Rückgängig</span>
+              <span className="hidden @[34rem]:inline">{t("Rückgängig")}</span>
+              <span className="sr-only @[34rem]:hidden">{t("Rückgängig")}</span>
             </Button>
           )}
           {previewCollapsed && (
             <IconButton
               size="sm"
-              label="Vorschau einblenden"
+              label={t("Vorschau einblenden")}
               icon={<PanelRightOpen />}
               onClick={() => useReviewUi.getState().setPreviewCollapsed(false)}
             />
@@ -171,6 +172,7 @@ const GAP = 2
  * auf dem Menüknopf). „Prüfen“ bleibt immer sichtbar.
  */
 function SectionNav({ items, active }: { items: NavItem[]; active: DataSection }) {
+  useI18n()
   const [navRef, nav] = useElementSize<HTMLElement>()
   const measureRef = useRef<HTMLDivElement>(null)
   const [widths, setWidths] = useState<number[]>([])
@@ -208,7 +210,7 @@ function SectionNav({ items, active }: { items: NavItem[]; active: DataSection }
   const jump = (id: DataSection) => useReviewUi.getState().showSection(id)
 
   return (
-    <nav ref={navRef} aria-label="Abschnitte" className="relative flex min-w-0 flex-1 items-center gap-0.5 overflow-hidden">
+    <nav ref={navRef} aria-label={t("Abschnitte")} className="relative flex min-w-0 flex-1 items-center gap-0.5 overflow-hidden">
       {/* Messkopie (unsichtbar, nicht bedienbar) */}
       <div ref={measureRef} aria-hidden className="pointer-events-none invisible absolute left-0 top-0 flex gap-0.5">
         {items.map((n) => (
@@ -234,9 +236,9 @@ function SectionNav({ items, active }: { items: NavItem[]; active: DataSection }
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button type="button" className={cn(navItemClass(Boolean(activeHidden)), 'gap-1 pr-1.5')}>
-              {activeHidden ? activeHidden.label : 'Mehr'}
+              {activeHidden ? activeHidden.label : t("Mehr")}
               {/* Name = sichtbarer Text plus Zweck (kein abweichendes aria-label) */}
-              <span className="sr-only">{activeHidden ? ' (aktueller Abschnitt) – weitere Abschnitte' : ' Abschnitte'}</span>
+              <span className="sr-only">{activeHidden ? t(" (aktueller Abschnitt) – weitere Abschnitte") : t(" Abschnitte")}</span>
               <ChevronDown aria-hidden className="size-3.5 text-fg-subtle" />
             </button>
           </DropdownMenuTrigger>

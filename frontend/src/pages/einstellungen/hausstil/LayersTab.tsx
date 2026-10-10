@@ -1,3 +1,4 @@
+import { t as translate, useI18n, localizeMessage } from '@/lib/i18n'
 /**
  * Lagen: Zuordnung der logischen Footprint-Lagen zu Altium-Lagen (Top Overlay, Mechanical 1–32) mit
  * Vorlagen (Ihre Standardvorlage / IPC-Wizard der TR-Bibliotheken), optionaler .stackup-Datei, eigenem Lagensatz
@@ -101,26 +102,26 @@ function mapIssues(map: LayerMap, layers: Record<string, MechLayer> | null, rese
   for (const r of ROLES) {
     const n = mechNumber(map[r.key])
     if (n === null) continue
-    used.set(n, [...(used.get(n) ?? []), r.label])
+    used.set(n, [...(used.get(n) ?? []), translate(r.label)])
     if (reserved && RESERVED.has(n) && r.key !== 'silkscreen') {
       issues.push({
         level: 'warn',
-        text: `${r.label}: Mechanical ${n} belegt der Bibliotheks-Writer mit festen Typen (Assembly/Courtyard/3D) – besser eine Lage ab 8 wählen.`,
+        text: translate("{value1}: Mechanical {value2} belegt der Bibliotheks-Writer mit festen Typen (Assembly/Courtyard/3D) – besser eine Lage ab 8 wählen.", { value1: translate(r.label), value2: n }),
       })
     }
     if (!layers) continue
     const layer = layers[String(n)]
     if (!layer) {
-      issues.push({ level: 'info', text: `${r.label}: Mechanical ${n} ist im Lagenaufbau nicht definiert – PartForge legt sie in den Bibliotheken an.` })
+      issues.push({ level: 'info', text: translate("{value1}: Mechanical {value2} ist im Lagenaufbau nicht definiert – PartForge legt sie in den Bibliotheken an.", { value1: translate(r.label), value2: n }) })
     } else {
       if (r.kind && layer.kind && layer.kind !== r.kind) {
-        issues.push({ level: 'warn', text: `${r.label}: Mechanical ${n} ist „${layer.name}“ (Typ ${layer.kind}), erwartet wird ${r.kind}.` })
+        issues.push({ level: 'warn', text: translate("{value1}: Mechanical {value2} ist „{value3}“ (Typ {value4}), erwartet wird {value5}.", { value1: translate(r.label), value2: n, value3: layer.name, value4: layer.kind, value5: r.kind }) })
       }
-      if (!layer.enabled) issues.push({ level: 'info', text: `${r.label}: Mechanical ${n} ist im Lagenaufbau deaktiviert – wird in den Bibliotheken aktiviert.` })
+      if (!layer.enabled) issues.push({ level: 'info', text: translate("{value1}: Mechanical {value2} ist im Lagenaufbau deaktiviert – wird in den Bibliotheken aktiviert.", { value1: translate(r.label), value2: n }) })
     }
   }
   for (const [n, roles] of used) {
-    if (roles.length > 1) issues.push({ level: 'warn', text: `Mechanical ${n} trägt mehrere Rollen: ${roles.join(', ')}.` })
+    if (roles.length > 1) issues.push({ level: 'warn', text: translate("Mechanical {value1} trägt mehrere Rollen: {value2}.", { value1: n, value2: roles.join(', ') }) })
   }
   return issues
 }
@@ -148,6 +149,7 @@ export function LayersTab({
   onStackup: (path: string | null) => void
   onLayerSet: (layerSet: LayerSetSettings) => void
 }) {
+  useI18n()
   const server = useLayerStack()
   const pathForParse = useDebounced(stackup && stackup !== savedStackup ? stackup : null, 600)
   const parsed = useParsedLayerStack(pathForParse)
@@ -173,30 +175,28 @@ export function LayersTab({
       return {
         value: `Mechanical ${n}`,
         label: `Mechanical ${n}`,
-        description: [layer?.name && layer.name !== `Mechanical ${n}` ? layer.name : null, fixed ? 'vom Bibliotheks-Writer reserviert' : null]
+        description: [layer?.name && layer.name !== `Mechanical ${n}` ? layer.name : null, fixed ? translate("vom Bibliotheks-Writer reserviert") : null]
           .filter(Boolean)
           .join(' · ') || undefined,
       }
     })
     const overlay = [
-      { value: 'Top Overlay', label: 'Top Overlay', description: 'Bestückungsdruck oben' },
-      { value: 'Bottom Overlay', label: 'Bottom Overlay', description: 'Bestückungsdruck unten' },
+      { value: 'Top Overlay', label: 'Top Overlay', description: translate("Bestückungsdruck oben") },
+      { value: 'Bottom Overlay', label: 'Bottom Overlay', description: translate("Bestückungsdruck unten") },
     ]
     return role.key === 'silkscreen'
       ? [
-          { label: 'Bestückungsdruck', options: overlay },
-          { label: 'Mechanik', options: mech },
+          { label: translate("Bestückungsdruck"), options: overlay },
+          { label: translate("Mechanik"), options: mech },
         ]
-      : [{ label: 'Mechanik', options: mech }]
+      : [{ label: translate("Mechanik"), options: mech }]
   }
 
   const runApply = async () => {
     const ok = await confirm({
-      title: 'Lagen in alle Footprint-Bibliotheken übernehmen?',
-      description: `PartForge schreibt Lagennamen, -typen und Paare des Lagenaufbaus${
-        savedLayerSet.mode === 'none' ? '' : ' sowie den Lagensatz'
-      } in den Kopf jeder PcbLib. Primitive bleiben unverändert; bei unerwartetem Dateiaufbau bleibt die Datei unberührt.`,
-      confirmLabel: 'Übernehmen',
+      title: translate("Lagen in alle Footprint-Bibliotheken übernehmen?"),
+      description: translate("PartForge schreibt Lagennamen, -typen und Paare des Lagenaufbaus{value1} in den Kopf jeder PcbLib. Primitive bleiben unverändert; bei unerwartetem Dateiaufbau bleibt die Datei unberührt.", { value1: savedLayerSet.mode === 'none' ? '' : translate(" sowie den Lagensatz") }),
+      confirmLabel: translate("Übernehmen"),
       icon: <Layers3 />,
     })
     if (!ok) return
@@ -213,9 +213,9 @@ export function LayersTab({
       <div className="flex min-w-0 flex-col gap-5">
         <Card className="@container overflow-hidden">
           <div className="border-b border-line px-5 py-3.5">
-            <h2 className="text-ui font-semibold text-fg">Zuordnung</h2>
-            <p className="text-xs text-fg-muted">Auf welcher Altium-Lage PartForge was zeichnet – Vorlage wählen oder einzeln zuordnen</p>
-            <div role="group" aria-label="Vorlagen" className="mt-3 grid grid-cols-1 gap-2 @[30rem]:grid-cols-2">
+            <h2 className="text-ui font-semibold text-fg">{translate("Zuordnung")}</h2>
+            <p className="text-xs text-fg-muted">{translate("Auf welcher Altium-Lage PartForge was zeichnet – Vorlage wählen oder einzeln zuordnen")}</p>
+            <div role="group" aria-label={translate("Vorlagen")} className="mt-3 grid grid-cols-1 gap-2 @[30rem]:grid-cols-2">
               {PRESETS.map((p) => {
                 const active = sameMap(p.map, map)
                 return (
@@ -241,9 +241,9 @@ export function LayersTab({
                       {active && <Check className="size-3" />}
                     </span>
                     <span className="min-w-0">
-                      <span className="block text-ui font-medium text-fg">{p.label}</span>
-                      <span className="block text-2xs leading-snug text-fg-muted">{p.detail}</span>
-                      {p.note && <span className="mt-0.5 block text-2xs leading-snug text-fg-subtle">{p.note}</span>}
+                      <span className="block text-ui font-medium text-fg">{translate(p.label)}</span>
+                      <span className="block text-2xs leading-snug text-fg-muted">{translate(p.detail)}</span>
+                      {p.note && <span className="mt-0.5 block text-2xs leading-snug text-fg-subtle">{translate(p.note)}</span>}
                     </span>
                   </button>
                 )
@@ -251,10 +251,8 @@ export function LayersTab({
             </div>
             {/* Direkt unter den Vorlagen, damit der Hinweis beim Klick auf „IPC-Wizard“ sofort sichtbar ist */}
             {ipcActive && builtinStack && !missing && (
-              <Callout tone="info" icon={<FileStack />} title="Dazu den Lagenaufbau der TR-Bibliotheken wählen" className="mt-3">
-                Die Vorlage „IPC-Wizard“ gehört zum Lagenaufbau der TR-Bibliotheken. Wählen Sie unten deren .stackup-Datei – mit
-                dem eingebauten Standard tragen einige Lagen andere Typen (siehe Hinweise).
-              </Callout>
+              <Callout tone="info" icon={<FileStack />} title={translate("Dazu den Lagenaufbau der TR-Bibliotheken wählen")} className="mt-3">
+                {translate("Die Vorlage „IPC-Wizard“ gehört zum Lagenaufbau der TR-Bibliotheken. Wählen Sie unten deren .stackup-Datei – mit dem eingebauten Standard tragen einige Lagen andere Typen (siehe Hinweise).")}</Callout>
             )}
           </div>
           <div className="flex flex-col divide-y divide-line px-5">
@@ -271,12 +269,12 @@ export function LayersTab({
                   className={cn('-mx-5 px-5 transition-colors', hover === r.key && 'bg-surface-2/50')}
                 >
                   <StyleRow
-                    label={r.label}
+                    label={translate(r.label)}
                     help={
                       <span className="flex items-center gap-1.5">
                         <span aria-hidden className="size-2 shrink-0 rounded-[3px] shadow-[inset_0_0_0_1px_rgba(0,0,0,.28)]" style={{ background: roleColor(r) }} />
-                        {r.description}
-                        {changed && <Badge variant="accent" className="ml-1 h-4 px-1.5">geändert</Badge>}
+                        {translate(r.description)}
+                        {changed && <Badge variant="accent" className="ml-1 h-4 px-1.5">{translate("geändert")}</Badge>}
                       </span>
                     }
                   >
@@ -293,7 +291,7 @@ export function LayersTab({
             })}
           </div>
           {issues.length > 0 && (
-            <ul className="flex flex-col gap-1.5 border-t border-line bg-surface-2/30 px-5 py-3" aria-label="Hinweise zur Zuordnung">
+            <ul className="flex flex-col gap-1.5 border-t border-line bg-surface-2/30 px-5 py-3" aria-label={translate("Hinweise zur Zuordnung")}>
               {issues.map((i) => (
                 <li key={i.text} className={cn('flex items-start gap-2 text-xs', i.level === 'warn' ? 'text-warning-text' : 'text-fg-muted')}>
                   <TriangleAlert aria-hidden className={cn('mt-px size-3.5 shrink-0', i.level === 'info' && 'opacity-60')} />
@@ -305,18 +303,17 @@ export function LayersTab({
           {suggested && suggestionDiffers && !missing && (
             <div className="flex flex-wrap items-center gap-3 border-t border-line px-5 py-3">
               <Lightbulb aria-hidden className="size-4 shrink-0 text-fg-subtle" />
-              <p className="min-w-0 flex-1 text-xs text-fg-muted">Der Lagenaufbau legt eine andere Zuordnung nahe (nach Lagentyp).</p>
+              <p className="min-w-0 flex-1 text-xs text-fg-muted">{translate("Der Lagenaufbau legt eine andere Zuordnung nahe (nach Lagentyp).")}</p>
               <Button size="sm" variant="secondary" leftIcon={<Wand2 />} onClick={() => onMap({ ...suggested })}>
-                Vorschlag übernehmen
-              </Button>
+                {translate("Vorschlag übernehmen")}</Button>
             </div>
           )}
         </Card>
 
         <Card className="overflow-hidden">
           <div className="border-b border-line px-5 py-3.5">
-            <h2 className="text-ui font-semibold text-fg">Lagenaufbau (.stackup)</h2>
-            <p className="text-xs text-fg-muted">Optional: Namen und Typen der Mechanik-Lagen aus Ihrer Altium-Vorlage</p>
+            <h2 className="text-ui font-semibold text-fg">{translate("Lagenaufbau (.stackup)")}</h2>
+            <p className="text-xs text-fg-muted">{translate("Optional: Namen und Typen der Mechanik-Lagen aus Ihrer Altium-Vorlage")}</p>
           </div>
           <div className="flex flex-col gap-3 px-5 py-4">
             <PathInput
@@ -324,27 +321,26 @@ export function LayersTab({
               onValueChange={(v) => onStackup(v.trim() ? v : null)}
               prefix={<FileStack />}
               browse="file"
-              fileFilters={['Altium-Lagenaufbau (*.stackup)']}
-              placeholder="Leer = eingebauter Standard (Mechanical_Stackup_Standard)"
-              aria-label="Pfad der .stackup-Datei"
+              fileFilters={[translate("Altium-Lagenaufbau (*.stackup)")]}
+              placeholder={translate("Leer = eingebauter Standard (Mechanical_Stackup_Standard)")}
+              aria-label={translate("Pfad der .stackup-Datei")}
             />
-            {pathForParse && parsed.isFetching && <p className="text-xs text-fg-muted">Lese Lagenaufbau …</p>}
+            {pathForParse && parsed.isFetching && <p className="text-xs text-fg-muted">{translate("Lese Lagenaufbau …")}</p>}
             {pathForParse && parsed.isError && (
-              <Callout tone="danger" title="Datei nicht lesbar">
+              <Callout tone="danger" title={translate("Datei nicht lesbar")}>
                 {errorMessage(parsed.error)}
               </Callout>
             )}
             {pathForParse && parsed.data && <ParsedSummary layers={parsed.data.stack.layers ?? {}} />}
             {(stackInfo?.notes ?? []).map((n) => (
               <p key={n} className="text-xs text-warning-text">
-                {n}
+                {localizeMessage(n)}
               </p>
             ))}
           </div>
           <div className="flex flex-wrap items-center gap-3 border-t border-line bg-surface-2/30 px-5 py-3">
             <p className="min-w-0 flex-1 text-xs text-fg-muted">
-              Neue Footprints erhalten die Lagen automatisch. Vorhandene PcbLib-Dateien lassen sich nachträglich angleichen.
-            </p>
+              {translate("Neue Footprints erhalten die Lagen automatisch. Vorhandene PcbLib-Dateien lassen sich nachträglich angleichen.")}</p>
             <Button
               size="sm"
               variant="secondary"
@@ -352,10 +348,9 @@ export function LayersTab({
               onClick={() => void runApply()}
               loading={apply.isPending}
               disabled={dirty || missing || stackInfo?.patch_enabled === false}
-              title={dirty ? 'Zuerst speichern' : undefined}
+              title={dirty ? translate("Zuerst speichern") : undefined}
             >
-              Auf Bibliotheken anwenden …
-            </Button>
+              {translate("Auf Bibliotheken anwenden …")}</Button>
           </div>
         </Card>
 
@@ -363,7 +358,7 @@ export function LayersTab({
           value={layerSet}
           saved={savedLayerSet}
           map={map}
-          roles={ROLES.map((r) => ({ label: r.label, color: roleColor(r), layer: map[r.key] }))}
+          roles={ROLES.map((r) => ({ label: translate(r.label), color: roleColor(r), layer: map[r.key] }))}
           onChange={onLayerSet}
         />
       </div>
@@ -387,13 +382,12 @@ export function LayersTab({
 
 /** „51 Mechanik-Lagen gelesen“ – PartForge nutzt davon nur Mechanical 1–32 (so viele kennt der Kopf einer PcbLib) */
 function ParsedSummary({ layers }: { layers: Record<string, MechLayer> }) {
+  useI18n()
   const all = Object.keys(layers).length
   const used = Object.keys(layers).filter((n) => Number(n) >= 1 && Number(n) <= 32).length
   return (
     <p className="text-xs text-success-text">
-      {all} Mechanik-Lagen gelesen{all > used ? `, davon nutzt PartForge Mechanical 1–32 (${used} Lagen)` : ''} – rechts als
-      Vorschau, gilt nach dem Speichern.
-    </p>
+      {all} {' '}{translate("Mechanik-Lagen gelesen")}{all > used ? translate(", davon nutzt PartForge Mechanical 1–32 ({value1} Lagen)", { value1: used }) : ''} {' '}{translate("– rechts als Vorschau, gilt nach dem Speichern.")}</p>
   )
 }
 
@@ -420,6 +414,7 @@ function StackDiagram({
   onHover: (role: Role | null) => void
   className?: string
 }) {
+  useI18n()
   const layers = info?.stack.layers ?? null
   const rolesOn = (layer: string) => ROLES.filter((r) => map[r.key] === layer)
   const overlays = ['Top Overlay', 'Bottom Overlay']
@@ -428,16 +423,16 @@ function StackDiagram({
       <div className="flex items-center gap-2 border-b border-line px-4 py-3">
         <CircuitBoard aria-hidden className="size-4 text-fg-subtle" />
         <div className="min-w-0">
-          <h2 className="text-ui font-semibold text-fg">Lagenplan</h2>
+          <h2 className="text-ui font-semibold text-fg">{translate("Lagenplan")}</h2>
           <p className="truncate text-2xs text-fg-subtle" title={info?.stack.source}>
-            {info ? (info.stack.source === 'builtin' ? info.stack.name || 'Eingebauter Standard' : info.stack.source) : missing ? 'Standardnamen' : '…'}
+            {info ? (info.stack.source === 'builtin' ? info.stack.name || translate("Eingebauter Standard") : info.stack.source) : missing ? translate("Standardnamen") : '…'}
           </p>
         </div>
       </div>
-      <div className="dot-grid bg-canvas p-3" role="list" aria-label="Lagen mit zugeordneten Rollen">
+      <div className="dot-grid bg-canvas p-3" role="list" aria-label={translate("Lagen mit zugeordneten Rollen")}>
         <div className="mb-2 grid grid-cols-2 gap-1.5">
           {overlays.map((name) => (
-            <LayerCell key={name} title={name} name={name === 'Top Overlay' ? 'Bestückungsdruck oben' : 'Bestückungsdruck unten'} roles={rolesOn(name)} hover={hover} onHover={onHover} />
+            <LayerCell key={name} title={name} name={name === 'Top Overlay' ? translate("Bestückungsdruck oben") : translate("Bestückungsdruck unten")} roles={rolesOn(name)} hover={hover} onHover={onHover} />
           ))}
         </div>
         {loading && !missing ? (
@@ -471,21 +466,19 @@ function StackDiagram({
         {ROLES.map((r) => (
           <span key={r.key} className="flex items-center gap-1.5 text-2xs text-[#AEB7C7]">
             <span aria-hidden className="size-2 rounded-[3px]" style={{ background: roleColor(r) }} />
-            {r.short}
+            {translate(r.short)}
           </span>
         ))}
         {reserved && (
           <span className="flex items-center gap-1.5 text-2xs text-[#AEB7C7]">
             <span aria-hidden className="size-2 rounded-[3px] bg-[repeating-linear-gradient(135deg,#9AA4B6_0_2px,transparent_2px_4px)]" />
-            reserviert (2–7)
-          </span>
+            {translate("reserviert (2–7)")}</span>
         )}
       </div>
       {missing && error && (
         <div className="border-t border-line px-4 py-3">
-          <Callout tone="warning" title="Lagenaufbau nicht gelesen">
-            {error} Angezeigt werden die Standardnamen.
-          </Callout>
+          <Callout tone="warning" title={translate("Lagenaufbau nicht gelesen")}>
+            {error} {' '}{translate("Angezeigt werden die Standardnamen.")}</Callout>
         </div>
       )}
     </Card>
@@ -511,15 +504,16 @@ function LayerCell({
   hover: Role | null
   onHover: (role: Role | null) => void
 }) {
+  useI18n()
   const active = roles.length > 0
   const highlighted = roles.some((r) => r.key === hover)
   const color = active ? roleColor(roles[0]) : undefined
-  const label = `${title}${name ? ` (${name})` : ''}${roles.length ? ` – ${roles.map((r) => r.label).join(', ')}` : ''}${reserved ? ' – vom Bibliotheks-Writer reserviert' : ''}${!enabled ? ' – deaktiviert' : ''}`
+  const label = `${title}${name ? ` (${name})` : ''}${roles.length ? ` – ${roles.map((r) => translate(r.label)).join(', ')}` : ''}${reserved ? translate(" – vom Bibliotheks-Writer reserviert") : ''}${!enabled ? translate(" – deaktiviert") : ''}`
   return (
     <div
       role="listitem"
       aria-label={label}
-      title={`${label}${kind ? ` · Typ ${kind}` : ''}`}
+      title={`${label}${kind ? translate(" · Typ {value1}", { value1: kind }) : ''}`}
       onPointerEnter={() => roles[0] && onHover(roles[0].key)}
       onPointerLeave={() => roles[0] && onHover(null)}
       className={cn(
@@ -541,7 +535,7 @@ function LayerCell({
         {roles.length > 1 && <span className="text-2xs font-semibold text-[#FFC27A]">×{roles.length}</span>}
       </div>
       <div className={cn('truncate text-2xs leading-tight', active ? 'text-[#E6EAF2]' : 'text-[#9AA4B6]')}>
-        {active ? roles.map((r) => r.short).join(' · ') : name || ' '}
+        {active ? roles.map((r) => translate(r.short)).join(' · ') : name || ' '}
       </div>
     </div>
   )

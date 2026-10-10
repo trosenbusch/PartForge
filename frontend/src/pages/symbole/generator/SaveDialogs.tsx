@@ -1,3 +1,4 @@
+import { t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Dialoge beim Speichern: „Speichern unter …“ (neuer Symbolname, mit Prüfung gegen die Bibliothek) und die Rückfrage
  * bei Konflikten (geänderte Pinbelegung, fremde Zeichnung gleichen Namens) mit drei Wegen: abbrechen, unter neuem
@@ -41,15 +42,16 @@ function SaveAsForm({
   onSubmit,
   onCancel,
 }: Omit<SaveAsDialogProps, 'open' | 'onOpenChange'> & { onCancel: () => void }) {
+  useI18n()
   const [name, setName] = useState(initialName)
   const [touched, setTouched] = useState(false)
   const formId = useId()
   const trimmed = name.trim()
   const existing = entries?.find((e) => e.name.toLowerCase() === trimmed.toLowerCase()) ?? null
   const error = !trimmed
-    ? 'Bitte einen Namen eingeben.'
+    ? tr('Bitte einen Namen eingeben.')
     : (symbolNameError(name) ??
-      (trimmed.toLowerCase() === currentName.trim().toLowerCase() ? 'Das ist der aktuelle Name – „In Bibliothek speichern“ genügt.' : undefined))
+      (trimmed.toLowerCase() === currentName.trim().toLowerCase() ? tr('Das ist der aktuelle Name – „In Bibliothek speichern“ genügt.') : undefined))
   // Ziel der Kopie aus dem Probelauf des Backends (entprellt beim Tippen)
   const planName = useDebouncedValue(error ? '' : trimmed, 250)
   const plan = useQuery({
@@ -74,17 +76,17 @@ function SaveAsForm({
     <form id={formId} onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
       <DialogBody className="flex flex-col gap-3">
         <Field
-          label="Neuer Symbolname"
+          label={tr("Neuer Symbolname")}
           required
           error={touched || trimmed ? error : undefined}
           help={
             existing ? (
               <span className="text-warning-text">
-                „{existing.name}“ gibt es schon in {baseName(existing.library)}
-                {existing.usage ? ` (${plural(existing.usage, 'Bauteil', 'Bauteile')})` : ''} – es wird überschrieben.
+                „{existing.name}{tr("“ gibt es schon in")}{' '}{baseName(existing.library)}
+                {existing.usage ? ` (${plural(existing.usage, tr('Bauteil'), tr('Bauteile'))})` : ''} {tr("– es wird überschrieben.")}
               </span>
             ) : (
-              'Erlaubt sind A–Z, a–z, 0–9, Leerzeichen und _ . - + ( ) – höchstens 64 Zeichen.'
+              tr('Erlaubt sind A–Z, a–z, 0–9, Leerzeichen und _ . - + ( ) – höchstens 64 Zeichen.')
             )
           }
         >
@@ -93,12 +95,12 @@ function SaveAsForm({
         {planFor && (
           <div className="flex min-h-9 items-center gap-2.5 rounded-control border border-line bg-surface-2/50 px-3 py-2 text-xs" aria-live="polite">
             <LibraryBig aria-hidden className="size-4 shrink-0 text-fg-subtle" />
-            <span className="shrink-0 text-fg-muted">Ziel</span>
+            <span className="shrink-0 text-fg-muted">{tr("Ziel")}</span>
             {error ? (
               <span className="text-fg-subtle">–</span>
             ) : planPending && !plan.data ? (
               <span className="flex items-center gap-1.5 text-fg-subtle">
-                <Spinner size={11} /> wird geprüft …
+                <Spinner size={11} /> {tr("wird geprüft …")}
               </span>
             ) : plan.error ? (
               <span className="min-w-0 text-danger-text">{errorMessage(plan.error)}</span>
@@ -106,10 +108,10 @@ function SaveAsForm({
               <>
                 <span className={cn('mono min-w-0 truncate font-medium text-fg', planPending && 'opacity-60')}>{baseName(plan.data.library)}</span>
                 <Badge size="sm" variant={plan.data.new ? 'success' : 'warning'}>
-                  {plan.data.new ? 'neu' : 'ersetzt'}
+                  {plan.data.new ? tr('neu') : tr('ersetzt')}
                 </Badge>
                 {origin && plan.data.new && baseName(plan.data.library).toLowerCase() === baseName(origin.library).toLowerCase() && (
-                  <span className="min-w-0 truncate text-fg-subtle">wie „{origin.name}“</span>
+                  <span className="min-w-0 truncate text-fg-subtle">{tr("wie „")}{origin.name}“</span>
                 )}
               </>
             ) : (
@@ -118,15 +120,15 @@ function SaveAsForm({
           </div>
         )}
         <p className="text-xs leading-relaxed text-fg-muted">
-          Das bisherige Symbol bleibt unverändert. Der Entwurf arbeitet danach mit dem neuen Namen weiter.
+          {tr("Das bisherige Symbol bleibt unverändert. Der Entwurf arbeitet danach mit dem neuen Namen weiter.")}
         </p>
       </DialogBody>
       <DialogFooter>
         <Button type="button" variant="ghost" onClick={onCancel}>
-          Abbrechen
+          {tr("Abbrechen")}
         </Button>
         <Button type="submit" variant="primary" leftIcon={<SaveAll />}>
-          Unter neuem Namen speichern
+          {tr("Unter neuem Namen speichern")}
         </Button>
       </DialogFooter>
     </form>
@@ -134,10 +136,11 @@ function SaveAsForm({
 }
 
 export function SaveAsDialog({ open, onOpenChange, ...props }: SaveAsDialogProps) {
+  useI18n()
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="sm">
-        <DialogHeader icon={<SaveAll />} title="Speichern unter …" description="Symbol unter einem neuen Namen in die Bibliothek schreiben." />
+        <DialogHeader icon={<SaveAll />} title={tr("Speichern unter …")} description={tr("Symbol unter einem neuen Namen in die Bibliothek schreiben.")} />
         {open && <SaveAsForm key={props.initialName} {...props} onCancel={() => onOpenChange(false)} />}
       </DialogContent>
     </Dialog>
@@ -158,6 +161,7 @@ export interface SaveConflict {
 }
 
 export function SaveConflictDialog({ conflict, onChoice }: { conflict: SaveConflict | null; onChoice: (choice: ConflictChoice) => void }) {
+  useI18n()
   // Inhalt während der Schließen-Animation behalten
   const [shown, setShown] = useState(conflict)
   if (conflict && conflict !== shown) setShown(conflict)
@@ -182,11 +186,11 @@ export function SaveConflictDialog({ conflict, onChoice }: { conflict: SaveConfl
         <DialogBody className="text-ui leading-relaxed text-fg-muted">{shown?.description}</DialogBody>
         <DialogFooter className="flex-wrap justify-between gap-y-2">
           <Button ref={cancelRef} variant="ghost" onClick={() => onChoice('cancel')}>
-            Abbrechen
+            {tr("Abbrechen")}
           </Button>
           <div className="flex flex-wrap items-center justify-end gap-2">
             <Button variant="secondary" leftIcon={<SaveAll />} onClick={() => onChoice('saveAs')}>
-              Unter neuem Namen …
+              {tr("Unter neuem Namen …")}
             </Button>
             <Button variant={shown?.destructive ? 'danger' : 'primary'} onClick={() => onChoice('confirm')}>
               {shown?.confirmLabel}

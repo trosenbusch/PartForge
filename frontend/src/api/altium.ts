@@ -1,21 +1,4 @@
-/**
- * Altium-Anbindung: Status (Altium, Bibliotheks-Writer, DbLib, Aktualisierung), DbLib (Vorschau, Download, neu
- * erzeugen), ODBC-Test, Installation, Aktualisierung, Prüfung in Altium (samt gespeichertem letzten Ergebnis) und
- * Öffnen von Bibliotheken.
- *
- *   const status = useAltiumStatus()                         // GET  /api/altium/status (billig, ohne Altium-Skript)
- *   const regen = useRegenerateDblib()                       // POST /api/altium/dblib/regenerate (direkt, ohne Job)
- *   const last = useLastVerify()                             // GET  /api/altium/verify/last (übersteht Neustarts)
- *   const { job } = await altiumApi.verify({ limit: 20, sample: 'spread' })   // alles, was mit Altium spricht, ist ein Job
- *   const file = await altiumApi.dblibFile('target')         // exakte Bytes der DbLib + Dateiname (Content-Disposition)
- *
- * Job-Endpunkte antworten ohne laufendes Altium sofort mit 503 („Altium Designer ist nicht gestartet …“), bei
- * belegter Brücke mit 409. Jeder Altium-Job endet mit einem deutschen Ergebnissatz in `job.message`. Job-Ergebnisse
- * sind im Schema untypisierte dicts – ihre Form steht unten (aus dem Schema, wo das Backend ein Modell hat, sonst von
- * Hand gespiegelt aus `partforge/altium/odbc.py`).
- *
- * Query-Keys beginnen mit „altium“. `['altium', 'status']` teilt sich den Cache mit der Einstellungsseite.
- */
+import { useI18n } from '@/lib/i18n'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError, api, buildQuery, detailToMessage, getToken, isAbortError, TOKEN_HEADER } from './client'
 import type { Job } from './system'
@@ -312,10 +295,11 @@ export function useLastVerify(enabled = true) {
 
 /** DbLib jetzt schreiben (ohne Job). Ein laufendes Altium liest sie danach selbst neu ein (falls aktiviert). */
 export function useRegenerateDblib() {
+  const { t: tr } = useI18n()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: altiumApi.regenerate,
-    meta: { errorTitle: 'DbLib konnte nicht erzeugt werden' },
+    meta: { errorTitle: tr("DbLib konnte nicht erzeugt werden") },
     onSuccess: (result) => {
       qc.setQueryData<AltiumStatus>(altiumKeys.status, (cur) => (cur ? { ...cur, dblib: result.status } : cur))
       void qc.invalidateQueries({ queryKey: altiumKeys.all })

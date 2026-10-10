@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { useEffect, useRef, useState, type InputHTMLAttributes, type KeyboardEvent, type Ref } from 'react'
 import { Input, type InputProps } from '@/components/ui'
 import { cn } from '@/lib/cn'
@@ -66,6 +67,7 @@ export interface CommitInputProps extends Omit<InputProps, 'value' | 'defaultVal
 
 /** UI-Eingabefeld mit Übernahme beim Verlassen (Formulare der Prüfansicht). */
 export function CommitInput({ value, onCommit, onKeyDown, display, ...props }: CommitInputProps) {
+  useI18n()
   const c = useCommitText(value, onCommit, display)
   return (
     <Input
@@ -92,6 +94,7 @@ export interface CellInputProps extends Omit<InputHTMLAttributes<HTMLInputElemen
 
 /** Randlose Tabellenzelle zum Bearbeiten (Rahmen erst bei Hover/Fokus). */
 export function CellInput({ value, onCommit, mono, invalid, className, onKeyDown, onBlur, onFocus, ref, ...props }: CellInputProps) {
+  useI18n()
   const c = useCommitText(value, onCommit)
   return (
     <input
@@ -133,6 +136,7 @@ export interface NumberCellProps extends Omit<CellInputProps, 'value' | 'onCommi
 
 /** Zahl in einer Tabellenzelle (deutsche Eingabe „0,95“, leer = keine Angabe). */
 export function NumberCell({ value, onCommit, digits = 3, ...props }: NumberCellProps) {
+  useI18n()
   const text = value === null || value === undefined ? '' : formatDecimal(value, digits)
   return (
     <CellInput

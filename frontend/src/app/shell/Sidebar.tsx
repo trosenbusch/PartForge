@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { motion } from 'motion/react'
 import {
   ChevronsUpDown,
@@ -44,12 +45,13 @@ export const SIDEBAR_COLLAPSED_WIDTH = 68
  * Frame das ganze Layout inkl. Tabellen neu berechnen); nur die Beschriftungen blenden weich ein.
  */
 export function Sidebar() {
+  const { t: tr } = useI18n()
   const collapsed = useUi((s) => s.sidebarCollapsed)
   const toggle = useUi((s) => s.toggleSidebar)
 
   return (
     <aside
-      aria-label="Hauptnavigation"
+      aria-label={tr("Hauptnavigation")}
       className="relative z-sidebar flex h-full shrink-0 flex-col border-r border-line bg-bg-elev"
       style={{ width: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH }}
     >
@@ -73,16 +75,16 @@ export function Sidebar() {
       {/* Navigation */}
       <nav
         id="pf-sidebar-nav"
-        aria-label="Bereiche"
+        aria-label={tr("Bereiche")}
         className="relative mt-3 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overflow-x-hidden px-3 pb-3 scrollbar-none"
       >
         {NAV_GROUPS.map((group) => (
-          <div key={group} className="flex flex-col gap-0.5">
+          <div key={tr(group)} className="flex flex-col gap-0.5">
             {collapsed ? (
               <div className="mx-auto mb-1 h-px w-6 bg-line-strong first:hidden" aria-hidden />
             ) : (
               <div className="micro-label px-2.5 pb-1.5" aria-hidden>
-                {group}
+                {tr(group)}
               </div>
             )}
             {NAV_ITEMS.filter((i) => i.group === group).map((item) => (
@@ -101,7 +103,8 @@ export function Sidebar() {
 }
 
 function SidebarToggle({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
-  const label = collapsed ? 'Seitenleiste ausklappen' : 'Seitenleiste einklappen'
+  const { t: tr } = useI18n()
+  const label = collapsed ? tr("Seitenleiste ausklappen") : tr("Seitenleiste einklappen")
   return (
     <Tooltip content={label} hotkey="mod+b" side="right" sideOffset={10}>
       <button
@@ -140,10 +143,11 @@ function SidebarToggle({ collapsed, onToggle }: { collapsed: boolean; onToggle: 
 // --------------------------------------------------------------------------- Navigation
 
 function SidebarLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
+  const { t: tr } = useI18n()
   const Icon = item.icon
   // Zugänglicher Name: ausgeklappt der sichtbare Text (+ „KI-gestützt“ nur für Screenreader – Sprachsteuerung trifft
   // die Beschriftung), eingeklappt ohne sichtbaren Text als aria-label; Kbd und KI-Abzeichen sind Zierde
-  const name = item.ai ? `${item.label} (KI-gestützt)` : item.label
+  const name = item.ai ? tr("{0} (KI-gestützt)", { "0": String(item.label) }) : item.label
   const link = (
     <NavLink
       to={item.to}
@@ -186,13 +190,12 @@ function SidebarLink({ item, collapsed }: { item: NavItem; collapsed: boolean })
             >
               <span className="min-w-0 flex-1 truncate">
                 {item.label}
-                {item.ai && <span className="sr-only"> (KI-gestützt)</span>}
+                {item.ai && <span className="sr-only"> {tr(" (KI-gestützt)")}</span>}
               </span>
               <span className="relative flex h-5 items-center" aria-hidden>
                 {item.ai && (
                   <span className="flex h-[18px] items-center rounded-full border border-spark-b/30 bg-[color-mix(in_oklab,var(--pf-spark-b)_12%,transparent)] px-1.5 text-2xs font-semibold leading-none text-spark-text transition-opacity group-hover/nav:opacity-0">
-                    KI
-                  </span>
+                    {tr("KI")}</span>
                 )}
                 <Kbd
                   hotkey={item.hotkey}
@@ -220,6 +223,7 @@ function SidebarLink({ item, collapsed }: { item: NavItem; collapsed: boolean })
 // --------------------------------------------------------------------------- Bibliotheks-Umschalter
 
 function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
+  const { t: tr } = useI18n()
   const navigate = useNavigate()
   const workspace = useWorkspace().data
   const recent = useRecentWorkspaces()
@@ -238,17 +242,17 @@ function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
     const note = switchCancelNote()
     openWs.mutate(path, {
       onSuccess: (info) => {
-        toast.success(`„${info.name}“ geöffnet`, { description: note ?? shortenPath(info.root, 56) })
+        toast.success(tr("„{0}“ geöffnet", { "0": String(info.name) }), { description: note ?? shortenPath(info.root, 56) })
         navigate('/')
       },
-      onError: (err) => toast.error('Bibliothek konnte nicht geöffnet werden', { description: errorMessage(err) }),
+      onError: (err) => toast.error(tr("Bibliothek konnte nicht geöffnet werden"), { description: errorMessage(err) }),
     })
   }
 
   const closeLibrary = async () => {
     if (!(await confirmLibrarySwitch('close'))) return
     const note = switchCancelNote()
-    closeWs.mutate(undefined, { onSuccess: () => toast.success('Bibliothek geschlossen', { description: note ?? undefined }) })
+    closeWs.mutate(undefined, { onSuccess: () => toast.success(tr("Bibliothek geschlossen"), { description: note ?? undefined }) })
   }
 
   const trigger = (
@@ -256,7 +260,7 @@ function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
       type="button"
       // eingeklappt ohne sichtbaren Text; ausgeklappt gilt der sichtbare Name (Sprachsteuerung „Shell-Test“)
       aria-label={
-        collapsed ? (workspace ? `Bibliothek wechseln (aktuell: ${workspace.name})` : 'Bibliothek öffnen oder anlegen') : undefined
+        collapsed ? (workspace ? tr("Bibliothek wechseln (aktuell: {0})", { "0": String(workspace.name) }) : tr("Bibliothek öffnen oder anlegen")) : undefined
       }
       title={workspace ? `${workspace.name}\n${workspace.root}` : undefined}
       className={cn(
@@ -278,12 +282,12 @@ function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
         <>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-ui font-semibold leading-5 text-fg">
-              {workspace && <span className="sr-only">Bibliothek wechseln, aktuell: </span>}
-              {workspace?.name ?? 'Keine Bibliothek'}
+              {workspace && <span className="sr-only">{tr("Bibliothek wechseln, aktuell: ")}</span>}
+              {workspace?.name ?? tr("Keine Bibliothek")}
             </span>
             <span className="sr-only">, </span>
             <span className="block truncate text-2xs leading-4 text-fg-subtle">
-              {workspace ? `${kind} · ${folder}` : 'Öffnen oder anlegen'}
+              {workspace ? `${kind} · ${folder}` : tr("Öffnen oder anlegen")}
             </span>
           </span>
           <ChevronsUpDown aria-hidden className="size-4 shrink-0 text-fg-subtle transition-colors group-hover/ws:text-fg-muted" />
@@ -295,7 +299,7 @@ function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
   return (
     <DropdownMenu>
       {collapsed ? (
-        <Tooltip content={workspace?.name ?? 'Bibliothek wählen'} side="right" sideOffset={10}>
+        <Tooltip content={workspace?.name ?? tr("Bibliothek wählen")} side="right" sideOffset={10}>
           <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
         </Tooltip>
       ) : (
@@ -304,7 +308,7 @@ function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
       <DropdownMenuContent align="start" side={collapsed ? 'right' : 'bottom'} className="w-[300px]">
         {workspace && (
           <>
-            <DropdownMenuLabel>Aktuelle Bibliothek</DropdownMenuLabel>
+            <DropdownMenuLabel>{tr("Aktuelle Bibliothek")}</DropdownMenuLabel>
             <div className="mx-1 mb-1 flex items-start gap-2.5 rounded-control bg-surface-2 px-2 py-2">
               <Database aria-hidden className="mt-0.5 size-4 shrink-0 text-fg-muted" />
               <div className="min-w-0 flex-1">
@@ -317,22 +321,21 @@ function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
             </div>
             <DropdownMenuItem
               icon={<FolderSearch />}
-              description={bridge.canRevealPath || bridge.canOpenPath ? undefined : 'Pfad kopieren'}
-              onSelect={() => void revealPath(workspace.root, { what: 'Bibliotheksordner' })}
+              description={bridge.canRevealPath || bridge.canOpenPath ? undefined : tr("Pfad kopieren")}
+              onSelect={() => void revealPath(workspace.root, { what: tr("Bibliotheksordner") })}
             >
-              Im Explorer zeigen
-            </DropdownMenuItem>
+              {tr("Im Explorer zeigen")}</DropdownMenuItem>
             <DropdownMenuSeparator />
           </>
         )}
-        <DropdownMenuLabel>Zuletzt verwendet</DropdownMenuLabel>
-        {others.length === 0 && <div className="px-2 pb-2 text-xs text-fg-subtle">Keine weiteren Bibliotheken</div>}
+        <DropdownMenuLabel>{tr("Zuletzt verwendet")}</DropdownMenuLabel>
+        {others.length === 0 && <div className="px-2 pb-2 text-xs text-fg-subtle">{tr("Keine weiteren Bibliotheken")}</div>}
         {others.map((r) => (
           <DropdownMenuItem
             key={r.path}
             icon={<Library />}
             disabled={!r.exists || openWs.isPending}
-            description={r.exists ? shortenPath(r.path, 38) : 'Ordner nicht gefunden'}
+            description={r.exists ? shortenPath(r.path, 38) : tr("Ordner nicht gefunden")}
             onSelect={() => void openRecent(r.path)}
           >
             {r.name ?? baseName(r.path)}
@@ -340,15 +343,12 @@ function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
         ))}
         <DropdownMenuSeparator />
         <DropdownMenuItem icon={<FolderPlus />} onSelect={() => setLibraryDialog('create')}>
-          Neue Bibliothek anlegen …
-        </DropdownMenuItem>
+          {tr("Neue Bibliothek anlegen …")}</DropdownMenuItem>
         <DropdownMenuItem icon={<FolderOpen />} onSelect={() => setLibraryDialog('open')}>
-          Bibliothek öffnen …
-        </DropdownMenuItem>
+          {tr("Bibliothek öffnen …")}</DropdownMenuItem>
         {workspace && (
           <DropdownMenuItem icon={<LogOut />} onSelect={() => void closeLibrary()}>
-            Bibliothek schließen
-          </DropdownMenuItem>
+            {tr("Bibliothek schließen")}</DropdownMenuItem>
         )}
       </DropdownMenuContent>
     </DropdownMenu>
@@ -358,6 +358,7 @@ function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
 // --------------------------------------------------------------------------- Status
 
 export function StatusDot({ level, className }: { level: StatusLevel; className?: string }) {
+  useI18n()
   const color = statusColor[level]
   return (
     <span className={cn('relative flex size-2 shrink-0', className)} aria-hidden>
@@ -378,6 +379,7 @@ export function StatusDot({ level, className }: { level: StatusLevel; className?
 }
 
 function StatusTooltip({ item }: { item: StatusItem }) {
+  useI18n()
   return (
     <div className="flex max-w-64 flex-col gap-0.5 py-0.5">
       <div className="flex items-center gap-1.5 font-medium text-fg">
@@ -393,6 +395,7 @@ const statusTextClass = (level: StatusLevel) =>
   level === 'warn' ? 'text-warning-text' : level === 'error' ? 'text-danger-text' : 'text-fg-subtle'
 
 function SystemStatus({ collapsed }: { collapsed: boolean }) {
+  useI18n()
   const items = useSystemStatus()
   const navigate = useNavigate()
   const uid = useId()

@@ -1,3 +1,4 @@
+import { t as tr } from '@/lib/i18n'
 /**
  * Eigene Serienvorlage als Formular-Entwurf ↔ `MpnTemplate` des Backends (partforge/domain/mpn/model.py).
  * Der Entwurf kennt nur Muster-Vorlagen mit einer Gültigkeitsregel für alle Baugrößen – genug für die meisten
@@ -452,7 +453,7 @@ export function requiredGaps(
         label,
         sizeAttr: source.attr,
         sizes: list,
-        hint: `${label} je Baugröße angeben (${list.length === d.sizes.length ? 'alle' : list.join(', ')}).`,
+        hint: tr("{v0} je Baugröße angeben ({v1}).", { v0: label, v1: list.length === d.sizes.length ? tr("alle") : list.join(', ') }),
       }
     }
     let hint: string
@@ -460,12 +461,12 @@ export function requiredGaps(
       const v = d.variables.find((x) => x.name === source.name)
       const empty = v ? v.options.filter((o) => !o.value.trim()) : []
       hint = empty.length
-        ? `In der Codetabelle „${v?.label ?? source.name}“ fehlt die Bedeutung (z. B. ${source.name === 'tolerance' ? '±1%' : '50V'}) bei ${empty.length === 1 ? `Code „${empty[0].code || 'ohne'}“` : `${empty.length} Codes`}.`
-        : `Bedeutungen in der Codetabelle „${v?.label ?? source.name}“ prüfen – ${label} lässt sich daraus nicht lesen.`
+        ? tr("In der Codetabelle „{v0}“ fehlt die Bedeutung (z. B. {v1}) bei {v2}.", { v0: v?.label ?? source.name, v1: source.name === 'tolerance' ? '±1%' : '50V', v2: empty.length === 1 ? tr("Code „{v0}“", { v0: empty[0].code || tr("ohne") }) : tr("{v0} Codes", { v0: empty.length }) })
+        : tr("Bedeutungen in der Codetabelle „{v0}“ prüfen – {v1} lässt sich daraus nicht lesen.", { v0: v?.label ?? source.name, v1: label })
     } else if (source.kind === 'missing') {
-      hint = `Platzhalter {${source.name}} ins Muster aufnehmen – sonst bleibt ${label} leer.`
+      hint = tr("Platzhalter {{v0}} ins Muster aufnehmen – sonst bleibt {v1} leer.", { v0: source.name, v1: label })
     } else {
-      hint = `${label} füllt diese Vorlage nicht – das Feld in den Einstellungen der Kategorie optional machen.`
+      hint = tr("{v0} füllt diese Vorlage nicht – das Feld in den Einstellungen der Kategorie optional machen.", { v0: label })
     }
     return { column, label, sizeAttr: null, sizes: list, hint }
   })

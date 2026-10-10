@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 /**
  * Zellen der Bauteiltabelle, die über die geteilten Renderer hinausgehen: Teilenummer (mit „neu“-Markierung),
  * Datenblatt (URL oder Datei der Bibliothek), Bibliothekspfade („Im Explorer zeigen“), Ja/Nein und
@@ -24,6 +25,7 @@ export interface PartNumberCellParams {
 }
 
 export function PartNumberCell({ value, isNew }: CustomCellRendererProps<PartRow> & PartNumberCellParams) {
+  const { t } = useI18n()
   if (value === null || value === undefined || value === '') return EMPTY
   const pn = String(value)
   return (
@@ -31,7 +33,7 @@ export function PartNumberCell({ value, isNew }: CustomCellRendererProps<PartRow
       <span className="mono truncate font-medium text-fg">{pn}</span>
       {isNew?.(pn) && (
         <span className="shrink-0 rounded-full border border-accent/30 bg-accent-soft px-1.5 text-2xs font-medium leading-4 text-accent-text">
-          neu
+          {t("neu")}
         </span>
       )}
     </span>
@@ -41,6 +43,7 @@ export function PartNumberCell({ value, isNew }: CustomCellRendererProps<PartRow
 // --------------------------------------------------------------------------- Datenblatt / Pfad
 
 export function DatasheetCell({ value }: CustomCellRendererProps<PartRow>) {
+  const { t } = useI18n()
   const root = useWorkspace().data?.root
   const native = useNativeBridge()
   if (value === null || value === undefined || value === '') return EMPTY
@@ -74,7 +77,7 @@ export function DatasheetCell({ value }: CustomCellRendererProps<PartRow>) {
     <button
       type="button"
       tabIndex={-1}
-      title={`${text} – öffnen`}
+      title={t("{1} – öffnen", { 1: text })}
       onClick={(e) => {
         e.stopPropagation()
         void openDatasheet(text, root)
@@ -92,6 +95,7 @@ export function DatasheetCell({ value }: CustomCellRendererProps<PartRow>) {
  * des Desktop-Programms kopiert `revealPath` den Pfad (mit Hinweis).
  */
 export function LibraryPathCell({ value, colDef }: CustomCellRendererProps<PartRow>) {
+  const { t } = useI18n()
   const root = useWorkspace().data?.root
   if (value === null || value === undefined || value === '') return EMPTY
   const text = String(value)
@@ -100,7 +104,7 @@ export function LibraryPathCell({ value, colDef }: CustomCellRendererProps<PartR
     <button
       type="button"
       tabIndex={-1}
-      title={`${text} – im Explorer zeigen`}
+      title={t("{1} – im Explorer zeigen", { 1: text })}
       onClick={(e) => {
         e.stopPropagation()
         void revealPath(resolveLibraryPath(root, text), { what: pathLabel(colDef?.colId ?? '') })
@@ -119,13 +123,14 @@ const YES = new Set(['ja', 'yes', 'true', '1', 'wahr', 'x'])
 const NO = new Set(['nein', 'no', 'false', '0', 'falsch'])
 
 export function BoolCell({ value }: CustomCellRendererProps<PartRow>) {
+  const { t } = useI18n()
   if (value === null || value === undefined || value === '') return EMPTY
   const text = String(value).trim().toLowerCase()
   if (YES.has(text)) {
     return (
       <span className="pf-cell-inline gap-1.5 text-fg">
         <Check aria-hidden className="size-3.5 text-success" />
-        Ja
+        {t("Ja")}
       </span>
     )
   }
@@ -133,7 +138,7 @@ export function BoolCell({ value }: CustomCellRendererProps<PartRow>) {
     return (
       <span className="pf-cell-inline gap-1.5 text-fg-muted">
         <Minus aria-hidden className="size-3.5 text-fg-subtle" />
-        Nein
+        {t("Nein")}
       </span>
     )
   }
@@ -161,6 +166,7 @@ function loadedSelectionState(api: CustomHeaderProps<PartRow>['api']): CheckStat
  * Zeilen – die Leiste unten bietet danach „Alle Treffer auswählen“ an.
  */
 export function SelectAllHeader({ api, eGridHeader }: CustomHeaderProps<PartRow>) {
+  const { t } = useI18n()
   const [state, setState] = useState<CheckState>('none')
   const stateRef = useRef<CheckState>('none')
   useEffect(() => {
@@ -193,15 +199,15 @@ export function SelectAllHeader({ api, eGridHeader }: CustomHeaderProps<PartRow>
       toggle()
     }
     eGridHeader.addEventListener('keydown', onKey)
-    eGridHeader.setAttribute('aria-label', 'Auswahl: alle geladenen Zeilen (Leertaste)')
+    eGridHeader.setAttribute('aria-label', t("Auswahl: alle geladenen Zeilen (Leertaste)"))
     return () => eGridHeader.removeEventListener('keydown', onKey)
-  }, [eGridHeader, toggle])
+  }, [eGridHeader, toggle, t])
   return (
     <button
       type="button"
       role="checkbox"
       aria-checked={state === 'all' ? true : state === 'some' ? 'mixed' : false}
-      aria-label="Alle geladenen Zeilen auswählen"
+      aria-label={t("Alle geladenen Zeilen auswählen")}
       tabIndex={-1}
       onClick={toggle}
       className={cn(

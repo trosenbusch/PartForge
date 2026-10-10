@@ -1,3 +1,5 @@
+import { localizeMessage } from '@/lib/i18n'
+import { t, useI18n } from '@/lib/i18n'
 import { Activity, ArrowRight, CircleCheck, Hammer, KeyRound, ListChecks, Power, ScanText, Settings2, Sparkles, TriangleAlert } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
@@ -19,9 +21,9 @@ export interface AiCardStats {
 }
 
 const STEPS: { icon: ReactNode; title: string; text: string }[] = [
-  { icon: <ScanText />, title: 'Claude liest', text: 'Bestellangaben, Parameter, Pintabellen, Maßzeichnungen' },
-  { icon: <ListChecks />, title: 'Sie prüfen', text: 'jede Angabe mit Fundstelle – korrigieren per Klick' },
-  { icon: <Hammer />, title: 'PartForge legt an', text: 'Bauteile, Symbol, Footprint und 3D-Körper' },
+  { icon: <ScanText />, get title() { return t("Claude liest") }, get text() { return t("Bestellangaben, Parameter, Pintabellen, Maßzeichnungen") } },
+  { icon: <ListChecks />, get title() { return t("Sie prüfen") }, get text() { return t("jede Angabe mit Fundstelle – korrigieren per Klick") } },
+  { icon: <Hammer />, get title() { return t("PartForge legt an") }, get text() { return t("Bauteile, Symbol, Footprint und 3D-Körper") } },
 ]
 
 /** Ergebnis eines Verbindungstests (frisch oder der zuletzt gespeicherte) als eine Zeile */
@@ -37,12 +39,12 @@ function lineFromCheck(check: AiConnectionCheck): TestLine {
   if (check.ok) {
     return {
       ok: true,
-      text: `Verbunden – ${check.model ? modelDisplayName(check.model) : 'Claude'}${check.latencyMs !== null ? ` in ${formatNumber(check.latencyMs)} ms` : ''}`,
+      text: t("Verbunden – {0}{1}", { "0": String(check.model ? modelDisplayName(check.model) : 'Claude'), "1": String(check.latencyMs !== null ? ` in ${formatNumber(check.latencyMs)} ms` : '') }),
       fixable: false,
       at: check.at,
     }
   }
-  const title = check.code === 'unexpected' ? 'Unerwartete Antwort' : check.code ? AI_PROBLEM_TITLE[check.code] : 'Verbindung fehlgeschlagen'
+  const title = check.code === 'unexpected' ? t("Unerwartete Antwort") : check.code ? AI_PROBLEM_TITLE[check.code] : t("Verbindung fehlgeschlagen")
   return {
     ok: false,
     text: check.message && check.code !== 'unexpected' ? `${title} – ${check.message}` : (check.message ?? title),
@@ -67,6 +69,7 @@ export function AiCard({
   stats: AiCardStats
   compact?: boolean
 }) {
+  useI18n()
   const test = useAiTest()
   const settings = useSettings().data
   const last = useAiConnection((s) => s.last)
@@ -84,10 +87,10 @@ export function AiCard({
     line = test.data.ok
       ? {
           ok: true,
-          text: `Verbunden – ${test.data.model_label || modelDisplayName(test.data.model)} in ${formatNumber(test.data.latency_ms)} ms · ${formatUsd(test.data.cost_usd)}`,
+          text: t("Verbunden – {0} in {1} ms · {2}", { "0": String(test.data.model_label || modelDisplayName(test.data.model)), "1": String(formatNumber(test.data.latency_ms)), "2": String(formatUsd(test.data.cost_usd)) }),
           fixable: false,
         }
-      : { ok: false, text: `Unerwartete Antwort – ${test.data.reply || 'leer'}`, fixable: false }
+      : { ok: false, text: t("Unerwartete Antwort – {0}", { "0": String(test.data.reply || t("leer")) }), fixable: false }
   } else if (stored && ready) {
     line = lineFromCheck(stored)
   }
@@ -107,11 +110,11 @@ export function AiCard({
         </span>
         <div className="min-w-0 flex-1">
           <h2 id="ai-card-title" className="min-w-0">
-            <span className="micro-label block">KI-Analyse</span>
+            <span className="micro-label block">{t("KI-Analyse")}</span>
             {!loading && (
               // Modellname vollständig (bricht notfalls um) – „Claude O…“ sagt nichts
               <span className="block break-words text-sm font-semibold leading-snug tracking-[-0.01em] text-fg">
-                {status ? status.model_label || modelDisplayName(status.model) : 'Status unbekannt'}
+                {status ? status.model_label || modelDisplayName(status.model) : t("Status unbekannt")}
               </span>
             )}
           </h2>
@@ -119,7 +122,7 @@ export function AiCard({
         </div>
         {status && (
           <Badge variant={rejected ? 'danger' : ready ? 'success' : status.enabled ? 'warning' : 'neutral'} dot>
-            {rejected ? 'Problem' : ready ? 'bereit' : status.enabled ? 'Schlüssel fehlt' : 'aus'}
+            {rejected ? 'Problem' : ready ? t("bereit") : status.enabled ? t("Schlüssel fehlt") : t("aus")}
           </Badge>
         )}
       </div>
@@ -128,18 +131,18 @@ export function AiCard({
         <div className="mx-4 mb-4 rounded-card border border-warning/30 bg-warning/8 px-3.5 py-3">
           <div className="flex items-center gap-2 text-ui font-medium text-fg">
             {status.enabled ? <KeyRound aria-hidden className="size-4 text-warning-text" /> : <Power aria-hidden className="size-4 text-warning-text" />}
-            {status.enabled ? 'Claude-API-Schlüssel fehlt' : 'KI ist ausgeschaltet'}
+            {status.enabled ? t("Claude-API-Schlüssel fehlt") : t("KI ist ausgeschaltet")}
           </div>
           <p className="mt-1 text-xs leading-relaxed text-fg-muted">
             {compact
-              ? 'Datenblätter werden nur gespeichert – Analyse und Suche brauchen Claude.'
+              ? t("Datenblätter werden nur gespeichert – Analyse und Suche brauchen Claude.")
               : status.enabled
-                ? 'Datenblätter werden gespeichert, aber nicht analysiert und nicht gesucht. Mit einem Schlüssel aus der Claude Console liest PartForge Parameter, Pins und Gehäusemaße selbst.'
-                : `Datenblätter werden nur gespeichert. Analyse und Datenblattsuche lassen sich unter ${SETTINGS_PLACE.ai.label} einschalten.`}
+                ? t("Datenblätter werden gespeichert, aber nicht analysiert und nicht gesucht. Mit einem Schlüssel aus der Claude Console liest PartForge Parameter, Pins und Gehäusemaße selbst.")
+                : t("Datenblätter werden nur gespeichert. Analyse und Datenblattsuche lassen sich unter {0} einschalten.", { "0": String(SETTINGS_PLACE.ai.label) })}
           </p>
           <Button asChild size="sm" variant="secondary" className="mt-2.5">
             <Link to={SETTINGS_PLACE.ai.to}>
-              {status.enabled ? 'Schlüssel hinterlegen' : 'Einstellungen öffnen'}
+              {status.enabled ? t("Schlüssel hinterlegen") : t("Einstellungen öffnen")}
               <ArrowRight aria-hidden />
             </Link>
           </Button>
@@ -149,23 +152,22 @@ export function AiCard({
       {/* ohne nutzbare KI (kompakt) zählt nur der Weg zu den Einstellungen – die Einzelheiten stehen dort */}
       {(ready || !compact) && (
         <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 border-t border-line px-4 py-3 text-xs">
-          <dt className="text-fg-subtle">Gründlichkeit</dt>
-          <dd className="text-right text-fg" title={status?.use_fallbacks ? 'Bei Überlastung antwortet ein Ausweichmodell' : undefined}>
+          <dt className="text-fg-subtle">{t("Gründlichkeit")}</dt>
+          <dd className="text-right text-fg" title={status?.use_fallbacks ? t("Bei Überlastung antwortet ein Ausweichmodell") : undefined}>
             {status ? effortLabel(status.effort) : '–'}
           </dd>
-          <dt className="text-fg-subtle">Schlüssel</dt>
+          <dt className="text-fg-subtle">{t("Schlüssel")}</dt>
           <dd
             className="truncate text-right text-fg"
-            title={replay ? 'Aufgezeichnete Antworten statt der Claude-API (PARTFORGE_AI_REPLAY_DIR) – nichts kostet' : undefined}
+            title={replay ? t("Aufgezeichnete Antworten statt der Claude-API (PARTFORGE_AI_REPLAY_DIR) – nichts kostet") : undefined}
           >
-            {status ? (keySourceLabel(status.key_source) ?? 'nicht hinterlegt') : '–'}
+            {status ? (keySourceLabel(status.key_source) ?? t("nicht hinterlegt")) : '–'}
           </dd>
-          <dt className="text-fg-subtle">Kostenlimit</dt>
+          <dt className="text-fg-subtle">{t("Kostenlimit")}</dt>
           <dd className="text-right text-fg">
             {status ? (
               <>
-                <span className="mono">{formatUsd(status.max_cost_per_import_usd)}</span> je Import
-              </>
+                <span className="mono">{formatUsd(status.max_cost_per_import_usd)}</span> {t(" je Import")}</>
             ) : (
               '–'
           )}
@@ -174,13 +176,13 @@ export function AiCard({
       )}
 
       <dl className="grid grid-cols-3 border-t border-line">
-        <Stat label={stats.analyzed === 1 ? 'Analyse' : 'Analysen'} value={formatNumber(stats.analyzed)} />
-        <Stat label="Ø Kosten" value={average === null ? '–' : formatUsd(average)} />
-        <Stat label="gesamt" value={formatUsd(stats.costUsd)} />
+        <Stat label={stats.analyzed === 1 ? t("Analyse") : t("Analysen")} value={formatNumber(stats.analyzed)} />
+        <Stat label={t("Ø Kosten")} value={average === null ? '–' : formatUsd(average)} />
+        <Stat label={t("gesamt")} value={formatUsd(stats.costUsd)} />
       </dl>
 
       {ready && !compact && (
-        <ol aria-label="Ablauf" className="flex flex-col gap-2.5 border-t border-line px-4 py-3.5">
+        <ol aria-label={t("Ablauf")} className="flex flex-col gap-2.5 border-t border-line px-4 py-3.5">
           {STEPS.map((s, i) => (
             <li key={s.title} className="flex items-start gap-2.5">
               <span
@@ -204,11 +206,10 @@ export function AiCard({
       {/* ohne nutzbare KI gibt es nichts zu testen – der Weg zu den Einstellungen steht im Hinweis oben */}
       <div className={cn('mt-auto flex flex-wrap items-center gap-2 border-t border-line bg-surface-2/40 px-4 py-3', !ready && status && 'hidden')}>
         <Button size="sm" variant="secondary" leftIcon={<Activity />} loading={test.isPending} disabled={!ready} onClick={() => test.mutate()}>
-          Verbindung testen
-        </Button>
-        <Tooltip content="KI-Einstellungen">
+          {t("Verbindung testen")}</Button>
+        <Tooltip content={t("KI-Einstellungen")}>
           <Button asChild size="sm" variant="ghost" iconOnly className="ml-auto">
-            <Link to={SETTINGS_PLACE.ai.to} aria-label="KI-Einstellungen">
+            <Link to={SETTINGS_PLACE.ai.to} aria-label={t("KI-Einstellungen")}>
               <Settings2 aria-hidden />
             </Link>
           </Button>
@@ -222,7 +223,7 @@ export function AiCard({
                 <TriangleAlert aria-hidden className="mt-0.5 size-3.5 shrink-0" />
               )}
               <span className="min-w-0">
-                {line.text}
+                {localizeMessage(line.text)}
                 {line.at && !test.data && !test.isError ? <span className="text-fg-subtle"> · {formatRelativeTime(line.at)}</span> : null}
               </span>
             </p>
@@ -234,6 +235,7 @@ export function AiCard({
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
+  useI18n()
   return (
     <div className="flex min-w-0 flex-col-reverse gap-0.5 border-r border-line px-3.5 py-3 last:border-r-0">
       <dt className="truncate text-2xs text-fg-subtle">{label}</dt>

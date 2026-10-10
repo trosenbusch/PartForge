@@ -1,3 +1,4 @@
+import { t as tr } from '@/lib/i18n'
 import { useEffect, useRef } from 'react'
 
 /**
@@ -86,9 +87,9 @@ export function isEditableTarget(target: EventTarget | null): boolean {
 }
 
 const LABELS: Record<string, string> = {
-  mod: IS_MAC ? '⌘' : 'Strg',
-  ctrl: 'Strg',
-  strg: 'Strg',
+  get mod() { return IS_MAC ? '⌘' : tr('Strg') },
+  get ctrl() { return tr("Strg") },
+  get strg() { return tr("Strg") },
   cmd: '⌘',
   meta: IS_MAC ? '⌘' : 'Win',
   alt: IS_MAC ? '⌥' : 'Alt',
@@ -96,8 +97,8 @@ const LABELS: Record<string, string> = {
   escape: 'Esc',
   esc: 'Esc',
   enter: '↵',
-  delete: 'Entf',
-  del: 'Entf',
+  get delete() { return tr("Entf") },
+  get del() { return tr("Entf") },
   backspace: '⌫',
   arrowup: '↑',
   arrowdown: '↓',
@@ -105,7 +106,7 @@ const LABELS: Record<string, string> = {
   arrowright: '→',
   up: '↑',
   down: '↓',
-  space: 'Leertaste',
+  get space() { return tr("Leertaste") },
   tab: 'Tab',
 }
 

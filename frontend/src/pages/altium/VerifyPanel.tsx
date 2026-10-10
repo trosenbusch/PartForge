@@ -1,13 +1,5 @@
-/**
- * „In Altium geprüft“: die letzte abgeschlossene Prüfung der Bibliothek (`GET /api/altium/verify/last` – in der
- * Bibliothek gespeichert, übersteht Neustarts) – je Bauteil Symbol, Pins und jeder Footprint-Verweis (zugeordnet,
- * Bibliothek vorhanden, enthalten; der Grund steht im Text), darunter Comment, Beschreibung und die aufklappbare
- * Parameterliste mit dem Vergleich zur Datenbank (`VerifyParameters`), mit Filtern und Sprung zum Bauteil. Läuft eine
- * Prüfung, steht ihr Fortschritt darüber (Abbrechen möglich); scheitert sie, bleibt das letzte Ergebnis sichtbar.
- *
- * Breite: ab 60 rem stehen die Meldungen in einer eigenen Spalte, darunter als zweite Zeile unter dem Bauteil – nichts
- * wird abgeschnitten oder seitlich gescrollt.
- */
+import { useI18n, localizeMessage } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { CircleX, RotateCw, Search, ShieldCheck, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
@@ -39,6 +31,7 @@ export interface VerifyPanelProps {
 const jobEnd = (job: Pick<Job, 'finished' | 'created'>) => toMillis(job.finished ?? job.created)
 
 export function VerifyPanel({ blocker, pending, onVerify }: VerifyPanelProps) {
+  const { t: tr } = useI18n()
   const lastQ = useLastVerify()
   const run = lastQ.data ?? null
   // Laufende bzw. gescheiterte Prüfung aus der Jobliste (Kurzfassung – für Zustand und Fortschritt genügt sie)
@@ -61,14 +54,14 @@ export function VerifyPanel({ blocker, pending, onVerify }: VerifyPanelProps) {
       {!progress && failed && (
         <Callout
           tone={failed.status === 'cancelled' ? 'neutral' : 'danger'}
-          title={failed.status === 'cancelled' ? 'Prüfung abgebrochen' : 'Prüfung in Altium fehlgeschlagen'}
+          title={failed.status === 'cancelled' ? tr("Prüfung abgebrochen") : tr("Prüfung in Altium fehlgeschlagen")}
           // mit gespeichertem Ergebnis steht „Erneut prüfen“ (samt „nur mit Befund“) an dessen Zusammenfassung
-          actions={run ? undefined : <VerifyMenu onVerify={onVerify} pending={pending} label="Erneut prüfen" blocked={blocker} />}
+          actions={run ? undefined : <VerifyMenu onVerify={onVerify} pending={pending} label={tr("Erneut prüfen")} blocked={blocker} />}
         >
-          {failed.status === 'cancelled' ? jobCancelText(failed) : cleanErrorText(failed.error ?? '') || 'Kein Ergebnis.'}
+          {failed.status === 'cancelled' ? jobCancelText(failed) : cleanErrorText(failed.error ?? '') || tr("Kein Ergebnis.")}
           {run && (
             <span className="block">
-              Unten steht weiter das Ergebnis vom {formatDateTime(run.finished)}.
+              {tr("Unten steht weiter das Ergebnis vom ")}{formatDateTime(run.finished)}.
             </span>
           )}
         </Callout>
@@ -76,11 +69,10 @@ export function VerifyPanel({ blocker, pending, onVerify }: VerifyPanelProps) {
       {lastQ.isError && !run && (
         <Callout
           tone="danger"
-          title="Letztes Prüfergebnis nicht verfügbar"
+          title={tr("Letztes Prüfergebnis nicht verfügbar")}
           actions={
             <Button size="sm" leftIcon={<RotateCw />} onClick={() => void lastQ.refetch()} loading={lastQ.isFetching}>
-              Erneut laden
-            </Button>
+              {tr("Erneut laden")}</Button>
           }
         >
           {errorMessage(lastQ.error)}
@@ -95,13 +87,13 @@ export function VerifyPanel({ blocker, pending, onVerify }: VerifyPanelProps) {
           <Card>
             <EmptyState
               illustration="forge"
-              title="Noch nicht in Altium geprüft"
+              title={tr("Noch nicht in Altium geprüft")}
               description={
                 blocker
-                  ? 'Sobald Altium Designer läuft, lässt PartForge Altium jedes Bauteil auflösen – Symbol, Pins und Footprints, genau wie beim Platzieren. Das Ergebnis bleibt in der Bibliothek gespeichert.'
-                  : 'Altium löst jedes Bauteil auf – genau wie beim Platzieren: Symbol gefunden, Pins vollständig, jeder Footprint zugeordnet und in seiner Bibliothek enthalten, Parameter und Beschreibung wie in der Datenbank. Die Stichprobe verteilt sich über alle Kategorien.'
+                  ? tr("Sobald Altium Designer läuft, lässt PartForge Altium jedes Bauteil auflösen – Symbol, Pins und Footprints, genau wie beim Platzieren. Das Ergebnis bleibt in der Bibliothek gespeichert.")
+                  : tr("Altium löst jedes Bauteil auf – genau wie beim Platzieren: Symbol gefunden, Pins vollständig, jeder Footprint zugeordnet und in seiner Bibliothek enthalten, Parameter und Beschreibung wie in der Datenbank. Die Stichprobe verteilt sich über alle Kategorien.")
               }
-              actions={<VerifyMenu onVerify={onVerify} pending={pending} size="md" label="In Altium prüfen" blocked={blocker} />}
+              actions={<VerifyMenu onVerify={onVerify} pending={pending} size="md" label={tr("In Altium prüfen")} blocked={blocker} />}
             />
           </Card>
         )
@@ -111,8 +103,9 @@ export function VerifyPanel({ blocker, pending, onVerify }: VerifyPanelProps) {
 }
 
 function VerifySkeleton() {
+  const { t: tr } = useI18n()
   return (
-    <div className="flex flex-col gap-4" aria-busy="true" aria-label="Letztes Prüfergebnis wird geladen">
+    <div className="flex flex-col gap-4" aria-busy="true" aria-label={tr("Letztes Prüfergebnis wird geladen")}>
       <Card className="px-5 py-4">
         <Skeleton className="h-4 w-72" />
         <Skeleton className="mt-2 h-3 w-56" />
@@ -133,6 +126,7 @@ function VerifySkeleton() {
 }
 
 function VerifyProgress({ job }: { job: Job<VerifyResult> }) {
+  const { t: tr } = useI18n()
   const cancel = useCancelJob()
   // Fortschritt und Ergebnis stehen hier – solange sichtbar, zählt der Job nicht in der Pille des Job-Docks
   useInlineJob(job.id)
@@ -149,13 +143,12 @@ function VerifyProgress({ job }: { job: Job<VerifyResult> }) {
         <div className="min-w-0 flex-1">
           <h3 className="text-sm font-semibold text-fg">{job.title}</h3>
           <p className="mt-0.5 truncate text-xs text-fg-muted" aria-live="polite">
-            {stopping ? 'Wird abgebrochen …' : job.message || 'Altium wird vorbereitet …'}
+            {stopping ? tr("Wird abgebrochen …") : job.message || tr("Altium wird vorbereitet …")}
           </p>
-          <ProgressBar className="mt-3" value={job.progress} live label="Fortschritt der Prüfung in Altium" hideLabel showValue />
+          <ProgressBar className="mt-3" value={job.progress} live label={tr("Fortschritt der Prüfung in Altium")} hideLabel showValue />
         </div>
         <Button size="sm" variant="ghost" onClick={() => cancel.mutate(job.id)} loading={cancel.isPending} disabled={stopping}>
-          Abbrechen
-        </Button>
+          {tr("Abbrechen")}</Button>
       </div>
     </Card>
   )
@@ -167,12 +160,12 @@ function VerifyProgress({ job }: { job: Job<VerifyResult> }) {
 function scopeText(run: VerifyRun, catMap: Map<string, CategoryDef>): string {
   const { summary } = run
   const tables = run.tables.map((t) => catMap.get(t)?.label ?? t)
-  const where = tables.length === 1 ? ` in „${tables[0]}“` : tables.length > 1 ? ` in ${plural(tables.length, 'Kategorie', 'Kategorien')}` : ''
-  if (run.scope === 'part_numbers') return 'ausgewählte Bauteile'
-  if (run.scope === 'all') return tables.length ? `alle Bauteile${where}` : `alle Bauteile aus ${plural(summary.categories, 'Kategorie', 'Kategorien')}`
-  const of = summary.total > summary.checked ? ` · aus ${plural(summary.total, 'Bauteil', 'Bauteilen')}` : ''
-  if (run.sample === 'first') return `die ersten in Kategorie-Reihenfolge${where}${of}`
-  return `Stichprobe über ${plural(summary.categories, 'Kategorie', 'Kategorien')}${where}${of}`
+  const where = tables.length === 1 ? tr(" in „{0}“", { "0": String(tables[0]) }) : tables.length > 1 ? ` in ${plural(tables.length, tr("Kategorie"), tr("Kategorien"))}` : ''
+  if (run.scope === 'part_numbers') return tr("ausgewählte Bauteile")
+  if (run.scope === 'all') return tables.length ? tr("alle Bauteile{0}", { "0": String(where) }) : tr("alle Bauteile aus {0}", { "0": String(plural(summary.categories, tr("Kategorie"), tr("Kategorien"))) })
+  const of = summary.total > summary.checked ? tr(" · aus {0}", { "0": String(plural(summary.total, tr("Bauteil"), tr("Bauteilen"))) }) : ''
+  if (run.sample === 'first') return tr("die ersten in Kategorie-Reihenfolge{0}{1}", { "0": String(where), "1": String(of) })
+  return tr("Stichprobe über {0}{1}{2}", { "0": String(plural(summary.categories, tr("Kategorie"), tr("Kategorien"))), "1": String(where), "2": String(of) })
 }
 
 function VerifyResults({
@@ -189,6 +182,7 @@ function VerifyResults({
   /** ein neues Ergebnis wird gerade geladen */
   refreshing: boolean
 }) {
+  const { t: tr } = useI18n()
   const navigate = useNavigate()
   const categories = useCategories().data
   const catMap = useMemo(() => new Map((categories ?? []).map((c) => [c.table, c] as const)), [categories])
@@ -203,11 +197,11 @@ function VerifyResults({
       run.results.filter((p) => {
         if (filter !== 'all' && p.status !== filter) return false
         if (!needle) return true
-        return [p.part_number, p.table, catMap.get(p.table)?.label, p.library_ref, p.lib_reference, p.comment, p.description, ...p.footprint_checks.map((c) => c.footprint), ...p.messages]
+        return [p.part_number, p.table, catMap.get(p.table)?.label, p.library_ref, p.lib_reference, p.comment, p.description, ...p.footprint_checks.map((c) => c.footprint), ...p.messages.map((message) => tr(localizeMessage(message)))]
           .filter(Boolean)
           .some((v) => String(v).toLowerCase().includes(needle))
       }),
-    [run.results, filter, needle, catMap],
+    [run.results, filter, needle, catMap, tr],
   )
   const shown = rows.slice(0, limit)
   const flagged = run.results.filter((p) => p.status !== 'ok').map((p) => p.part_number)
@@ -219,17 +213,16 @@ function VerifyResults({
         <div className="flex flex-col gap-4 @[48rem]:flex-row @[48rem]:items-center">
           <div className="min-w-0 flex-1">
             <h3 className="flex flex-wrap items-baseline gap-x-1.5 text-sm font-semibold text-fg">
-              {plural(summary.checked, 'Bauteil', 'Bauteile')} in Altium geprüft
-              <span className="font-normal text-fg-muted">· {scopeText(run, catMap)}</span>
-              {refreshing && <Spinner size={12} tone="accent" label="Neues Ergebnis wird geladen" className="self-center" />}
+              {plural(summary.checked, tr("Bauteil"), tr("Bauteile"))} {tr(" in Altium geprüft")}<span className="font-normal text-fg-muted">· {scopeText(run, catMap)}</span>
+              {refreshing && <Spinner size={12} tone="accent" label={tr("Neues Ergebnis wird geladen")} className="self-center" />}
             </h3>
             <p className="mt-0.5 text-xs text-fg-subtle">
               <time dateTime={run.finished} title={formatDateTime(run.finished)}>
                 {formatRelativeTime(run.finished)}
               </time>
-              {` · Dauer ${formatDuration(summary.duration_s)}`}
-              {summary.altium_runs ? ` · ${plural(summary.altium_runs, 'Altium-Lauf', 'Altium-Läufe')}` : ''}
-              {summary.temporarily_installed && ' · DbLib dafür vorübergehend installiert'}
+              {tr(" · Dauer {0}", { "0": String(formatDuration(summary.duration_s)) })}
+              {summary.altium_runs ? ` · ${plural(summary.altium_runs, tr("Altium-Lauf"), tr("Altium-Läufe"))}` : ''}
+              {summary.temporarily_installed && tr(" · DbLib dafür vorübergehend installiert")}
             </p>
             <ResultBar summary={summary} />
           </div>
@@ -237,13 +230,13 @@ function VerifyResults({
             onVerify={onVerify}
             pending={pending}
             blocked={blocker}
-            label="Erneut prüfen"
+            label={tr("Erneut prüfen")}
             extra={
               flagged.length
                 ? [
                     {
-                      scope: { kind: 'parts', partNumbers: flagged, label: `Nur ${plural(flagged.length, 'Bauteil', 'Bauteile')} mit Befund` },
-                      description: 'nach dem Beheben gezielt nachprüfen',
+                      scope: { kind: 'parts', partNumbers: flagged, label: tr("Nur {0} mit Befund", { "0": String(plural(flagged.length, tr("Bauteil"), tr("Bauteile"))) }) },
+                      description: tr("nach dem Beheben gezielt nachprüfen"),
                     },
                   ]
                 : undefined
@@ -256,17 +249,17 @@ function VerifyResults({
       <div className="flex flex-wrap items-center gap-3">
         <SegmentedControl<Filter>
           size="sm"
-          aria-label="Ergebnisse filtern"
+          aria-label={tr("Ergebnisse filtern")}
           value={filter}
           onValueChange={(v) => {
             setFilter(v)
             setLimit(PAGE)
           }}
           options={[
-            { value: 'all', label: <FilterLabel label="Alle" count={summary.checked} /> },
-            { value: 'error', label: <FilterLabel label="Fehler" count={summary.errors} tone="error" /> },
-            { value: 'warning', label: <FilterLabel label="Hinweise" count={summary.warnings} tone="warning" /> },
-            { value: 'ok', label: <FilterLabel label="In Ordnung" count={summary.ok} /> },
+            { value: 'all', label: <FilterLabel label={tr("Alle")} count={summary.checked} /> },
+            { value: 'error', label: <FilterLabel label={tr("Fehler")} count={summary.errors} tone="error" /> },
+            { value: 'warning', label: <FilterLabel label={tr("Hinweise")} count={summary.warnings} tone="warning" /> },
+            { value: 'ok', label: <FilterLabel label={tr("In Ordnung")} count={summary.ok} /> },
           ]}
         />
         <Input
@@ -283,14 +276,14 @@ function VerifyResults({
               setQuery('')
             }
           }}
-          placeholder="Bauteil, Symbol, Footprint …"
-          aria-label="Ergebnisse durchsuchen"
+          placeholder={tr("Bauteil, Symbol, Footprint …")}
+          aria-label={tr("Ergebnisse durchsuchen")}
           prefix={<Search />}
-          suffix={query ? <IconButton size="xs" label="Suche leeren" icon={<X />} onClick={() => setQuery('')} tooltip={false} /> : undefined}
+          suffix={query ? <IconButton size="xs" label={tr("Suche leeren")} icon={<X />} onClick={() => setQuery('')} tooltip={false} /> : undefined}
           containerClassName="w-64 max-w-full"
         />
         <span className="ml-auto text-xs text-fg-subtle" aria-live="polite">
-          {rows.length === run.results.length ? plural(rows.length, 'Bauteil', 'Bauteile') : `${formatNumber(rows.length)} von ${formatNumber(run.results.length)}`}
+          {rows.length === run.results.length ? plural(rows.length, tr("Bauteil"), tr("Bauteile")) : tr("{0} von {1}", { "0": String(formatNumber(rows.length)), "1": String(formatNumber(run.results.length)) })}
         </span>
       </div>
 
@@ -299,23 +292,23 @@ function VerifyResults({
           <EmptyState
             size="sm"
             illustration={filter === 'error' && !needle ? 'all-good' : 'search-empty'}
-            title={filter === 'error' && !needle ? 'Keine Fehler' : 'Keine Treffer'}
-            description={filter === 'error' && !needle ? 'Altium hat jedes geprüfte Bauteil vollständig aufgelöst.' : 'Kein Bauteil passt zu Filter und Suche.'}
+            title={filter === 'error' && !needle ? tr("Keine Fehler") : tr("Keine Treffer")}
+            description={filter === 'error' && !needle ? tr("Altium hat jedes geprüfte Bauteil vollständig aufgelöst.") : tr("Kein Bauteil passt zu Filter und Suche.")}
           />
         ) : (
           <>
             <table className="w-full table-fixed border-collapse text-left">
-              <caption className="sr-only">Ergebnis der Prüfung in Altium</caption>
+              <caption className="sr-only">{tr("Ergebnis der Prüfung in Altium")}</caption>
               <thead>
                 <tr className="border-b border-line text-2xs font-semibold uppercase tracking-[0.06em] text-fg-subtle">
                   <th scope="col" className="w-10 py-2.5 pl-4 pr-1">
                     <span className="sr-only">Status</span>
                   </th>
-                  <th scope="col" className="w-[28%] px-3 py-2.5 @[60rem]:w-[19%]">Bauteil</th>
+                  <th scope="col" className="w-[28%] px-3 py-2.5 @[60rem]:w-[19%]">{tr("Bauteil")}</th>
                   <th scope="col" className="w-[22%] px-3 py-2.5 @[60rem]:w-[15%]">Symbol</th>
                   <th scope="col" className="w-20 px-3 py-2.5 text-right">Pins</th>
                   <th scope="col" className="px-3 py-2.5">Footprints</th>
-                  <th scope="col" className="hidden w-[32%] py-2.5 pl-3 pr-4 @[60rem]:table-cell">Meldungen</th>
+                  <th scope="col" className="hidden w-[32%] py-2.5 pl-3 pr-4 @[60rem]:table-cell">{tr("Meldungen")}</th>
                 </tr>
               </thead>
               {shown.map((p) => (
@@ -325,11 +318,9 @@ function VerifyResults({
             {rows.length > shown.length && (
               <div className="flex items-center gap-3 border-t border-line px-4 py-2.5">
                 <Button size="xs" variant="ghost" onClick={() => setLimit((l) => l + PAGE)}>
-                  {formatNumber(Math.min(PAGE, rows.length - shown.length))} weitere anzeigen
-                </Button>
+                  {formatNumber(Math.min(PAGE, rows.length - shown.length))} {tr(" weitere anzeigen")}</Button>
                 <span className="text-2xs text-fg-subtle">
-                  {formatNumber(shown.length)} von {formatNumber(rows.length)} angezeigt
-                </span>
+                  {formatNumber(shown.length)} {tr(" von ")}{formatNumber(rows.length)} {' '}{tr("angezeigt")}</span>
               </div>
             )}
           </>
@@ -340,11 +331,12 @@ function VerifyResults({
 }
 
 function ResultBar({ summary }: { summary: VerifyRun['summary'] }) {
+  const { t: tr } = useI18n()
   const total = Math.max(1, summary.checked)
   const parts = [
-    { key: 'ok', n: summary.ok, label: 'in Ordnung', color: 'var(--pf-success)' },
-    { key: 'warning', n: summary.warnings, label: 'mit Hinweisen', color: 'var(--pf-warning)' },
-    { key: 'error', n: summary.errors, label: 'mit Fehlern', color: 'var(--pf-danger)' },
+    { key: 'ok', n: summary.ok, label: tr("in Ordnung"), color: 'var(--pf-success)' },
+    { key: 'warning', n: summary.warnings, label: tr("mit Hinweisen"), color: 'var(--pf-warning)' },
+    { key: 'error', n: summary.errors, label: tr("mit Fehlern"), color: 'var(--pf-danger)' },
   ]
   return (
     <div className="mt-3">
@@ -367,6 +359,7 @@ function ResultBar({ summary }: { summary: VerifyRun['summary'] }) {
 
 /** Ein Bauteil: Zeile mit Symbol, Pins, Footprints – Meldungen als Spalte (breit) bzw. als zweite Zeile (schmal) */
 function PartRows({ part: p, cat, onOpen }: { part: VerifiedPart; cat: CategoryDef | undefined; onOpen: () => void }) {
+  const { t: tr } = useI18n()
   const [expanded, setExpanded] = useState(false)
   const symbolName = p.lib_reference || p.library_ref || '–'
   const loadsOther = Boolean(p.library_ref && p.lib_reference && p.lib_reference.toLowerCase() !== p.library_ref.toLowerCase())
@@ -380,7 +373,7 @@ function PartRows({ part: p, cat, onOpen }: { part: VerifiedPart; cat: CategoryD
         <td className="py-2.5 pl-4 pr-1">
           <span className="flex h-5 items-center">
             {p.status === 'ok' ? <OkIcon /> : <SeverityIcon severity={p.status} />}
-            <span className="sr-only">{p.status === 'ok' ? 'in Ordnung' : p.status === 'warning' ? 'Hinweis' : 'Fehler'}</span>
+            <span className="sr-only">{p.status === 'ok' ? tr("in Ordnung") : p.status === 'warning' ? tr("Hinweis") : tr("Fehler")}</span>
           </span>
         </td>
         <td className="min-w-0 px-3 py-2.5">
@@ -388,7 +381,7 @@ function PartRows({ part: p, cat, onOpen }: { part: VerifiedPart; cat: CategoryD
             type="button"
             onClick={onOpen}
             className="mono block max-w-full break-all rounded-sm text-left text-xs font-semibold text-fg outline-none hover:text-accent-text hover:underline focus-ring"
-            aria-label={`${p.part_number} in der Bauteiltabelle öffnen`}
+            aria-label={tr("{0} in der Bauteiltabelle öffnen", { "0": String(p.part_number) })}
           >
             {p.part_number}
           </button>
@@ -402,8 +395,8 @@ function PartRows({ part: p, cat, onOpen }: { part: VerifiedPart; cat: CategoryD
             {p.symbol_found ? <OkIcon className="size-3.5" /> : <CircleX aria-hidden className="size-3.5 shrink-0" />}
             <span className="min-w-0 break-words">{symbolName}</span>
           </span>
-          {!p.symbol_found && <span className="mt-0.5 block text-2xs text-danger-text">nicht gefunden</span>}
-          {loadsOther && <span className="mt-0.5 block text-2xs text-warning-text">statt „{p.library_ref}“</span>}
+          {!p.symbol_found && <span className="mt-0.5 block text-2xs text-danger-text">{tr("nicht gefunden")}</span>}
+          {loadsOther && <span className="mt-0.5 block text-2xs text-warning-text">{tr("statt „")}{p.library_ref}“</span>}
         </td>
         <td className="mono px-3 py-2.5 text-right text-xs">
           {p.pin_count === null ? (
@@ -411,13 +404,13 @@ function PartRows({ part: p, cat, onOpen }: { part: VerifiedPart; cat: CategoryD
           ) : (
             <span className={pinsMismatch ? 'text-warning-text' : 'text-fg'}>
               {formatNumber(p.pin_count)}
-              {pinsMismatch && <span className="block text-2xs text-fg-muted">erwartet {formatNumber(p.expected_pins ?? 0)}</span>}
+              {pinsMismatch && <span className="block text-2xs text-fg-muted">{tr("erwartet")}{' '}{formatNumber(p.expected_pins ?? 0)}</span>}
             </span>
           )}
         </td>
         <td className="min-w-0 px-3 py-2.5">
           {p.footprint_checks.length === 0 ? (
-            <span className="text-xs text-fg-subtle">kein Footprint</span>
+            <span className="text-xs text-fg-subtle">{tr("kein Footprint")}</span>
           ) : (
             <ul className="flex flex-col gap-1">
               {p.footprint_checks.map((c) => (
@@ -451,13 +444,14 @@ function PartRows({ part: p, cat, onOpen }: { part: VerifiedPart; cat: CategoryD
 }
 
 function Messages({ messages, expanded, onToggle }: { messages: string[]; expanded: boolean; onToggle: () => void }) {
+  const { t: tr } = useI18n()
   if (messages.length === 0) return <span className="text-xs text-fg-subtle">–</span>
   const visible = expanded ? messages : messages.slice(0, 1)
   return (
     <div className="text-xs leading-snug text-fg-muted">
       <ul className="flex flex-col gap-0.5">
         {visible.map((m, i) => (
-          <li key={i}>{m}</li>
+          <li key={i}>{localizeMessage(m)}</li>
         ))}
       </ul>
       {messages.length > 1 && (
@@ -467,7 +461,7 @@ function Messages({ messages, expanded, onToggle }: { messages: string[]; expand
           onClick={onToggle}
           className="mt-0.5 rounded-sm text-2xs text-fg-subtle underline decoration-dotted underline-offset-2 outline-none hover:text-fg focus-ring"
         >
-          {expanded ? 'Weniger anzeigen' : `+ ${plural(messages.length - 1, 'weitere Meldung', 'weitere Meldungen')}`}
+          {expanded ? tr("Weniger anzeigen") : `+ ${plural(messages.length - 1, tr("weitere Meldung"), tr("weitere Meldungen"))}`}
         </button>
       )}
     </div>
@@ -476,13 +470,14 @@ function Messages({ messages, expanded, onToggle }: { messages: string[]; expand
 
 /** Footprint-Verweis mit Zustand im Text (zugeordnet, Bibliothek vorhanden, enthalten) */
 function FootprintLine({ check: c, showColumn }: { check: FootprintCheck; showColumn: boolean }) {
+  const { t: tr } = useI18n()
   const ok = c.assigned && c.library_found && c.in_library === true
   const unknown = c.assigned && c.library_found && c.in_library === null
   const problems = [
-    !c.assigned && 'nicht zugeordnet',
-    !c.library_found && 'Bibliothek fehlt',
-    c.library_found && c.in_library === false && 'nicht in der Bibliothek',
-    unknown && 'Inhalt ungeprüft',
+    !c.assigned && tr("nicht zugeordnet"),
+    !c.library_found && tr("Bibliothek fehlt"),
+    c.library_found && c.in_library === false && tr("nicht in der Bibliothek"),
+    unknown && tr("Inhalt ungeprüft"),
   ].filter((x): x is string => Boolean(x))
   const ref = /(\d+)$/.exec(c.column)?.[1]
   return (
@@ -502,7 +497,7 @@ function FootprintLine({ check: c, showColumn }: { check: FootprintCheck; showCo
         {problems.length > 0 ? (
           <span className={cn('block', unknown ? 'text-warning-text' : 'text-danger-text')}>{problems.join(' · ')}</span>
         ) : (
-          <span className="sr-only">: in Altium zugeordnet und in der Bibliothek enthalten</span>
+          <span className="sr-only">{tr(": in Altium zugeordnet und in der Bibliothek enthalten")}</span>
         )}
       </span>
     </li>

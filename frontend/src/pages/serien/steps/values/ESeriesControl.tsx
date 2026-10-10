@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 /**
  * E-Reihe wählen: „Datenblatt“ (Reihen laut Toleranz bzw. alle lieferbaren Werte) oder E3 … E192 – der
  * Segmentschalter des UI-Kits (Radio-Semantik, gleitende Markierung, Pfeiltasten) mit Reihen in Monospace. Tooltip je
@@ -31,22 +32,21 @@ export function ESeriesControl({
   disabled,
   'aria-label': ariaLabel = 'E-Reihe',
 }: ESeriesControlProps) {
+  const { t: tr } = useI18n()
   const choices: { value: SeriesChoice; label: string; tip: string; marked: boolean; mono: boolean }[] = [
     {
       value: 'auto',
-      label: 'Datenblatt',
+      label: tr("Datenblatt"),
       tip: datasheet.length
-        ? `Reihen laut Datenblatt${toleranceLabel ? ` für ${toleranceLabel}` : ''}: ${datasheet.join(' + ')}`
-        : fallbackTip,
+        ? tr("Reihen laut Datenblatt{v0}: {v1}", { v0: toleranceLabel ? tr(" für {v0}", { v0: toleranceLabel }) : '', v1: datasheet.join(' + ') })
+        : tr(fallbackTip),
       marked: false,
       mono: false,
     },
     ...SERIES_NAMES.map((name) => ({
       value: name as SeriesChoice,
       label: name,
-      tip: `${name} · übliche Toleranz ${E_SERIES_TOLERANCE[name]} · ${valuesPerDecade(name)} Werte je Dekade${
-        datasheet.includes(name) ? ' · laut Datenblatt lieferbar' : ''
-      }`,
+      tip: tr("{v0} · übliche Toleranz {v1} · {v2} Werte je Dekade{v3}", { v0: name, v1: E_SERIES_TOLERANCE[name], v2: valuesPerDecade(name), v3: datasheet.includes(name) ? tr("· laut Datenblatt lieferbar") : '' }),
       marked: datasheet.includes(name),
       mono: true,
     })),
@@ -72,7 +72,7 @@ export function ESeriesControl({
       value={value}
       onValueChange={onValueChange}
       disabled={disabled}
-      aria-label={ariaLabel}
+      aria-label={tr(ariaLabel)}
       options={options}
     />
   )

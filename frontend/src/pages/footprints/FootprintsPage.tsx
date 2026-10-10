@@ -1,3 +1,4 @@
+import { t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Modul „Footprints“: Generator (IPC-7351B, live) und Bibliothek (gespeicherte Footprints + Vorlagen-Katalog).
  *
@@ -29,6 +30,7 @@ import { LibraryView, type LibrarySource } from './library/LibraryView'
 type View = 'generator' | 'bibliothek'
 
 export default function FootprintsPage() {
+  useI18n()
   const [params, setParams] = useSearchParams()
   const view: View = params.get('ansicht') === 'bibliothek' ? 'bibliothek' : 'generator'
   const source: LibrarySource = params.get('quelle') === 'katalog' ? 'katalog' : 'bibliothek'
@@ -79,13 +81,13 @@ export default function FootprintsPage() {
       const preset = wanted ? (f.presets.find((p) => normalizeTerm(p.key) === wanted) ?? null) : null
       useGenerator.getState().selectFamily(f, preset)
       if (linkPreset && !preset) {
-        toast.info(`Vorlage „${linkPreset}“ nicht gefunden`, {
+        toast.info(tr("Vorlage „{value0}“ nicht gefunden", { value0: String(linkPreset) }), {
           id: 'fp-deeplink',
-          description: `${familyShortLabel(f)} ist geöffnet – bitte die passende Vorlage wählen.`,
+          description: tr("{value0} ist geöffnet – bitte die passende Vorlage wählen.", { value0: String(familyShortLabel(f)) }),
         })
       }
     } else {
-      toast.error('Gehäusefamilie unbekannt', { id: 'fp-deeplink', description: `„${linkFamily}“ gibt es im Generator nicht.` })
+      toast.error(tr('Gehäusefamilie unbekannt'), { id: 'fp-deeplink', description: tr("„{value0}“ gibt es im Generator nicht.", { value0: String(linkFamily) }) })
     }
     setParams(
       (prev) => {
@@ -107,9 +109,9 @@ export default function FootprintsPage() {
   const regenerate: RegenerateHandler = (f, generator, { name }) => {
     useGenerator.getState().loadSnapshot(f, generator, {
       styleRounding: style?.rounding,
-      label: 'Gespeicherte Parameter geladen',
+      label: tr('Gespeicherte Parameter geladen'),
       name,
-      notice: name ? `Parameter von „${name}“ geladen – der eigene Name bleibt beim Speichern erhalten` : undefined,
+      notice: name ? tr("Parameter von „{value0}“ geladen – der eigene Name bleibt beim Speichern erhalten", { value0: String(name) }) : undefined,
     })
     setView('generator')
   }
@@ -121,9 +123,9 @@ export default function FootprintsPage() {
 
   // Strg+S in der Bibliothek: nichts zu speichern (Hinweis) – im Generator speichert der Befehl „footprints.save“
   const nothingToSave = () => {
-    toast.info('Nichts zu speichern', {
+    toast.info(tr('Nichts zu speichern'), {
       id: 'fp-save-hint',
-      description: 'Die Bibliothek ist immer aktuell. Neue und geänderte Footprints speichert der Generator (Strg+S).',
+      description: tr('Die Bibliothek ist immer aktuell. Neue und geänderte Footprints speichert der Generator (Strg+S).'),
     })
   }
   useSaveHandler(nothingToSave, { enabled: view === 'bibliothek', saveAs: nothingToSave })
@@ -135,45 +137,45 @@ export default function FootprintsPage() {
     view === 'generator'
       ? family
         ? `Generator · ${familyShortLabel(family)}`
-        : 'Generator nach IPC-7351B'
+        : tr('Generator nach IPC-7351B')
       : shownSource === 'katalog'
-        ? `Katalog · ${presetCount !== undefined ? `${formatNumber(presetCount)} Vorlagen` : 'Vorlagen'}`
+        ? tr("Katalog · {value0}", { value0: String(presetCount !== undefined ? tr("{value0} Vorlagen", { value0: String(formatNumber(presetCount)) }) : tr('Vorlagen')) })
         : libraryCount !== undefined
-          ? `Bibliothek · ${formatNumber(libraryCount)} Footprints`
-          : 'Bibliothek'
+          ? tr("Bibliothek · {value0} Footprints", { value0: String(formatNumber(libraryCount)) })
+          : tr('Bibliothek')
 
   return (
     <PageBody width="full" flush className="flex h-[calc(100dvh-var(--pf-topbar-height,3.5rem))] min-h-[40rem] flex-col">
       <PageTitle title="Footprints" subtitle={subtitle} />
       <Tabs value={view} onValueChange={(v) => setView(v as View)} className="min-h-0 flex-1">
         <div className="flex shrink-0 items-end gap-4 border-b border-line px-6">
-          <TabsList aria-label="Ansicht" className="border-b-0">
+          <TabsList aria-label={tr("Ansicht")} className="border-b-0">
             <TabsTrigger value="generator" icon={<DraftingCompass />}>
-              Generator
+              {tr("Generator")}
             </TabsTrigger>
             <TabsTrigger
               value="bibliothek"
               icon={<LibraryBig />}
               count={libraryCount !== undefined ? formatNumber(libraryCount) : undefined}
             >
-              Bibliothek
+              {tr("Bibliothek")}
             </TabsTrigger>
           </TabsList>
           {view === 'generator' && style && (
             <div className="ml-auto hidden h-10 min-w-0 items-center gap-2 text-2xs text-fg-subtle xl:flex">
-              <span className="micro-label">Hausstil</span>
+              <span className="micro-label">{tr("Hausstil")}</span>
               <span className="flex min-w-0 items-center gap-1.5">
-                <StyleChip>{style.naming === 'ipc' ? 'IPC-Namen' : 'Hausnamen'}</StyleChip>
-                <StyleChip>Rundung {ROUNDING_LABEL[style.rounding] ?? style.rounding}</StyleChip>
+                <StyleChip>{style.naming === 'ipc' ? tr('IPC-Namen') : tr('Hausnamen')}</StyleChip>
+                <StyleChip>{tr("Rundung")}{' '}{tr(ROUNDING_LABEL[style.rounding]) ?? style.rounding}</StyleChip>
                 <StyleChip>
                   F {formatDim(style.fab_tolerance)} · P {formatDim(style.placement_tolerance)}
                 </StyleChip>
-                <StyleChip>{style.generate_3d ? '3D an' : '3D aus'}</StyleChip>
+                <StyleChip>{style.generate_3d ? tr('3D an') : tr('3D aus')}</StyleChip>
               </span>
-              <Tooltip content="Hausstil der Bibliothek bearbeiten">
+              <Tooltip content={tr("Hausstil der Bibliothek bearbeiten")}>
                 <Link
                   to="/einstellungen/hausstil"
-                  aria-label="Hausstil bearbeiten"
+                  aria-label={tr("Hausstil bearbeiten")}
                   className="flex size-6 items-center justify-center rounded-control text-fg-subtle outline-none transition-colors hover:bg-surface-2 hover:text-fg focus-ring"
                 >
                   <PenTool aria-hidden className="size-3.5" />
@@ -189,11 +191,11 @@ export default function FootprintsPage() {
               <EmptyState
                 illustration="offline"
                 titleAs="h2"
-                title="Gehäusefamilien konnten nicht geladen werden"
+                title={tr("Gehäusefamilien konnten nicht geladen werden")}
                 description={errorMessage(familiesQ.error)}
                 actions={
                   <Button variant="secondary" leftIcon={<RefreshCw />} onClick={() => void familiesQ.refetch()}>
-                    Erneut versuchen
+                    {tr("Erneut versuchen")}
                   </Button>
                 }
               />

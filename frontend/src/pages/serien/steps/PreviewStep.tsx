@@ -1,3 +1,4 @@
+import { localizeMessage, useI18n } from '@/lib/i18n'
 /**
  * Schritt 4 – Vorschau: alle Zeilen der Serie mit Status (neu/vorhanden/Konflikt/ungültig) und Hinweisen in einer
  * virtualisierten Tabelle, Filter nach Status, Suche, „MPN prüfen“; rechts Symbol und Footprints (neue werden beim
@@ -107,6 +108,7 @@ export function PreviewStep({
   density,
   internalScheme,
 }: PreviewStepProps) {
+  const { t: tr } = useI18n()
   const [filter, setFilter] = useState<Filter>('all')
   const [view, setView] = useState<View>('rows')
   const [sectionRef, sectionSize] = useElementSize<HTMLElement>()
@@ -116,8 +118,8 @@ export function PreviewStep({
   const categories = useCategories()
   const labels = useMemo(() => {
     const def = categories.data?.find((c) => c.table === template.category)
-    return Object.fromEntries((def?.fields ?? []).map((f) => [f.column, f.label]))
-  }, [categories.data, template.category])
+    return Object.fromEntries((def?.fields ?? []).map((f) => [f.column, tr(f.label)]))
+  }, [categories.data, template.category, tr])
 
   const rows = useMemo<GridRow[]>(() => (preview?.rows ?? []).map((r, index) => ({ ...r, index })), [preview])
   const shown = useMemo(() => (filter === 'all' ? rows : rows.filter((r) => r.status === filter)), [rows, filter])
@@ -138,22 +140,22 @@ export function PreviewStep({
     const groups = new Map<string, ReasonGroup>()
     for (const r of rows) {
       if (r.status !== 'invalid' && r.status !== 'conflict') continue
-      const reason = reasonKey(rowReason(r) ?? ROW_STATUS[r.status].description)
+      const reason = reasonKey(rowReason(r) ?? tr(ROW_STATUS[r.status].description))
       const key = `${r.status}|${reason}`
       const g = groups.get(key) ?? { status: r.status, reason, count: 0 }
       g.count += 1
       groups.set(key, g)
     }
     return { common: commonNotes, reasons: [...groups.values()].sort((a, b) => b.count - a.count) }
-  }, [rows])
+  }, [rows, tr])
   const hiddenMessages = useMemo(() => new Set(common.keys()), [common])
   const skippedTotal = preview?.skipped_total ?? 0
   const notes = useMemo(
     () => [
-      ...(preview?.warnings ?? []).filter((w) => !(skippedTotal > 0 && isSkippedWarning(w))),
-      ...[...common].map(([m, n]) => (n === rows.length ? `${m} (alle Zeilen)` : `${m} (${plural(n, 'Zeile', 'Zeilen')})`)),
+      ...(preview?.warnings ?? []).filter((w) => !(skippedTotal > 0 && isSkippedWarning(w))).map(localizeMessage),
+      ...[...common].map(([m, n]) => (n === rows.length ? tr("{v0} (alle Zeilen)", { v0: localizeMessage(m) }) : `${localizeMessage(m)} (${plural(n, tr("Zeile"), tr("Zeilen"))})`)),
     ],
-    [preview?.warnings, common, rows.length, skippedTotal],
+    [preview?.warnings, common, rows.length, skippedTotal, tr],
   )
   /** Kommentar eines typischen Bauteils der Serie („10k“, „100n“) für die Symbolvorschau */
   const sampleComment = useMemo(() => {
@@ -216,11 +218,11 @@ export function PreviewStep({
     <section ref={sectionRef} aria-labelledby="serien-vorschau" className="flex min-h-0 flex-col gap-4">
       <StepHeading
         id="serien-vorschau"
-        title="Vorschau"
+        title={tr("Vorschau")}
         description={
           preview
-            ? `${plural(total, 'Zeile', 'Zeilen')} für ${categoryLabel} – geschrieben wird erst beim Erzeugen.`
-            : 'PartForge berechnet jede Teilenummer und prüft sie gegen die Bibliothek.'
+            ? tr("{v0} für {v1} – geschrieben wird erst beim Erzeugen.", { v0: plural(total, tr("Zeile"), tr("Zeilen")), v1: categoryLabel })
+            : tr("PartForge berechnet jede Teilenummer und prüft sie gegen die Bibliothek.")
         }
         actions={
           preview ? (
@@ -228,12 +230,12 @@ export function PreviewStep({
               {narrow && (
                 <SegmentedControl<View>
                   size="sm"
-                  aria-label="Ansicht der Vorschau"
+                  aria-label={tr("Ansicht der Vorschau")}
                   value={view}
                   onValueChange={setView}
                   options={[
-                    { value: 'rows', label: `Bauteile (${formatNumber(total)})` },
-                    { value: 'footprints', label: `Footprints (${formatNumber(preview.footprints.length)})` },
+                    { value: 'rows', label: tr("Bauteile ({v0})", { v0: formatNumber(total) }) },
+                    { value: 'footprints', label: tr("Footprints ({v0})", { v0: formatNumber(preview.footprints.length) }) },
                   ]}
                 />
               )}
@@ -253,11 +255,10 @@ export function PreviewStep({
         <Callout
           tone="danger"
           urgent
-          title="Vorschau nicht möglich"
+          title={tr("Vorschau nicht möglich")}
           actions={
             <Button size="sm" variant="secondary" leftIcon={<RefreshCw />} onClick={onRetry}>
-              Erneut versuchen
-            </Button>
+              {tr("Erneut versuchen")}</Button>
           }
         >
           {errorMessage(error)}
@@ -273,12 +274,11 @@ export function PreviewStep({
       ) : (
         <>
           {error ? (
-            <Callout tone="danger" title="Die Auswahl lässt sich so nicht prüfen" live>
-              {errorMessage(error)} – angezeigt wird die letzte gültige Vorschau.
-            </Callout>
+            <Callout tone="danger" title={tr("Die Auswahl lässt sich so nicht prüfen")} live>
+              {errorMessage(error)} {tr("– angezeigt wird die letzte gültige Vorschau.")}</Callout>
           ) : null}
           {notes.length > 0 && (
-            <Callout tone="warning" title={plural(notes.length, 'Hinweis zur Serie', 'Hinweise zur Serie')}>
+            <Callout tone="warning" title={plural(notes.length, tr("Hinweis zur Serie"), tr("Hinweise zur Serie"))}>
               <ul className="flex list-disc flex-col gap-0.5 pl-4">
                 {notes.map((w) => (
                   <li key={w}>{w}</li>
@@ -293,8 +293,7 @@ export function PreviewStep({
             >
               <h3 id="serien-gruende" className="flex items-center gap-2 text-ui font-medium text-fg">
                 <CircleSlash aria-hidden className="size-4 text-fg-subtle" />
-                {plural(blockedCount, 'Zeile wird', 'Zeilen werden')} nicht angelegt
-                <span className="font-normal text-fg-muted">– häufigste Gründe</span>
+                {plural(blockedCount, tr("Zeile wird"), tr("Zeilen werden"))} {tr("nicht angelegt")}<span className="font-normal text-fg-muted">{tr("– häufigste Gründe")}</span>
               </h3>
               <ul className="flex flex-col">
                 {reasons.slice(0, TOP_REASONS).map((g) => (
@@ -309,21 +308,18 @@ export function PreviewStep({
                       </span>
                       <span className="flex w-24 shrink-0 items-center gap-1.5 text-fg-muted">
                         <span aria-hidden className={cn('size-1.5 shrink-0 rounded-full', TONE_DOT[ROW_STATUS[g.status].tone])} />
-                        {ROW_STATUS[g.status].label}
+                        {tr(ROW_STATUS[g.status].label)}
                       </span>
-                      <span className="min-w-0 flex-1 text-fg">{g.reason}</span>
+                      <span className="min-w-0 flex-1 text-fg">{localizeMessage(g.reason)}</span>
                       <span className="shrink-0 text-2xs text-fg-subtle opacity-0 transition-opacity group-hover/reason:opacity-100 group-focus-visible/reason:opacity-100">
-                        Zeilen zeigen
-                      </span>
+                        {tr("Zeilen zeigen")}</span>
                     </button>
                   </li>
                 ))}
               </ul>
               {reasons.length > TOP_REASONS && (
                 <p className="text-2xs text-fg-subtle">
-                  {plural(reasons.length - TOP_REASONS, 'weiterer Grund', 'weitere Gründe')} – Filter „Konflikte“ bzw.
-                  „Ungültig“ zeigt alle Zeilen.
-                </p>
+                  {plural(reasons.length - TOP_REASONS, tr("weiterer Grund"), tr("weitere Gründe"))} {tr("– Filter „Konflikte“ bzw. „Ungültig“ zeigt alle Zeilen.")}</p>
               )}
             </section>
           )}
@@ -334,7 +330,7 @@ export function PreviewStep({
             {(!narrow || view === 'rows') && (
             <div className="flex min-w-0 flex-col gap-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div role="group" aria-label="Zeilen nach Status filtern" className="flex flex-wrap items-center gap-1">
+                <div role="group" aria-label={tr("Zeilen nach Status filtern")} className="flex flex-wrap items-center gap-1">
                   {(['all', ...STATUS_ORDER] as Filter[]).map((f) => {
                     const n = f === 'all' ? total : (counts[f] ?? 0)
                     const active = filter === f
@@ -357,7 +353,7 @@ export function PreviewStep({
                         {f !== 'all' && (
                           <span aria-hidden className={cn('size-1.5 rounded-full', TONE_DOT[ROW_STATUS[f].tone])} />
                         )}
-                        {f === 'all' ? 'Alle' : ROW_STATUS[f].plural}
+                        {f === 'all' ? tr("Alle") : tr(ROW_STATUS[f].plural)}
                         <span className={cn('tabular-nums', active ? 'text-accent-text' : 'text-fg-subtle')}>
                           {formatNumber(n)}
                         </span>
@@ -370,8 +366,8 @@ export function PreviewStep({
                   type="search"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="In der Vorschau suchen …"
-                  aria-label="In der Vorschau suchen"
+                  placeholder={tr("In der Vorschau suchen …")}
+                  aria-label={tr("In der Vorschau suchen")}
                   prefix={<Search />}
                   containerClassName="w-60"
                 />
@@ -381,8 +377,8 @@ export function PreviewStep({
                   <div className="flex h-[22rem] items-center justify-center rounded-card border border-line bg-surface">
                     <EmptyState
                       illustration="search-empty"
-                      title="Keine Bauteile"
-                      description="Mit dieser Auswahl entstehen keine Bauteile – Bauformen, Bereich oder Varianten anpassen."
+                      title={tr("Keine Bauteile")}
+                      description={tr("Mit dieser Auswahl entstehen keine Bauteile – Bauformen, Bereich oder Varianten anpassen.")}
                     />
                   </div>
                 ) : (
@@ -433,17 +429,17 @@ export function PreviewStep({
 
 /** Werte der gewählten Reihe bzw. des Bereichs, die laut Datenblatt mit dieser Auswahl keine Zeile ergeben */
 function SkippedNote({ total, bySize: sizes, reason }: { total: number; bySize: [string, number][]; reason: string | null }) {
+  const { t: tr } = useI18n()
   return (
     <section
-      aria-label="Ausgelassene Werte"
+      aria-label={tr("Ausgelassene Werte")}
       className="flex items-start gap-3 rounded-card border border-line bg-surface px-4 py-3 shadow-card"
     >
       <ListX aria-hidden className="mt-0.5 size-4 shrink-0 text-fg-subtle" />
       <div className="min-w-0 flex-1">
         <p className="text-ui text-fg">
           <span className="mono font-semibold">{formatNumber(total)}</span>{' '}
-          {total === 1 ? 'Wert der Reihe ist' : 'Werte der Reihe sind'} ausgelassen
-          <span className="text-fg-muted"> – {midSentence(reason ?? 'laut Datenblatt mit dieser Auswahl nicht lieferbar')}.</span>
+          {total === 1 ? tr("Wert der Reihe ist") : tr("Werte der Reihe sind")} {tr("ausgelassen")}<span className="text-fg-muted"> – {midSentence(localizeMessage(reason ?? tr("laut Datenblatt mit dieser Auswahl nicht lieferbar")))}.</span>
         </p>
         <p className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-xs text-fg-muted">
           {sizes.map(([size, n]) => (
@@ -451,7 +447,7 @@ function SkippedNote({ total, bySize: sizes, reason }: { total: number; bySize: 
               <span className="mono text-fg">{size}</span> {formatNumber(n)}
             </span>
           ))}
-          <span className="text-fg-subtle">Sie erscheinen nicht in der Tabelle und werden nicht angelegt.</span>
+          <span className="text-fg-subtle">{tr("Sie erscheinen nicht in der Tabelle und werden nicht angelegt.")}</span>
         </p>
       </div>
     </section>

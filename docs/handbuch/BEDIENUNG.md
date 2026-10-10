@@ -413,7 +413,15 @@ eine Weile offen (meist etwa eine Minute); erst dann lässt sich der Ordner vers
 
 ![Einstellungen › Allgemein](bilder/30-einstellungen.png)
 
-- **Allgemein:** Autor (steht im Verlauf), Farbschema (Dunkel, Hell, Wie System), Tabellendichte; **KI-Funktionen**
+**Sprache:** PartForge startet standardmäßig auf Englisch, auch wenn eine ältere Einstellungsdatei noch keine
+Sprache enthält. Unter *Settings › General › Language* können Sie **Deutsch** auswählen und mit **Save**
+speichern. Der Wechsel gilt sofort für die gesamte Oberfläche und bleibt nach einem Neustart erhalten.
+Auf Deutsch finden Sie dieselbe Auswahl unter *Einstellungen › Allgemein › Sprache*; **English** wechselt
+zurück. Die Auswahl gilt für den Windows-Benutzer, unabhängig von der geöffneten Bibliothek. Eigene Namen,
+Bauteildaten, technische Kennungen und Dateipfade werden nicht übersetzt. Diese Anleitung zeigt die deutschen
+Bezeichnungen.
+
+- **Allgemein:** Autor (steht im Verlauf), Sprache (English, Deutsch), Farbschema (Dunkel, Hell, Wie System), Tabellendichte; **KI-Funktionen**
   (Schlüssel, Modell, Gründlichkeit, Kostenlimit je Import); **Altium Designer** (Pfad zu X2.EXE,
   Bibliotheks-Writer, automatisch aktualisieren).
 - **Bibliothek:** Name, DbLib-Datei, Teilenummern-Schema (Hersteller-Teilenummer oder eigene Nummern), Speicherort

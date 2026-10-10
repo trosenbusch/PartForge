@@ -7,6 +7,10 @@ IPC-7351B-Footprints und 3D-Modellen. Komplette Bauteilserien entstehen mit weni
 Datenblätter werden per Drag & Drop von Claude ausgewertet und zu fertigen Bauteilen mit Symbol
 und Footprint. Altium sieht neue Bauteile sofort – ohne Neustart.
 
+Die Oberfläche unterstützt **Englisch (Standard)** und **Deutsch**. Die Sprache lässt sich unter
+*Settings → General → Language* bzw. *Einstellungen → Allgemein → Sprache* wählen und speichern;
+die Auswahl bleibt auch nach einem Neustart erhalten.
+
 ![Übersicht](docs/screenshots/readme/uebersicht-dark.png)
 
 ## Funktionen auf einen Blick

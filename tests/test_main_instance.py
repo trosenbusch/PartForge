@@ -1,4 +1,4 @@
-"""Start-up (PKG-02): one PartForge per settings folder, the server port bound once, German errors."""
+"""Start-up (PKG-02): one PartForge per settings folder, bound server ports and localized errors."""
 from __future__ import annotations
 
 import json
@@ -12,12 +12,15 @@ from pathlib import Path
 import httpx
 import pytest
 
-from partforge import __main__ as main_mod
+from partforge import __main__ as main_mod, config
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def _start(home: Path, *args: str) -> subprocess.Popen[bytes]:
+def _start(home: Path, *args: str, language: str | None = None) -> subprocess.Popen[bytes]:
+    if language is not None:
+        home.mkdir(parents=True, exist_ok=True)
+        (home / "settings.json").write_text(json.dumps({"language": language}), encoding="utf-8")
     env = {**os.environ, "PARTFORGE_HOME": str(home), "PARTFORGE_NO_ALTIUM": "1", "PYTHONIOENCODING": "utf-8"}
     env.pop("PARTFORGE_ALLOW_REAL_AI", None)
     return subprocess.Popen([sys.executable, "-m", "partforge", "--server-only", *args], cwd=ROOT, env=env,
@@ -42,10 +45,11 @@ def _free() -> int:
         return int(s.getsockname()[1])
 
 
+@pytest.mark.skipif(os.name != "nt", reason="The single-instance mutex is specific to Windows")
 def test_second_start_with_the_same_settings_is_refused(tmp_path: Path) -> None:
     home = tmp_path / "home"
     port = _free()
-    first = _start(home, "--port", str(port))
+    first = _start(home, "--port", str(port), language="de")
     try:
         _wait_health(port)
         info = json.loads((home / "instance.json").read_text(encoding="utf-8"))
@@ -66,19 +70,23 @@ def test_second_start_with_the_same_settings_is_refused(tmp_path: Path) -> None:
         first.wait(20)
 
 
-def test_busy_explicit_port_is_a_german_error(tmp_path: Path) -> None:
+@pytest.mark.parametrize(("language", "expected"), [(None, "is in use"), ("de", "ist belegt")])
+def test_busy_explicit_port_uses_selected_language(tmp_path: Path, language: str | None, expected: str) -> None:
     with socket.socket() as blocker:
         blocker.bind(("127.0.0.1", 0))
         blocker.listen(1)
         port = int(blocker.getsockname()[1])
-        proc = _start(tmp_path / "home", "--port", str(port))
+        proc = _start(tmp_path / "home", "--port", str(port), language=language)
         out, err = proc.communicate(timeout=60)
     assert proc.returncode == main_mod.EXIT_PORT_BUSY
     text = err.decode("utf-8")
-    assert f"Port {port} ist belegt" in text and "läuft auf" not in out.decode("utf-8")
+    assert f"Port {port} {expected}" in text
+    assert not out.decode("utf-8")
 
 
-def test_bind_server_socket_falls_back_only_without_a_fixed_port() -> None:
+@pytest.mark.parametrize(("language", "expected"), [("en", "is in use"), ("de", "ist belegt")])
+def test_bind_server_socket_falls_back_only_without_a_fixed_port(language: str, expected: str) -> None:
+    config.save_settings(config.load_settings().model_copy(update={"language": language}))
     first = main_mod.bind_server_socket(0, fixed=False)
     try:
         taken = int(first.getsockname()[1])
@@ -87,7 +95,16 @@ def test_bind_server_socket_falls_back_only_without_a_fixed_port() -> None:
             assert int(other.getsockname()[1]) != taken
         finally:
             other.close()
-        with pytest.raises(main_mod.PortInUse, match="ist belegt"):
+        with pytest.raises(main_mod.PortInUse, match=expected):
             main_mod.bind_server_socket(taken, fixed=True)
     finally:
         first.close()
+
+
+@pytest.mark.parametrize(("language", "expected"), [("en", "open a library folder"), ("de", "Bibliotheksordner öffnen")])
+def test_command_line_help_uses_selected_language(language: str, expected: str, capsys: pytest.CaptureFixture[str]):
+    config.save_settings(config.load_settings().model_copy(update={"language": language}))
+    with pytest.raises(SystemExit) as exit_info:
+        main_mod.main(["--help"])
+    assert exit_info.value.code == 0
+    assert expected in capsys.readouterr().out

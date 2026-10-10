@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 /**
  * Seiten-API der App-Shell:
  *
@@ -32,6 +33,7 @@ const SM = { size: 'sm' } as const
 
 /** Aktionen (Buttons) rechts in der Topbar platzieren. Buttons erhalten automatisch die Topbar-Größe „sm“. */
 export function PageActions({ children }: { children: ReactNode }) {
+  useI18n()
   const el = useTopbar((s) => s.actionsEl)
   if (!el) return null
   return createPortal(<ButtonDefaultsContext.Provider value={SM}>{children}</ButtonDefaultsContext.Provider>, el)
@@ -48,6 +50,7 @@ export interface PageBodyProps {
 
 /** Standard-Inhaltsbereich einer Seite (Container für Container-Queries: `@container`). */
 export function PageBody({ children, width = 'default', flush = false, className }: PageBodyProps) {
+  useI18n()
   useEffect(() => {
     useTopbar.getState().setLayout(width, flush)
     return () => useTopbar.getState().setLayout('default', false)

@@ -1,3 +1,4 @@
+import { t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Herstellerempfehlung (Land Pattern aus dem Datenblatt) statt IPC-Berechnung: Padbreite, Padlänge,
  * Reihenabstand mit Bezug (Mitte–Mitte C, Innenkante G, Außenkante Z), optional Reihenabstand oben/unten und
@@ -31,6 +32,7 @@ export interface LandPatternSectionProps {
 }
 
 export function LandPatternSection({ state, onChange, lands, exposedPad, unsupported }: LandPatternSectionProps) {
+  useI18n()
   const id = useId()
   const collapsedPref = useFootprintUi((s) => s.collapsed['land-pattern'])
   const setCollapsed = useFootprintUi((s) => s.setCollapsed)
@@ -66,7 +68,7 @@ export function LandPatternSection({ state, onChange, lands, exposedPad, unsuppo
     <label className="flex min-w-0 flex-col gap-1">
       <span className="truncate text-2xs text-fg-muted">
         {label}
-        {optional && <span className="text-fg-subtle"> · optional</span>}
+        {optional && <span className="text-fg-subtle"> {tr("· optional")}</span>}
       </span>
       <NumberInput
         size="sm"
@@ -96,35 +98,35 @@ export function LandPatternSection({ state, onChange, lands, exposedPad, unsuppo
         >
           <ChevronRight aria-hidden className={cn('size-3.5 shrink-0 text-fg-subtle transition-transform', open && 'rotate-90')} />
           <span id={`${id}-title`} className="micro-label text-fg-muted">
-            Herstellerempfehlung
+            {tr("Herstellerempfehlung")}
           </span>
         </button>
-        <Switch size="sm" aria-label="Land Pattern des Herstellers verwenden" checked={state.enabled} onCheckedChange={enable} />
+        <Switch size="sm" aria-label={tr("Land Pattern des Herstellers verwenden")} checked={state.enabled} onCheckedChange={enable} />
       </div>
       {open && (
         <div id={`${id}-body`} className="flex flex-col gap-2.5">
           <p className="text-2xs leading-4 text-fg-muted">
-            Padmaße aus dem Datenblatt statt IPC-7351-Berechnung. Beim Einschalten werden die aktuellen Werte übernommen.
+            {tr("Padmaße aus dem Datenblatt statt IPC-7351-Berechnung. Beim Einschalten werden die aktuellen Werte übernommen.")}
           </p>
           {unsupported && state.enabled && (
             <p className="rounded-control border border-warning/30 bg-warning/8 px-2.5 py-1.5 text-2xs leading-4 text-warning-text">
-              Diese Gehäusefamilie berechnet ihre Pads immer nach IPC – die Herstellerempfehlung wird ignoriert.
+              {tr("Diese Gehäusefamilie berechnet ihre Pads immer nach IPC – die Herstellerempfehlung wird ignoriert.")}
             </p>
           )}
           <div className="grid grid-cols-2 gap-2">
-            {num('pad_width', 'Padbreite X')}
-            {num('pad_length', 'Padlänge Y')}
+            {num('pad_width', tr('Padbreite X'))}
+            {num('pad_length', tr('Padlänge Y'))}
           </div>
           <div className="flex flex-col gap-1">
-            <div className="grid grid-cols-2 gap-2">{num('row_spacing', 'Reihenabstand')}</div>
+            <div className="grid grid-cols-2 gap-2">{num('row_spacing', tr('Reihenabstand'))}</div>
             <SegmentedControl
               size="sm"
               fullWidth
-              aria-label="Bezug des Reihenabstands"
+              aria-label={tr("Bezug des Reihenabstands")}
               disabled={!state.enabled}
               value={state.reference}
               onValueChange={(v) => onChange({ reference: v }, 'discrete')}
-              options={REFERENCES.map((r) => ({ value: r.value, label: r.label }))}
+              options={REFERENCES.map((r) => ({ value: r.value, label: tr(r.label) }))}
             />
             <ReferenceDiagram reference={state.reference} dimmed={!state.enabled} />
           </div>
@@ -137,7 +139,7 @@ export function LandPatternSection({ state, onChange, lands, exposedPad, unsuppo
           )}
           {landPatternIncomplete(state) && (
             <p role="status" className="text-2xs leading-4 text-warning-text">
-              Padbreite, Padlänge und Reihenabstand angeben – bis dahin rechnet der Generator nach IPC.
+              {tr("Padbreite, Padlänge und Reihenabstand angeben – bis dahin rechnet der Generator nach IPC.")}
             </p>
           )}
         </div>

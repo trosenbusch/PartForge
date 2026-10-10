@@ -1,10 +1,4 @@
-/**
- * Vorschau eines Bauteils der Quelle (vor dem Import): SVG aus `GET /api/library-import/preview` als Bild – gelesen
- * über den Bibliotheks-Writer, deshalb mit Platzhalter, bis es da ist. Symbole im Theme der App bzw. in der
- * Altium-Ansicht (geteilte Vorliebe der Vorschau), Footprints auf der dunklen Leiterplatte.
- *
- * `variant="pane"`: Spalte rechts im Dateibaum (breite Fenster), `card`: eigene Karte unter den Optionen.
- */
+import { t, useI18n } from '@/lib/i18n'
 import { Eye, ImageOff, Square } from 'lucide-react'
 import { useState } from 'react'
 import { libImportApi, STATE_LABELS, type PreviewTheme } from '@/api/libimport'
@@ -26,6 +20,7 @@ export interface PreviewCardProps {
 }
 
 export function PreviewCard({ scanId, target, pinned, variant = 'card' }: PreviewCardProps) {
+  useI18n()
   const { resolvedTheme } = useTheme()
   const altium = usePreviewPrefs((s) => s.altium)
   const setPrefs = usePreviewPrefs((s) => s.set)
@@ -37,7 +32,7 @@ export function PreviewCard({ scanId, target, pinned, variant = 'card' }: Previe
 
   const toggle =
     target && !board ? (
-      <Tooltip content={altium ? 'PartForge-Darstellung' : 'Wie in Altium Designer (weißes Blatt)'}>
+      <Tooltip content={altium ? t("PartForge-Darstellung") : t("Wie in Altium Designer (weißes Blatt)")}>
         <button
           type="button"
           aria-pressed={altium}
@@ -61,11 +56,10 @@ export function PreviewCard({ scanId, target, pinned, variant = 'card' }: Previe
       )}
     >
       {url && c ? (
-        <PreviewImage key={url} src={url} alt={`Vorschau ${c.name}`} />
+        <PreviewImage key={url} src={url} alt={t("Vorschau {0}", { "0": String(c.name) })} />
       ) : (
         <p className="flex size-full items-center justify-center px-6 text-center text-xs leading-relaxed text-fg-subtle">
-          Über ein Bauteil fahren oder es in der Liste wählen – hier erscheint seine Vorschau.
-        </p>
+          {t("Über ein Bauteil fahren oder es in der Liste wählen – hier erscheint seine Vorschau.")}</p>
       )}
     </div>
   )
@@ -81,39 +75,37 @@ export function PreviewCard({ scanId, target, pinned, variant = 'card' }: Previe
         <p className="text-2xs text-fg-subtle">
           {[
             c.count != null ? plural(c.count, text.countOne, text.countMany) : null,
-            c.has_3d === true ? 'mit 3D‑Modell' : c.has_3d === false && board ? 'ohne 3D‑Modell' : null,
+            c.has_3d === true ? t("mit 3D‑Modell") : c.has_3d === false && board ? t("ohne 3D‑Modell") : null,
           ]
             .filter(Boolean)
             .join(' · ') || text.one}
         </p>
         <p className="text-2xs text-fg-subtle">
-          aus <RelPath rel={target.file.rel} className="text-2xs" />
+          {t("aus ")}<RelPath rel={target.file.rel} className="text-2xs" />
         </p>
         {c.state !== 'new' && c.registered_library && (
           <p className={cn('text-2xs', c.state === 'taken' ? 'text-warning-text' : 'text-fg-subtle')}>
-            {c.state === 'taken' ? 'Name schon registriert in ' : c.state === 'duplicate' ? 'zuerst in ' : 'importiert nach '}
+            {c.state === 'taken' ? t("Name schon registriert in ") : c.state === 'duplicate' ? t("zuerst in ") : t("importiert nach ")}
             <RelPath rel={c.registered_library} className="text-2xs" />
-            {c.state === 'taken' && ' – wird nicht übernommen.'}
+            {c.state === 'taken' && t(" – wird nicht übernommen.")}
           </p>
         )}
         <span className="sr-only" aria-live="polite">
-          {`${c.name}, ${STATE_LABELS[c.state]}`}
+          {`${c.name}, ${t(STATE_LABELS[c.state])}`}
         </span>
       </div>
     ) : (
       <p className="text-xs leading-relaxed text-fg-muted">
-        Symbole und Footprints lassen sich vor dem Import ansehen – PartForge liest sie über den Bibliotheks-Writer aus der Quelle.
-      </p>
+        {t("Symbole und Footprints lassen sich vor dem Import ansehen – PartForge liest sie über den Bibliotheks-Writer aus der Quelle.")}</p>
     )
 
   if (variant === 'pane') {
     return (
-      <section aria-label="Vorschau" className="flex h-full min-h-0 flex-col overflow-y-auto">
+      <section aria-label={t("Vorschau")} className="flex h-full min-h-0 flex-col overflow-y-auto">
         <div className="flex h-11 shrink-0 items-center justify-between gap-2 pl-3 pr-2">
           <h3 className="micro-label flex items-center gap-1.5">
             <Eye aria-hidden className="size-3.5" />
-            Vorschau
-          </h3>
+            {t("Vorschau")}</h3>
           {toggle}
         </div>
         <div className="px-3">{image}</div>
@@ -126,9 +118,9 @@ export function PreviewCard({ scanId, target, pinned, variant = 'card' }: Previe
     <Card className="overflow-hidden">
       <CardHeader
         icon={<Eye />}
-        title="Vorschau"
+        title={t("Vorschau")}
         titleAs="h2"
-        description={target ? (pinned ? `${text?.one} der Quelle` : `${text?.one} unter dem Mauszeiger`) : 'Vor dem Import, direkt aus der Quelle'}
+        description={target ? (pinned ? t("{0} der Quelle", { "0": String(text?.one) }) : t("{0} unter dem Mauszeiger", { "0": String(text?.one) })) : t("Vor dem Import, direkt aus der Quelle")}
         actions={toggle ?? undefined}
       />
       <div className="mx-4">{image}</div>
@@ -139,6 +131,7 @@ export function PreviewCard({ scanId, target, pinned, variant = 'card' }: Previe
 
 /** SVG als Bild – Platzhalter bis geladen, ruhiger Hinweis, wenn es nicht geht */
 function PreviewImage({ src, alt }: { src: string; alt: string }) {
+  useI18n()
   const [state, setState] = useState<'loading' | 'done' | 'error'>('loading')
   return (
     <>
@@ -146,8 +139,7 @@ function PreviewImage({ src, alt }: { src: string; alt: string }) {
       {state === 'error' ? (
         <div className="flex size-full flex-col items-center justify-center gap-1.5 px-6 text-center text-2xs text-fg-subtle">
           <ImageOff aria-hidden className="size-5" />
-          Vorschau nicht verfügbar – die Datei ist nicht lesbar oder der Bibliotheks-Writer fehlt.
-        </div>
+          {t("Vorschau nicht verfügbar – die Datei ist nicht lesbar oder der Bibliotheks-Writer fehlt.")}</div>
       ) : (
         <img
           src={src}

@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 /**
  * Werteliste einfügen (statt E-Reihe): eine Zeile je Wert oder durch Komma/Semikolon getrennt – „10k, 4k7, 2,2 µ“,
  * „0“ für die Brücke. Darunter die gelesenen Werte als Chips (ungültige rot mit Grund, doppelte durchgestrichen).
@@ -19,6 +20,7 @@ export interface ValueListInputProps {
 }
 
 export function ValueListInput({ id, text, onTextChange, parsed, unit, jumper }: ValueListInputProps) {
+  const { t: tr } = useI18n()
   const valid = parsed.filter((p) => p.value !== null && !p.error && !p.duplicate).length
   const invalid = parsed.filter((p) => p.error).length
   const duplicates = parsed.filter((p) => p.duplicate).length
@@ -33,25 +35,25 @@ export function ValueListInput({ id, text, onTextChange, parsed, unit, jumper }:
         autoResize
         spellCheck={false}
         className="mono text-ui"
-        placeholder={`${example}${jumper ? '\n0  (0-Ω-Brücke)' : ''}`}
-        aria-label="Werteliste – ein Wert je Zeile oder durch Komma getrennt"
+        placeholder={`${example}${jumper ? '\n' + tr("0 (0-Ω-Brücke)") : ''}`}
+        aria-label={tr("Werteliste – ein Wert je Zeile oder durch Komma getrennt")}
         aria-describedby={`${id}-summary`}
       />
       <div id={`${id}-summary`} aria-live="polite" className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-fg-muted">
         {parsed.length === 0 ? (
-          <span>Werte mit Einheit oder technischer Schreibweise: 4k7 · 2,2 µ · 100n · R47 – eine Zeile oder durch Komma getrennt.</span>
+          <span>{tr("Werte mit Einheit oder technischer Schreibweise: 4k7 · 2,2 µ · 100n · R47 – eine Zeile oder durch Komma getrennt.")}</span>
         ) : (
           <>
             <span>
-              <span className="mono font-semibold text-fg">{formatNumber(valid)}</span> {valid === 1 ? 'Wert' : 'Werte'}
+              <span className="mono font-semibold text-fg">{formatNumber(valid)}</span> {valid === 1 ? tr("Wert") : tr("Werte")}
             </span>
-            {invalid > 0 && <span className="text-danger-text">{plural(invalid, 'ungültig', 'ungültig')}</span>}
-            {duplicates > 0 && <span>{plural(duplicates, 'doppelt', 'doppelt')}</span>}
+            {invalid > 0 && <span className="text-danger-text">{plural(invalid, tr("ungültig"), tr("ungültig"))}</span>}
+            {duplicates > 0 && <span>{plural(duplicates, tr("doppelt"), tr("doppelt"))}</span>}
           </>
         )}
       </div>
       {parsed.length > 0 && (
-        <ul aria-label="Gelesene Werte" className="flex flex-wrap gap-1">
+        <ul aria-label={tr("Gelesene Werte")} className="flex flex-wrap gap-1">
           {parsed.slice(0, MAX_CHIPS).map((p, i) => {
             const chip = (
               <span
@@ -64,13 +66,13 @@ export function ValueListInput({ id, text, onTextChange, parsed, unit, jumper }:
                       : 'border-line-strong bg-surface-2 text-fg',
                 )}
               >
-                {p.value !== null && !p.error ? (p.jumper ? '0 Ω · Brücke' : displayValue(p.value, unit)) : p.raw}
+                {p.value !== null && !p.error ? (p.jumper ? tr("0 Ω · Brücke") : displayValue(p.value, unit)) : p.raw}
               </span>
             )
             return (
               <li key={`${p.raw}-${i}`}>
                 {p.error ? (
-                  <Tooltip content={`„${p.raw}“: ${p.error}`}>
+                  <Tooltip content={tr("„{v0}“: {v1}", { v0: p.raw, v1: p.error })}>
                     <span className="cursor-help">
                       {chip}
                       <span className="sr-only">: {p.error}</span>
@@ -83,7 +85,7 @@ export function ValueListInput({ id, text, onTextChange, parsed, unit, jumper }:
             )
           })}
           {parsed.length > MAX_CHIPS && (
-            <li className="flex h-6 items-center px-1 text-2xs text-fg-subtle">… und {formatNumber(parsed.length - MAX_CHIPS)} weitere</li>
+            <li className="flex h-6 items-center px-1 text-2xs text-fg-subtle">{tr("… und")} {formatNumber(parsed.length - MAX_CHIPS)} {tr("weitere")}</li>
           )}
         </ul>
       )}

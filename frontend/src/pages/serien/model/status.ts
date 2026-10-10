@@ -1,3 +1,4 @@
+import { getLocale, t as tr } from '@/lib/i18n'
 /** Status der Vorschauzeilen (series.py `RowStatus`) – Beschriftung, Ton und Erklärung. */
 import type { RowStatus } from '@/api/series'
 
@@ -77,7 +78,7 @@ const LEADING_VALUE = /^[+-]?\d+(?:[.,]\d+)?(?:e[+-]?\d+)?\s?[pnuµμmkKMG]?(?:�
  */
 export function reasonKey(message: string): string {
   const rest = message.replace(LEADING_VALUE, '')
-  return rest === message || !rest ? message : rest.charAt(0).toLocaleUpperCase('de-DE') + rest.slice(1)
+  return rest === message || !rest ? message : rest.charAt(0).toLocaleUpperCase(getLocale()) + rest.slice(1)
 }
 
 /**
@@ -103,8 +104,8 @@ export function serverParts(counts: Partial<Record<string, number>>): number {
 
 /** Zählerbeschriftung im Satz: „3 neu“, „1 Konflikt“, „2 Konflikte“, „4 ungültig“ */
 export function countLabel(status: RowStatus, n: number): string {
-  if (status === 'new') return 'neu'
-  if (status === 'exists') return 'vorhanden'
-  if (status === 'conflict') return n === 1 ? 'Konflikt' : 'Konflikte'
-  return 'ungültig'
+  if (status === 'new') return tr("neu")
+  if (status === 'exists') return tr("vorhanden")
+  if (status === 'conflict') return n === 1 ? tr("Konflikt") : tr("Konflikte")
+  return tr("ungültig")
 }

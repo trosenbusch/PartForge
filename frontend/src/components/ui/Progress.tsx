@@ -1,3 +1,5 @@
+import { useI18n } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { useId, type ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 import { formatPercent } from '@/lib/format'
@@ -52,6 +54,7 @@ export function ProgressBar({
   live,
   className,
 }: ProgressBarProps) {
+  const { t: tr } = useI18n()
   const labelId = useId()
   const fraction = Math.min(1, Math.max(0, max > 0 ? value / max : 0))
   const height = size === 'xs' ? 'h-1' : size === 'sm' ? 'h-1.5' : 'h-2.5'
@@ -74,11 +77,11 @@ export function ProgressBar({
       <div
         role="progressbar"
         aria-labelledby={label ? labelId : undefined}
-        aria-label={label ? undefined : 'Fortschritt'}
+        aria-label={label ? undefined : tr("Fortschritt")}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={indeterminate ? undefined : Math.round(fraction * 100)}
-        aria-valuetext={indeterminate ? 'läuft' : undefined}
+        aria-valuetext={indeterminate ? tr("läuft") : undefined}
         className={cn('relative w-full overflow-hidden rounded-full bg-surface-3', height)}
       >
         {indeterminate ? (
@@ -136,9 +139,10 @@ export function ProgressRing({
   children,
   showValue,
   className,
-  label = 'Fortschritt',
+  label = tr("Fortschritt"),
   valueText,
 }: ProgressRingProps) {
+  const { t: tr } = useI18n()
   const id = useId().replace(/:/g, '')
   const r = (size - stroke) / 2
   const c = 2 * Math.PI * r
@@ -154,7 +158,7 @@ export function ProgressRing({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={indeterminate || valueText ? undefined : Math.round(fraction * 100)}
-      aria-valuetext={valueText ?? (indeterminate ? 'läuft' : undefined)}
+      aria-valuetext={valueText ?? (indeterminate ? tr("läuft") : undefined)}
       className={cn('relative inline-flex shrink-0 items-center justify-center', className)}
       style={{ width: size, height: size }}
     >

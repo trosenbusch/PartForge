@@ -23,7 +23,7 @@ Security model (PartForge runs a local HTTP server on 127.0.0.1 that a browser t
   PartForge's own page started (``same-origin``), as a top-level document (``Sec-Fetch-Dest: document``);
   requests without these headers (non-browser clients, old browsers) count as such. A link, redirect or
   frame of another website (``cross-site``/``same-site``, ``Sec-Fetch-Dest: iframe`` …) gets **HTTP 403**
-  with a short German page that links to ``/`` – no token, no query, so the SPA never runs for a foreign
+  with a short localized page that links to ``/`` – no token, no query, so the SPA never runs for a foreign
   page (:func:`navigation_may_carry_token`).
 * **No framing** – every response carries ``X-Frame-Options: DENY`` and ``Content-Security-Policy:
   frame-ancestors 'none'`` (merged into a route's own policy), so no website can frame PartForge
@@ -41,6 +41,7 @@ import logging
 import os
 import secrets
 from pathlib import Path
+from string import Template
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -91,8 +92,8 @@ _FRAME_ANCESTORS = "frame-ancestors 'none'"
 
 #: Answer to a foreign website's navigation or frame: no token, no query, no SPA – only a link to the start page
 #: (clicking it is a same-origin navigation of PartForge itself, which gets the SPA).
-_FOREIGN_NAVIGATION_PAGE = """<!doctype html>
-<html lang="de">
+_FOREIGN_NAVIGATION_PAGE = Template("""<!doctype html>
+<html lang="$language">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -109,14 +110,30 @@ a{color:#ff8a3d;font-weight:600}
 </head>
 <body>
 <main>
-<h1>PartForge wurde von einer anderen Website aufgerufen</h1>
-<p>Zum Schutz Ihrer Bibliothek öffnet sich PartForge nicht über Links oder eingebettete Rahmen fremder Seiten.
-Es wurde nichts ausgeführt.</p>
-<p><a href="/">PartForge öffnen</a></p>
+<h1>$heading</h1>
+<p>$explanation</p>
+<p><a href="/">$open_label</a></p>
 </main>
 </body>
 </html>
-"""
+""")
+
+
+def _foreign_navigation_page(language: str) -> str:
+    """Localize only fixed page text; never include a request URL, query or session token."""
+    german = language == "de"
+    return _FOREIGN_NAVIGATION_PAGE.substitute(
+        language="de" if german else "en",
+        heading=("PartForge wurde von einer anderen Website aufgerufen" if german
+                 else "PartForge was opened from another website"),
+        explanation=(
+            "Zum Schutz Ihrer Bibliothek öffnet sich PartForge nicht über Links oder eingebettete Rahmen fremder Seiten. "
+            "Es wurde nichts ausgeführt." if german else
+            "To protect your library, PartForge does not open through links or embedded frames from other websites. "
+            "No action was performed."
+        ),
+        open_label="PartForge öffnen" if german else "Open PartForge",
+    )
 
 
 def resolve_allowed_hosts(explicit: frozenset[str] | set[str] | None) -> frozenset[str]:
@@ -297,21 +314,33 @@ def _mount_spa(app: FastAPI, token: str) -> None:
     index = WEB_DIR / "index.html"
 
     def render_index(request: Request) -> Response:
+        from .config import load_settings
+
+        settings = load_settings()
+        language = settings.language
         # the token only for the user's own navigation (or PartForge's): never for another website's link,
         # redirect or frame – the page names no token and no query, its link to "/" is same-origin
         if not navigation_may_carry_token(request.headers):
-            return HTMLResponse(_FOREIGN_NAVIGATION_PAGE, status_code=403, headers={"Cache-Control": "no-store"})
+            return HTMLResponse(_foreign_navigation_page(language), status_code=403, headers={"Cache-Control": "no-store"})
         if not index.is_file():
-            return HTMLResponse(
-                "<h1>PartForge</h1><p>Frontend ist nicht gebaut. Bitte <code>npm run build</code> im Ordner "
-                "<code>frontend</code> ausführen.</p>",
-                status_code=503,
+            message = (
+                "Frontend ist nicht gebaut. Bitte <code>npm run build</code> im Ordner "
+                "<code>frontend</code> ausführen." if language == "de" else
+                "The frontend has not been built. Please run <code>npm run build</code> in the "
+                "<code>frontend</code> folder."
             )
-        from .config import load_settings
+            return HTMLResponse(
+                f'<!doctype html><html lang="{language}"><head><meta charset="utf-8">'
+                f'<title>PartForge</title></head><body><h1>PartForge</h1><p>{message}</p></body></html>',
+                status_code=503,
+                headers={"Cache-Control": "no-store"},
+            )
 
         html = index.read_text(encoding="utf-8")
-        theme = load_settings().theme
-        meta = f'<meta name="partforge-token" content="{token}"><meta name="partforge-theme" content="{theme}">'
+        theme = settings.theme
+        meta = (f'<meta name="partforge-token" content="{token}"><meta name="partforge-theme" content="{theme}">'
+                f'<meta name="partforge-language" content="{language}">')
+        html = html.replace('<html lang="en"', f'<html lang="{language}"', 1)
         html = html.replace("</head>", f"{meta}</head>", 1)
         return HTMLResponse(html, headers={"Cache-Control": "no-store"})
 

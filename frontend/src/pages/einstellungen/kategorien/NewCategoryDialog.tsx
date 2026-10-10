@@ -1,3 +1,4 @@
+import { t as translate, useI18n, getLocale } from '@/lib/i18n'
 /**
  * Neue Kategorie: aus einer eingebauten Vorlage (Felder, Vorlagen und Standardsymbol werden übernommen – auch
  * mehrfach, z. B. „Präzisionswiderstände“ auf Basis „Widerstände“) oder leer (nur Standardfelder).
@@ -65,6 +66,7 @@ export function NewCategoryDialog({
   categories: CategoryDef[]
   onCreated: (table: string) => void
 }) {
+  useI18n()
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="xl">{open && <Body categories={categories} onOpenChange={onOpenChange} onCreated={onCreated} />}</DialogContent>
@@ -81,6 +83,7 @@ function Body({
   onOpenChange: (open: boolean) => void
   onCreated: (table: string) => void
 }) {
+  useI18n()
   const templates = useCategoryTemplates()
   const create = useCreateCategory()
   const [mode, setMode] = useState<Mode>('vorlage')
@@ -92,15 +95,15 @@ function Body({
   const gridRef = useRef<HTMLDivElement>(null)
 
   const list = templates.data ?? []
-  const q = query.trim().toLocaleLowerCase('de-DE')
-  const shown = q ? list.filter((t) => `${t.label} ${t.table}`.toLocaleLowerCase('de-DE').includes(q)) : list
+  const q = query.trim().toLocaleLowerCase(getLocale())
+  const shown = q ? list.filter((t) => `${t.label} ${t.table}`.toLocaleLowerCase(getLocale()).includes(q)) : list
 
   const pick = (t: CategoryDef) => {
     setTemplate(t)
     const exists = categories.some((c) => c.table.toLowerCase() === t.table.toLowerCase())
     setForm({
       table: uniqueTable(t.table, categories),
-      label: exists ? `${t.label} (neu)` : t.label,
+      label: exists ? translate("{value1} (neu)", { value1: t.label }) : t.label,
       prefix: t.prefix,
       icon: t.icon,
       color: t.color,
@@ -121,8 +124,8 @@ function Body({
 
   const set = <K extends keyof Form>(key: K, value: Form[K]) => setForm((f) => ({ ...f, [key]: value }))
   const tableError = form.table ? validateTableName(form.table, categories) : null
-  const labelError = normalizeName(form.label) ? null : 'Bitte eine Bezeichnung eingeben.'
-  const prefixError = /^[A-Za-z]{1,8}$/.test(form.prefix) ? null : '1–8 Buchstaben, z. B. R, C, U.'
+  const labelError = normalizeName(form.label) ? null : translate("Bitte eine Bezeichnung eingeben.")
+  const prefixError = /^[A-Za-z]{1,8}$/.test(form.prefix) ? null : translate("1–8 Buchstaben, z. B. R, C, U.")
   const ready = (mode === 'leer' || template) && form.table && !tableError && !labelError && !prefixError
 
   const submit = (e: FormEvent) => {
@@ -145,11 +148,11 @@ function Body({
         onOpenChange(false)
         onCreated(cat.table)
         const fieldCount = cat.fields?.filter((f) => !f.common).length ?? 0
-        toast.success(`Kategorie „${cat.label}“ angelegt`, {
+        toast.success(translate("Kategorie „{value1}“ angelegt", { value1: cat.label }), {
           description:
             fieldCount > 0
-              ? `${formatNumber(fieldCount)} eigene Felder · erscheint als Tabelle ${cat.table} in der DbLib.`
-              : `Tabelle ${cat.table} mit den Standardfeldern – jetzt eigene Felder hinzufügen.`,
+              ? translate("{value1} eigene Felder · erscheint als Tabelle {value2} in der DbLib.", { value1: formatNumber(fieldCount), value2: cat.table })
+              : translate("Tabelle {value1} mit den Standardfeldern – jetzt eigene Felder hinzufügen.", { value1: cat.table }),
         })
       },
       onError: (err) => setError(errorMessage(err)),
@@ -177,17 +180,17 @@ function Body({
       <DialogHeader
         tone="accent"
         icon={<FilePlus2 />}
-        title="Neue Kategorie"
-        description="Jede Kategorie ist eine eigene Tabelle – in Altium erscheint sie als Bibliothek im Components-Panel."
+        title={translate("Neue Kategorie")}
+        description={translate("Jede Kategorie ist eine eigene Tabelle – in Altium erscheint sie als Bibliothek im Components-Panel.")}
       />
       <DialogBody className="@container flex flex-col gap-4">
         <SegmentedControl<Mode>
-          aria-label="Ausgangspunkt"
+          aria-label={translate("Ausgangspunkt")}
           value={mode}
           onValueChange={switchMode}
           options={[
-            { value: 'vorlage', label: 'Aus Vorlage', icon: <LayoutTemplate /> },
-            { value: 'leer', label: 'Leer beginnen', icon: <Plus /> },
+            { value: 'vorlage', label: translate("Aus Vorlage"), icon: <LayoutTemplate /> },
+            { value: 'leer', label: translate("Leer beginnen"), icon: <Plus /> },
           ]}
           className="self-start"
         />
@@ -199,8 +202,8 @@ function Body({
               prefix={<Search />}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Vorlage suchen …"
-              aria-label="Vorlagen durchsuchen"
+              placeholder={translate("Vorlage suchen …")}
+              aria-label={translate("Vorlagen durchsuchen")}
               containerClassName="max-w-72"
             />
             {templates.isPending ? (
@@ -210,14 +213,14 @@ function Body({
                 ))}
               </div>
             ) : templates.isError ? (
-              <Callout tone="warning" title="Vorlagen konnten nicht geladen werden">
+              <Callout tone="warning" title={translate("Vorlagen konnten nicht geladen werden")}>
                 {errorMessage(templates.error)}
               </Callout>
             ) : (
               <div
                 ref={gridRef}
                 role="radiogroup"
-                aria-label="Vorlagen"
+                aria-label={translate("Vorlagen")}
                 className="grid max-h-[17.5rem] grid-cols-1 gap-2 overflow-y-auto p-0.5 @[30rem]:grid-cols-2 @[48rem]:grid-cols-3"
               >
                 {shown.map((t, i) => {
@@ -245,7 +248,7 @@ function Body({
                         <span className="flex items-center gap-1.5 text-2xs text-fg-subtle">
                           <span className="mono truncate">{t.table}</span>
                           <span aria-hidden>·</span>
-                          <span className="shrink-0">{own === 1 ? '1 Feld' : `${own} Felder`}</span>
+                          <span className="shrink-0">{own === 1 ? translate("1 Feld") : translate("{value1} Felder", { value1: own })}</span>
                         </span>
                       </span>
                     </button>
@@ -258,24 +261,22 @@ function Body({
 
         {mode === 'vorlage' && template && templateExists && (
           <p className="-mb-1 text-xs text-fg-muted">
-            „{template.label}“ gibt es in dieser Bibliothek schon. Die neue Kategorie wird eine eigene Tabelle mit denselben Feldern –
-            etwa für eine Variante.
-          </p>
+            „{template.label}{translate("“ gibt es in dieser Bibliothek schon. Die neue Kategorie wird eine eigene Tabelle mit denselben Feldern – etwa für eine Variante.")}</p>
         )}
 
         {(mode === 'leer' || template) && (
           <div className="grid grid-cols-1 gap-4 rounded-card border border-line bg-surface-2/30 p-4 @[40rem]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_7rem]">
-            <Field label="Bezeichnung" required error={form.label ? labelError ?? undefined : undefined}>
+            <Field label={translate("Bezeichnung")} required error={form.label ? labelError ?? undefined : undefined}>
               <Input
                 value={form.label}
                 onChange={(e) => {
                   const label = e.target.value
                   setForm((f) => ({ ...f, label, table: tableTouched ? f.table : suggestTable(label) || f.table }))
                 }}
-                placeholder="z. B. Präzisionswiderstände"
+                placeholder={translate("z. B. Präzisionswiderstände")}
               />
             </Field>
-            <Field label="Tabellenname" required hint="ASCII" error={tableError ?? undefined}>
+            <Field label={translate("Tabellenname")} required hint="ASCII" error={tableError ?? undefined}>
               <Input
                 mono
                 value={form.table}
@@ -287,7 +288,7 @@ function Body({
                 spellCheck={false}
               />
             </Field>
-            <Field label="Präfix" required error={form.prefix ? prefixError ?? undefined : undefined}>
+            <Field label={translate("Präfix")} required error={form.prefix ? prefixError ?? undefined : undefined}>
               <Input
                 mono
                 value={form.prefix}
@@ -308,22 +309,20 @@ function Body({
         )}
 
         {mode === 'vorlage' && !template && !templates.isPending && (
-          <p className="text-xs text-fg-muted">Vorlage wählen – Felder, Beschreibungs- und Kommentarvorlage sowie das Standardsymbol werden übernommen.</p>
+          <p className="text-xs text-fg-muted">{translate("Vorlage wählen – Felder, Beschreibungs- und Kommentarvorlage sowie das Standardsymbol werden übernommen.")}</p>
         )}
 
         {error && (
-          <Callout tone="danger" title="Anlegen fehlgeschlagen" urgent>
+          <Callout tone="danger" title={translate("Anlegen fehlgeschlagen")} urgent>
             {error}
           </Callout>
         )}
       </DialogBody>
       <DialogFooter>
         <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={create.isPending}>
-          Abbrechen
-        </Button>
+          {translate("Abbrechen")}</Button>
         <Button type="submit" variant="primary" leftIcon={<Plus />} loading={create.isPending} disabled={!ready}>
-          Kategorie anlegen
-        </Button>
+          {translate("Kategorie anlegen")}</Button>
       </DialogFooter>
     </form>
   )

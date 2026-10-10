@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { Slot } from 'radix-ui'
 import type { ComponentProps, ReactNode } from 'react'
 import { cn } from '@/lib/cn'
@@ -8,6 +9,7 @@ export interface CardProps extends ComponentProps<'div'>, CardVariantProps {
 }
 
 export function Card({ className, variant, padding, asChild, children, ...props }: CardProps) {
+  useI18n()
   const Comp = asChild ? Slot.Root : 'div'
   return (
     <Comp className={cn(cardVariants({ variant, padding }), className)} {...props}>
@@ -46,6 +48,7 @@ export function CardHeader({
   children,
   ...props
 }: CardHeaderProps) {
+  useI18n()
   return (
     <div className={cn('flex items-start gap-3 px-4 pb-3 pt-4', className)} {...props}>
       {icon && (
@@ -68,10 +71,12 @@ export function CardHeader({
 }
 
 export function CardContent({ className, ...props }: ComponentProps<'div'>) {
+  useI18n()
   return <div className={cn('px-4 pb-4', className)} {...props} />
 }
 
 export function CardFooter({ className, ...props }: ComponentProps<'div'>) {
+  useI18n()
   return (
     <div
       className={cn('flex items-center gap-2 rounded-b-card border-t border-line bg-surface-2/40 px-4 py-3', className)}

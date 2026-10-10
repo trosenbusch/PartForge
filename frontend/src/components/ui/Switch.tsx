@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { Switch as SwitchPrimitive } from 'radix-ui'
 import { useId, type ReactNode } from 'react'
 import { cn } from '@/lib/cn'
@@ -39,6 +40,7 @@ export function Switch({
   className,
   'aria-label': ariaLabel,
 }: SwitchProps) {
+  useI18n()
   const field = useFieldContext()
   const auto = useId()
   const switchId = id ?? field?.id ?? `sw-${auto.replace(/:/g, '')}`

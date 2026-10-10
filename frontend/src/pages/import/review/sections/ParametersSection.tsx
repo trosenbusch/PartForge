@@ -1,3 +1,4 @@
+import { t, useI18n } from '@/lib/i18n'
 import { ChevronDown, CircleAlert, ListTree, RotateCcw, SlidersHorizontal, TriangleAlert, Wand2 } from 'lucide-react'
 import { useState } from 'react'
 import type { FieldDef } from '@/api/library'
@@ -53,6 +54,7 @@ function setForVariant(c: ChoiceDraft, mpn: string, column: string, text: string
 }
 
 function FieldRow({ field }: { field: FieldDef }) {
+  useI18n()
   const { device, proposal, choices, setChoices } = useReview()
   const override = choices.values[field.column]
   const values = proposalValues(proposal, field.column)
@@ -101,22 +103,22 @@ function FieldRow({ field }: { field: FieldDef }) {
           />
         )}
         {(override !== undefined || (perVariant && !varies)) && (
-          <IconButton size="xs" label="Wert aus dem Datenblatt verwenden" icon={<RotateCcw />} onClick={() => setAll(null)} />
+          <IconButton size="xs" label={t("Wert aus dem Datenblatt verwenden")} icon={<RotateCcw />} onClick={() => setAll(null)} />
         )}
       </div>
       <div className="flex min-w-[3.25rem] items-center justify-end gap-1">
         {errors.length > 0 ? (
-          <TipButton tip={errors.join(' · ')} label={`Ungültig: ${errors.join(', ')}`} className="rounded-sm text-danger-text">
+          <TipButton tip={errors.join(' · ')} label={t("Ungültig: {0}", { "0": String(errors.join(', ')) })} className="rounded-sm text-danger-text">
             <CircleAlert aria-hidden className="size-3.5" />
           </TipButton>
         ) : source?.warning ? (
-          <TipButton tip={source.warning} label={`Hinweis: ${source.warning}`} className="rounded-sm text-warning-text">
+          <TipButton tip={source.warning} label={t("Hinweis: {0}", { "0": String(source.warning) })} className="rounded-sm text-warning-text">
             <TriangleAlert aria-hidden className="size-3.5" />
           </TipButton>
         ) : normalized && override === undefined ? (
           <TipButton
-            tip={`Im Datenblatt: „${normalized}“ – einheitlich geschrieben`}
-            label={`Normalisiert aus „${normalized}“`}
+            tip={t("Im Datenblatt: „{0}“ – einheitlich geschrieben", { "0": String(normalized) })}
+            label={t("Normalisiert aus „{0}“", { "0": String(normalized) })}
             className="rounded-sm text-fg-subtle"
           >
             <Wand2 aria-hidden className="size-3.5" />
@@ -133,6 +135,7 @@ function FieldRow({ field }: { field: FieldDef }) {
  * (`variant_values`). „Für alle gleich setzen …“ ist ein ausdrücklicher Schritt mit Warnung.
  */
 function PerVariantEditor({ id, field, invalid }: { id: string; field: FieldDef; invalid: boolean }) {
+  useI18n()
   const { proposal, choices, setChoices } = useReview()
   const [open, setOpen] = useState(false)
   const [allMode, setAllMode] = useState(false)
@@ -173,20 +176,18 @@ function PerVariantEditor({ id, field, invalid }: { id: string; field: FieldDef;
           <ListTree aria-hidden className="size-3.5 shrink-0 text-fg-subtle" />
           <span id={`${id}-values`} className={cn('min-w-0 flex-1 truncate text-fg', isMono(field) && 'mono')}>
             {preview}
-            <span className="sr-only"> – {distinct.length} verschiedene Werte je Bestellnummer, bearbeiten</span>
+            <span className="sr-only"> – {distinct.length} {t(" verschiedene Werte je Bestellnummer, bearbeiten")}</span>
           </span>
           <span className="shrink-0 rounded-full bg-surface-3 px-1.5 text-2xs tabular-nums leading-4 text-fg-muted">
-            je Nr.
-          </span>
+            {t("je Nr.")}</span>
           <ChevronDown aria-hidden className="size-3.5 shrink-0 text-fg-subtle" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" aria-label={`${field.label} je Bestellnummer`} className="w-[26rem] p-0">
+      <PopoverContent align="end" aria-label={t("{0} je Bestellnummer", { "0": String(field.label) })} className="w-[26rem] p-0">
         <div className="border-b border-line px-3.5 py-2.5">
-          <div className="text-ui font-semibold text-fg">{field.label} je Bestellnummer</div>
+          <div className="text-ui font-semibold text-fg">{field.label} {t(" je Bestellnummer")}</div>
           <p className="mt-0.5 text-xs leading-snug text-fg-muted">
-            {distinct.length} verschiedene Werte – jede Bestellnummer behält ihren eigenen Wert.
-          </p>
+            {distinct.length} {t(" verschiedene Werte – jede Bestellnummer behält ihren eigenen Wert.")}</p>
         </div>
         <ul className="max-h-72 divide-y divide-line overflow-y-auto px-3.5 py-1">
           {rows.map((r) => {
@@ -199,7 +200,7 @@ function PerVariantEditor({ id, field, invalid }: { id: string; field: FieldDef;
                 {enumOptions ? (
                   <Select
                     size="sm"
-                    aria-label={`${field.label} von ${r.mpn}`}
+                    aria-label={t("{0} von {1}", { "0": String(field.label), "1": String(r.mpn) })}
                     value={r.value || NONE}
                     onValueChange={(v) => setVariant(r.mpn, v === NONE ? null : v)}
                     options={[{ value: NONE, label: '–' }, ...enumOptions.map((o) => ({ value: o, label: o }))]}
@@ -207,7 +208,7 @@ function PerVariantEditor({ id, field, invalid }: { id: string; field: FieldDef;
                 ) : (
                   <CommitInput
                     size="sm"
-                    aria-label={`${field.label} von ${r.mpn}`}
+                    aria-label={t("{0} von {1}", { "0": String(field.label), "1": String(r.mpn) })}
                     value={r.value}
                     display={show}
                     mono={isMono(field)}
@@ -216,7 +217,7 @@ function PerVariantEditor({ id, field, invalid }: { id: string; field: FieldDef;
                   />
                 )}
                 {overridden ? (
-                  <IconButton size="xs" label={`${r.mpn}: Wert aus dem Datenblatt`} icon={<RotateCcw />} onClick={() => setVariant(r.mpn, null)} />
+                  <IconButton size="xs" label={t("{0}: Wert aus dem Datenblatt", { "0": String(r.mpn) })} icon={<RotateCcw />} onClick={() => setVariant(r.mpn, null)} />
                 ) : (
                   <span aria-hidden />
                 )}
@@ -235,15 +236,14 @@ function PerVariantEditor({ id, field, invalid }: { id: string; field: FieldDef;
             >
               <p className="flex items-start gap-1.5 text-xs leading-snug text-warning-text">
                 <TriangleAlert aria-hidden className="mt-0.5 size-3.5 shrink-0" />
-                Überschreibt {formatNumber(distinct.length)} verschiedene Werte bei {formatNumber(rows.length)} Bestellnummern.
-              </p>
+                {t("Überschreibt ")}{formatNumber(distinct.length)} {t(" verschiedene Werte bei ")}{formatNumber(rows.length)} {t(" Bestellnummern.")}</p>
               <div className="flex items-center gap-2">
                 {enumOptions ? (
                   <Select
                     size="sm"
-                    aria-label={`${field.label} für alle`}
+                    aria-label={t("{0} für alle", { "0": String(field.label) })}
                     value={allText || undefined}
-                    placeholder="Wert wählen …"
+                    placeholder={t("Wert wählen …")}
                     onValueChange={setAllText}
                     options={enumOptions.map((o) => ({ value: o, label: o }))}
                     className="min-w-0 flex-1"
@@ -252,10 +252,10 @@ function PerVariantEditor({ id, field, invalid }: { id: string; field: FieldDef;
                   <input
                     // oxlint-disable-next-line jsx-a11y/no-autofocus -- ausdrücklich geöffnetes Eingabefeld
                     autoFocus
-                    aria-label={`${field.label} für alle`}
+                    aria-label={t("{0} für alle", { "0": String(field.label) })}
                     value={allText}
                     onChange={(e) => setAllText(e.target.value)}
-                    placeholder="Wert für alle …"
+                    placeholder={t("Wert für alle …")}
                     className={cn(
                       'h-7 min-w-0 flex-1 rounded-control border border-line-control bg-control px-2 text-xs text-fg outline-none focus:border-accent focus:shadow-[0_0_0_3px_var(--pf-accent-soft)]',
                       isMono(field) && 'mono',
@@ -263,17 +263,14 @@ function PerVariantEditor({ id, field, invalid }: { id: string; field: FieldDef;
                   />
                 )}
                 <Button size="xs" variant="ghost" onClick={() => setAllMode(false)}>
-                  Abbrechen
-                </Button>
+                  {t("Abbrechen")}</Button>
                 <Button size="xs" variant="secondary" type="submit" disabled={!allText.trim()}>
-                  Für alle setzen
-                </Button>
+                  {t("Für alle setzen")}</Button>
               </div>
             </form>
           ) : (
             <Button size="xs" variant="ghost" onClick={() => setAllMode(true)}>
-              Für alle gleich setzen …
-            </Button>
+              {t("Für alle gleich setzen …")}</Button>
           )}
         </div>
       </PopoverContent>
@@ -283,19 +280,20 @@ function PerVariantEditor({ id, field, invalid }: { id: string; field: FieldDef;
 
 /** Parameter der gewählten Kategorie (mit Einheiten): Werte aus dem Datenblatt, normalisiert und überschreibbar. */
 export function ParametersSection() {
+  useI18n()
   const { category, device } = useReview()
   const { specific, general } = fieldGroups(category)
   const found = device.parameters.length
   return (
     <Section
       id="parameter"
-      title="Parameter"
+      title={t("Parameter")}
       icon={<SlidersHorizontal />}
       count={category ? specific.length + general.length : undefined}
-      aside={<span className="text-2xs text-fg-subtle">{found ? `${found} aus dem Datenblatt` : 'keine im Datenblatt gefunden'}</span>}
+      aside={<span className="text-2xs text-fg-subtle">{found ? t("{0} aus dem Datenblatt", { "0": String(found) }) : t("keine im Datenblatt gefunden")}</span>}
     >
       {!category ? (
-        <p className="text-xs text-fg-muted">Erst eine Kategorie wählen – dann erscheinen ihre Felder.</p>
+        <p className="text-xs text-fg-muted">{t("Erst eine Kategorie wählen – dann erscheinen ihre Felder.")}</p>
       ) : (
         <div className="flex flex-col gap-3">
           {specific.length > 0 && (
@@ -310,7 +308,7 @@ export function ParametersSection() {
           )}
           {general.length > 0 && (
             <div>
-              <h3 className="micro-label mb-1">Allgemein</h3>
+              <h3 className="micro-label mb-1">{t("Allgemein")}</h3>
               <div className="rounded-card border border-line bg-surface px-3">
                 {general.map((f) => (
                   <FieldRow key={f.column} field={f} />

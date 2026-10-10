@@ -1,3 +1,4 @@
+import { getLocale } from './i18n'
 /**
  * Technische Werte im Frontend: Eingaben wie „4k7“, „100n“, „2,2 µF“, „0R“ lesen, Werte mit SI-Präfix
  * formatieren („4,7 kΩ“) und E-Reihen (IEC 60063, identisch mit partforge/domain/eseries.py).
@@ -74,12 +75,12 @@ const ENG_PREFIXES: [number, string][] = [
   [1e-12, 'p'],
 ]
 
-const mantissaFormat = new Map<number, Intl.NumberFormat>()
+const mantissaFormat = new Map<string, Intl.NumberFormat>()
 function formatMantissa(value: number, digits: number): string {
-  let f = mantissaFormat.get(digits)
+  let f = mantissaFormat.get(`${getLocale()}:${digits}`)
   if (!f) {
-    f = new Intl.NumberFormat('de-DE', { maximumSignificantDigits: digits })
-    mantissaFormat.set(digits, f)
+    f = new Intl.NumberFormat(getLocale(), { maximumSignificantDigits: digits })
+    mantissaFormat.set(`${getLocale()}:${digits}`, f)
   }
   return f.format(value)
 }

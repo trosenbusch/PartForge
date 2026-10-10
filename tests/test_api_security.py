@@ -175,17 +175,53 @@ def spa(monkeypatch, tmp_path) -> TestClient:
 
 
 @pytest.mark.parametrize("kind", FOREIGN_SPA_REQUESTS)
-def test_foreign_navigation_or_frame_gets_no_token(spa, kind) -> None:
+@pytest.mark.parametrize("language, heading, open_label", [
+    ("en", "PartForge was opened from another website", "Open PartForge"),
+    ("de", "PartForge wurde von einer anderen Website aufgerufen", "PartForge öffnen"),
+])
+def test_foreign_navigation_or_frame_gets_no_token(spa, kind, language, heading, open_label) -> None:
     """A foreign website navigating to /altium?aktion=… (or framing it) must not get the SPA with the token: the
     page would run the action without a click (verifier finding sec-spa-crosssite-aktion)."""
+    from partforge.config import load_settings, save_settings
+
+    settings = load_settings().model_copy(update={"language": language})
+    save_settings(settings)
     for path in SPA_PATHS:
         r = spa.get(path, headers=FOREIGN_SPA_REQUESTS[kind])
         assert r.status_code == 403, (kind, path, r.status_code)
         assert "partforge-token" not in r.text and TOKEN not in r.text, (kind, path)
         assert "aktion" not in r.text and "installieren" not in r.text, "query reflected"
-        assert "von einer anderen Website aufgerufen" in r.text and '<a href="/">PartForge öffnen</a>' in r.text
+        assert heading in r.text and f'<a href="/">{open_label}</a>' in r.text
+        assert f'<html lang="{language}">' in r.text
         assert r.headers["cache-control"] == "no-store"
         assert r.headers["content-type"].startswith("text/html")
+
+
+@pytest.mark.parametrize("language, message", [
+    ("en", "The frontend has not been built."),
+    ("de", "Frontend ist nicht gebaut."),
+])
+def test_missing_frontend_is_localized_and_foreign_navigation_still_gets_no_token(monkeypatch, tmp_path, language, message) -> None:
+    from partforge import app as app_module
+    from partforge.config import load_settings, save_settings
+
+    monkeypatch.setattr(app_module, "WEB_DIR", tmp_path / "missing-web")
+    save_settings(load_settings().model_copy(update={"language": language}))
+    client = _client()
+    own = client.get("/altium?aktion=sync", headers=OWN_SPA_REQUESTS["none (desktop window, address bar)"])
+    assert own.status_code == 503
+    assert f'<html lang="{language}">' in own.text and message in own.text
+    assert "npm run build" in own.text and "frontend" in own.text
+    assert TOKEN not in own.text and "partforge-token" not in own.text and "aktion" not in own.text
+    assert own.headers["cache-control"] == "no-store"
+    assert own.headers["x-frame-options"] == "DENY"
+    assert "frame-ancestors 'none'" in own.headers["content-security-policy"]
+
+    foreign = client.get("/altium?aktion=sync", headers=FOREIGN_SPA_REQUESTS["cross-site navigation"])
+    assert foreign.status_code == 403
+    assert f'<html lang="{language}">' in foreign.text
+    assert TOKEN not in foreign.text and "partforge-token" not in foreign.text and "aktion" not in foreign.text
+    assert '<a href="/">' in foreign.text and "npm run build" not in foreign.text
 
 
 @pytest.mark.parametrize("kind", OWN_SPA_REQUESTS)

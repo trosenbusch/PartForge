@@ -1,21 +1,5 @@
-/**
- * Bibliotheksimport: Symbole und Footprints aus vorhandenen Altium-Bibliotheken übernehmen (Backend
- * `partforge/altium/libimport.py`, Routen `routes_libimport.py`).
- *
- *   const { job } = await libImportApi.scan('C:\\PartForge-Examples\\Altium_Libs\\Celestial_Altium_Library')
- *   // Job „Bibliothek einlesen“ (library-import.scan, liest nur) – job.result = ImportScanSummary
- *   const scan = useImportScan(summary.id)            // GET /api/library-import/scans/{id}: alle Dateien und Namen
- *   const { job } = await libImportApi.run({ scan_id, files, target, convert })   // Job libraries.import
- *   libImportApi.previewUrl(scanId, rel, name, theme) // SVG eines Bauteils der Quelle (vor dem Import)
- *   const upload = await libImportApi.partsTable({ libraries })   // Tabelle für den Tabellen-Import (Token)
- *
- * Zustände der Namen: `new` (wird übernommen), `imported` (schon aus derselben Datei importiert), `taken` (der Name
- * ist woanders registriert – Altium findet Symbole/Footprints nur über den Namen), `duplicate` (zweimal in der Quelle).
- *
- * Hooks für die Seite (Fehler zeigt sie selbst, kein automatischer Toast): `useStartLibraryScan()`,
- * `useStartLibraryImport()`; `usePartsTable()` meldet Fehler als Toast. `isScanGone(err)`: der Scan ist abgelaufen
- * (404 nach einigen Stunden bzw. wenn mehr als acht Quellen eingelesen wurden) – „Erneut einlesen“ anbieten.
- */
+import { useI18n } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { api, apiUrl, ApiError } from './client'
 import type { Job } from './system'
@@ -91,8 +75,8 @@ export interface PartsTableUpload {
 
 export const STATE_LABELS: Record<ImportComponentState, string> = {
   new: 'neu',
-  imported: 'schon importiert',
-  taken: 'Name vergeben',
+  get imported() { return tr("schon importiert") },
+  get taken() { return tr("Name vergeben") },
   duplicate: 'doppelt',
 }
 
@@ -156,8 +140,9 @@ export function useStartLibraryImport() {
 
 /** Tabelle der importierten Symbole für den Tabellen-Import („Bauteile anlegen“) */
 export function usePartsTable() {
+  const { t: tr } = useI18n()
   return useMutation({
     mutationFn: (body: { libraries?: string[] | null; names?: string[] | null }) => libImportApi.partsTable(body),
-    meta: { errorTitle: 'Tabelle für „Bauteile anlegen“ nicht erstellt' },
+    meta: { errorTitle: tr("Tabelle für „Bauteile anlegen“ nicht erstellt") },
   })
 }

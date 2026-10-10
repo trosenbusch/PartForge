@@ -1,3 +1,4 @@
+import { t as tr, getLocale } from '@/components/preview/i18n'
 /**
  * Parameter des Footprint-Generators im Formular: Werte lesen (Vorlagen, gespeicherte Generator-Parameter),
  * Toleranzen klug parsen („0,25±0,05“, „0,20…0,30“, „0,20 0,25 0,30“), für die Anfrage serialisieren,
@@ -44,10 +45,10 @@ export function parseNumber(text: string): number | null {
 
 const fmtCache = new Map<string, Intl.NumberFormat>()
 function fmt(min: number, max: number): Intl.NumberFormat {
-  const key = `${min}-${max}`
+  const key = `${getLocale()}-${min}-${max}`
   let f = fmtCache.get(key)
   if (!f) {
-    f = new Intl.NumberFormat('de-DE', { minimumFractionDigits: min, maximumFractionDigits: max, useGrouping: false })
+    f = new Intl.NumberFormat(getLocale(), { minimumFractionDigits: min, maximumFractionDigits: max, useGrouping: false })
     fmtCache.set(key, f)
   }
   return f
@@ -98,7 +99,7 @@ export function parseTolText(raw: string): TolParse {
   if (m) {
     const c = n(m[1])
     const d = Math.abs(n(m[2]))
-    return { kind: 'tol', tol: { min: round6(c - d), nom: c, max: round6(c + d) }, label: 'Nennwert ± Toleranz' }
+    return { kind: 'tol', tol: { min: round6(c - d), nom: c, max: round6(c + d) }, label: tr('Nennwert ± Toleranz') }
   }
   m = ASYM_RE.exec(text)
   if (m) {
@@ -106,32 +107,32 @@ export function parseTolText(raw: string): TolParse {
     return {
       kind: 'tol',
       tol: { min: round6(c - Math.abs(n(m[3]))), nom: c, max: round6(c + Math.abs(n(m[2]))) },
-      label: 'Nennwert mit Abmaßen',
+      label: tr('Nennwert mit Abmaßen'),
     }
   }
   m = RANGE_RE.exec(text)
   if (m) {
     const a = n(m[1])
     const b = n(m[2])
-    return { kind: 'tol', tol: { min: Math.min(a, b), nom: null, max: Math.max(a, b) }, label: 'Bereich Min…Max' }
+    return { kind: 'tol', tol: { min: Math.min(a, b), nom: null, max: Math.max(a, b) }, label: tr('Bereich Min…Max') }
   }
   m = LIMIT_RE.exec(text)
   if (m) {
     const v = n(m[2])
     const word = m[1].toLowerCase()
     if (word.startsWith('max') || word.startsWith('<') || word.startsWith('≤'))
-      return { kind: 'tol', tol: { min: null, nom: null, max: v }, label: 'nur Maximum' }
+      return { kind: 'tol', tol: { min: null, nom: null, max: v }, label: tr('nur Maximum') }
     if (word.startsWith('min') || word.startsWith('>') || word.startsWith('≥'))
-      return { kind: 'tol', tol: { min: v, nom: null, max: null }, label: 'nur Minimum' }
-    return { kind: 'tol', tol: { min: null, nom: v, max: null }, label: 'Nennwert' }
+      return { kind: 'tol', tol: { min: v, nom: null, max: null }, label: tr('nur Minimum') }
+    return { kind: 'tol', tol: { min: null, nom: v, max: null }, label: tr('Nennwert') }
   }
   const parts = text.split(/[\s;/|]+/).filter(Boolean)
   if (parts.length >= 2 && parts.length <= 3 && parts.every((p) => parseNumber(p) !== null)) {
     const vals = parts.map((p) => parseNumber(p) as number)
     if (vals.length === 2) {
-      return { kind: 'tol', tol: { min: Math.min(vals[0], vals[1]), nom: null, max: Math.max(vals[0], vals[1]) }, label: 'Min und Max' }
+      return { kind: 'tol', tol: { min: Math.min(vals[0], vals[1]), nom: null, max: Math.max(vals[0], vals[1]) }, label: tr('Min und Max') }
     }
-    return { kind: 'tol', tol: { min: vals[0], nom: vals[1], max: vals[2] }, label: 'Min, Nom und Max' }
+    return { kind: 'tol', tol: { min: vals[0], nom: vals[1], max: vals[2] }, label: tr('Min, Nom und Max') }
   }
   const single = parseNumber(text)
   if (single !== null) return { kind: 'single', value: single }
@@ -166,9 +167,9 @@ export function tolProblem(t: TolValue | null | undefined): string | null {
   if (min !== null && max !== null && nom !== null) {
     const lo = Math.min(min, max)
     const hi = Math.max(min, max)
-    if (nom < lo - 1e-9 || nom > hi + 1e-9) return 'Nennwert liegt nicht zwischen Min und Max.'
+    if (nom < lo - 1e-9 || nom > hi + 1e-9) return tr('Nennwert liegt nicht zwischen Min und Max.')
   }
-  if (min !== null && max !== null && max < min) return 'Min ist größer als Max – die Werte werden getauscht.'
+  if (min !== null && max !== null && max < min) return tr('Min ist größer als Max – die Werte werden getauscht.')
   return null
 }
 
@@ -243,7 +244,7 @@ export function normalizeParam(spec: FootprintParamSpec, raw: unknown): ParamVal
     case 'bool':
       if (typeof raw === 'boolean') return raw
       if (typeof raw === 'number') return raw !== 0
-      return ['1', 'true', 'ja', 'yes', 'j', 'an', 'on'].includes(String(raw).trim().toLowerCase())
+      return ['1', 'true', tr('ja'), 'yes', 'j', 'an', 'on'].includes(String(raw).trim().toLowerCase())
     case 'enum':
       return matchOption(spec, raw)
     default:
@@ -342,7 +343,7 @@ export function serializeParams(specs: readonly FootprintParamSpec[], values: Pa
 
 /** „Gesamtbreite E“ → { symbol: 'E', text: 'Gesamtbreite' }; „Körper X (E)“ → { symbol: 'E', text: 'Körper X' } */
 export function splitLabel(spec: FootprintParamSpec): { symbol: string | null; text: string } {
-  const label = spec.label.trim()
+  const label = tr(spec.label).trim()
   const name = spec.name
   if (name.length <= 3 && /^[A-Za-z][A-Za-z0-9]?\d?$/.test(name)) {
     if (label.endsWith(` (${name})`)) return { symbol: name, text: label.slice(0, -(name.length + 3)).trim() }
@@ -379,7 +380,7 @@ const ENUM_LABELS: Record<string, Record<string, string>> = {
 /** Ausführlicher Text eines Auswahlwerts für Listen */
 export function enumLabel(spec: FootprintParamSpec, option: string): string {
   const mapped = ENUM_LABELS[spec.name]?.[option]
-  if (mapped) return mapped
+  if (mapped) return tr(mapped)
   if (spec.name === 'pitch' || spec.unit === 'mm') {
     const v = toNumber(option)
     if (v !== null) return `${formatDim(v)} mm`
@@ -390,7 +391,7 @@ export function enumLabel(spec: FootprintParamSpec, option: string): string {
 /** Kurzer Text eines Auswahlwerts (Segmente) */
 export function enumShortLabel(spec: FootprintParamSpec, option: string): string {
   const mapped = ENUM_LABELS[spec.name]?.[option]
-  if (mapped) return mapped.split(' · ')[0]
+  if (mapped) return tr(mapped).split(' · ')[0]
   if (spec.name === 'pitch') {
     const v = toNumber(option)
     if (v !== null) return formatDim(v)
@@ -420,7 +421,7 @@ export function groupParams(specs: readonly FootprintParamSpec[]): ParamGroup[] 
     const rb = b === 'Typ' ? -1 : GROUP_LAST.indexOf(b) >= 0 ? 100 + GROUP_LAST.indexOf(b) : 0
     return ra - rb
   })
-  return order.map((g) => ({ id: g, label: g, params: map.get(g) ?? [] }))
+  return order.map((g) => ({ id: g, label: tr(g), params: map.get(g) ?? [] }))
 }
 
 const SOFT_HYPHEN = String.fromCharCode(0xad)

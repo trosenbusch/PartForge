@@ -1,3 +1,4 @@
+import { localizeMessage, t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Rechenprotokoll des Generators als Messinstrument: Namen (IPC/Haus, eigener Name), Kennwerte, je Anschlussreihe
  * Zmax · Gmin · Xmax mit ungerundeten Werten und J-Zuschlägen, Eingangsgrößen, Toleranzen, Courtyard,
@@ -63,6 +64,7 @@ export interface ResultPanelProps {
 }
 
 export function ResultPanel({ data, fetching, error, saveTarget, className }: ResultPanelProps) {
+  useI18n()
   const calc = readCalc(data?.calc)
   const counts = issueCounts(collectIssues(data, calc))
   return (
@@ -73,12 +75,12 @@ export function ResultPanel({ data, fetching, error, saveTarget, className }: Re
     >
       <header className="flex h-11 shrink-0 items-center gap-2 border-b border-line px-4">
         <h2 id="fp-result-title" className="text-ui font-semibold tracking-[-0.01em] text-fg">
-          Berechnung
+          {tr("Berechnung")}
         </h2>
-        <ResultStatus data={data} calc={calc} fetching={fetching} error={error} counts={counts} />
+        <ResultStatus data={data} calc={calc} fetching={fetching} error={error ? localizeMessage(error) : error} counts={counts} />
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable]">
-        <ResultBody data={data} error={error} saveTarget={saveTarget} />
+        <ResultBody data={data} error={error ? localizeMessage(error) : error} saveTarget={saveTarget} />
       </div>
     </section>
   )
@@ -97,17 +99,18 @@ function ResultStatus({
   error: string | null
   counts: { errors: number; warnings: number }
 }) {
+  useI18n()
   return (
     <span className="ml-auto flex min-w-0 items-center gap-2 text-2xs text-fg-subtle">
       {fetching ? (
         <span className="flex items-center gap-1.5">
           <Spinner size={12} tone="accent" />
-          rechnet …
+          {tr("rechnet …")}
         </span>
       ) : error ? (
         <span className="flex items-center gap-1.5 text-danger-text">
           <CircleX aria-hidden className="size-3.5" />
-          nicht berechenbar
+          {tr("nicht berechenbar")}
         </span>
       ) : data ? (
         counts.errors + counts.warnings > 0 ? (
@@ -118,7 +121,7 @@ function ResultStatus({
         ) : (
           <span className="truncate">
             <span aria-hidden className="mr-1.5 inline-block size-1.5 rounded-full bg-success align-middle shadow-[0_0_6px_color-mix(in_oklab,var(--pf-success)_60%,transparent)]" />
-            {calc?.standard === 'Herstellerempfehlung' ? 'Hersteller' : (calc?.standard ?? 'IPC-7351B')} ·{' '}
+            {calc?.standard === 'Herstellerempfehlung' ? tr('Hersteller') : (calc?.standard ?? 'IPC-7351B')} ·{' '}
             <span className="mono tabular-nums">{data.elapsed} ms</span>
           </span>
         )
@@ -137,13 +140,14 @@ export function IssueChip({
   onClick: () => void
   className?: string
 }) {
+  useI18n()
   if (!counts.errors && !counts.warnings) return null
   const danger = counts.errors > 0
   const text = danger
-    ? countLabel(counts.errors, 'Fehler', 'Fehler')
-    : countLabel(counts.warnings, 'Warnung', 'Warnungen')
+    ? countLabel(counts.errors, tr('Fehler'), tr('Fehler'))
+    : countLabel(counts.warnings, tr('Warnung'), tr('Warnungen'))
   return (
-    <Tooltip content="Zur Prüfung">
+    <Tooltip content={tr("Zur Prüfung")}>
       <button
         type="button"
         onClick={onClick}
@@ -173,6 +177,7 @@ export function ResultBody({
   error: string | null
   saveTarget?: SaveTarget | null
 }) {
+  useI18n()
   const calc = readCalc(data?.calc)
   const spec = data?.spec ?? null
   const issues = collectIssues(data, calc)
@@ -187,8 +192,8 @@ export function ResultBody({
         <div className="flex gap-2.5 border-b border-danger/25 bg-danger/8 px-4 py-3">
           <CircleX aria-hidden className="mt-0.5 size-4 shrink-0 text-danger-text" />
           <div className="min-w-0 text-xs leading-relaxed">
-            <div className="font-medium text-fg">Neue Maße nicht berechenbar</div>
-            <p className="text-fg-muted">Angezeigt wird der letzte gültige Stand.</p>
+            <div className="font-medium text-fg">{tr("Neue Maße nicht berechenbar")}</div>
+            <p className="text-fg-muted">{tr("Angezeigt wird der letzte gültige Stand.")}</p>
           </div>
         </div>
       )}
@@ -209,14 +214,15 @@ export function ResultBody({
 }
 
 function ResultEmpty() {
+  useI18n()
   return (
     <div className="flex flex-col items-center gap-2.5 px-6 py-12 text-center">
       <span className="flex size-10 items-center justify-center rounded-card border border-line bg-surface-2 text-fg-subtle">
         <Calculator aria-hidden className="size-5" />
       </span>
-      <h3 className="text-ui font-medium text-fg">Noch keine Berechnung</h3>
+      <h3 className="text-ui font-medium text-fg">{tr("Noch keine Berechnung")}</h3>
       <p className="max-w-56 text-2xs leading-4 text-fg-muted">
-        Sobald die Maße zueinander passen, erscheinen hier Zmax, Gmin und Xmax und die Prüfung.
+        {tr("Sobald die Maße zueinander passen, erscheinen hier Zmax, Gmin und Xmax und die Prüfung.")}
       </p>
     </div>
   )
@@ -233,6 +239,7 @@ function NameBlock({
   calc: CalcRecord | null
   saveTarget?: SaveTarget | null
 }) {
+  useI18n()
   const overrides = useGenerator((s) => s.overrides)
   const setOverrides = useGenerator((s) => s.setOverrides)
   const [editing, setEditing] = useState(false)
@@ -241,11 +248,11 @@ function NameBlock({
   const house = calc?.houseName ?? null
   const density = (calc?.density ?? data.spec.density ?? 'N') as 'L' | 'N' | 'M'
   const custom = Boolean(overrides.name)
-  const base = calc?.tag ? '-Basis' : ''
+  const base = calc?.tag ? tr('-Basis') : ''
 
   return (
     <div className="border-b border-line px-4 pb-3.5 pt-3">
-      <div className="micro-label">{custom ? 'Footprint-Name · eigener' : name === ipc ? 'Footprint-Name · IPC' : 'Footprint-Name'}</div>
+      <div className="micro-label">{custom ? tr('Footprint-Name · eigener') : name === ipc ? tr('Footprint-Name · IPC') : tr('Footprint-Name')}</div>
       {editing ? (
         <NameEditor
           initial={overrides.name ?? name}
@@ -262,8 +269,8 @@ function NameBlock({
           <FlashValue value={name} className="min-w-0 flex-1">
             <span className="mono block break-all text-md font-semibold leading-snug tracking-[-0.01em] text-fg">{name}</span>
           </FlashValue>
-          <CopyButton text={name} label={name === ipc ? 'IPC-Namen kopieren' : 'Namen kopieren'} className="-mt-0.5 shrink-0" />
-          <IconButton size="xs" label="Namen ändern" icon={<PenLine />} className="-mt-0.5 shrink-0" onClick={() => setEditing(true)} />
+          <CopyButton text={name} label={name === ipc ? tr('IPC-Namen kopieren') : tr('Namen kopieren')} className="-mt-0.5 shrink-0" />
+          <IconButton size="xs" label={tr("Namen ändern")} icon={<PenLine />} className="-mt-0.5 shrink-0" onClick={() => setEditing(true)} />
         </div>
       )}
       {custom && !editing && (
@@ -273,7 +280,7 @@ function NameBlock({
           className="mt-1 flex items-center gap-1 rounded-sm text-2xs text-fg-muted outline-none transition-colors hover:text-fg focus-ring"
         >
           <RotateCcw aria-hidden className="size-3" />
-          Erzeugten Namen verwenden
+          {tr("Erzeugten Namen verwenden")}
         </button>
       )}
       {(ipc && ipc !== name) || (house && house !== name) ? (
@@ -283,7 +290,7 @@ function NameBlock({
             <>
               <dt className="text-fg-subtle">
                 {base ? (
-                  <Tooltip content={`IPC-Name ohne den Zusatz _${calc?.tag} für eigene Maße`}>
+                  <Tooltip content={tr("IPC-Name ohne den Zusatz _{value0} für eigene Maße", { value0: String(calc?.tag) })}>
                     <button type="button" className="cursor-help rounded-sm underline decoration-dotted underline-offset-2 outline-none focus-ring">
                       IPC{base}
                     </button>
@@ -294,16 +301,16 @@ function NameBlock({
               </dt>
               <dd className="flex min-w-0 items-center gap-2">
                 <span className="mono min-w-0 flex-1 break-all text-fg-muted">{ipc}</span>
-                <CopyButton text={ipc} label="IPC-Namen kopieren" />
+                <CopyButton text={ipc} label={tr("IPC-Namen kopieren")} />
               </dd>
             </>
           )}
           {house && house !== name && (
             <>
-              <dt className="text-fg-subtle">Haus{base}</dt>
+              <dt className="text-fg-subtle">{tr("Haus")}{base}</dt>
               <dd className="flex min-w-0 items-center gap-2">
                 <span className="mono min-w-0 flex-1 break-all text-fg-muted">{house}</span>
-                <CopyButton text={house} label="Hausnamen kopieren" />
+                <CopyButton text={house} label={tr("Hausnamen kopieren")} />
               </dd>
             </>
           )}
@@ -311,21 +318,21 @@ function NameBlock({
       ) : null}
       <div className="mt-2.5 flex flex-wrap items-center gap-1">
         {calc?.standardMatch ? (
-          <Tooltip content="Die Maße entsprechen einer Vorlage bzw. Standardmaßen – der Name bleibt ohne Zusatz.">
+          <Tooltip content={tr("Die Maße entsprechen einer Vorlage bzw. Standardmaßen – der Name bleibt ohne Zusatz.")}>
             <button type="button" className="cursor-help rounded-full outline-none focus-ring">
               <Badge variant="success" dot>
-                Standard · {calc.standardMatch}
+                {tr("Standard ·")}{' '}{calc.standardMatch}
               </Badge>
             </button>
           </Tooltip>
         ) : (
-          <Tooltip content="Eigene Maße: Der Name erhält einen Zusatz, damit er eindeutig zum Land Pattern passt.">
+          <Tooltip content={tr("Eigene Maße: Der Name erhält einen Zusatz, damit er eindeutig zum Land Pattern passt.")}>
             <button type="button" className="cursor-help rounded-full outline-none focus-ring">
-              <Badge variant="neutral">Eigene Maße{calc?.tag ? ` · _${calc.tag}` : ''}</Badge>
+              <Badge variant="neutral">{tr("Eigene Maße")}{calc?.tag ? ` · _${calc.tag}` : ''}</Badge>
             </button>
           </Tooltip>
         )}
-        <Badge variant="outline">Dichte {densityLabel(density)}</Badge>
+        <Badge variant="outline">{tr("Dichte")}{' '}{densityLabel(density)}</Badge>
         {calc?.package && calc.package !== calc.standardMatch && <Badge variant="outline">{calc.package}</Badge>}
       </div>
       {saveTarget && <SaveTargetLine target={saveTarget} />}
@@ -338,6 +345,7 @@ function NameBlock({
  * Footprint (mit Verwendung) oder ist bereits aktuell; abgelehnt mit Grund.
  */
 function SaveTargetLine({ target }: { target: SaveTarget }) {
+  useI18n()
   const file = target.library ? baseName(target.library) : null
   let tone: 'success' | 'warning' | 'neutral' | 'danger' = 'neutral'
   let icon: ReactNode = <FilePlus2 aria-hidden className="size-3.5 shrink-0 text-fg-subtle" />
@@ -345,29 +353,29 @@ function SaveTargetLine({ target }: { target: SaveTarget }) {
   let detail: ReactNode = file ? <span className="mono">{file}</span> : null
   if (target.state === 'checking') {
     icon = <Spinner size={12} />
-    title = 'Ziel wird geprüft …'
+    title = tr('Ziel wird geprüft …')
     detail = null
   } else if (target.state === 'error') {
     tone = 'danger'
     icon = <CircleX aria-hidden className="size-3.5 shrink-0 text-danger-text" />
-    title = 'Nicht speicherbar'
-    detail = <span className="text-danger-text">{target.error}</span>
+    title = tr('Nicht speicherbar')
+    detail = <span className="text-danger-text">{localizeMessage(target.error ?? '')}</span>
   } else if (target.unchanged) {
     tone = 'success'
     icon = <CircleCheck aria-hidden className="size-3.5 shrink-0 text-success-text" />
-    title = 'In der Bibliothek · aktuell'
+    title = tr('In der Bibliothek · aktuell')
   } else if (!target.isNew) {
     tone = 'warning'
     icon = <Replace aria-hidden className="size-3.5 shrink-0 text-warning-text" />
-    title = 'Ersetzt gespeicherte Version'
+    title = tr('Ersetzt gespeicherte Version')
     detail = (
       <>
         {file && <span className="mono">{file}</span>}
-        {target.usage > 0 && <span> · {plural(target.usage, 'Bauteil verwendet', 'Bauteile verwenden')} ihn</span>}
+        {target.usage > 0 && <span> · {plural(target.usage, tr('Bauteil verwendet'), tr('Bauteile verwenden'))} {tr("ihn")}</span>}
       </>
     )
   } else {
-    title = 'Neu in der Bibliothek'
+    title = tr('Neu in der Bibliothek')
   }
   return (
     <div
@@ -384,7 +392,7 @@ function SaveTargetLine({ target }: { target: SaveTarget }) {
         {icon}
         <span className="min-w-0 flex-1 font-medium text-fg">{title}</span>
         {target.onShow && (
-          <IconButton size="xs" label="In der Bibliothek anzeigen" icon={<LibraryBig />} onClick={target.onShow} className="-my-1 -mr-1 shrink-0" />
+          <IconButton size="xs" label={tr("In der Bibliothek anzeigen")} icon={<LibraryBig />} onClick={target.onShow} className="-my-1 -mr-1 shrink-0" />
         )}
       </div>
       {detail && <div className="mt-0.5 break-words pl-5.5 leading-snug text-fg-muted">{detail}</div>}
@@ -403,6 +411,7 @@ function useFocusOnMount<T extends HTMLElement>() {
 }
 
 function NameEditor({ initial, onApply, onCancel }: { initial: string; onApply: (text: string) => void; onCancel: () => void }) {
+  useI18n()
   const [text, setText] = useState(initial)
   const ref = useFocusOnMount<HTMLInputElement>()
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -419,7 +428,7 @@ function NameEditor({ initial, onApply, onCancel }: { initial: string; onApply: 
     <div className="mt-1 flex flex-col gap-1">
       <input
         ref={ref}
-        aria-label="Eigener Footprint-Name"
+        aria-label={tr("Eigener Footprint-Name")}
         value={text}
         spellCheck={false}
         onChange={(e) => setText(e.target.value)}
@@ -427,7 +436,7 @@ function NameEditor({ initial, onApply, onCancel }: { initial: string; onApply: 
         onBlur={() => onApply(text)}
         className="mono h-8 w-full rounded-control border border-accent bg-control px-2 text-ui font-semibold text-fg shadow-[0_0_0_3px_var(--pf-accent-soft)] outline-none"
       />
-      <p className="text-2xs text-fg-subtle">Enter übernimmt · Esc bricht ab · leer = erzeugter Name</p>
+      <p className="text-2xs text-fg-subtle">{tr("Enter übernimmt · Esc bricht ab · leer = erzeugter Name")}</p>
     </div>
   )
 }
@@ -454,6 +463,7 @@ function Metric({ label, value, unit }: { label: string; value: string; unit?: s
 }
 
 function Metrics({ data, calc }: { data: TimedPreview; calc: CalcRecord | null }) {
+  useI18n()
   const pads = data.spec.pads?.length ?? calc?.padCount ?? 0
   const h = data.spec.height ?? calc?.height ?? null
   const cy = calc?.courtyard
@@ -462,17 +472,17 @@ function Metrics({ data, calc }: { data: TimedPreview; calc: CalcRecord | null }
   const bga = calc?.bga
   return (
     <div className="grid grid-cols-2 gap-px border-b border-line bg-line">
-      <Metric label="Pads" value={formatPlain(pads, 0)} />
-      <Metric label="Höhe max." value={h !== null ? formatDim(h) : '–'} unit={h !== null ? 'mm' : undefined} />
-      <Metric label="Courtyard" value={cy ? `${formatDim(cy.width)} × ${formatDim(cy.height)}` : '–'} unit={cy ? 'mm' : undefined} />
+      <Metric label={tr("Pads")} value={formatPlain(pads, 0)} />
+      <Metric label={tr("Höhe max.")} value={h !== null ? formatDim(h) : '–'} unit={h !== null ? 'mm' : undefined} />
+      <Metric label={tr("Courtyard")} value={cy ? `${formatDim(cy.width)} × ${formatDim(cy.height)}` : '–'} unit={cy ? 'mm' : undefined} />
       {land ? (
-        <Metric label="Pad L × B" value={`${formatDim(land.padLength)} × ${formatDim(land.padWidth)}`} unit="mm" />
+        <Metric label={tr("Pad L × B")} value={`${formatDim(land.padLength)} × ${formatDim(land.padWidth)}`} unit="mm" />
       ) : tht ? (
-        <Metric label="Bohrung · Pad" value={`${formatDim(tht.hole)} · ${formatDim(tht.pad)}`} unit="mm" />
+        <Metric label={tr("Bohrung · Pad")} value={`${formatDim(tht.hole)} · ${formatDim(tht.pad)}`} unit="mm" />
       ) : bga ? (
-        <Metric label="Land Ø" value={formatDim(bga.land)} unit="mm" />
+        <Metric label={tr("Land Ø")} value={formatDim(bga.land)} unit="mm" />
       ) : (
-        <Metric label="Pad" value="–" />
+        <Metric label={tr("Pad")} value="–" />
       )}
     </div>
   )
@@ -508,22 +518,24 @@ function mergeLands(lands: readonly LandRecord[]): { land: LandRecord; both: boo
     const [a, b] = lands
     const same = (u: number, v: number) => Math.abs(u - v) < 1e-6
     if (a.axis !== b.axis && a.table === b.table && same(a.z, b.z) && same(a.g, b.g) && same(a.x, b.x) && a.clamps.join() === b.clamps.join()) {
-      return [{ land: { ...a, label: 'Anschlüsse ringsum' }, both: true }]
+      return [{ land: { ...a, label: tr('Anschlüsse ringsum') }, both: true }]
     }
   }
   return lands.map((land) => ({ land, both: false }))
 }
 
 function AxisBadge({ both, axis }: { both: boolean; axis: 'x' | 'y' }) {
+  useI18n()
   return (
     <Badge variant="outline" size="sm" className="mono">
       <span aria-hidden>{both ? '↔ ↕' : axis === 'x' ? '↔' : '↕'}</span>
-      <span className="sr-only">Achse</span> {both ? 'X/Y' : axis.toUpperCase()}
+      <span className="sr-only">{tr("Achse")}</span> {both ? 'X/Y' : axis.toUpperCase()}
     </Badge>
   )
 }
 
 function LandBlock({ land, both }: { land: LandRecord; both: boolean }) {
+  useI18n()
   const manufacturer = land.source === 'manufacturer'
   const [open, setOpen] = useState(false)
   const id = useId()
@@ -537,10 +549,10 @@ function LandBlock({ land, both }: { land: LandRecord; both: boolean }) {
   return (
     <div className="border-b border-line px-4 py-3">
       <SectionLabel actions={<AxisBadge both={both} axis={land.axis} />}>
-        {land.label.length > 14 ? land.label : `Lötfläche · ${land.label}`}
+        {tr(land.label).length > 14 ? tr(land.label) : tr("Lötfläche · {value0}", { value0: tr(land.label) })}
       </SectionLabel>
       <table className="mt-1.5 w-full table-fixed border-collapse">
-        <caption className="sr-only">Lötfläche {land.label}: Zmax, Gmin und Xmax in Millimeter</caption>
+        <caption className="sr-only">{tr("Lötfläche")}{' '}{tr(land.label)}{tr(": Zmax, Gmin und Xmax in Millimeter")}</caption>
         <colgroup>
           <col className="w-[30%]" />
           <col />
@@ -550,7 +562,7 @@ function LandBlock({ land, both }: { land: LandRecord; both: boolean }) {
         <thead>
           <tr>
             <th scope="col" className="pb-1">
-              <span className="sr-only">Wert</span>
+              <span className="sr-only">{tr("Wert")}</span>
             </th>
             <ColHead sym="Z" sub="max" formula={FORMULA.z} />
             <ColHead sym="G" sub="min" formula={FORMULA.g} />
@@ -560,7 +572,7 @@ function LandBlock({ land, both }: { land: LandRecord; both: boolean }) {
         <tbody className="mono tabular-nums">
           <tr>
             <th scope="row" className="py-0.5 text-left font-sans text-2xs font-normal text-fg-subtle">
-              Ergebnis
+              {tr("Ergebnis")}
             </th>
             {values.map(({ v, clamped }, i) => (
               <td key={i} className="py-0.5 text-right text-md font-semibold tracking-[-0.01em] text-fg">
@@ -569,7 +581,7 @@ function LandBlock({ land, both }: { land: LandRecord; both: boolean }) {
                     // begrenzter Wert: getönt hinterlegt (Begründung einmal unter „Prüfung“)
                     <span className="-mr-1 rounded-sm bg-warning/12 px-1 text-warning-text">
                       {formatDim(v)}
-                      <span className="sr-only"> (begrenzt)</span>
+                      <span className="sr-only"> {tr("(begrenzt)")}</span>
                     </span>
                   ) : (
                     formatDim(v)
@@ -582,7 +594,7 @@ function LandBlock({ land, both }: { land: LandRecord; both: boolean }) {
             <>
               <tr className="text-2xs text-fg-muted">
                 <th scope="row" className="py-px text-left font-sans font-normal text-fg-subtle">
-                  ungerundet
+                  {tr("ungerundet")}
                 </th>
                 <td className="py-px text-right">{formatDim(land.zRaw, 3)}</td>
                 <td className="py-px text-right">{formatDim(land.gRaw, 3)}</td>
@@ -590,9 +602,9 @@ function LandBlock({ land, both }: { land: LandRecord; both: boolean }) {
               </tr>
               <tr className="text-2xs text-fg-muted">
                 <th scope="row" className="py-px text-left font-sans font-normal text-fg-subtle">
-                  <Tooltip content="J-Werte (Lötkegel) der Dichte: JT Zehe (wirkt auf Z), JH Ferse (auf G), JS Seite (auf X)">
+                  <Tooltip content={tr("J-Werte (Lötkegel) der Dichte: JT Zehe (wirkt auf Z), JH Ferse (auf G), JS Seite (auf X)")}>
                     {/* Name beginnt mit dem sichtbaren Text, danach die Erklärung */}
-                    <button type="button" aria-label="J · T/H/S – J-Zuschläge Zehe, Ferse, Seite" className="cursor-help rounded-sm outline-none focus-ring">
+                    <button type="button" aria-label={tr("J · T/H/S – J-Zuschläge Zehe, Ferse, Seite")} className="cursor-help rounded-sm outline-none focus-ring">
                       J · T/H/S
                     </button>
                   </Tooltip>
@@ -606,11 +618,11 @@ function LandBlock({ land, both }: { land: LandRecord; both: boolean }) {
         </tbody>
       </table>
       <p className="mt-2 text-2xs leading-4 text-fg-muted">
-        Pad <span className="mono text-fg">{formatDim(land.padLength)} × {formatDim(land.padWidth)}</span> mm · Mitte–Mitte{' '}
+        {tr("Pad")}{' '}<span className="mono text-fg">{formatDim(land.padLength)} × {formatDim(land.padWidth)}</span> {tr("mm · Mitte–Mitte")}{' '}
         <span className="mono text-fg">{formatDim(c)}</span> mm
       </p>
       <p className="text-2xs leading-4 text-fg-subtle">
-        {manufacturer ? 'Herstellerempfehlung (keine IPC-Berechnung)' : `${land.standard} Tab. ${land.table} · ${land.tableLabel}`}
+        {manufacturer ? tr('Herstellerempfehlung (keine IPC-Berechnung)') : tr("{value0} Tab. {value1} · {value2}", { value0: String(land.standard), value1: String(land.table), value2: tr(land.tableLabel) })}
       </p>
       {anyClamped && (
         <button
@@ -619,7 +631,7 @@ function LandBlock({ land, both }: { land: LandRecord; both: boolean }) {
           className="mt-1.5 flex items-center gap-1 rounded-sm text-left text-2xs leading-4 text-warning-text outline-none hover:underline focus-ring"
         >
           <TriangleAlert aria-hidden className="size-3 shrink-0" />
-          Begrenzt – Begründung unter „Prüfung“
+          {tr("Begrenzt – Begründung unter „Prüfung“")}
         </button>
       )}
       {!manufacturer && (
@@ -632,15 +644,15 @@ function LandBlock({ land, both }: { land: LandRecord; both: boolean }) {
             className="-mx-1 flex items-center gap-1 rounded-sm px-1 text-2xs font-medium text-fg-muted outline-none transition-colors hover:text-fg focus-ring"
           >
             <ChevronRight aria-hidden className={cn('size-3 transition-transform', open && 'rotate-90')} />
-            Eingangsgrößen (L · T · W · S)
+            {tr("Eingangsgrößen (L · T · W · S)")}
           </button>
           {open && (
             <table id={`${id}-inputs`} className="mt-1.5 w-full table-fixed text-2xs">
-              <caption className="sr-only">Eingangsgrößen der IPC-Berechnung in Millimeter</caption>
+              <caption className="sr-only">{tr("Eingangsgrößen der IPC-Berechnung in Millimeter")}</caption>
               <thead className="text-fg-subtle">
                 <tr>
                   <th scope="col" className="w-[38%] pb-0.5 text-left font-normal">
-                    Größe
+                    {tr("Größe")}
                   </th>
                   <th scope="col" className="pb-0.5 text-right font-normal">
                     min
@@ -649,19 +661,19 @@ function LandBlock({ land, both }: { land: LandRecord; both: boolean }) {
                     max
                   </th>
                   <th scope="col" className="pb-0.5 text-right font-normal">
-                    Tol.
+                    {tr("Tol.")}
                   </th>
                 </tr>
               </thead>
               <tbody className="mono tabular-nums text-fg-muted">
                 {(
                   [
-                    ['L', 'Spannweite', land.L.min, land.L.max, land.L.tol],
-                    ['T', 'Anschlusslänge', land.T.min, land.T.max, land.T.tol],
-                    ['W', 'Anschlussbreite', land.W.min, land.W.max, land.W.tol],
+                    ['L', tr('Spannweite'), land.L.min, land.L.max, land.L.tol],
+                    ['T', tr('Anschlusslänge'), land.T.min, land.T.max, land.T.tol],
+                    ['W', tr('Anschlussbreite'), land.W.min, land.W.max, land.W.tol],
                     [
                       'S',
-                      land.S.mode === 'rms' ? 'Innenmaß (RMS)' : 'Innenmaß',
+                      land.S.mode === 'rms' ? tr('Innenmaß (RMS)') : tr('Innenmaß'),
                       land.S.mode === 'rms' ? land.S.minRms : land.S.min,
                       land.S.mode === 'rms' ? land.S.maxRms : land.S.max,
                       land.S.mode === 'rms' ? land.S.tolRms : land.S.tol,
@@ -709,13 +721,14 @@ function Row({ label, children, hint }: { label: string; children: ReactNode; hi
 }
 
 function ThtBlock({ calc }: { calc: CalcRecord }) {
+  useI18n()
   return (
     <div className="border-b border-line px-4 py-3">
-      <SectionLabel>Bohrungen · IPC-2222</SectionLabel>
+      <SectionLabel>{tr("Bohrungen · IPC-2222")}</SectionLabel>
       {calc.tht.map((t, i) => (
         <dl key={`${t.what}-${i}`} className="mt-1.5">
           {calc.tht.length > 1 && <div className="text-2xs font-medium text-fg-muted">{t.what}</div>}
-          <Row label="Bohrung" hint="Anschluss (Diagonale) + Bohrzugabe der IPC-Stufe">
+          <Row label={tr("Bohrung")} hint={tr("Anschluss (Diagonale) + Bohrzugabe der IPC-Stufe")}>
             <span className="text-fg">{formatDim(t.hole)} mm</span>
             {t.leadSize !== null && t.holeAllowance !== null && (
               <span className="text-fg-subtle">
@@ -724,7 +737,7 @@ function ThtBlock({ calc }: { calc: CalcRecord }) {
               </span>
             )}
           </Row>
-          <Row label="Pad" hint="Bohrung + 2 × Restring + Fertigungszugabe">
+          <Row label={tr("Pad")} hint={tr("Bohrung + 2 × Restring + Fertigungszugabe")}>
             <span className="text-fg">
               {t.shape === 'oval' && t.padWidth !== null && t.padHeight !== null
                 ? `${formatDim(t.padWidth)} × ${formatDim(t.padHeight)} oval`
@@ -733,12 +746,12 @@ function ThtBlock({ calc }: { calc: CalcRecord }) {
             </span>
           </Row>
           {t.level && (
-            <Row label="Stufe">
+            <Row label={tr("Stufe")}>
               {t.level}
-              {t.fabAllowance !== null && <span className="text-fg-subtle"> · Zugabe {formatDim(t.fabAllowance)}</span>}
+              {t.fabAllowance !== null && <span className="text-fg-subtle"> {tr("· Zugabe")}{' '}{formatDim(t.fabAllowance)}</span>}
             </Row>
           )}
-          {t.pitch !== null && <Row label="Raster">{formatDim(t.pitch)} mm</Row>}
+          {t.pitch !== null && <Row label={tr("Raster")}>{formatDim(t.pitch)} mm</Row>}
         </dl>
       ))}
     </div>
@@ -746,17 +759,18 @@ function ThtBlock({ calc }: { calc: CalcRecord }) {
 }
 
 function BgaBlock({ calc }: { calc: CalcRecord }) {
+  useI18n()
   const bga = calc.bga
   if (!bga) return null
   return (
     <div className="border-b border-line px-4 py-3">
-      <SectionLabel>Kugeln · IPC-7351B</SectionLabel>
+      <SectionLabel>{tr("Kugeln · IPC-7351B")}</SectionLabel>
       <dl className="mt-1.5">
-        <Row label="Kugel Ø">
+        <Row label={tr("Kugel Ø")}>
           {formatDim(bga.ball)} mm
-          {bga.collapsible !== null && <span className="text-fg-subtle"> · {bga.collapsible ? 'kollabierend' : 'nicht kollabierend'}</span>}
+          {bga.collapsible !== null && <span className="text-fg-subtle"> · {bga.collapsible ? tr('kollabierend') : tr('nicht kollabierend')}</span>}
         </Row>
-        <Row label="Land Ø">
+        <Row label={tr("Land Ø")}>
           <span className="text-fg">{formatDim(bga.land)} mm</span>
         </Row>
       </dl>
@@ -766,36 +780,37 @@ function BgaBlock({ calc }: { calc: CalcRecord }) {
 }
 
 function ToleranceBlock({ calc }: { calc: CalcRecord }) {
+  useI18n()
   const bases = calc.roundingBase.filter((b) => b > 0)
   const base = bases.length ? bases.map((b) => formatDim(b)).join(' / ') : null
   const manufacturer = calc.lands.length > 0 && calc.lands.every((l) => l.source === 'manufacturer')
   return (
     <div className="border-b border-line px-4 py-3">
-      <SectionLabel>Toleranzen und Raster</SectionLabel>
+      <SectionLabel>{tr("Toleranzen und Raster")}</SectionLabel>
       <dl className="mt-1.5">
         {calc.F !== null && (
-          <Row label="Fertigung F" hint="Leiterplatten-Fertigungstoleranz (gesamt)">
+          <Row label={tr("Fertigung F")} hint={tr("Leiterplatten-Fertigungstoleranz (gesamt)")}>
             {formatDim(calc.F)} mm
           </Row>
         )}
         {calc.P !== null && (
-          <Row label="Bestückung P" hint="Platzierungstoleranz des Bestückers (gesamt)">
+          <Row label={tr("Bestückung P")} hint={tr("Platzierungstoleranz des Bestückers (gesamt)")}>
             {formatDim(calc.P)} mm
           </Row>
         )}
         {calc.roundingMode && !manufacturer && (
-          <Row label="Rundung" hint="KiCad: Z/G/X auf 0,05 mm (0,02 mm bei kleinen Chips); IPC: auf 0,01 mm">
-            {ROUNDING_LABEL[calc.roundingMode] ?? calc.roundingMode}
+          <Row label={tr("Rundung")} hint={tr("KiCad: Z/G/X auf 0,05 mm (0,02 mm bei kleinen Chips); IPC: auf 0,01 mm")}>
+            {tr(ROUNDING_LABEL[calc.roundingMode]) ?? calc.roundingMode}
             {base && <span className="text-fg-subtle"> · {base} mm</span>}
           </Row>
         )}
         {calc.courtyard && (
-          <Row label="Courtyard" hint="Zugabe um Pads und Körper, nach außen auf das Raster gerundet">
+          <Row label={tr("Courtyard")} hint={tr("Zugabe um Pads und Körper, nach außen auf das Raster gerundet")}>
             +{formatDim(calc.courtyard.excess)} mm
-            <span className="text-fg-subtle"> · Raster {formatDim(calc.courtyard.grid)}</span>
+            <span className="text-fg-subtle"> {tr("· Raster")}{' '}{formatDim(calc.courtyard.grid)}</span>
           </Row>
         )}
-        {calc.pasteWindows !== null && calc.pasteWindows > 0 && <Row label="Pastenfenster EP">{calc.pasteWindows}</Row>}
+        {calc.pasteWindows !== null && calc.pasteWindows > 0 && <Row label={tr("Pastenfenster EP")}>{calc.pasteWindows}</Row>}
       </dl>
     </div>
   )
@@ -810,6 +825,7 @@ const ISSUE_META = {
 } as const
 
 function IssuesBlock({ items }: { items: readonly IssueItem[] }) {
+  useI18n()
   const { errors, warnings } = issueCounts(items)
   return (
     <div id={CHECKS_ID} tabIndex={-1} className="scroll-mt-2 px-4 py-3 outline-none focus-visible:bg-surface-2/50">
@@ -819,24 +835,24 @@ function IssuesBlock({ items }: { items: readonly IssueItem[] }) {
             <span className="flex items-center gap-1">
               {errors > 0 && (
                 <Badge variant="danger" size="sm">
-                  {errors} Fehler
+                  {errors} {tr("Fehler")}
                 </Badge>
               )}
               {warnings > 0 && (
                 <Badge variant="warning" size="sm">
-                  {countLabel(warnings, 'Warnung', 'Warnungen')}
+                  {countLabel(warnings, tr('Warnung'), tr('Warnungen'))}
                 </Badge>
               )}
             </span>
           ) : undefined
         }
       >
-        Prüfung
+        {tr("Prüfung")}
       </SectionLabel>
       {items.length === 0 ? (
         <p className="mt-1.5 flex items-center gap-1.5 text-xs text-success-text">
           <CircleCheck aria-hidden className="size-3.5 shrink-0" />
-          Keine Auffälligkeiten – bereit zum Speichern.
+          {tr("Keine Auffälligkeiten – bereit zum Speichern.")}
         </p>
       ) : (
         <ul className="mt-1.5 flex flex-col gap-1.5">
@@ -847,8 +863,8 @@ function IssuesBlock({ items }: { items: readonly IssueItem[] }) {
               <li key={item.key} className="flex gap-2 text-xs leading-snug">
                 <Icon aria-hidden className={cn('mt-0.5 size-3.5 shrink-0', meta.cls)} />
                 <span className="text-fg-muted">
-                  <span className="sr-only">{meta.label}: </span>
-                  {item.message}
+                  <span className="sr-only">{tr(meta.label)}: </span>
+                  {localizeMessage(item.message)}
                 </span>
               </li>
             )
@@ -862,6 +878,7 @@ function IssuesBlock({ items }: { items: readonly IssueItem[] }) {
 // --------------------------------------------------------------------------- Beschreibung
 
 function DescriptionBlock({ description }: { description: string | null }) {
+  useI18n()
   const override = useGenerator((s) => s.overrides.description)
   const setOverrides = useGenerator((s) => s.setOverrides)
   const [editing, setEditing] = useState(false)
@@ -872,14 +889,14 @@ function DescriptionBlock({ description }: { description: string | null }) {
           !editing ? (
             <>
               {override && (
-                <IconButton size="xs" label="Erzeugte Beschreibung verwenden" icon={<RotateCcw />} onClick={() => setOverrides({ description: null })} />
+                <IconButton size="xs" label={tr("Erzeugte Beschreibung verwenden")} icon={<RotateCcw />} onClick={() => setOverrides({ description: null })} />
               )}
-              <IconButton size="xs" label="Beschreibung ändern" icon={<PenLine />} onClick={() => setEditing(true)} />
+              <IconButton size="xs" label={tr("Beschreibung ändern")} icon={<PenLine />} onClick={() => setEditing(true)} />
             </>
           ) : undefined
         }
       >
-        {override ? 'Beschreibung · eigene' : 'Beschreibung'}
+        {override ? tr('Beschreibung · eigene') : tr('Beschreibung')}
       </SectionLabel>
       {editing ? (
         <DescriptionEditor
@@ -900,13 +917,14 @@ function DescriptionBlock({ description }: { description: string | null }) {
 }
 
 function DescriptionEditor({ initial, onApply, onCancel }: { initial: string; onApply: (text: string) => void; onCancel: () => void }) {
+  useI18n()
   const [text, setText] = useState(initial)
   const ref = useFocusOnMount<HTMLTextAreaElement>()
   return (
     <div className="mt-1 flex flex-col gap-1">
       <textarea
         ref={ref}
-        aria-label="Eigene Beschreibung"
+        aria-label={tr("Eigene Beschreibung")}
         value={text}
         rows={3}
         onChange={(e) => setText(e.target.value)}
@@ -923,7 +941,7 @@ function DescriptionEditor({ initial, onApply, onCancel }: { initial: string; on
         }}
         className="w-full resize-none rounded-control border border-accent bg-control px-2 py-1.5 text-2xs leading-4 text-fg shadow-[0_0_0_3px_var(--pf-accent-soft)] outline-none"
       />
-      <p className="text-2xs text-fg-subtle">Enter übernimmt · ⇧ Enter neue Zeile · Esc bricht ab · leer = erzeugte</p>
+      <p className="text-2xs text-fg-subtle">{tr("Enter übernimmt · ⇧ Enter neue Zeile · Esc bricht ab · leer = erzeugte")}</p>
     </div>
   )
 }
@@ -952,6 +970,7 @@ export function ResultReadout({
   error: string | null
   onShowIssues: () => void
 }) {
+  useI18n()
   const calc = readCalc(data?.calc)
   const counts = issueCounts(collectIssues(data, calc))
   const land = calc?.lands[0]
@@ -961,7 +980,7 @@ export function ResultReadout({
   return (
     <div className="flex h-10 shrink-0 items-center gap-3 overflow-hidden border-t border-line bg-surface px-3">
       {!data ? (
-        <span className="text-2xs text-fg-subtle">{error ? 'Nicht berechenbar' : 'Berechnung läuft …'}</span>
+        <span className="text-2xs text-fg-subtle">{error ? tr('Nicht berechenbar') : tr('Berechnung läuft …')}</span>
       ) : (
         <div className={cn('flex min-w-0 items-center gap-3.5 overflow-hidden', error && 'opacity-55')}>
           {land ? (
@@ -970,20 +989,20 @@ export function ResultReadout({
               <Reading label="G" value={formatDim(land.g)} warn={land.clamped.g} />
               <Reading label="X" value={formatDim(land.x)} warn={land.clamped.x} />
               <span aria-hidden className="h-4 w-px shrink-0 bg-line-strong" />
-              <Reading label="Pad" value={`${formatDim(land.padLength)}×${formatDim(land.padWidth)}`} />
+              <Reading label={tr("Pad")} value={`${formatDim(land.padLength)}×${formatDim(land.padWidth)}`} />
             </>
           ) : tht ? (
             <>
-              <Reading label="Bohrung" value={formatDim(tht.hole)} />
-              <Reading label="Pad" value={tht.shape === 'oval' && tht.padWidth !== null && tht.padHeight !== null ? `${formatDim(tht.padWidth)}×${formatDim(tht.padHeight)}` : `Ø${formatDim(tht.pad)}`} />
+              <Reading label={tr("Bohrung")} value={formatDim(tht.hole)} />
+              <Reading label={tr("Pad")} value={tht.shape === 'oval' && tht.padWidth !== null && tht.padHeight !== null ? `${formatDim(tht.padWidth)}×${formatDim(tht.padHeight)}` : `Ø${formatDim(tht.pad)}`} />
             </>
           ) : bga ? (
             <>
-              <Reading label="Kugel" value={formatDim(bga.ball)} />
-              <Reading label="Land" value={`Ø${formatDim(bga.land)}`} />
+              <Reading label={tr("Kugel")} value={formatDim(bga.ball)} />
+              <Reading label={tr("Land")} value={`Ø${formatDim(bga.land)}`} />
             </>
           ) : pads !== null ? (
-            <Reading label="Pads" value={formatPlain(pads, 0)} />
+            <Reading label={tr("Pads")} value={formatPlain(pads, 0)} />
           ) : null}
         </div>
       )}
@@ -995,7 +1014,7 @@ export function ResultReadout({
             className="flex h-6 items-center gap-1 rounded-full px-1.5 text-2xs text-success-text outline-none transition-colors hover:bg-surface-2 focus-ring"
           >
             <CircleCheck aria-hidden className="size-3.5" />
-            Prüfung ok
+            {tr("Prüfung ok")}
           </button>
         ) : (
           <IssueChip counts={counts} onClick={onShowIssues} className="h-6 px-2" />

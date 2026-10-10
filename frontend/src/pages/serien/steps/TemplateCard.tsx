@@ -1,3 +1,4 @@
+import { localizeMessage, t as tr, useI18n } from '@/lib/i18n'
 /**
  * Karte einer Hersteller-Serie: Hersteller, Serie, Bauart, Beispiel-Teilenummer mit Aufbau und Kennwerte – alles aus
  * der Vorlagenliste (`TemplateSummary.example`, `mode`, `value_range`, `e_series`, `jumper`, `sources`), ohne eigene
@@ -35,14 +36,15 @@ export interface TemplateCardProps {
 }
 
 function sourceLine(s: TemplateSource): string {
-  return [s.title, s.document, s.revision ? `Stand ${s.revision}` : null, s.pages ? `S. ${s.pages}` : null]
+  return [s.title, s.document, s.revision ? tr("Stand {v0}", { v0: s.revision }) : null, s.pages ? tr("S. {v0}", { v0: s.pages }) : null]
     .filter(Boolean)
     .join(' · ')
 }
 
 function productType(t: SeriesTemplateSummary): string {
-  const parts = t.title.split(' – ')
-  return parts.length > 1 ? parts.slice(1).join(' – ') : t.title
+  const title = t.builtin ? tr(t.title) : t.title
+  const parts = title.split(' – ')
+  return parts.length > 1 ? parts.slice(1).join(' – ') : title
 }
 
 const NOT_VERIFIED = 'Nicht gegen das Datenblatt geprüft – Werte vor der Freigabe kontrollieren.'
@@ -55,30 +57,31 @@ function templateFacts(t: SeriesTemplateSummary): string[] {
   if (t.sizes.length) {
     facts.push(
       t.sizes.length > 1
-        ? `${plural(t.sizes.length, 'Bauform', 'Bauformen')} ${t.sizes[0]} … ${t.sizes[t.sizes.length - 1]}`
+        ? `${plural(t.sizes.length, tr("Bauform"), tr("Bauformen"))} ${t.sizes[0]} … ${t.sizes[t.sizes.length - 1]}`
         : t.sizes[0],
     )
   }
   if (t.mode === 'rules' && t.e_series.length) facts.push(t.e_series.join(' / '))
   const range = t.value_range
   if (range && range.length === 2) facts.push(`${displayValue(range[0], t.value_unit)} … ${displayValue(range[1], t.value_unit)}`)
-  if (t.mode === 'matrix' && t.availability_count) facts.push(`${formatNumber(t.availability_count)} lieferbare Typen`)
-  if (t.mode === 'catalog' && t.part_count) facts.push(`Katalog · ${plural(t.part_count, 'Typ', 'Typen')}`)
-  if (t.jumper) facts.push('0‑Ω‑Brücke')
+  if (t.mode === 'matrix' && t.availability_count) facts.push(tr("{v0} lieferbare Typen", { v0: formatNumber(t.availability_count) }))
+  if (t.mode === 'catalog' && t.part_count) facts.push(tr("Katalog · {v0}", { v0: plural(t.part_count, tr("Typ"), tr("Typen")) }))
+  if (t.jumper) facts.push(tr('0‑Ω‑Brücke'))
   return facts
 }
 
 export function TemplateCard({ template: t, selected, radioProps, onEdit, onDelete }: TemplateCardProps) {
+  const { t: tr } = useI18n()
   const id = useId()
   const sources = t.sources
   const facts = templateFacts(t)
 
   const verification = t.verified
-    ? `Gegen das Datenblatt geprüft${sources.length ? `: ${sources.map(sourceLine).join('; ')}` : ''}.`
-    : NOT_VERIFIED
-  const availability = t.availability_certain ? '' : ` ${AVAILABILITY_OPEN}`
+    ? tr("Gegen das Datenblatt geprüft{v0}.", { v0: sources.length ? `: ${sources.map(sourceLine).join('; ')}` : '' })
+    : tr(NOT_VERIFIED)
+  const availability = t.availability_certain ? '' : ` ${tr(AVAILABILITY_OPEN)}`
   const ex = t.example
-  const exampleText = ex ? ` Beispiel: ${ex.mpn}${ex.valid ? '' : ` – ungültig: ${ex.message ?? ''}`}.` : ''
+  const exampleText = ex ? tr(" Beispiel: {v0}{v1}.", { v0: ex.mpn, v1: ex.valid ? '' : tr(" – ungültig: {v0}", { v0: localizeMessage(ex.message ?? '') }) }) : ''
 
   return (
     <div
@@ -123,16 +126,14 @@ export function TemplateCard({ template: t, selected, radioProps, onEdit, onDele
             {!t.verified && (
               <Badge variant="warning">
                 <ShieldAlert />
-                Ungeprüft
-              </Badge>
+                {tr("Ungeprüft")}</Badge>
             )}
             {!t.availability_certain && (
               <Badge variant="warning">
                 <TriangleAlert />
-                Lieferbarkeit offen
-              </Badge>
+                {tr("Lieferbarkeit offen")}</Badge>
             )}
-            {!t.builtin && <Badge variant="outline">Eigene Vorlage</Badge>}
+            {!t.builtin && <Badge variant="outline">{tr("Eigene Vorlage")}</Badge>}
           </span>
         )}
 
@@ -143,8 +144,8 @@ export function TemplateCard({ template: t, selected, radioProps, onEdit, onDele
           )}
         >
           <span className="micro-label">
-            Beispiel{ex?.size ? ` · ${ex.size}` : ''}
-            {ex && !ex.valid ? <span className="text-warning-text"> · ungültig</span> : null}
+            {tr("Beispiel")}{ex?.size ? ` · ${ex.size}` : ''}
+            {ex && !ex.valid ? <span className="text-warning-text"> {tr("· ungültig")}</span> : null}
           </span>
           {ex ? (
             <>
@@ -152,16 +153,16 @@ export function TemplateCard({ template: t, selected, radioProps, onEdit, onDele
               {!ex.valid && ex.message && (
                 <span className="flex items-start gap-1.5 text-2xs leading-snug text-warning-text">
                   <TriangleAlert aria-hidden className="mt-px size-3 shrink-0" />
-                  {ex.message}
+                  {localizeMessage(ex.message)}
                 </span>
               )}
             </>
           ) : (
-            <span className="mono truncate text-ui text-fg-muted">{t.pattern ?? 'Katalog mit festen Teilenummern'}</span>
+            <span className="mono truncate text-ui text-fg-muted">{t.pattern ?? tr("Katalog mit festen Teilenummern")}</span>
           )}
         </span>
         <span id={`${id}-desc`} className="sr-only">
-          {`${t.title}. ${verification}${availability} ${facts.join(', ')}.${exampleText}`}
+          {`${t.builtin ? tr(t.title) : t.title}. ${verification}${availability} ${facts.join(', ')}.${exampleText}`}
         </span>
       </button>
 
@@ -172,7 +173,7 @@ export function TemplateCard({ template: t, selected, radioProps, onEdit, onDele
           content={
             t.verified ? (
               <span className="flex flex-col gap-1">
-                <span className="font-medium">Gegen das Datenblatt geprüft</span>
+                <span className="font-medium">{tr("Gegen das Datenblatt geprüft")}</span>
                 {sources.length ? (
                   sources.map((src) => (
                     <span key={src.title} className="text-fg-muted">
@@ -180,21 +181,21 @@ export function TemplateCard({ template: t, selected, radioProps, onEdit, onDele
                     </span>
                   ))
                 ) : (
-                  <span className="text-fg-muted">Quelle in der Vorlage nicht angegeben.</span>
+                  <span className="text-fg-muted">{tr("Quelle in der Vorlage nicht angegeben.")}</span>
                 )}
-                {!t.availability_certain && <span className="text-warning-text">{AVAILABILITY_OPEN}</span>}
+                {!t.availability_certain && <span className="text-warning-text">{tr(AVAILABILITY_OPEN)}</span>}
               </span>
             ) : (
               <span className="flex flex-col gap-1">
-                <span className="font-medium">{NOT_VERIFIED}</span>
-                {!t.availability_certain && <span className="text-fg-muted">{AVAILABILITY_OPEN}</span>}
+                <span className="font-medium">{tr(NOT_VERIFIED)}</span>
+                {!t.availability_certain && <span className="text-fg-muted">{tr(AVAILABILITY_OPEN)}</span>}
               </span>
             )
           }
         >
           <button
             type="button"
-            aria-label={`Prüfstatus von ${t.title}: ${t.verified ? 'gegen das Datenblatt geprüft' : 'ungeprüft'}`}
+            aria-label={tr("Prüfstatus von {v0}: {v1}", { v0: t.builtin ? tr(t.title) : t.title, v1: t.verified ? tr("gegen das Datenblatt geprüft") : tr("ungeprüft") })}
             className={cn(
               'flex size-7 shrink-0 items-center justify-center rounded-control outline-none transition-colors hover:bg-surface-2 focus-ring [&_svg]:size-4',
               t.verified ? 'text-success' : 'text-warning',
@@ -215,12 +216,12 @@ export function TemplateCard({ template: t, selected, radioProps, onEdit, onDele
           ))}
         </span>
         {t.datasheet_url && (
-          <Tooltip content="Datenblatt öffnen">
+          <Tooltip content={tr('Datenblatt öffnen')}>
             <a
               href={t.datasheet_url}
               target="_blank"
               rel="noreferrer noopener"
-              aria-label={`Datenblatt von ${t.title} (öffnet extern)`}
+              aria-label={tr("Datenblatt von {v0} (öffnet extern)", { v0: t.builtin ? tr(t.title) : t.title })}
               className="flex size-7 shrink-0 items-center justify-center rounded-control text-fg-muted outline-none transition-colors hover:bg-surface-2 hover:text-fg focus-ring"
             >
               <ExternalLink aria-hidden className="size-3.5" />
@@ -230,19 +231,17 @@ export function TemplateCard({ template: t, selected, radioProps, onEdit, onDele
         {(onEdit || onDelete) && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <IconButton size="sm" variant="ghost" label={`Aktionen für ${t.title}`} icon={<MoreHorizontal />} tooltip={false} />
+              <IconButton size="sm" variant="ghost" label={tr("Aktionen für {v0}", { v0: t.builtin ? tr(t.title) : t.title })} icon={<MoreHorizontal />} tooltip={false} />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {onEdit && (
                 <DropdownMenuItem icon={<Pencil />} onSelect={onEdit}>
-                  Bearbeiten
-                </DropdownMenuItem>
+                  {tr("Bearbeiten")}</DropdownMenuItem>
               )}
               {onEdit && onDelete && <DropdownMenuSeparator />}
               {onDelete && (
                 <DropdownMenuItem icon={<Trash2 />} destructive onSelect={onDelete}>
-                  Löschen …
-                </DropdownMenuItem>
+                  {tr("Löschen …")}</DropdownMenuItem>
               )}
             </DropdownMenuContent>
           </DropdownMenu>

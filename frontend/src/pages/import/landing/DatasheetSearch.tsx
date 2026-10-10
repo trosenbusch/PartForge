@@ -1,3 +1,4 @@
+import { t, useI18n } from '@/lib/i18n'
 import { useMutation } from '@tanstack/react-query'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { ArrowRight, CircleAlert, CircleStop, ExternalLink, FileCheck2, FileScan, Globe, Search, Settings2, Sparkles, X } from 'lucide-react'
@@ -27,9 +28,9 @@ import { useActiveImports } from '../store'
 const FIND_MAX_COST_USD = 0.5
 
 const SOURCE_LABEL: Record<FindCandidate['source'], string> = {
-  hersteller: 'Hersteller',
+  get hersteller() { return t("Hersteller") },
   distributor: 'Distributor',
-  andere: 'Andere Quelle',
+  get andere() { return t("Andere Quelle") },
 }
 
 /** Ist der Link schon als Datenblatt in der Bibliothek (gleiche Hersteller-Adresse)? */
@@ -61,6 +62,7 @@ export interface DatasheetSearchProps {
  * Ohne KI (aus, kein Schlüssel) neutral und gesperrt – mit dem Weg zu Einstellungen › Allgemein › KI-Funktionen.
  */
 export function DatasheetSearch({ aiReady, aiStatus, aiLoading, focusKey, initialQuery, known, onImport, importing }: DatasheetSearchProps) {
+  useI18n()
   const uid = useId()
   const entry = useActiveImports((s) => s.search)
   const setSearch = useActiveImports((s) => s.setSearch)
@@ -99,7 +101,7 @@ export function DatasheetSearch({ aiReady, aiStatus, aiLoading, focusKey, initia
     if (disabled || running) return
     const q = query.trim()
     if (!q) {
-      setInputError('Bitte eine Teilenummer eingeben, z. B. OPA656.')
+      setInputError(t("Bitte eine Teilenummer eingeben, z. B. OPA656."))
       inputRef.current?.focus()
       return
     }
@@ -115,16 +117,14 @@ export function DatasheetSearch({ aiReady, aiStatus, aiLoading, focusKey, initia
     <div className="flex flex-col gap-1.5">
       <div className="flex items-baseline justify-between gap-3">
         <label htmlFor={`${uid}-q`} className="text-xs font-medium text-fg-muted">
-          Datenblatt suchen
-        </label>
+          {t("Datenblatt suchen")}</label>
         {!disabled && (
           <span className="flex items-center gap-1 text-2xs text-fg-subtle">
             <Sparkles aria-hidden className="size-3 text-spark-a" />
-            Claude sucht im Web
-          </span>
+            {t("Claude sucht im Web")}</span>
         )}
       </div>
-      <form role="search" aria-label="Datenblatt im Web suchen" onSubmit={submit} noValidate>
+      <form role="search" aria-label={t("Datenblatt im Web suchen")} onSubmit={submit} noValidate>
         <div
           className={cn(
             'group/search flex h-11 items-center gap-2 rounded-button pl-3 pr-1.5 transition-[box-shadow,background-color] duration-150',
@@ -146,7 +146,7 @@ export function DatasheetSearch({ aiReady, aiStatus, aiLoading, focusKey, initia
             autoComplete="off"
             spellCheck={false}
             disabled={disabled}
-            placeholder="Teilenummer eingeben, z. B. OPA656"
+            placeholder={t("Teilenummer eingeben, z. B. OPA656")}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value)
@@ -162,9 +162,9 @@ export function DatasheetSearch({ aiReady, aiStatus, aiLoading, focusKey, initia
             autoComplete="off"
             spellCheck={false}
             disabled={disabled}
-            aria-label="Hersteller (optional)"
-            title="Hersteller (optional) – hilft bei mehrdeutigen Teilenummern"
-            placeholder="Hersteller"
+            aria-label={t("Hersteller (optional)")}
+            title={t("Hersteller (optional) – hilft bei mehrdeutigen Teilenummern")}
+            placeholder={t("Hersteller")}
             value={maker}
             onChange={(e) => setMaker(e.target.value)}
             className="hidden h-full w-24 min-w-0 bg-transparent text-ui text-fg outline-none placeholder:text-fg-subtle disabled:cursor-not-allowed @[30rem]:block @[40rem]:w-36"
@@ -178,20 +178,19 @@ export function DatasheetSearch({ aiReady, aiStatus, aiLoading, focusKey, initia
             disabled={disabled}
             className="h-8"
           >
-            Suchen
-          </Button>
+            {t("Suchen")}</Button>
         </div>
       </form>
       <p id={`${uid}-hint`} className={cn('text-xs', inputError ? 'text-danger-text' : 'text-fg-subtle')} aria-live="polite">
         {inputError ??
           (disabled ? (
             aiLoading ? (
-              'KI-Status wird geprüft …'
+              t("KI-Status wird geprüft …")
             ) : (
               <>
                 {aiStatus?.enabled === false
-                  ? 'Die Suche nutzt Claude – die KI ist ausgeschaltet:'
-                  : 'Die Suche nutzt Claude – es fehlt ein API-Schlüssel:'}{' '}
+                  ? t("Die Suche nutzt Claude – die KI ist ausgeschaltet:")
+                  : t("Die Suche nutzt Claude – es fehlt ein API-Schlüssel:")}{' '}
                 <Link
                   to={SETTINGS_PLACE.ai.to}
                   className="font-medium text-accent-text underline-offset-4 outline-none hover:underline focus-ring"
@@ -201,21 +200,20 @@ export function DatasheetSearch({ aiReady, aiStatus, aiLoading, focusKey, initia
               </>
             )
           ) : (
-            `Claude findet das offizielle PDF, PartForge prüft jeden Link · höchstens ${formatUsd(limit)} je Suche`
+            t("Claude findet das offizielle PDF, PartForge prüft jeden Link · höchstens {0} je Suche", { "0": String(formatUsd(limit)) })
           ))}
       </p>
 
       {startError && (
         <Callout
           tone={startError.code && startError.code !== 'unknown' ? 'warning' : 'danger'}
-          title={startError.code ? AI_PROBLEM_TITLE[startError.code] : 'Die Suche konnte nicht starten'}
+          title={startError.code ? AI_PROBLEM_TITLE[startError.code] : t("Die Suche konnte nicht starten")}
           actions={
             startError.code && AI_SETTINGS_CODES.has(startError.code) ? (
               <Button asChild size="xs" variant="secondary">
                 <Link to={SETTINGS_PLACE.ai.to}>
                   <Settings2 aria-hidden />
-                  KI einrichten
-                </Link>
+                  {t("KI einrichten")}</Link>
               </Button>
             ) : undefined
           }
@@ -269,6 +267,7 @@ function SearchResults({
   cancelling: boolean
   onClose: () => void
 }) {
+  useI18n()
   const reduce = useReducedMotion()
   const detail = jobDetail<FindJobDetail>(job)
   const result = job.status === 'done' ? job.result : null
@@ -288,18 +287,18 @@ function SearchResults({
 
   const status =
     job.status === 'failed'
-      ? 'Die Suche ist fehlgeschlagen'
+      ? t("Die Suche ist fehlgeschlagen")
       : job.status === 'cancelled'
-        ? 'Suche abgebrochen'
+        ? t("Suche abgebrochen")
         : running
           ? checking
-            ? `${plural(detail.candidates ?? 0, 'Link wird', 'Links werden')} geprüft …`
+            ? t("{0} geprüft …", { "0": String(plural(detail.candidates ?? 0, t("Link wird"), t("Links werden"))) })
             : queries.length
-              ? `Claude sucht: „${queries[queries.length - 1]}“ …`
-              : 'Claude sucht das Datenblatt …'
+              ? t("Claude sucht: „{0}“ …", { "0": String(queries[queries.length - 1]) })
+              : t("Claude sucht das Datenblatt …")
           : candidates.length
-            ? `${plural(candidates.length, 'Treffer', 'Treffer')} für „${query}“ · ${plural(pdfs.length, 'PDF', 'PDFs')}`
-            : `Kein Datenblatt gefunden für „${query}“`
+            ? t("{0} für „{1}“ · {2}", { "0": String(plural(candidates.length, t("Treffer"), t("Treffer"))), "1": String(query), "2": String(plural(pdfs.length, 'PDF', 'PDFs')) })
+            : t("Kein Datenblatt gefunden für „{0}“", { "0": String(query) })
 
   return (
     <motion.div
@@ -308,7 +307,7 @@ function SearchResults({
       exit={reduce ? { opacity: 0 } : { opacity: 0, y: -4 }}
       transition={{ duration: 0.18 }}
       role="region"
-      aria-label={`Suchergebnisse für „${query}“`}
+      aria-label={t("Suchergebnisse für „{0}“", { "0": String(query) })}
       aria-busy={running || undefined}
       className={cn(
         'mt-1.5 overflow-hidden rounded-card shadow-card',
@@ -333,7 +332,7 @@ function SearchResults({
           <div className="truncate text-ui font-medium text-fg">{status}</div>
           <div className="truncate text-2xs text-fg-subtle">
             {[
-              queries.length ? plural(queries.length, 'Websuche', 'Websuchen') : null,
+              queries.length ? plural(queries.length, t("Websuche"), t("Websuchen")) : null,
               cost > 0 || !running ? formatUsd(cost) : null,
               runLabel(detail.model_label || result?.model_label) || null,
             ]
@@ -343,10 +342,10 @@ function SearchResults({
         </div>
         {running ? (
           <Button size="xs" variant="ghost" leftIcon={<CircleStop />} loading={cancelling} onClick={onCancel}>
-            {cancelling ? 'Wird abgebrochen …' : 'Abbrechen'}
+            {cancelling ? t("Wird abgebrochen …") : t("Abbrechen")}
           </Button>
         ) : (
-          <Button size="xs" variant="ghost" iconOnly aria-label="Suchergebnisse schließen" onClick={onClose}>
+          <Button size="xs" variant="ghost" iconOnly aria-label={t("Suchergebnisse schließen")} onClick={onClose}>
             <X />
           </Button>
         )}
@@ -354,12 +353,12 @@ function SearchResults({
 
       {job.status === 'failed' && (
         <p className="px-3.5 py-3 text-xs leading-relaxed text-danger-text" role="alert">
-          {cleanErrorText(cleanJobError(job.error || job.message)) || 'Unbekannter Fehler.'}
+          {cleanErrorText(cleanJobError(job.error || job.message)) || t("Unbekannter Fehler.")}
         </p>
       )}
 
       {running && queries.length > 0 && (
-        <ul aria-label="Suchanfragen von Claude" className="flex flex-col gap-1 px-3.5 py-2.5">
+        <ul aria-label={t("Suchanfragen von Claude")} className="flex flex-col gap-1 px-3.5 py-2.5">
           {queries.map((q, i) => (
             <li key={`${q}-${i}`} className="flex items-center gap-2 text-xs text-fg-muted">
               <Globe aria-hidden className="size-3.5 shrink-0 text-fg-subtle" />
@@ -375,13 +374,13 @@ function SearchResults({
             <p className="flex items-start gap-2 border-b border-line bg-[linear-gradient(135deg,color-mix(in_oklab,var(--pf-spark-a)_5%,transparent),color-mix(in_oklab,var(--pf-spark-b)_7%,transparent))] px-3.5 py-2 text-xs leading-relaxed text-fg-muted">
               <Sparkles aria-hidden className="mt-0.5 size-3.5 shrink-0 text-spark-a" />
               <span>
-                <span className="sr-only">Anmerkung von Claude: </span>
+                <span className="sr-only">{t("Anmerkung von Claude: ")}</span>
                 {result.note}
               </span>
             </p>
           )}
           {candidates.length > 0 ? (
-            <ul aria-label="Gefundene Datenblätter" className="divide-y divide-line">
+            <ul aria-label={t("Gefundene Datenblätter")} className="divide-y divide-line">
               {candidates.map((c) => (
                 <CandidateRow
                   key={c.url}
@@ -396,14 +395,12 @@ function SearchResults({
             </ul>
           ) : (
             <p className="px-3.5 py-3 text-xs leading-relaxed text-fg-muted">
-              Claude hat kein passendes Datenblatt gefunden. Genauer suchen (mit Hersteller) – oder das PDF selbst ablegen bzw. seine
-              Adresse unten eingeben.
-            </p>
+              {t("Claude hat kein passendes Datenblatt gefunden. Genauer suchen (mit Hersteller) – oder das PDF selbst ablegen bzw. seine Adresse unten eingeben.")}</p>
           )}
           {candidates.length > 0 && (
             <p className="border-t border-line px-3.5 py-2 text-2xs leading-4 text-fg-subtle">
               {formatNumbersInText(
-                `Die Kosten der Suche (${formatUsd(result.cost_usd)}) werden dem Datenblatt zugerechnet, das Sie von hier laden.`,
+                t("Die Kosten der Suche ({0}) werden dem Datenblatt zugerechnet, das Sie von hier laden.", { "0": String(formatUsd(result.cost_usd)) }),
               )}
             </p>
           )}
@@ -428,6 +425,7 @@ function CandidateRow({
   disabled: boolean
   onLoad: () => void
 }) {
+  useI18n()
   const host = hostOf(c.final_url ?? c.url)
   const meta = [c.manufacturer || null, host, c.note || null].filter(Boolean) as string[]
   return (
@@ -448,8 +446,7 @@ function CandidateRow({
           </span>
           {c.source === 'hersteller' ? (
             <Badge variant="success" size="sm">
-              Hersteller
-            </Badge>
+              {t("Hersteller")}</Badge>
           ) : (
             <Badge variant="outline" size="sm">
               {SOURCE_LABEL[c.source]}
@@ -461,14 +458,13 @@ function CandidateRow({
             </Badge>
           ) : (
             <Badge variant="warning" size="sm">
-              {c.check || 'kein PDF'}
+              {c.check || t("kein PDF")}
             </Badge>
           )}
           {recommended && !existing && (
             <Badge variant="spark" size="sm">
               <Sparkles />
-              Empfohlen
-            </Badge>
+              {t("Empfohlen")}</Badge>
           )}
         </div>
         <div className="mt-0.5 line-clamp-1 text-2xs leading-4 text-fg-subtle" title={meta.join(' · ')}>
@@ -478,9 +474,8 @@ function CandidateRow({
       <div className="flex shrink-0 items-center gap-1.5">
         {existing ? (
           <Button asChild size="sm" variant="secondary">
-            <Link to={importPath(existing.id)} aria-label={`In der Bibliothek: „${c.title || host}“ öffnen`}>
-              In der Bibliothek
-              <ArrowRight aria-hidden />
+            <Link to={importPath(existing.id)} aria-label={t("In der Bibliothek: „{0}“ öffnen", { "0": String(c.title || host) })}>
+              {t("In der Bibliothek")}<ArrowRight aria-hidden />
             </Link>
           </Button>
         ) : c.is_pdf ? (
@@ -491,15 +486,13 @@ function CandidateRow({
             loading={loading}
             disabled={disabled}
             onClick={onLoad}
-            aria-label={`Laden und analysieren: ${c.title || host}`}
+            aria-label={t("Laden und analysieren: {0}", { "0": String(c.title || host) })}
           >
-            Laden und analysieren
-          </Button>
+            {t("Laden und analysieren")}</Button>
         ) : (
           <Button asChild size="sm" variant="ghost">
-            <a href={c.url} target="_blank" rel="noopener noreferrer" aria-label={`Öffnen im Browser: ${c.title || host}`}>
-              Öffnen
-              <ExternalLink aria-hidden />
+            <a href={c.url} target="_blank" rel="noopener noreferrer" aria-label={t("Öffnen im Browser: {0}", { "0": String(c.title || host) })}>
+              {t("Öffnen")}<ExternalLink aria-hidden />
             </a>
           </Button>
         )}

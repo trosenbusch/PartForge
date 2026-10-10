@@ -1,3 +1,4 @@
+import { t, useI18n } from '@/lib/i18n'
 import { useState } from 'react'
 import { datasheetPageUrl } from '@/api/datasheets'
 import { cn } from '@/lib/cn'
@@ -35,6 +36,7 @@ export function PageImage({
   dark,
   placeholder = true,
 }: PageImageProps) {
+  useI18n()
   const src = datasheetPageUrl(datasheetId, page, dpi)
   const [loaded, setLoaded] = useState<string | null>(null)
   const [failed, setFailed] = useState<string | null>(null)
@@ -44,12 +46,11 @@ export function PageImage({
       {placeholder && !ready && failed !== src && <div aria-hidden className={cn('shimmer absolute inset-0', dark && 'opacity-60')} />}
       {failed === src ? (
         <div className="absolute inset-0 flex items-center justify-center bg-surface-2 text-2xs text-fg-subtle">
-          Seite {page} nicht verfügbar
-        </div>
+          {t("Seite ")}{page} {t(" nicht verfügbar")}</div>
       ) : (
         <img
           src={src}
-          alt={alt ?? `Seite ${page}`}
+          alt={alt ?? t("Seite {0}", { "0": String(page) })}
           loading={loading}
           decoding="async"
           draggable={false}

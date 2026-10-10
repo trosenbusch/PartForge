@@ -2,7 +2,11 @@
 
 Verbindliches Design-Briefing für alle Frontend-Arbeiten. Ziel: ein professionelles
 Engineering-Werkzeug mit Premium-Anmutung, das sich sofort vertraut anfühlt, aber
-eigenständig und beeindruckend aussieht. Sprache der Oberfläche: **Deutsch**.
+eigenständig und beeindruckend aussieht. Sprachen der Oberfläche: **Englisch (Standard)** und **Deutsch**.
+Die Auswahl steht unter *Settings → General → Language* bzw. *Einstellungen → Allgemein → Sprache* und
+wird nach dem Speichern für den Windows-Benutzer übernommen. Benutzerinhalte und technische Bezeichner bleiben
+unverändert. UI-Texte werden mit `useI18n()` / `t()` aus `src/lib/i18n.ts` übersetzt; deutsche Quelltexte sind
+Schlüssel in den englischen Katalogen unter `src/i18n/catalogs/`. Zahlen und Daten verwenden die aktive Locale.
 
 ## 1. Stack (installierte Versionen – APIs gegen `node_modules/*/dist/*.d.ts` prüfen!)
 
@@ -158,7 +162,7 @@ Linien `#800000`, Pins `#000080`) – so sehen Symbole aus wie später in Altium
 
 ## 9. Qualitätskriterien
 - Kein Layout-Springen, keine abgeschnittenen Texte; Mindestbreite 1120 px.
-- Jede Aktion gibt Feedback (Toast, Inline-Status oder Job-Dock); Fehler auf Deutsch mit Lösungsweg.
+- Jede Aktion gibt Feedback (Toast, Inline-Status oder Job-Dock); Fehler in der gewählten Sprache mit Lösungsweg.
 - Ladezustände mit Skeletons; leere Zustände mit Illustration + Aktion.
 - Tastatur: Strg+K Palette, Strg+N neues Bauteil, Strg+F Tabellenfilter, Entf löschen (mit Bestätigung), Esc schließt.
 - Kontrast WCAG AA in beiden Themes.

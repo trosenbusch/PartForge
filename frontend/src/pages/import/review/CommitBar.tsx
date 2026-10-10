@@ -1,3 +1,5 @@
+import { localizeMessage } from '@/lib/i18n'
+import { t, useI18n } from '@/lib/i18n'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   ChevronDown,
@@ -81,6 +83,7 @@ function modalOpen(): boolean {
  * Gehäusezeichnung ohne Bauteil ist „Footprint speichern“ die Primäraktion.
  */
 export function CommitBar({ state, gate }: { state: Readiness; gate: CommitGate }) {
+  useI18n()
   const { ds, proposal, proposalError, category, categories, setChoices, acknowledged } = useReview()
   const navigate = useNavigate()
   const qc = useQueryClient()
@@ -95,7 +98,7 @@ export function CommitBar({ state, gate }: { state: Readiness; gate: CommitGate 
   const onRefused = useCallback(
     (j: Job<CommitResult>) => {
       const detail = jobDetail<CommitJobDetail>(j)
-      const message = cleanErrorText(cleanJobError(j.error)) || 'Die Übernahme wurde abgelehnt – es wurde nichts geschrieben.'
+      const message = cleanErrorText(cleanJobError(j.error)) || t("Die Übernahme wurde abgelehnt – es wurde nichts geschrieben.")
       const ui = useReviewUi.getState()
       // den Vorschlag neu laden: angezeigt wird der Stand, den die Übernahme vorgefunden hat
       void qc.invalidateQueries({ queryKey: datasheetKeys.proposalAll(ds.id) })
@@ -130,7 +133,7 @@ export function CommitBar({ state, gate }: { state: Readiness; gate: CommitGate 
     },
     onFailed: (j) => {
       if (j.error_type === 'CommitRefused') onRefused(j)
-      else setError(cleanErrorText(cleanJobError(j.error)) || 'Die Übernahme ist fehlgeschlagen.')
+      else setError(cleanErrorText(cleanJobError(j.error)) || t("Die Übernahme ist fehlgeschlagen."))
     },
     onCancelled: (j) => setError(jobCancelText(j)),
   })
@@ -250,7 +253,7 @@ export function CommitBar({ state, gate }: { state: Readiness; gate: CommitGate 
     {
       id: 'import.commit',
       title: label,
-      subtitle: 'Datenblatt-Import',
+      subtitle: t("Datenblatt-Import"),
       group: 'Aktionen',
       icon: packageOnly ? Save : Hammer,
       hotkey: 'mod+enter',
@@ -259,8 +262,8 @@ export function CommitBar({ state, gate }: { state: Readiness; gate: CommitGate 
     },
     {
       id: 'import.commit-symbols',
-      title: 'Nur Symbol speichern',
-      subtitle: 'Datenblatt-Import · ohne Bauteil, nur die SchLib',
+      title: t("Nur Symbol speichern"),
+      subtitle: t("Datenblatt-Import · ohne Bauteil, nur die SchLib"),
       group: 'Aktionen',
       icon: SymbolIcon,
       when: () => Boolean(proposal) && !packageOnly && !busy && state.symbols.ready,
@@ -268,8 +271,8 @@ export function CommitBar({ state, gate }: { state: Readiness; gate: CommitGate 
     },
     {
       id: 'import.commit-footprints',
-      title: 'Nur Footprint speichern',
-      subtitle: 'Datenblatt-Import · ohne Bauteil, nur die PcbLib',
+      title: t("Nur Footprint speichern"),
+      subtitle: t("Datenblatt-Import · ohne Bauteil, nur die PcbLib"),
       group: 'Aktionen',
       icon: CircuitBoard,
       when: () => Boolean(proposal) && !packageOnly && !busy && state.footprints.ready,
@@ -281,7 +284,7 @@ export function CommitBar({ state, gate }: { state: Readiness; gate: CommitGate 
   const stale = Boolean(proposal) && !gate.synced
   const invalidSymbols = proposal?.symbols.filter((s) => !s.valid).length ?? 0
   const invalidFootprints = proposal?.footprints.filter((f) => !f.valid).length ?? 0
-  const notDone = jobScope === 'part' ? 'Nicht angelegt' : 'Nicht gespeichert'
+  const notDone = jobScope === 'part' ? t("Nicht angelegt") : t("Nicht gespeichert")
 
   let status
   let actions = null
@@ -289,22 +292,22 @@ export function CommitBar({ state, gate }: { state: Readiness; gate: CommitGate 
     const scoped = jobScope !== 'part'
     status = (
       <div className="flex min-w-0 items-center gap-2.5" role="status">
-        {job ? <ProgressRing value={job.progress} size={26} stroke={2.5} label="Übernahme" /> : <Spinner size={18} tone="accent" />}
+        {job ? <ProgressRing value={job.progress} size={26} stroke={2.5} label={t("Übernahme")} /> : <Spinner size={18} tone="accent" />}
         <div className="min-w-0">
           <div className="truncate text-ui font-medium text-fg">
             {scoped
               ? jobScope === 'symbols'
-                ? 'Symbol wird gespeichert …'
-                : 'Footprint wird gespeichert …'
+                ? t("Symbol wird gespeichert …")
+                : t("Footprint wird gespeichert …")
               : state.updateCount === count && count
-                ? 'Wird aktualisiert …'
-                : 'Wird angelegt …'}
+                ? t("Wird aktualisiert …")
+                : t("Wird angelegt …")}
           </div>
           <div className="truncate text-2xs text-fg-subtle">
-            {job?.message ||
+            {localizeMessage(job?.message || '') ||
               (scoped
-                ? `${jobScope === 'symbols' ? 'Symbolbibliothek (SchLib)' : 'Footprint-Bibliothek (PcbLib)'} wird geschrieben – ohne Bauteil`
-                : 'Symbole, Footprints und Bauteile werden geschrieben')}
+                ? t("{0} wird geschrieben – ohne Bauteil", { "0": String(jobScope === 'symbols' ? t("Symbolbibliothek (SchLib)") : t("Footprint-Bibliothek (PcbLib)")) })
+                : t("Symbole, Footprints und Bauteile werden geschrieben"))}
           </div>
         </div>
       </div>
@@ -314,10 +317,9 @@ export function CommitBar({ state, gate }: { state: Readiness; gate: CommitGate 
       <div className="flex min-w-0 items-center gap-2.5" role="status">
         <Spinner size={18} tone="accent" />
         <div className="min-w-0">
-          <div className="truncate text-ui font-medium text-fg">Vorschlag wird aktualisiert …</div>
+          <div className="truncate text-ui font-medium text-fg">{t("Vorschlag wird aktualisiert …")}</div>
           <div className="truncate text-2xs text-fg-subtle">
-            {packageOnly ? 'Danach wird gespeichert' : 'Danach wird angelegt'} – sofern nichts Neues zu prüfen ist
-          </div>
+            {packageOnly ? t("Danach wird gespeichert") : t("Danach wird angelegt")} {t(" – sofern nichts Neues zu prüfen ist")}</div>
         </div>
       </div>
     )
@@ -350,13 +352,13 @@ export function CommitBar({ state, gate }: { state: Readiness; gate: CommitGate 
         <span className="min-w-0">
           <span className="block truncate text-ui font-medium text-fg">
             {blockers
-              ? `${notDone} – ${plural(refusal.items.length, 'neues Problem', 'neue Probleme')} bestätigen`
-              : `${notDone} – der Vorschlag hat sich geändert`}
+              ? t("{0} – {1} bestätigen", { "0": String(notDone), "1": String(plural(refusal.items.length, t("neues Problem"), t("neue Probleme"))) })
+              : t("{0} – der Vorschlag hat sich geändert", { "0": String(notDone) })}
           </span>
           <span className="block truncate text-2xs text-fg-subtle">
             {blockers
-              ? 'Es wurde nichts geschrieben · zur Prüfliste'
-              : `Es wurde nichts geschrieben · den neuen Stand prüfen und erneut ${jobScope === 'part' ? 'anlegen' : 'speichern'}`}
+              ? t("Es wurde nichts geschrieben · zur Prüfliste")
+              : t("Es wurde nichts geschrieben · den neuen Stand prüfen und erneut {0}", { "0": String(jobScope === 'part' ? t("anlegen") : t("speichern")) })}
           </span>
         </span>
       </button>
@@ -366,7 +368,7 @@ export function CommitBar({ state, gate }: { state: Readiness; gate: CommitGate 
       <div className="flex min-w-0 items-center gap-2.5" role="alert">
         <CircleAlert aria-hidden className="size-5 shrink-0 text-danger-text" />
         <div className="min-w-0">
-          <div className="text-ui font-medium text-fg">Kein Vorschlag möglich</div>
+          <div className="text-ui font-medium text-fg">{t("Kein Vorschlag möglich")}</div>
           <div className="truncate text-2xs text-danger-text">{errorMessage(proposalError)}</div>
         </div>
       </div>
@@ -375,18 +377,16 @@ export function CommitBar({ state, gate }: { state: Readiness; gate: CommitGate 
     status = (
       <div className="flex items-center gap-2.5 text-ui text-fg-muted" role="status">
         <Spinner size={16} tone="accent" />
-        Vorschlag wird berechnet …
-      </div>
+        {t("Vorschlag wird berechnet …")}</div>
     )
   } else if (stale) {
     status = (
       <div className="flex min-w-0 items-center gap-2.5" role="status">
         <Spinner size={18} tone="accent" />
         <div className="min-w-0">
-          <div className="truncate text-ui font-medium text-fg">Vorschlag wird aktualisiert …</div>
+          <div className="truncate text-ui font-medium text-fg">{t("Vorschlag wird aktualisiert …")}</div>
           <div className="truncate text-2xs text-fg-subtle">
-            Ihre Änderung wird geprüft – {packageOnly ? 'Speichern' : 'Anlegen'} geht gleich wieder
-          </div>
+            {t("Ihre Änderung wird geprüft – ")}{packageOnly ? t("Speichern") : t("Anlegen")} {t(" geht gleich wieder")}</div>
         </div>
       </div>
     )
@@ -396,15 +396,14 @@ export function CommitBar({ state, gate }: { state: Readiness; gate: CommitGate 
         <CircleCheck aria-hidden className="size-5 shrink-0 text-success-text" />
         <div className="min-w-0">
           <div className="truncate text-ui font-medium text-fg">
-            Bereits gespeichert · {plural(state.footprints.total, 'Footprint', 'Footprints')}
+            {t("Bereits gespeichert · ")}{plural(state.footprints.total, 'Footprint', 'Footprints')}
           </div>
           <div className="truncate text-2xs text-fg-subtle">
             {proposal.footprints
               .map((f) => f.name)
               .filter(Boolean)
               .join(', ')}{' '}
-            – im Datenblatt des Bauteils unter „Gehäuse“ übernehmen
-          </div>
+            {t("– im Datenblatt des Bauteils unter „Gehäuse“ übernehmen")}</div>
         </div>
       </div>
     )
@@ -415,12 +414,11 @@ export function CommitBar({ state, gate }: { state: Readiness; gate: CommitGate 
         <CircleCheck aria-hidden className="size-5 shrink-0 text-success-text" />
         <div className="min-w-0">
           <div className="truncate text-ui font-medium text-fg">
-            Bereits übernommen · {plural(state.existsCount, 'Bauteil', 'Bauteile')}
+            {t("Bereits übernommen · ")}{plural(state.existsCount, t("Bauteil"), t("Bauteile"))}
           </div>
           <div className="truncate text-2xs text-fg-subtle">
-            Alle Bestellnummern sind schon in{' '}
-            {part ? `„${categories.find((c) => c.table === part.table)?.label ?? part.table}“` : 'der Bibliothek'} angelegt
-          </div>
+            {t("Alle Bestellnummern sind schon in")}{' '}
+            {part ? `„${categories.find((c) => c.table === part.table)?.label ?? part.table}“` : t("der Bibliothek")} {t(" angelegt")}</div>
         </div>
       </div>
     )
@@ -430,26 +428,23 @@ export function CommitBar({ state, gate }: { state: Readiness; gate: CommitGate 
           <Button asChild variant="ghost">
             <Link to={`/import?ds=${encodeURIComponent(ds.id)}&ansicht=ergebnis`}>
               <ListChecks aria-hidden />
-              Ergebnis
-            </Link>
+              {t("Ergebnis")}</Link>
           </Button>
         )}
         {part && (
           <Button asChild variant="secondary">
             <Link to={partLink(part.table, part.partNumber)}>
               <TableProperties aria-hidden />
-              In der Bauteiltabelle
-            </Link>
+              {t("In der Bauteiltabelle")}</Link>
           </Button>
         )}
         <Button
           variant="secondary"
           leftIcon={<RefreshCw />}
           onClick={() => setChoices((c) => ({ ...c, mode: 'update' }))}
-          title="Vorhandene Bauteile mit den Werten aus dem Datenblatt aktualisieren (Freigabe und eigene Links bleiben)"
+          title={t("Vorhandene Bauteile mit den Werten aus dem Datenblatt aktualisieren (Freigabe und eigene Links bleiben)")}
         >
-          Aktualisieren …
-        </Button>
+          {t("Aktualisieren …")}</Button>
       </div>
     )
   } else if (open) {
@@ -469,8 +464,8 @@ export function CommitBar({ state, gate }: { state: Readiness; gate: CommitGate 
         <span className="min-w-0">
           <span className="block truncate text-ui font-medium text-fg">
             {openBlockers.length
-              ? `${plural(openBlockers.length, 'Problem', 'Probleme')} bestätigen`
-              : `${plural(state.reasons.length, 'Punkt', 'Punkte')} offen`}
+              ? t("{0} bestätigen", { "0": String(plural(openBlockers.length, 'Problem', t("Probleme"))) })
+              : t("{0} offen", { "0": String(plural(state.reasons.length, t("Punkt"), t("Punkte"))) })}
           </span>
           <span className="block truncate text-2xs text-fg-subtle">{first}</span>
         </span>
@@ -481,11 +476,10 @@ export function CommitBar({ state, gate }: { state: Readiness; gate: CommitGate 
       <div className="flex min-w-0 items-center gap-2.5">
         <CircleCheck aria-hidden className="size-5 shrink-0 text-success-text" />
         <div className="min-w-0">
-          <div className="truncate text-ui font-medium text-fg">Bereit zum Speichern</div>
+          <div className="truncate text-ui font-medium text-fg">{t("Bereit zum Speichern")}</div>
           <div className="truncate text-2xs text-fg-subtle">
-            {accept ? `${plural(state.footprints.confirmedBlockers.length, 'Problem', 'Probleme')} bestätigt · ` : ''}
-            {state.footprints.writes.join(', ')} → Footprint-Bibliothek (PcbLib), ohne Bauteil
-          </div>
+            {accept ? t("{0} bestätigt · ", { "0": String(plural(state.footprints.confirmedBlockers.length, 'Problem', t("Probleme"))) }) : ''}
+            {state.footprints.writes.join(', ')} {t(" → Footprint-Bibliothek (PcbLib), ohne Bauteil")}</div>
         </div>
       </div>
     )
@@ -494,9 +488,9 @@ export function CommitBar({ state, gate }: { state: Readiness; gate: CommitGate 
       <div className="flex min-w-0 items-center gap-2.5">
         <CircleCheck aria-hidden className="size-5 shrink-0 text-success-text" />
         <div className="min-w-0">
-          <div className="truncate text-ui font-medium text-fg">{state.updateCount === count ? 'Bereit zum Aktualisieren' : 'Bereit zum Anlegen'}</div>
+          <div className="truncate text-ui font-medium text-fg">{state.updateCount === count ? t("Bereit zum Aktualisieren") : t("Bereit zum Anlegen")}</div>
           <div className="truncate text-2xs text-fg-subtle">
-            {accept ? `${plural(state.confirmedBlockers.length, 'Problem', 'Probleme')} bestätigt · ` : ''}in{' '}
+            {accept ? t("{0} bestätigt · ", { "0": String(plural(state.confirmedBlockers.length, 'Problem', t("Probleme"))) }) : ''}in{' '}
             {category?.label ?? proposal.category_label ?? proposal.category}
           </div>
         </div>
@@ -517,21 +511,21 @@ export function CommitBar({ state, gate }: { state: Readiness; gate: CommitGate 
           {!packageOnly && (
             <>
               <Summary
-                label="Bauteile"
+                label={t("Bauteile")}
                 value={formatNumber(count)}
-                detail={state.updateCount ? `${state.updateCount} aktualisiert` : state.existsCount ? `${state.existsCount} vorhanden` : undefined}
+                detail={state.updateCount ? t("{0} aktualisiert", { "0": String(state.updateCount) }) : state.existsCount ? t("{0} vorhanden", { "0": String(state.existsCount) }) : undefined}
               />
               <Summary
-                label="Symbole"
+                label={t("Symbole")}
                 value={formatNumber(proposal.symbols.length)}
                 detail={
                   invalidSymbols
-                    ? `${invalidSymbols} ungültig`
+                    ? t("{0} ungültig", { "0": String(invalidSymbols) })
                     : state.pinChanges
-                      ? `${state.pinChanges} geändert`
+                      ? t("{0} geändert", { "0": String(state.pinChanges) })
                       : state.symbolsNew
-                        ? `${state.symbolsNew} neu`
-                        : 'vorhanden'
+                        ? t("{0} neu", { "0": String(state.symbolsNew) })
+                        : t("vorhanden")
                 }
                 warn={state.pinChanges > 0 || invalidSymbols > 0}
               />
@@ -540,7 +534,7 @@ export function CommitBar({ state, gate }: { state: Readiness; gate: CommitGate 
           <Summary
             label="Footprints"
             value={formatNumber(proposal.footprints.length)}
-            detail={invalidFootprints ? `${invalidFootprints} ungültig` : state.footprintsNew ? `${state.footprintsNew} neu` : 'vorhanden'}
+            detail={invalidFootprints ? t("{0} ungültig", { "0": String(invalidFootprints) }) : state.footprintsNew ? t("{0} neu", { "0": String(state.footprintsNew) }) : t("vorhanden")}
             warn={invalidFootprints > 0}
           />
         </dl>
@@ -555,7 +549,7 @@ export function CommitBar({ state, gate }: { state: Readiness; gate: CommitGate 
               loading={busy || waiting}
               disabled={!proposal || !ready || stale}
               aria-keyshortcuts="Control+Enter"
-              title={stale ? 'Der Vorschlag wird gerade aktualisiert' : undefined}
+              title={stale ? t("Der Vorschlag wird gerade aktualisiert") : undefined}
               onClick={() => requestCommit()}
             >
               {label}
@@ -581,16 +575,17 @@ function ScopeMenu({
   disabled: boolean
   onPick: (scope: 'symbols' | 'footprints') => void
 }) {
+  useI18n()
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="secondary" leftIcon={<Save />} rightIcon={<ChevronDown />} disabled={disabled}>
-          <span className="hidden @[40rem]:inline">Einzeln speichern</span>
-          <span className="sr-only @[40rem]:hidden">Einzeln speichern</span>
+          <span className="hidden @[40rem]:inline">{t("Einzeln speichern")}</span>
+          <span className="sr-only @[40rem]:hidden">{t("Einzeln speichern")}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
-        <DropdownMenuLabel>Ohne Bauteil – nur in die Bibliothek</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("Ohne Bauteil – nur in die Bibliothek")}</DropdownMenuLabel>
         <ScopeItem readiness={state.symbols} onPick={onPick} />
         <ScopeItem readiness={state.footprints} onPick={onPick} />
       </DropdownMenuContent>
@@ -599,6 +594,7 @@ function ScopeMenu({
 }
 
 function ScopeItem({ readiness, onPick }: { readiness: ScopeReadiness; onPick: (scope: 'symbols' | 'footprints') => void }) {
+  useI18n()
   const symbols = readiness.scope === 'symbols'
   const noun = symbols ? 'Symbol' : 'Footprint'
   const file = symbols ? 'SchLib' : 'PcbLib'
@@ -606,7 +602,7 @@ function ScopeItem({ readiness, onPick }: { readiness: ScopeReadiness; onPick: (
   const description = readiness.ready
     ? `${readiness.writes.join(', ')} → ${file}`
     : readiness.saved
-      ? `Schon in der Bibliothek (${file})`
+      ? t("Schon in der Bibliothek ({0})", { "0": String(file) })
       : (readiness.reason ?? '')
   return (
     <DropdownMenuItem
@@ -615,7 +611,7 @@ function ScopeItem({ readiness, onPick }: { readiness: ScopeReadiness; onPick: (
       description={description}
       onSelect={() => onPick(readiness.scope)}
     >
-      {count > 1 ? `Nur ${formatNumber(count)} ${noun}s speichern` : `Nur ${noun} speichern`}
+      {count > 1 ? t("Nur {0} {1}s speichern", { "0": String(formatNumber(count)), "1": String(noun) }) : t("Nur {0} speichern", { "0": String(noun) })}
     </DropdownMenuItem>
   )
 }
@@ -624,7 +620,7 @@ function ScopeItem({ readiness, onPick }: { readiness: ScopeReadiness; onPick: (
 function scopeDoneMessage(j: Job<CommitResult>): string {
   const r = j.result
   const libraries = r?.libraries?.length ? ` · ${r.libraries.join(', ')}` : ''
-  return `${r?.message || j.message || 'Gespeichert'}${libraries}`
+  return `${localizeMessage(r?.message || j.message || t("Gespeichert"))}${libraries}`
 }
 
 /** Nicht geschriebene Symbole/Footprints → Warn-Toast statt Erfolg */
@@ -635,17 +631,18 @@ function scopeProblem(j: Job<CommitResult>): string | null {
 
 function footprintLabel(footprints: ScopeReadiness): string {
   const count = footprints.writes.length || footprints.total
-  return count > 1 ? `${formatNumber(count)} Footprints speichern` : 'Footprint speichern'
+  return count > 1 ? t("{0} Footprints speichern", { "0": String(formatNumber(count)) }) : t("Footprint speichern")
 }
 
 function commitLabel(state: Readiness): string {
   const count = state.writeCount
-  if (!count) return 'Bauteile anlegen'
-  const verb = state.updateCount === count ? 'aktualisieren' : state.updateCount ? 'übernehmen' : 'anlegen'
-  return `${plural(count, 'Bauteil', 'Bauteile')} ${verb}`
+  if (!count) return t("Bauteile anlegen")
+  const verb = state.updateCount === count ? t("aktualisieren") : state.updateCount ? t("übernehmen") : t("anlegen")
+  return `${plural(count, t("Bauteil"), t("Bauteile"))} ${verb}`
 }
 
 function Summary({ label, value, detail, warn }: { label: string; value: string; detail?: string; warn?: boolean }) {
+  useI18n()
   return (
     <div className="flex flex-col items-end leading-tight">
       <dt className="text-2xs text-fg-subtle">{label}</dt>

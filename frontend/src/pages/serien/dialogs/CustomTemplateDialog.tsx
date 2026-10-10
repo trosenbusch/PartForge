@@ -1,3 +1,4 @@
+import { localizeMessage, useI18n } from '@/lib/i18n'
 /**
  * Eigene Serienvorlage anlegen oder bearbeiten: Grunddaten, Teilenummern-Muster (Platzhalter als Chips),
  * Werteformat, Baugrößen mit Kennwerten, Codetabellen, Gültigkeit (Bereich + E-Reihen), Brücke und Prüfvermerk.
@@ -134,6 +135,7 @@ const gapsOf = (draft: TemplateDraft, data: TemplateTestResult | undefined) =>
   data?.category_checked ? requiredGaps(draft, data.samples) : []
 
 export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCategory, onSaved }: CustomTemplateDialogProps) {
+  const { t: tr } = useI18n()
   const uid = useId().replace(/:/g, '')
   const [draft, setDraft] = useState<TemplateDraft>(() => emptyDraft(defaultCategory))
   const [samples, setSamples] = useState(() => defaultSamples(defaultCategory, draft.sizes.map((s) => s.size)))
@@ -237,7 +239,7 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
   const okSamples = shownResults.filter((r) => r.valid && r.roundtrip && !r.missing_fields.length).length
 
   // Pflichtfelder der Kategorie (z. B. Leistung), die laut Test leer blieben – jede Zeile der Serie wäre „ungültig“
-  const gaps = useMemo(() => gapsOf(draft, testData), [draft, testData])
+  const gaps = useMemo(() => gapsOf(draft, testData).map((g) => ({ ...g, label: tr(g.label), hint: tr(g.hint) })), [draft, testData, tr])
   const sizeGaps = useMemo(() => {
     const out: Partial<Record<SizeAttr, Set<string>>> = {}
     for (const g of gaps) if (g.sizeAttr) out[g.sizeAttr] = new Set(g.sizes)
@@ -245,12 +247,12 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
   }, [gaps])
   const categoryDef = categories.data?.find((c) => c.table === draft.category)
   /** Bezeichnung einer Spalte der Kategorie („Power“ → „Leistung“) */
-  const fieldLabel = (column: string) => categoryDef?.fields.find((f) => f.column === column)?.label ?? column
+  const fieldLabel = (column: string) => tr(categoryDef?.fields.find((f) => f.column === column)?.label ?? column)
   const fieldMap = draft.original?.fields ?? fieldsFor(draft.category)
   /** Größen-Attribut füllt ein Pflichtfeld der Kategorie (Leistung bei Widerständen …) – Stern an der Spalte */
   const requiredAttr = (attr: SizeAttr) =>
     (categoryDef?.fields ?? []).some((f) => f.required && (fieldMap[f.column] ?? '').includes(`{${attr}}`))
-  const categoryLabel = categoryDef?.label ?? SERIES_CATEGORIES.find((c) => c.table === draft.category)?.label ?? draft.category
+  const categoryLabel = tr(categoryDef?.label ?? SERIES_CATEGORIES.find((c) => c.table === draft.category)?.label ?? draft.category)
 
   const dirty = open && initial !== '' && draftKey(draft, samples, mpns) !== initial
 
@@ -265,12 +267,12 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
       return
     }
     const ok = await confirm({
-      title: 'Eingaben verwerfen?',
+      title: tr("Eingaben verwerfen?"),
       description: editing
-        ? 'Die Änderungen an der Vorlage sind noch nicht gespeichert.'
-        : 'Die neue Vorlage ist noch nicht gespeichert.',
-      confirmLabel: 'Verwerfen',
-      cancelLabel: 'Weiter bearbeiten',
+        ? tr("Die Änderungen an der Vorlage sind noch nicht gespeichert.")
+        : tr("Die neue Vorlage ist noch nicht gespeichert."),
+      confirmLabel: tr("Verwerfen"),
+      cancelLabel: tr("Weiter bearbeiten"),
       destructive: true,
     })
     if (ok) close()
@@ -304,13 +306,13 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
   const setSize = (size: string, patch: Partial<DraftSize>) =>
     update({ sizes: draft.sizes.map((s) => (s.size === size ? { ...s, ...patch } : s)) })
   const tokenFields = [
-    { name: 'size', label: 'Baugröße', description: 'Code der Baugröße' },
-    { name: 'value', label: 'Wert', description: 'Wertcode nach Werteformat' },
-    { name: 'tolerance', label: 'Toleranz' },
-    { name: 'tcr', label: 'Temperaturkoeffizient' },
-    { name: 'voltage', label: 'Nennspannung' },
-    { name: 'dielectric', label: 'Dielektrikum' },
-    { name: 'packaging', label: 'Verpackung' },
+    { name: 'size', label: tr("Baugröße"), description: tr("Code der Baugröße") },
+    { name: 'value', label: tr("Wert"), description: tr("Wertcode nach Werteformat") },
+    { name: 'tolerance', label: tr("Toleranz") },
+    { name: 'tcr', label: tr("Temperaturkoeffizient") },
+    { name: 'voltage', label: tr("Nennspannung") },
+    { name: 'dielectric', label: tr("Dielektrikum") },
+    { name: 'packaging', label: tr("Verpackung") },
     ...draft.variables
       .filter((v) => !['tolerance', 'tcr', 'voltage', 'dielectric', 'packaging'].includes(v.name))
       .map((v) => ({ name: v.name, label: v.label })),
@@ -339,17 +341,17 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
       >
         <DialogHeader
           icon={<FilePlus2 />}
-          title={editing ? 'Serienvorlage bearbeiten' : 'Eigene Serienvorlage'}
-          description="Teilenummern-Muster, Codetabellen und Baugrößen – rechts sofort mit Beispielwerten getestet."
+          title={editing ? tr("Serienvorlage bearbeiten") : tr("Eigene Serienvorlage")}
+          description={tr("Teilenummern-Muster, Codetabellen und Baugrößen – rechts sofort mit Beispielwerten getestet.")}
         />
         {editId && !editQuery.data ? (
           <DialogBody className="flex items-center justify-center">
             {editQuery.isError ? (
-              <Callout tone="danger" title="Vorlage nicht geladen">
+              <Callout tone="danger" title={tr("Vorlage nicht geladen")}>
                 {errorMessage(editQuery.error)}
               </Callout>
             ) : (
-              <Spinner label="Vorlage wird geladen" />
+              <Spinner label={tr("Vorlage wird geladen")} />
             )}
           </DialogBody>
         ) : (
@@ -364,9 +366,9 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
             <DialogBody className="@container overflow-hidden p-0">
               <div className="grid h-full min-h-0 grid-cols-1 overflow-y-auto @[60rem]:grid-cols-[minmax(0,1fr)_24rem] @[60rem]:grid-rows-[minmax(0,1fr)] @[60rem]:overflow-hidden">
               <div className="min-w-0 px-6 pb-4 @[60rem]:min-h-0 @[60rem]:overflow-y-auto">
-                <FormSection title="Serie">
+                <FormSection title={tr("Serie")}>
                   <div className="grid grid-cols-1 gap-x-4 gap-y-3 @[34rem]:grid-cols-2">
-                    <Field label="Kategorie" required>
+                    <Field label={tr("Kategorie")} required>
                       <Select
                         value={draft.category}
                         disabled={editing}
@@ -374,23 +376,23 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
                           update({ category, variables: [] })
                           setSamples(defaultSamples(category, draft.sizes.map((s) => s.size)))
                         }}
-                        options={SERIES_CATEGORIES.map((c) => ({ value: c.table, label: c.label, description: `Wert in ${c.unit}` }))}
+                        options={SERIES_CATEGORIES.map((c) => ({ value: c.table, label: tr(c.label), description: tr("Wert in {v0}", { v0: c.unit }) }))}
                       />
                     </Field>
-                    <Field label="Hersteller" required>
-                      <Input value={draft.manufacturer} onChange={(e) => update({ manufacturer: e.target.value })} placeholder="z. B. Walsin" />
+                    <Field label={tr("Hersteller")} required>
+                      <Input value={draft.manufacturer} onChange={(e) => update({ manufacturer: e.target.value })} placeholder={tr("z. B. Walsin")} />
                     </Field>
-                    <Field label="Serienname" required>
-                      <Input value={draft.series} onChange={(e) => update({ series: e.target.value })} placeholder="z. B. WR06" />
+                    <Field label={tr("Serienname")} required>
+                      <Input value={draft.series} onChange={(e) => update({ series: e.target.value })} placeholder={tr("z. B. WR06")} />
                     </Field>
-                    <Field label="Titel" hint="für Karten und Listen">
+                    <Field label={tr("Titel")} hint={tr("für Karten und Listen")}>
                       <Input
                         value={draft.title}
                         onChange={(e) => update({ title: e.target.value, titleTouched: Boolean(e.target.value) })}
-                        placeholder="Hersteller Serie – Bauart"
+                        placeholder={tr("Hersteller Serie – Bauart")}
                       />
                     </Field>
-                    <Field label="ID" required error={idError} hint={editing ? 'nicht änderbar' : 'automatisch'}>
+                    <Field label="ID" required error={idError ? localizeMessage(idError) : undefined} hint={editing ? tr("nicht änderbar") : tr("automatisch")}>
                       <Input
                         mono
                         value={draft.id}
@@ -402,51 +404,50 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
                         placeholder="eigen-hersteller-serie"
                       />
                     </Field>
-                    <Field label="Datenblatt-Link" hint="optional">
+                    <Field label={tr("Datenblatt-Link")} hint="optional">
                       <Input value={draft.datasheetUrl} onChange={(e) => update({ datasheetUrl: e.target.value })} placeholder="https://…" />
                     </Field>
                   </div>
-                  <Field label="Beschreibung" hint="optional">
+                  <Field label={tr("Beschreibung")} hint="optional">
                     <Textarea
                       rows={2}
                       autoResize
                       value={draft.description}
                       onChange={(e) => update({ description: e.target.value })}
-                      placeholder="Bauart, Toleranzen, Besonderheiten der Serie"
+                      placeholder={tr("Bauart, Toleranzen, Besonderheiten der Serie")}
                     />
                   </Field>
                 </FormSection>
 
                 <FormSection
-                  title="Teilenummern-Muster"
+                  title={tr("Teilenummern-Muster")}
                   description={
                     <>
-                      Platzhalter in geschweiften Klammern: <span className="mono">{'{size}'}</span> Baugröße,{' '}
-                      <span className="mono">{'{value}'}</span> Wert – jede weitere Variable bekommt unten eine Codetabelle.
-                    </>
+                      {tr("Platzhalter in geschweiften Klammern:")} <span className="mono">{'{size}'}</span> {tr("Baugröße,")}{' '}
+                      <span className="mono">{'{value}'}</span> {tr("Wert – jede weitere Variable bekommt unten eine Codetabelle.")}</>
                   }
                 >
-                  <Field label="Muster" required>
+                  <Field label={tr("Muster")} required>
                     <TemplateTokenInput
                       value={draft.pattern}
                       onValueChange={(pattern) => update({ pattern })}
                       fields={tokenFields}
                       formats={[]}
-                      placeholder="z. B. WR{size}{tolerance}{value}T{packaging}"
+                      placeholder={tr("z. B. WR{size}{tolerance}{value}T{packaging}")}
                       preview={firstSample?.mpn ? <span className="mono">{firstSample.mpn}</span> : undefined}
                       previewLoading={testing}
                     />
                   </Field>
                   <div className="grid grid-cols-1 gap-x-4 gap-y-3 @[34rem]:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-                    <Field label="Werteformat" help={VALUE_STYLES.find((s) => s.value === draft.valueStyle)?.description}>
+                    <Field label={tr("Werteformat")} help={tr(VALUE_STYLES.find((s) => s.value === draft.valueStyle)?.description ?? '')}>
                       <Select<ValueStyle>
                         value={draft.valueStyle}
                         onValueChange={(valueStyle) => update({ valueStyle })}
-                        options={VALUE_STYLES.map((s) => ({ value: s.value, label: s.label, description: s.example(unit) }))}
+                        options={VALUE_STYLES.map((s) => ({ value: s.value, label: tr(s.label), description: s.example(unit) }))}
                       />
                     </Field>
                     {SCALES[unit] && SCALES[unit].length > 1 ? (
-                      <Field label="Code-Einheit" help="Wert einer Einheit im Code">
+                      <Field label={tr("Code-Einheit")} help={tr("Wert einer Einheit im Code")}>
                         <Select
                           value={String(draft.valueScale)}
                           onValueChange={(v) => update({ valueScale: Number(v) })}
@@ -455,13 +456,13 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
                       </Field>
                     ) : null}
                     {draft.valueStyle === 'uniohm4' && (
-                      <Field label="Stellen">
+                      <Field label={tr("Stellen")}>
                         <Select
                           value={String(draft.valueDigits)}
                           onValueChange={(v) => update({ valueDigits: v === '2' ? 2 : 3 })}
                           options={[
-                            { value: '3', label: '3 Ziffern (±1 %)' },
-                            { value: '2', label: '2 Ziffern (±5 %)' },
+                            { value: '3', label: tr("3 Ziffern (±1 %)") },
+                            { value: '2', label: tr("2 Ziffern (±5 %)") },
                           ]}
                         />
                       </Field>
@@ -469,9 +470,9 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
                   </div>
                 </FormSection>
 
-                <FormSection title="Baugrößen" description="Footprints entstehen nach IPC-7351B. Code nur angeben, wenn das Muster die Größe anders schreibt (z. B. „1J“ für 0603).">
+                <FormSection title={tr("Baugrößen")} description={tr("Footprints entstehen nach IPC-7351B. Code nur angeben, wenn das Muster die Größe anders schreibt (z. B. „1J“ für 0603).")}>
                   <ChipGroup
-                    aria-label="Baugrößen"
+                    aria-label={tr("Baugrößen")}
                     mono
                     value={draft.sizes.map((s) => s.size)}
                     onValueChange={(sizes) =>
@@ -488,26 +489,21 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
                       <thead>
                         <tr className="text-2xs text-fg-subtle">
                           <th scope="col" className="w-20 pb-1 font-medium">
-                            Baugröße
-                          </th>
+                            {tr("Baugröße")}</th>
                           <th scope="col" className="px-1 pb-1 font-medium">
-                            Code im Muster
-                          </th>
+                            {tr("Code im Muster")}</th>
                           {unit === 'Ω' && (
                             <>
                               <th scope="col" className="px-1 pb-1 font-medium">
-                                Leistung
-                                {requiredAttr('power') && <RequiredMark />}
+                                {tr("Leistung")}{requiredAttr('power') && <RequiredMark />}
                               </th>
                               <th scope="col" className="px-1 pb-1 font-medium">
-                                Spannung
-                                {requiredAttr('voltage') && <RequiredMark />}
+                                {tr("Spannung")}{requiredAttr('voltage') && <RequiredMark />}
                               </th>
                             </>
                           )}
                           <th scope="col" className="px-1 pb-1 font-medium">
-                            Höhe
-                            {requiredAttr('height') && <RequiredMark />}
+                            {tr("Höhe")}{requiredAttr('height') && <RequiredMark />}
                           </th>
                         </tr>
                       </thead>
@@ -516,7 +512,7 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
                           <tr key={s.size}>
                             <td className="mono py-0.5 text-ui text-fg">{s.size}</td>
                             <td className="px-1 py-0.5">
-                              <Input size="sm" mono value={s.code} placeholder={s.size} onChange={(e) => setSize(s.size, { code: e.target.value })} aria-label={`Code für ${s.size}`} />
+                              <Input size="sm" mono value={s.code} placeholder={s.size} onChange={(e) => setSize(s.size, { code: e.target.value })} aria-label={tr("Code für {v0}", { v0: s.size })} />
                             </td>
                             {unit === 'Ω' && (
                               <>
@@ -525,12 +521,12 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
                                     size="sm"
                                     mono
                                     value={s.power}
-                                    placeholder={sizeGaps.power?.has(s.size) ? 'Pflichtfeld' : row === 0 ? 'z. B. 0.1W' : '–'}
+                                    placeholder={sizeGaps.power?.has(s.size) ? tr("Pflichtfeld") : row === 0 ? tr("z. B. 0.1W") : '–'}
                                     invalid={Boolean(sizeGaps.power?.has(s.size) && touched.power)}
                                     aria-required={requiredAttr('power') || undefined}
                                     onChange={(e) => setSize(s.size, { power: e.target.value })}
                                     onBlur={() => setTouched((t) => ({ ...t, power: true }))}
-                                    aria-label={`Leistung ${s.size}`}
+                                    aria-label={tr("Leistung {v0}", { v0: s.size })}
                                   />
                                 </td>
                                 <td className="px-1 py-0.5">
@@ -538,18 +534,18 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
                                     size="sm"
                                     mono
                                     value={s.voltage}
-                                    placeholder={sizeGaps.voltage?.has(s.size) ? 'Pflichtfeld' : row === 0 ? 'z. B. 75V' : '–'}
+                                    placeholder={sizeGaps.voltage?.has(s.size) ? tr("Pflichtfeld") : row === 0 ? tr("z. B. 75V") : '–'}
                                     invalid={Boolean(sizeGaps.voltage?.has(s.size) && touched.voltage)}
                                     aria-required={requiredAttr('voltage') || undefined}
                                     onChange={(e) => setSize(s.size, { voltage: e.target.value })}
                                     onBlur={() => setTouched((t) => ({ ...t, voltage: true }))}
-                                    aria-label={`Spannung ${s.size}`}
+                                    aria-label={tr("Spannung {v0}", { v0: s.size })}
                                   />
                                 </td>
                               </>
                             )}
                             <td className="px-1 py-0.5">
-                              <Input size="sm" mono value={s.height} placeholder={row === 0 ? 'z. B. 0.5mm' : '–'} onChange={(e) => setSize(s.size, { height: e.target.value })} aria-label={`Höhe ${s.size}`} />
+                              <Input size="sm" mono value={s.height} placeholder={row === 0 ? tr("z. B. 0.5mm") : '–'} onChange={(e) => setSize(s.size, { height: e.target.value })} aria-label={tr("Höhe {v0}", { v0: s.size })} />
                             </td>
                           </tr>
                         ))}
@@ -562,16 +558,15 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
                       <span>
                         {gaps
                           .filter((g) => g.sizeAttr)
-                          .map((g) => `${g.label} ist ein Pflichtfeld der Kategorie ${categoryLabel}`)
+                          .map((g) => tr("{v0} ist ein Pflichtfeld der Kategorie {v1}", { v0: tr(g.label), v1: categoryLabel }))
                           .join(' · ')}{' '}
-                        – ohne Angabe wären alle Bauteile dieser Baugrößen „ungültig“.
-                      </span>
+                        {tr("– ohne Angabe wären alle Bauteile dieser Baugrößen „ungültig“.")}</span>
                     </p>
                   )}
                 </FormSection>
 
                 {draft.variables.length > 0 && (
-                  <FormSection title="Codetabellen" description="Je Platzhalter: Code in der Teilenummer, Bedeutung als Feldwert (±1%, 50V, X7R), Vorgabe für die Serie.">
+                  <FormSection title={tr("Codetabellen")} description={tr("Je Platzhalter: Code in der Teilenummer, Bedeutung als Feldwert (±1%, 50V, X7R), Vorgabe für die Serie.")}>
                     <div className="flex flex-col gap-3">
                       {draft.variables.map((v) => (
                         <CodeTable
@@ -585,31 +580,28 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
                   </FormSection>
                 )}
 
-                <FormSection title="Gültigkeit" description="Welche Werte lieferbar sind – eine Regel für alle Baugrößen. Ohne Bereich prüft PartForge die Lieferbarkeit nicht.">
+                <FormSection title={tr("Gültigkeit")} description={tr("Welche Werte lieferbar sind – eine Regel für alle Baugrößen. Ohne Bereich prüft PartForge die Lieferbarkeit nicht.")}>
                   {keepRules && (
-                    <Callout tone="info" title={`${draft.original?.rules.length ?? 0} Regeln aus der gespeicherten Vorlage`}>
-                      Bereiche mit Bedingungen je Baugröße oder Code lassen sich hier nicht bearbeiten – sie bleiben unverändert erhalten.
-                    </Callout>
+                    <Callout tone="info" title={tr("{v0} Regeln aus der gespeicherten Vorlage", { v0: draft.original?.rules.length ?? 0 })}>
+                      {tr("Bereiche mit Bedingungen je Baugröße oder Code lassen sich hier nicht bearbeiten – sie bleiben unverändert erhalten.")}</Callout>
                   )}
                   {(draft.original?.availability_count ?? 0) > 0 || (draft.original?.catalog.length ?? 0) > 0 ? (
-                    <Callout tone="info" title="Lieferbarkeitsmatrix bzw. Katalog bleibt erhalten">
-                      Diese Vorlage legt die lieferbaren Typen über eine Matrix oder einen Katalog fest – das Formular ändert sie nicht.
-                    </Callout>
+                    <Callout tone="info" title={tr("Lieferbarkeitsmatrix bzw. Katalog bleibt erhalten")}>
+                      {tr("Diese Vorlage legt die lieferbaren Typen über eine Matrix oder einen Katalog fest – das Formular ändert sie nicht.")}</Callout>
                   ) : null}
                   <div className="grid grid-cols-1 gap-x-4 gap-y-3 @[34rem]:grid-cols-2">
-                    <Field label="Von" hint={unit} disabled={keepRules}>
+                    <Field label={tr("Von")} hint={unit} disabled={keepRules}>
                       <Input mono value={draft.rangeMin} onChange={(e) => update({ rangeMin: e.target.value })} placeholder={unit === 'F' ? '10p' : '1'} />
                     </Field>
-                    <Field label="Bis" hint={unit} disabled={keepRules}>
+                    <Field label={tr("Bis")} hint={unit} disabled={keepRules}>
                       <Input mono value={draft.rangeMax} onChange={(e) => update({ rangeMax: e.target.value })} placeholder={unit === 'F' ? '10µ' : '10M'} />
                     </Field>
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <span id={`${uid}-series`} className="text-ui font-medium text-fg">
-                      E-Reihen
-                    </span>
+                      {tr("E-Reihen")}</span>
                     <ChipGroup<ESeriesName>
-                      aria-label="E-Reihen"
+                      aria-label={tr("E-Reihen")}
                       mono
                       disabled={keepRules}
                       value={draft.eSeries}
@@ -622,23 +614,23 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
                       <Switch
                         checked={draft.jumper}
                         onCheckedChange={(jumper) => update({ jumper })}
-                        label="0-Ω-Brücke"
-                        description="Die Serie hat eine Brücke mit eigenem Wertcode."
+                        label={tr("0-Ω-Brücke")}
+                        description={tr("Die Serie hat eine Brücke mit eigenem Wertcode.")}
                       />
                       {draft.jumper && (
                         <div className="grid grid-cols-1 gap-x-4 gap-y-3 pl-11 @[34rem]:grid-cols-2">
-                          <Field label="Wertcode der Brücke">
+                          <Field label={tr("Wertcode der Brücke")}>
                             <Input mono value={draft.jumperCode} onChange={(e) => update({ jumperCode: e.target.value })} placeholder="0R" />
                           </Field>
                           {draft.variables
                             .filter((v) => used.has(v.name) && v.options.length > 1)
                             .map((v) => (
-                              <Field key={v.name} label={`${v.label} bei Brücken`}>
+                              <Field key={v.name} label={tr("{v0} bei Brücken", { v0: tr(v.label) })}>
                                 <Select
                                   value={draft.jumperCodes[v.name] || '__std'}
                                   onValueChange={(code) => update({ jumperCodes: { ...draft.jumperCodes, [v.name]: code === '__std' ? '' : code } })}
                                   options={[
-                                    { value: '__std', label: 'Vorgabe' },
+                                    { value: '__std', label: tr("Vorgabe") },
                                     ...v.options.filter((o) => o.code).map((o) => ({ value: o.code, label: `${o.code}${o.value ? ` · ${o.value}` : ''}` })),
                                   ]}
                                 />
@@ -650,12 +642,12 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
                   )}
                 </FormSection>
 
-                <FormSection title="Prüfung">
+                <FormSection title={tr("Prüfung")}>
                   <Checkbox
                     checked={draft.verified}
                     onCheckedChange={(v) => update({ verified: v === true })}
-                    label="Gegen das Datenblatt geprüft"
-                    description="Codes, Bereiche und Kennwerte stimmen mit dem Datenblatt überein – die Karte zeigt „Geprüft“ mit Quelle."
+                    label={tr("Gegen das Datenblatt geprüft")}
+                    description={tr("Codes, Bereiche und Kennwerte stimmen mit dem Datenblatt überein – die Karte zeigt „Geprüft“ mit Quelle.")}
                   />
                   {draft.verified && (
                     <div className="pl-7">
@@ -663,17 +655,17 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
                         checked={draft.availabilityChecked}
                         disabled={keepRules ? false : !(draft.rangeMin.trim() && draft.rangeMax.trim()) && !draft.eSeries.length}
                         onCheckedChange={(v) => update({ availabilityChecked: v === true })}
-                        label="Lieferbare Werte stimmen mit dem Datenblatt überein"
-                        description="Bereich und E-Reihen unter „Gültigkeit“ sind geprüft – sonst zeigt die Karte „Lieferbarkeit offen“."
+                        label={tr("Lieferbare Werte stimmen mit dem Datenblatt überein")}
+                        description={tr("Bereich und E-Reihen unter „Gültigkeit“ sind geprüft – sonst zeigt die Karte „Lieferbarkeit offen“.")}
                       />
                     </div>
                   )}
                   {draft.verified && (
                     <div className="grid grid-cols-1 gap-x-4 gap-y-3 pl-7 @[34rem]:grid-cols-2">
-                      <Field label="Quelle">
-                        <Input value={draft.sourceTitle} onChange={(e) => update({ sourceTitle: e.target.value })} placeholder="Titel des Datenblatts, Stand" />
+                      <Field label={tr("Quelle")}>
+                        <Input value={draft.sourceTitle} onChange={(e) => update({ sourceTitle: e.target.value })} placeholder={tr("Titel des Datenblatts, Stand")} />
                       </Field>
-                      <Field label="Link zur Quelle" hint="optional">
+                      <Field label={tr("Link zur Quelle")} hint="optional">
                         <Input value={draft.sourceUrl} onChange={(e) => update({ sourceUrl: e.target.value })} placeholder="https://…" />
                       </Field>
                     </div>
@@ -683,59 +675,56 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
 
               {/* ------------------------------------------------------- Test */}
               <aside
-                aria-label="Test der Vorlage"
+                aria-label={tr("Test der Vorlage")}
                 className="flex min-w-0 flex-col gap-4 border-t border-line bg-surface-2/40 px-5 py-5 @[60rem]:min-h-0 @[60rem]:overflow-y-auto @[60rem]:border-l @[60rem]:border-t-0"
               >
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="flex items-center gap-2 text-sm font-semibold text-fg">
                     <FlaskConical aria-hidden className="size-4 text-fg-muted" />
-                    Test
-                  </h3>
+                    {tr("Test")}</h3>
                   <span className="flex items-center gap-1.5 text-2xs text-fg-subtle" aria-live="polite">
                     {testing ? (
                       <>
-                        <Spinner size={12} /> wird geprüft …
-                      </>
+                        <Spinner size={12} /> {tr("wird geprüft …")}</>
                     ) : testData && gaps.length ? (
-                      <span className="font-medium text-warning-text">Bauteile unvollständig</span>
+                      <span className="font-medium text-warning-text">{tr("Bauteile unvollständig")}</span>
                     ) : testData ? (
-                      `${okSamples} von ${shownSamples.length} in Ordnung`
+                      tr("{v0} von {v1} in Ordnung", { v0: okSamples, v1: shownSamples.length })
                     ) : null}
                   </span>
                 </div>
 
                 {!testBody ? (
-                  <p className="text-xs text-fg-muted">Muster und ID angeben – dann baut PartForge hier Teilenummern.</p>
+                  <p className="text-xs text-fg-muted">{tr("Muster und ID angeben – dann baut PartForge hier Teilenummern.")}</p>
                 ) : test.isError ? (
-                  <Callout tone="danger" title="Vorlage so nicht verwendbar">
+                  <Callout tone="danger" title={tr("Vorlage so nicht verwendbar")}>
                     {cleanError(test.error)}
                   </Callout>
                 ) : testData && !testData.category_checked && testData.category_note ? (
-                  <Callout tone="info" title="Pflichtfelder nicht geprüft">
+                  <Callout tone="info" title={tr("Pflichtfelder nicht geprüft")}>
                     {testData.category_note}
                   </Callout>
                 ) : null}
                 {gaps.length > 0 && (
                   <Callout
                     tone="warning"
-                    title={`${gaps.length === 1 ? 'Ein Pflichtfeld bleibt' : `${gaps.length} Pflichtfelder bleiben`} leer`}
+                    title={tr("{v0} leer", { v0: gaps.length === 1 ? tr("Ein Pflichtfeld bleibt") : tr("{v0} Pflichtfelder bleiben", { v0: gaps.length }) })}
                   >
                     <ul className="flex flex-col gap-0.5">
                       {gaps.map((g) => (
                         <li key={g.column}>
-                          <span className="font-medium text-fg">{g.label}:</span> {g.hint}
+                          <span className="font-medium text-fg">{tr(g.label)}:</span> {g.hint}
                         </li>
                       ))}
                     </ul>
                     <p className="mt-1">
-                      So {gaps.every((g) => g.sizes.length === draft.sizes.length) ? 'wäre jedes Bauteil der Serie' : 'wären diese Bauteile'}{' '}
-                      „ungültig“ und würden nicht angelegt.
-                    </p>
+                      {tr("So")} {gaps.every((g) => g.sizes.length === draft.sizes.length) ? tr("wäre jedes Bauteil der Serie") : tr("wären diese Bauteile")}{' '}
+                      {tr("„ungültig“ und würden nicht angelegt.")}</p>
                   </Callout>
                 )}
 
                 <div className="flex flex-col gap-2">
-                  <span className="micro-label">Beispielwerte</span>
+                  <span className="micro-label">{tr("Beispielwerte")}</span>
                   <ul className="flex flex-col gap-2">
                     {samples.map((s, i) => {
                       const r = resultFor(s)
@@ -744,9 +733,9 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
                           <div className="flex items-center gap-1.5">
                             <Select
                               size="sm"
-                              aria-label={`Baugröße Beispiel ${i + 1}`}
+                              aria-label={tr("Baugröße Beispiel {v0}", { v0: i + 1 })}
                               value={s.size || undefined}
-                              placeholder="Größe"
+                              placeholder={tr("Größe")}
                               onValueChange={(size) => setSamples((list) => list.map((x) => (x.key === s.key ? { ...x, size } : x)))}
                               options={draft.sizes.map((x) => ({ value: x.size, label: x.size }))}
                               className="w-28 shrink-0"
@@ -755,13 +744,13 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
                               size="sm"
                               mono
                               value={s.value}
-                              aria-label={`Wert Beispiel ${i + 1}`}
+                              aria-label={tr("Wert Beispiel {v0}", { v0: i + 1 })}
                               onChange={(e) => setSamples((list) => list.map((x) => (x.key === s.key ? { ...x, value: e.target.value } : x)))}
                               suffix={<span className="text-2xs">{unit}</span>}
                             />
                             <IconButton
                               size="xs"
-                              label={`Beispiel ${i + 1} entfernen`}
+                              label={tr("Beispiel {v0} entfernen", { v0: i + 1 })}
                               icon={<Trash2 />}
                               onClick={() => setSamples((list) => list.filter((x) => x.key !== s.key))}
                             />
@@ -778,14 +767,12 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
                     className="self-start"
                     onClick={() => setSamples((list) => [...list, { key: optionKey(), size: draft.sizes[0]?.size ?? '', value: '' }])}
                   >
-                    Beispielwert
-                  </Button>
+                    {tr("Beispielwert")}</Button>
                 </div>
 
                 <div className="flex flex-col gap-2">
                   <label htmlFor={`${uid}-mpns`} className="micro-label">
-                    Teilenummern lesen
-                  </label>
+                    {tr("Teilenummern lesen")}</label>
                   <Textarea
                     id={`${uid}-mpns`}
                     rows={2}
@@ -793,7 +780,7 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
                     className="mono text-ui"
                     value={mpns}
                     onChange={(e) => setMpns(e.target.value)}
-                    placeholder="Echte Teilenummern aus dem Datenblatt, eine je Zeile"
+                    placeholder={tr("Echte Teilenummern aus dem Datenblatt, eine je Zeile")}
                     spellCheck={false}
                   />
                   {testData && testData.decoded.length > 0 && (
@@ -812,7 +799,7 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
                               <span className="text-fg-muted">
                                 {d
                                   ? `→ ${[d.size, d.value_text, ...Object.values(d.codes).filter(Boolean)].filter(Boolean).join(' · ')}`
-                                  : '→ passt nicht zum Muster'}
+                                  : tr("→ passt nicht zum Muster")}
                               </span>
                             </span>
                           </li>
@@ -824,7 +811,7 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
 
                 {testData?.regex && (
                   <details className="text-2xs text-fg-subtle">
-                    <summary className="cursor-pointer rounded-sm outline-none focus-ring">Regulärer Ausdruck zum Lesen</summary>
+                    <summary className="cursor-pointer rounded-sm outline-none focus-ring">{tr("Regulärer Ausdruck zum Lesen")}</summary>
                     <code className="mono mt-1.5 block break-all rounded-control border border-line bg-bg/60 p-2 text-fg-muted">
                       {testData.regex}
                     </code>
@@ -838,19 +825,18 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
                 {save.isError && !idError ? (
                   <span className="text-danger-text">{cleanError(save.error)}</span>
                 ) : !basicsOk ? (
-                  'Hersteller, Serie, ID, Muster und mindestens eine Baugröße angeben.'
+                  tr("Hersteller, Serie, ID, Muster und mindestens eine Baugröße angeben.")
                 ) : gaps.length ? (
                   <span className="text-warning-text">{gaps[0].hint}</span>
                 ) : (
-                  'Eigene Vorlagen gehören zu dieser Bibliothek.'
+                  tr("Eigene Vorlagen gehören zu dieser Bibliothek.")
                 )}
               </span>
               <div className="flex gap-2">
                 <Button type="button" variant="ghost" onClick={() => void requestClose()}>
-                  Abbrechen
-                </Button>
+                  {tr("Abbrechen")}</Button>
                 <Button type="submit" variant="primary" loading={save.isPending} disabled={!canSave} aria-keyshortcuts="Control+S">
-                  {editing ? 'Speichern' : 'Vorlage anlegen'}
+                  {editing ? tr("Speichern") : tr("Vorlage anlegen")}
                 </Button>
               </div>
             </DialogFooter>
@@ -866,9 +852,10 @@ export function CustomTemplateDialog({ open, onOpenChange, editId, defaultCatego
  * für Brücken nicht gelten (`not_applicable`), Beschreibung und – aufklappbar – alle Werte, wie die Serie sie speichert.
  */
 function SampleOutcome({ result: r, fieldLabel }: { result: TemplateSampleResult; fieldLabel: (column: string) => string }) {
+  const { t: tr } = useI18n()
   const ok = r.valid && r.roundtrip
   const missing = r.missing_fields
-  const others = r.messages.filter((m) => !MISSING_MESSAGE.test(m))
+  const others = r.messages.filter((m) => !MISSING_MESSAGE.test(m)).map(localizeMessage)
   const values = Object.entries(r.values).filter(([, v]) => v !== null && v !== '')
   const description = r.values.Description ?? null
   return (
@@ -881,29 +868,29 @@ function SampleOutcome({ result: r, fieldLabel }: { result: TemplateSampleResult
         <CircleX aria-hidden className="mt-0.5 size-3.5 shrink-0 text-danger" />
       )}
       <div className="min-w-0 flex-1">
-        <div className={cn('mono break-all text-ui', r.mpn ? 'text-fg' : 'text-fg-subtle')}>{r.mpn ?? 'keine Teilenummer'}</div>
+        <div className={cn('mono break-all text-ui', r.mpn ? 'text-fg' : 'text-fg-subtle')}>{r.mpn ?? tr("keine Teilenummer")}</div>
         <div className="text-2xs text-fg-muted">
           {ok
-            ? 'Teilenummer gültig · wird eindeutig zurückgelesen'
-            : [r.mpn && !r.valid ? 'laut Regeln nicht lieferbar' : null, ...others].filter(Boolean).join(' · ')}
+            ? tr("Teilenummer gültig · wird eindeutig zurückgelesen")
+            : [r.mpn && !r.valid ? tr("laut Regeln nicht lieferbar") : null, ...others].filter(Boolean).join(' · ')}
         </div>
         {ok && others.length > 0 && <div className="text-2xs text-fg-muted">{others.join(' · ')}</div>}
         {missing.length > 0 && (
           <div className="text-2xs text-warning-text">
-            Bauteil wäre ungültig: {missing.map((f) => f.label).join(', ')} {missing.length === 1 ? 'fehlt' : 'fehlen'}
+            {tr("Bauteil wäre ungültig:")} {missing.map((f) => tr(f.label)).join(', ')} {missing.length === 1 ? tr("fehlt") : tr("fehlen")}
           </div>
         )}
         {r.not_applicable.length > 0 && (
           <div className="flex items-start gap-1 text-2xs text-fg-subtle">
             <Info aria-hidden className="mt-px size-3 shrink-0" />
-            <span>Gilt nicht für die Brücke: {r.not_applicable.map(fieldLabel).join(', ')}</span>
+            <span>{tr("Gilt nicht für die Brücke:")} {r.not_applicable.map(fieldLabel).join(', ')}</span>
           </div>
         )}
         {description && <div className="mt-0.5 truncate text-2xs text-fg-muted" title={description}>{description}</div>}
         {values.length > 0 && (
           <details className="mt-1 text-2xs text-fg-subtle">
             <summary className="w-fit cursor-pointer rounded-sm outline-none hover:text-fg focus-ring">
-              Gespeicherte Werte ({values.length})
+              {tr("Gespeicherte Werte (")}{values.length})
             </summary>
             <dl className="mt-1 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5 rounded-control border border-line bg-bg/60 p-2">
               {values.map(([column, value]) => (

@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { Tooltip as TooltipPrimitive } from 'radix-ui'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
@@ -35,6 +36,7 @@ export function Tooltip({
   open,
   onOpenChange,
 }: TooltipProps) {
+  useI18n()
   if (disabled || content === null || content === undefined || content === '') return <>{children}</>
   return (
     <TooltipPrimitive.Root delayDuration={delayDuration} open={open} onOpenChange={onOpenChange}>

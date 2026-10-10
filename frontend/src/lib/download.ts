@@ -1,34 +1,4 @@
-/**
- * Dateien speichern – ehrlich gemeldet: „gespeichert“ nur, wenn die Datei wirklich geschrieben wurde.
- *
- *   const result = await saveFile({ suggestedName: 'Widerstände.csv', content: csv, type: FILE_TYPES.csv })
- *   notifySaveResult(result, { what: 'CSV-Datei' })
- *
- *   // Inhalt erst laden, wenn der Speicherort feststeht (Abbruch = kein unnötiger Abruf):
- *   await saveFile({ suggestedName: `${name}.step`, type: FILE_TYPES.step,
- *     load: () => api.get<Blob>(`/api/footprints/${name}/step`, { responseType: 'blob' }) })
- *
- *   await saveBlob(blob, 'Export.xlsx', { type: FILE_TYPES.xlsx })          // Kurzform
- *   await saveFileWithFeedback({ suggestedName, content, type, what: 'Prüfbericht' })   // inkl. Toasts
- *
- *   // Große Dateien, die das Backend selbst schreiben kann (Export-Job): erst der Dialog, dann schreibt der Job direkt
- *   // in die gewählte Datei – kein Base64-Umweg, ein Abbruch im Dialog kostet nichts
- *   await saveFileWithFeedback({ suggestedName: 'Widerstände.xlsx', type: FILE_TYPES.xlsx, what: 'Excel-Datei',
- *     busy: 'Excel-Datei wird erstellt …',
- *     saveTo: async (path) => { const { job } = await startExportJob({ ...body, target_path: path }); await waitFor(job) },
- *     load: () => api.get<Blob>(url, { responseType: 'blob' }) })                  // Weg ohne `pick_save_path`
- *
- * Reihenfolge:
- *   0. `saveTo` und Desktop-Brücke mit `pick_save_path`: nativer Dialog zuerst, dann `saveTo(pfad)`.
- *   1. Desktop-Brücke `window.pywebview.api.save_file(name, content, filters)` → nativer Windows-Dialog; Text geht
- *      als UTF-8, Binärdaten als `base64:<daten>` (Bytes bleiben exakt erhalten, z. B. BOM einer CSV, XLSX).
- *   2. Desktop-Fenster ohne Brücke: Speichern-Dialog der File-System-Access-API (`showSaveFilePicker`, WebView2).
- *   3. Browser: Download über einen versteckten Link (Status „gestartet“ – den Rest erledigt der Browser).
- *
- * pywebview verwirft Downloads über Links, solange `ALLOW_DOWNLOADS` nicht gesetzt ist – deshalb im Desktop-Fenster
- * nie stillschweigend auf den Link ausweichen (`notifySaveResult` sagt es dann ehrlich).
- * Im Klick-Handler aufrufen: Der Browser-Dialog braucht eine frische Nutzeraktion.
- */
+import { t as tr } from '@/lib/i18n'
 import { toast } from 'sonner'
 import { baseName } from './format'
 import { canOpenPath, canRevealPath, isDesktopWindow, nativeApi, revealPath } from './native'
@@ -44,19 +14,19 @@ export interface SaveFileType {
 
 /** Gängige Dateitypen für den Speichern-Dialog */
 export const FILE_TYPES = {
-  csv: { description: 'CSV-Datei', mime: 'text/csv', extensions: ['.csv'] },
+  csv: { get description() { return tr("CSV-Datei") }, mime: 'text/csv', extensions: ['.csv'] },
   xlsx: {
-    description: 'Excel-Arbeitsmappe',
+    get description() { return tr("Excel-Arbeitsmappe") },
     mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     extensions: ['.xlsx'],
   },
-  step: { description: 'STEP-Modell', mime: 'model/step', extensions: ['.step', '.stp'] },
-  json: { description: 'JSON-Datei', mime: 'application/json', extensions: ['.json'] },
-  svg: { description: 'SVG-Grafik', mime: 'image/svg+xml', extensions: ['.svg'] },
-  png: { description: 'PNG-Bild', mime: 'image/png', extensions: ['.png'] },
-  pdf: { description: 'PDF-Dokument', mime: 'application/pdf', extensions: ['.pdf'] },
-  txt: { description: 'Textdatei', mime: 'text/plain', extensions: ['.txt'] },
-  zip: { description: 'ZIP-Archiv', mime: 'application/zip', extensions: ['.zip'] },
+  step: { get description() { return tr("STEP-Modell") }, mime: 'model/step', extensions: ['.step', '.stp'] },
+  json: { get description() { return tr("JSON-Datei") }, mime: 'application/json', extensions: ['.json'] },
+  svg: { get description() { return tr("SVG-Grafik") }, mime: 'image/svg+xml', extensions: ['.svg'] },
+  png: { get description() { return tr("PNG-Bild") }, mime: 'image/png', extensions: ['.png'] },
+  pdf: { get description() { return tr("PDF-Dokument") }, mime: 'application/pdf', extensions: ['.pdf'] },
+  txt: { get description() { return tr("Textdatei") }, mime: 'text/plain', extensions: ['.txt'] },
+  zip: { get description() { return tr("ZIP-Archiv") }, mime: 'application/zip', extensions: ['.zip'] },
 } satisfies Record<string, SaveFileType>
 
 /** Text (UTF-8) oder Binärdaten */
@@ -134,7 +104,7 @@ function blobToBase64(blob: Blob): Promise<string> {
       const url = String(reader.result ?? '')
       resolve(url.slice(url.indexOf(',') + 1))
     }
-    reader.onerror = () => reject(reader.error ?? new Error('Datei konnte nicht gelesen werden'))
+    reader.onerror = () => reject(reader.error ?? new Error(tr("Datei konnte nicht gelesen werden")))
     reader.readAsDataURL(blob)
   })
 }
@@ -177,7 +147,7 @@ function anchorDownload(blob: Blob, filename: string): void {
 function describeError(err: unknown): string {
   if (err instanceof Error && err.message) return err.message
   if (typeof err === 'string' && err) return err
-  return 'Unbekannter Fehler'
+  return tr("Unbekannter Fehler")
 }
 
 /**
@@ -196,13 +166,13 @@ export async function saveFile(opts: SaveFileOptions): Promise<SaveFileResult> {
     try {
       path = (await pickPath(name, bridgeFilters(types))) ?? null
     } catch (err) {
-      throw new Error(`Der Speichern-Dialog ließ sich nicht öffnen: ${describeError(err)}`, { cause: err })
+      throw new Error(tr("Der Speichern-Dialog ließ sich nicht öffnen: {0}", { "0": String(describeError(err)) }), { cause: err })
     }
     if (!path) return { status: 'cancelled' }
     try {
       await opts.saveTo(path)
     } catch (err) {
-      throw new Error(`Die Datei konnte nicht gespeichert werden: ${describeError(err)}`, { cause: err })
+      throw new Error(tr("Die Datei konnte nicht gespeichert werden: {0}", { "0": String(describeError(err)) }), { cause: err })
     }
     return { status: 'saved', name: baseName(path) || name, path, via: 'desktop' }
   }
@@ -215,7 +185,7 @@ export async function saveFile(opts: SaveFileOptions): Promise<SaveFileResult> {
     try {
       path = (await bridge(name, payload, bridgeFilters(types))) ?? null
     } catch (err) {
-      throw new Error(`Die Datei konnte nicht gespeichert werden: ${describeError(err)}`, { cause: err })
+      throw new Error(tr("Die Datei konnte nicht gespeichert werden: {0}", { "0": String(describeError(err)) }), { cause: err })
     }
     return path ? { status: 'saved', name: path.split(/[\\/]/).pop() ?? name, path, via: 'desktop' } : { status: 'cancelled' }
   }
@@ -241,7 +211,7 @@ export async function saveFile(opts: SaveFileOptions): Promise<SaveFileResult> {
         await writable.write(blob)
         await writable.close()
       } catch (err) {
-        throw new Error(`Die Datei konnte nicht gespeichert werden: ${describeError(err)}`, { cause: err })
+        throw new Error(tr("Die Datei konnte nicht gespeichert werden: {0}", { "0": String(describeError(err)) }), { cause: err })
       }
       return { status: 'saved', name: handle.name, path: null, via: 'picker' }
     }
@@ -273,26 +243,26 @@ export interface NotifySaveOptions {
  * ein an den Browser übergebener Download ist „gestartet“; im Desktop-Fenster ohne Dialog ehrlich mit Hinweis.
  * Abbruch bleibt still.
  */
-export function notifySaveResult(result: SaveFileResult, { what = 'Datei', id = 'pf-save-file' }: NotifySaveOptions = {}): void {
+export function notifySaveResult(result: SaveFileResult, { what = tr("Datei"), id = 'pf-save-file' }: NotifySaveOptions = {}): void {
   if (result.status === 'cancelled') return
   if (result.status === 'saved') {
     const path = result.path
-    toast.success(`${what} gespeichert`, {
+    toast.success(tr("{0} gespeichert", { "0": String(what) }), {
       id,
       description: path ?? result.name,
       // Explorer mit markierter Datei (ältere Desktop-Brücke: Ordner öffnen)
       action:
         path && (canRevealPath() || canOpenPath())
-          ? { label: 'Im Explorer zeigen', onClick: () => void revealPath(path, { what }) }
+          ? { label: tr("Im Explorer zeigen"), onClick: () => void revealPath(path, { what }) }
           : undefined,
     })
   } else if (result.desktop) {
-    toast.info(`${what} angefordert`, {
+    toast.info(tr("{0} angefordert", { "0": String(what) }), {
       id,
-      description: `${result.name} – erscheint kein Speichern-Dialog, sind Downloads in diesem Fenster noch nicht freigeschaltet.`,
+      description: tr("{0} – erscheint kein Speichern-Dialog, sind Downloads in diesem Fenster noch nicht freigeschaltet.", { "0": String(result.name) }),
     })
   } else {
-    toast('Download gestartet', { id, description: result.name })
+    toast(tr("Download gestartet"), { id, description: result.name })
   }
 }
 
@@ -306,7 +276,7 @@ export interface SaveFeedbackOptions extends NotifySaveOptions {
 
 /** `saveFile` + `notifySaveResult` + Fehler-Toast in einem – liefert das Ergebnis oder `null` bei einem Fehler. */
 export async function saveFileWithFeedback(opts: SaveFileOptions & SaveFeedbackOptions): Promise<SaveFileResult | null> {
-  const { what = 'Datei', id = 'pf-save-file', busy, ...save } = opts
+  const { what = tr("Datei"), id = 'pf-save-file', busy, ...save } = opts
   let shown = false
   const showBusy = () => {
     if (!busy || shown) return
@@ -334,7 +304,7 @@ export async function saveFileWithFeedback(opts: SaveFileOptions & SaveFeedbackO
     notifySaveResult(result, { what, id })
     return result
   } catch (err) {
-    toast.error(`${what} konnte nicht gespeichert werden`, { id, description: describeError(err) })
+    toast.error(tr("{0} konnte nicht gespeichert werden", { "0": String(what) }), { id, description: describeError(err) })
     return null
   }
 }

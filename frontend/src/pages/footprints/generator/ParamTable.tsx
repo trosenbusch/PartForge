@@ -1,3 +1,4 @@
+import { getLocale, t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Maßtabelle wie im Datenblatt: Symbol (E, E1, D, L, b …), Bezeichnung und Min · Nom · Max in mm.
  *
@@ -99,6 +100,7 @@ function historyKey(e: KeyboardEvent<HTMLElement>, before?: () => void): boolean
 }
 
 export function ParamTable({ family, values, resolved, fallbacks, errorParams, changed, onChange, onReset }: ParamTableProps) {
+  useI18n()
   const groups = groupParams(family.params)
   const collapsed = useFootprintUi((s) => s.collapsed)
   const setCollapsed = useFootprintUi((s) => s.setCollapsed)
@@ -116,7 +118,7 @@ export function ParamTable({ family, values, resolved, fallbacks, errorParams, c
     <section aria-labelledby="fp-params-label" className="flex flex-col [--ctl:9.25rem] @[21rem]/input:[--ctl:10.5rem]">
       <div className="sticky top-0 z-[2] -mx-4 flex items-end gap-2 border-b border-line bg-surface/95 px-4 pb-1.5 pt-2 backdrop-blur-sm">
         <SectionLabel id="fp-params-label" className="min-w-0 flex-1">
-          Maße
+          {tr("Maße")}
         </SectionLabel>
         <div aria-hidden className="grid w-[var(--ctl)] shrink-0 grid-cols-3 pr-px text-right">
           {['min', 'nom', 'max'].map((p) => (
@@ -172,6 +174,7 @@ function GroupView({
   onToggle: () => void
   children: ReactNode
 }) {
+  useI18n()
   const id = useId()
   return (
     <div role="group" aria-labelledby={id} className="flex flex-col">
@@ -183,7 +186,7 @@ function GroupView({
         className="group/gh -mx-1.5 mt-1.5 flex h-7 items-center gap-1.5 rounded-control px-1.5 text-left outline-none transition-colors hover:bg-surface-2 focus-ring-inset"
       >
         <ChevronRight aria-hidden className={cn('size-3.5 shrink-0 text-fg-subtle transition-transform duration-150', open && 'rotate-90')} />
-        <span className="micro-label text-fg-muted">{group.label}</span>
+        <span className="micro-label text-fg-muted">{tr(group.label)}</span>
         {!open && setCount > 0 && (
           <span className="rounded-full bg-surface-3 px-1.5 text-2xs leading-4 tabular-nums text-fg-muted">{setCount}</span>
         )}
@@ -211,6 +214,7 @@ interface RowProps {
 }
 
 function ParamRow({ spec, value, resolved, fallback, error, changed, intStep, announce, onChange, onReset }: RowProps) {
+  useI18n()
   const labelId = useId()
   const helpId = useId()
   const issueId = useId()
@@ -221,14 +225,14 @@ function ParamRow({ spec, value, resolved, fallback, error, changed, intStep, an
   const labelText = (
     <span
       id={labelId}
-      lang="de"
+      lang={getLocale()}
       className={cn(
         'min-w-0 break-words text-xs leading-tight text-fg-muted [hyphens:auto] group-focus-within/row:text-fg group-hover/row:text-fg',
         spec.help && 'cursor-help underline decoration-line-strong decoration-dotted underline-offset-[3px]',
       )}
     >
       {softHyphenate(text)}
-      {changed && <span className="sr-only"> (von der Vorlage geändert)</span>}
+      {changed && <span className="sr-only"> {tr("(von der Vorlage geändert)")}</span>}
     </span>
   )
 
@@ -244,14 +248,14 @@ function ParamRow({ spec, value, resolved, fallback, error, changed, intStep, an
     >
       {error && <span aria-hidden className="absolute inset-y-1 left-0 w-0.5 rounded-full bg-danger" />}
       <div className="flex min-w-0 items-center gap-1">
-        <ResetDot changed={changed} label={spec.label} onReset={onReset} />
+        <ResetDot changed={changed} label={tr(spec.label)} onReset={onReset} />
         {symbol && (
           <span className="mono flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-md border border-line bg-surface-2 px-1 text-2xs font-semibold text-fg">
             {symbol}
           </span>
         )}
         {spec.help ? (
-          <Tooltip content={spec.help} side="top" delayDuration={500}>
+          <Tooltip content={tr(spec.help ?? '')} side="top" delayDuration={500}>
             {labelText}
           </Tooltip>
         ) : (
@@ -264,7 +268,7 @@ function ParamRow({ spec, value, resolved, fallback, error, changed, intStep, an
           value={value}
           resolved={resolved}
           fallback={fallback}
-          label={spec.label}
+          label={tr(spec.label)}
           describedBy={describedBy}
           invalid={error || Boolean(tolIssue)}
           intStep={intStep}
@@ -276,9 +280,9 @@ function ParamRow({ spec, value, resolved, fallback, error, changed, intStep, an
         // Hilfe erscheint, sobald die Zeile den Fokus hat (Tastatur); mit der Maus als Tooltip an der Bezeichnung.
         // Toleranzzeilen nennen zusätzlich die Freitext-Formate – im Fluss, verdeckt also keine Nachbarzeile.
         <p id={helpId} className="col-span-2 hidden pb-0.5 pl-[18px] pr-1 pt-1 text-2xs leading-4 text-fg-subtle group-focus-within/row:block">
-          {spec.help}
+          {tr(spec.help ?? '')}
           {spec.kind === 'tol' && (
-            <span className="block text-fg-subtle">{FREE_TEXT_HELP}</span>
+            <span className="block text-fg-subtle">{tr(FREE_TEXT_HELP)}</span>
           )}
         </p>
       )}
@@ -293,12 +297,13 @@ function ParamRow({ spec, value, resolved, fallback, error, changed, intStep, an
 
 /** Punkt „geändert“ – zugleich Knopf zum Zurücksetzen auf den Vorlagenwert (Maus und Tastatur) */
 function ResetDot({ changed, label, onReset }: { changed: boolean; label: string; onReset: () => void }) {
+  useI18n()
   if (!changed) return <span aria-hidden className="w-3.5 shrink-0" />
   return (
-    <Tooltip content="Auf den Wert der Vorlage zurücksetzen" side="top">
+    <Tooltip content={tr("Auf den Wert der Vorlage zurücksetzen")} side="top">
       <button
         type="button"
-        aria-label={`${label}: auf den Wert der Vorlage zurücksetzen`}
+        aria-label={tr("{value0}: auf den Wert der Vorlage zurücksetzen", { value0: String(label) })}
         onClick={onReset}
         className="group/reset relative flex size-3.5 shrink-0 items-center justify-center rounded-sm text-fg-muted outline-none before:absolute before:-inset-1.5 before:content-[''] hover:text-fg focus-ring"
       >
@@ -387,6 +392,7 @@ interface TolEdit {
 type Hint = { text: string; tone: 'ok' | 'bad' | 'help' }
 
 function TolCells({ spec, value, resolved, fallback, label, describedBy, invalid, announce, onChange }: ControlProps) {
+  useI18n()
   const cur: TolValue = isTolValue(value) ? value : EMPTY_TOL
   const [edit, setEdit] = useState<TolEdit | null>(null)
   const [hint, setHint] = useState<Hint | null>(null)
@@ -408,26 +414,26 @@ function TolCells({ spec, value, resolved, fallback, label, describedBy, invalid
     setEdit((e) => ({ part, start: e?.part === part ? e.start : isTolValue(value) ? value : null, text }))
     const parsed = parseTolText(text)
     if (parsed.kind === 'empty') {
-      setHint({ text: FREE_TEXT_HELP, tone: 'help' })
+      setHint({ text: tr(FREE_TEXT_HELP), tone: 'help' })
       emit({ ...cur, [part]: null })
     } else if (parsed.kind === 'single') {
-      setHint({ text: FREE_TEXT_HELP, tone: 'help' })
+      setHint({ text: tr(FREE_TEXT_HELP), tone: 'help' })
       emit({ ...cur, [part]: parsed.value })
     } else if (parsed.kind === 'tol') {
       const t = parsed.tol
-      const summary = `${formatDim(t.min) || '–'} / ${formatDim(t.nom) || 'Mitte'} / ${formatDim(t.max) || '–'}`
+      const summary = `${formatDim(t.min) || '–'} / ${formatDim(t.nom) || tr('Mitte')} / ${formatDim(t.max) || '–'}`
       setHint({ text: `${parsed.label} → ${summary}`, tone: 'ok' })
-      announce(`${label}: ${parsed.label} erkannt, ${summary}`)
+      announce(tr("{value0}: {value1} erkannt, {value2}", { value0: String(label), value1: String(parsed.label), value2: String(summary) }))
       emit(t)
     } else {
-      setHint({ text: 'Nicht erkannt – z. B. 0,25±0,05 oder 0,20…0,30', tone: 'bad' })
-      announce(`${label}: Eingabe nicht erkannt`)
+      setHint({ text: tr('Nicht erkannt – z. B. 0,25±0,05 oder 0,20…0,30'), tone: 'bad' })
+      announce(tr("{value0}: Eingabe nicht erkannt", { value0: String(label) }))
     }
   }
 
   const settle = (part: Part) => {
     setEdit((e) => (e ? { ...e, part, text: null } : e))
-    setHint({ text: FREE_TEXT_HELP, tone: 'help' })
+    setHint({ text: tr(FREE_TEXT_HELP), tone: 'help' })
   }
 
   const onKey = (part: Part, e: KeyboardEvent<HTMLInputElement>) => {
@@ -442,7 +448,7 @@ function TolCells({ spec, value, resolved, fallback, label, describedBy, invalid
       e.stopPropagation()
       emit(start, 'discrete')
       settle(part)
-      announce(`${label}: Eingabe verworfen`)
+      announce(tr("{value0}: Eingabe verworfen", { value0: String(label) }))
     } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
       e.preventDefault()
       const step = e.shiftKey ? 0.1 : e.ctrlKey || e.metaKey ? 0.001 : 0.01
@@ -471,7 +477,7 @@ function TolCells({ spec, value, resolved, fallback, label, describedBy, invalid
                 inputMode="decimal"
                 autoComplete="off"
                 spellCheck={false}
-                aria-label={`${label} – ${PART_LABEL[part]} (mm)`}
+                aria-label={`${label} – ${tr(PART_LABEL[part])} (mm)`}
                 aria-describedby={describedBy}
                 aria-invalid={invalid || undefined}
                 value={display(part)}
@@ -480,7 +486,7 @@ function TolCells({ spec, value, resolved, fallback, label, describedBy, invalid
                 onKeyDown={(e) => onKey(part, e)}
                 onFocus={(e) => {
                   setEdit({ part, start: isTolValue(value) ? value : null, text: null })
-                  setHint({ text: FREE_TEXT_HELP, tone: 'help' })
+                  setHint({ text: tr(FREE_TEXT_HELP), tone: 'help' })
                   e.currentTarget.select()
                 }}
                 onBlur={(e) => {
@@ -540,6 +546,7 @@ function numberPlaceholder(spec: FootprintParamSpec, resolved: unknown, fallback
 }
 
 function NumberCell({ spec, value, resolved, fallback, label, describedBy, invalid, intStep, onChange }: ControlProps) {
+  useI18n()
   const isInt = spec.kind === 'int'
   const num = typeof value === 'number' ? value : null
   const [edit, setEdit] = useState<{ text: string; start: number | null } | null>(null)
@@ -627,6 +634,7 @@ function NumberCell({ spec, value, resolved, fallback, label, describedBy, inval
 const AUTO = '__auto__'
 
 function EnumCell({ spec, value, resolved, fallback, label, onChange }: ControlProps) {
+  useI18n()
   const current = typeof value === 'string' ? value : null
   const def = defaultValue(spec)
   const resolvedText = typeof resolved === 'string' ? resolved : resolved !== undefined && resolved !== null ? String(resolved) : null
@@ -634,8 +642,8 @@ function EnumCell({ spec, value, resolved, fallback, label, onChange }: ControlP
     typeof fallback === 'string' && fallback
       ? fallback
       : resolvedText
-        ? `automatisch (${enumShortLabel(spec, resolvedText)})`
-        : 'automatisch'
+        ? tr("automatisch ({value0})", { value0: String(enumShortLabel(spec, resolvedText)) })
+        : tr('automatisch')
   const hasAuto = def === null
   const shown = current ?? (hasAuto ? AUTO : String(def))
   const short = spec.options.map((o) => enumShortLabel(spec, o))
@@ -654,7 +662,7 @@ function EnumCell({ spec, value, resolved, fallback, label, onChange }: ControlP
         value={shown}
         onValueChange={set}
         options={[
-          ...(hasAuto ? [{ value: AUTO, label: 'Auto', title: autoText }] : []),
+          ...(hasAuto ? [{ value: AUTO, label: tr('Auto'), title: autoText }] : []),
           ...spec.options.map((o, i) => ({ value: o, label: short[i] })),
         ]}
         className="w-full"
@@ -677,19 +685,21 @@ function EnumCell({ spec, value, resolved, fallback, label, onChange }: ControlP
 }
 
 function BoolCell({ spec, value, label, onChange }: ControlProps) {
+  useI18n()
   const def = defaultValue(spec)
   const checked = typeof value === 'boolean' ? value : def === true
   return (
     <div className="flex h-7 items-center justify-end gap-2 pr-0.5">
-      <span className="text-2xs text-fg-muted">{checked ? 'Ja' : 'Nein'}</span>
+      <span className="text-2xs text-fg-muted">{checked ? tr('Ja') : tr('Nein')}</span>
       <Switch size="sm" aria-label={label} checked={checked} onCheckedChange={(c) => onChange(c, { mode: 'discrete', commit: true })} />
     </div>
   )
 }
 
 function TextCell({ spec, value, fallback, label, describedBy, onChange }: ControlProps) {
+  useI18n()
   const text = typeof value === 'string' ? value : ''
-  const placeholder = typeof fallback === 'string' ? fallback : spec.name === 'manufacturer' ? 'z. B. TI' : spec.name === 'package_code' ? 'z. B. PW' : ''
+  const placeholder = typeof fallback === 'string' ? fallback : spec.name === 'manufacturer' ? tr('z. B. TI') : spec.name === 'package_code' ? tr('z. B. PW') : ''
   return (
     <Input
       size="sm"

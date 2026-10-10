@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 /**
  * Leiste für die Mehrfachauswahl (schwebt über der Tabelle): Anzahl, „Alle Treffer auswählen“, Bearbeiten,
  * Duplizieren, Exportieren, Löschen. Esc hebt die Auswahl auf.
@@ -39,6 +40,7 @@ export function BulkBar({
   onClear,
   compact = false,
 }: BulkBarProps) {
+  const { t } = useI18n()
   const shown = allMatching && total !== null ? total : count
   // Das Job-Dock der Shell liegt unten rechts – die Leiste weicht nach oben aus, solange es sichtbar ist
   const dockVisible = useJobDock((s) => s.visible)
@@ -50,7 +52,7 @@ export function BulkBar({
         <motion.div
           key="bulk"
           role="group"
-          aria-label="Auswahl bearbeiten"
+          aria-label={t("Auswahl bearbeiten")}
           initial={{ opacity: 0, y: 16, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 12, scale: 0.98, transition: { duration: 0.14 } }}
@@ -69,22 +71,22 @@ export function BulkBar({
               {formatNumber(shown)}
             </span>
             <span className="whitespace-nowrap font-medium text-fg">
-              {allMatching ? (compact ? 'alle Treffer' : 'alle Treffer ausgewählt') : 'ausgewählt'}
+              {allMatching ? (compact ? t("alle Treffer") : t("alle Treffer ausgewählt")) : t("ausgewählt")}
             </span>
           </span>
           {canSelectAllMatching && !allMatching && total !== null && (
             <Button variant="link" size="sm" onClick={onSelectAllMatching} className="mr-1 whitespace-nowrap">
-              {compact ? `Alle ${formatNumber(total)}` : `Alle ${formatNumber(total)} auswählen`}
+              {compact ? t("Alle {1}", { 1: formatNumber(total) }) : t("Alle {1} auswählen", { 1: formatNumber(total) })}
             </Button>
           )}
           <span aria-hidden className="mx-1 h-5 w-px bg-line-strong" />
-          <BarAction compact={compact} icon={<PencilLine />} label="Bearbeiten" onClick={onEdit} />
-          <BarAction compact={compact} icon={<CopyPlus />} label="Duplizieren" onClick={onDuplicate} disabled={allMatching && shown > 200} />
-          <BarAction compact={compact} icon={<Download />} label="Exportieren" onClick={onExport} />
-          <BarAction compact={compact} icon={<Trash2 />} label="Löschen" onClick={onDelete} danger hotkey="delete" />
+          <BarAction compact={compact} icon={<PencilLine />} label={t("Bearbeiten")} onClick={onEdit} />
+          <BarAction compact={compact} icon={<CopyPlus />} label={t("Duplizieren")} onClick={onDuplicate} disabled={allMatching && shown > 200} />
+          <BarAction compact={compact} icon={<Download />} label={t("Exportieren")} onClick={onExport} />
+          <BarAction compact={compact} icon={<Trash2 />} label={t("Löschen")} onClick={onDelete} danger hotkey="delete" />
           <span aria-hidden className="mx-1 h-5 w-px bg-line-strong" />
-          <Tooltip content={<span className="flex items-center gap-2">Auswahl aufheben <Kbd size="xs">Esc</Kbd></span>}>
-            <Button variant="ghost" size="sm" iconOnly aria-label="Auswahl aufheben" onClick={onClear}>
+          <Tooltip content={<span className="flex items-center gap-2">{t("Auswahl aufheben")} <Kbd size="xs">Esc</Kbd></span>}>
+            <Button variant="ghost" size="sm" iconOnly aria-label={t("Auswahl aufheben")} onClick={onClear}>
               <X />
             </Button>
           </Tooltip>
@@ -111,6 +113,7 @@ function BarAction({
   danger?: boolean
   hotkey?: string
 }) {
+  const { t } = useI18n()
   const button = (
     <Button
       variant="ghost"
@@ -126,7 +129,7 @@ function BarAction({
     </Button>
   )
   return compact || hotkey ? (
-    <Tooltip content={danger ? `${label} (Auswahl)` : label} hotkey={hotkey}>
+    <Tooltip content={danger ? t("{1} (Auswahl)", { 1: label }) : label} hotkey={hotkey}>
       {button}
     </Tooltip>
   ) : (

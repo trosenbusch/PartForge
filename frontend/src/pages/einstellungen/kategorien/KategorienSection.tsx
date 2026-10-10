@@ -1,3 +1,4 @@
+import { t as translate, useI18n } from '@/lib/i18n'
 /**
  * Kategorien und Felder – der Schema-Designer. Links die Kategorien, rechts die gewählte Kategorie mit den Reitern
  * Felder (sofort gespeichert, mit Rückgängig), Texte (Vorlagen mit Live-Vorschau) und Eigenschaften.
@@ -32,8 +33,9 @@ const leavesCategory = (a: Location, b: Location) =>
   a.pathname !== b.pathname || new URLSearchParams(a.search).get('k') !== new URLSearchParams(b.search).get('k')
 
 function DesignerSkeleton() {
+  useI18n()
   return (
-    <div className="grid grid-cols-1 gap-5 @[58rem]:grid-cols-[15rem_minmax(0,1fr)]" aria-busy="true" aria-label="Kategorien werden geladen">
+    <div className="grid grid-cols-1 gap-5 @[58rem]:grid-cols-[15rem_minmax(0,1fr)]" aria-busy="true" aria-label={translate("Kategorien werden geladen")}>
       <Skeleton className="hidden h-[32rem] rounded-card @[58rem]:block" />
       <Skeleton className="h-[32rem] rounded-card" />
     </div>
@@ -41,14 +43,16 @@ function DesignerSkeleton() {
 }
 
 export default function KategorienSection() {
+  useI18n()
   const workspace = useWorkspace()
   if (workspace.isPending) return <DesignerSkeleton />
-  if (!workspace.data) return <NoWorkspace what="Kategorien und Felder" />
+  if (!workspace.data) return <NoWorkspace what={translate("Kategorien und Felder")} />
   // Abfragen erst mit geöffneter Bibliothek (sonst 409 und ein überflüssiger Hinweis)
   return <SchemaDesigner root={workspace.data.root} />
 }
 
 function SchemaDesigner({ root }: { root: string }) {
+  useI18n()
   const categories = useCategories()
   const kinds = useFieldKinds()
   const [params, setParams] = useSearchParams()
@@ -87,9 +91,9 @@ function SchemaDesigner({ root }: { root: string }) {
         <EmptyState
           illustration="offline"
           titleAs="h2"
-          title="Kategorien konnten nicht geladen werden"
+          title={translate("Kategorien konnten nicht geladen werden")}
           description={errorMessage(categories.error)}
-          actions={<Button onClick={() => void categories.refetch()}>Erneut versuchen</Button>}
+          actions={<Button onClick={() => void categories.refetch()}>{translate("Erneut versuchen")}</Button>}
         />
       </Card>
     )
@@ -113,20 +117,19 @@ function SchemaDesigner({ root }: { root: string }) {
       {/* Schmal: Kategorie als Auswahlliste */}
       <div className="flex items-center gap-2 @[58rem]:hidden">
         <Select
-          aria-label="Kategorie"
+          aria-label={translate("Kategorie")}
           value={selected?.table}
           onValueChange={select}
           options={list.map((c) => ({
             value: c.table,
             label: c.label,
-            description: `${c.table} · ${formatNumber(c.part_count ?? 0)} Bauteile`,
+            description: translate("{value1} · {value2} Bauteile", { value1: c.table, value2: formatNumber(c.part_count ?? 0) }),
             icon: <CategoryTile icon={c.icon} color={c.color} size="sm" className="size-5 rounded-md [&_svg]:size-3" />,
           }))}
           className="flex-1"
         />
         <Button variant="secondary" leftIcon={<Plus />} onClick={() => setCreating(true)}>
-          Neue Kategorie
-        </Button>
+          {translate("Neue Kategorie")}</Button>
       </div>
 
       {selected ? (
@@ -153,12 +156,11 @@ function SchemaDesigner({ root }: { root: string }) {
           <EmptyState
             illustration="forge"
             titleAs="h2"
-            title="Noch keine Kategorien"
-            description="Kategorien sind die Tabellen Ihrer Bibliothek – je Bauteilart eine, in Altium je eine Bibliothek."
+            title={translate("Noch keine Kategorien")}
+            description={translate("Kategorien sind die Tabellen Ihrer Bibliothek – je Bauteilart eine, in Altium je eine Bibliothek.")}
             actions={
               <Button variant="secondary" leftIcon={<Plus />} onClick={() => setCreating(true)}>
-                Erste Kategorie anlegen
-              </Button>
+                {translate("Erste Kategorie anlegen")}</Button>
             }
           />
         </Card>
@@ -193,6 +195,7 @@ function CategoryEditor({
   onRenamed: (table: string) => void
   onDeleted: () => void
 }) {
+  useI18n()
   const saved = toDraft(category)
   const { draft, setDraft, dirty, reset, commit } = useDraft<CategoryDraft>(saved)
   const update = useUpdateCategory()
@@ -216,8 +219,8 @@ function CategoryEditor({
     try {
       const cat = await update.mutateAsync({ table: category.table, patch, root })
       commit(toDraft(cat))
-      toast.success(`„${cat.label}“ gespeichert`, {
-        description: patch.table ? `Tabelle heißt jetzt ${cat.table}.` : undefined,
+      toast.success(translate("„{value1}“ gespeichert", { value1: cat.label }), {
+        description: patch.table ? translate("Tabelle heißt jetzt {value1}.", { value1: cat.table }) : undefined,
       })
       if (patch.table) onRenamed(cat.table)
       return true
@@ -242,45 +245,40 @@ function CategoryEditor({
               <span className="mono text-fg">{category.table}</span>
               <span aria-hidden className="text-fg-subtle">·</span>
               <span>
-                Präfix <span className="mono text-fg">{draft.prefix || '–'}</span>
+                {translate("Präfix")}{' '}<span className="mono text-fg">{draft.prefix || '–'}</span>
               </span>
               <span aria-hidden className="text-fg-subtle">·</span>
-              <span>{parts === 0 ? 'ohne Bauteile' : `${formatNumber(parts)} ${parts === 1 ? 'Bauteil' : 'Bauteile'}`}</span>
+              <span>{parts === 0 ? translate("ohne Bauteile") : `${formatNumber(parts)} ${parts === 1 ? translate("Bauteil") : translate("Bauteile")}`}</span>
               <span aria-hidden className="text-fg-subtle">·</span>
               <span>
-                {formatNumber(ownFields)} eigene {ownFields === 1 ? 'Feld' : 'Felder'}
+                {formatNumber(ownFields)} {' '}{translate("eigene")}{' '}{ownFields === 1 ? translate("Feld") : translate("Felder")}
               </span>
               <span className="flex gap-1.5">
-                {category.builtin ? <Badge variant="outline">aus Vorlage</Badge> : <Badge variant="outline">eigene</Badge>}
+                {category.builtin ? <Badge variant="outline">{translate("aus Vorlage")}</Badge> : <Badge variant="outline">{translate("eigene")}</Badge>}
                 {draft.altium_enabled ? (
                   <Badge variant="success" dot>
-                    in Altium
-                  </Badge>
+                    {translate("in Altium")}</Badge>
                 ) : (
-                  <Badge variant="neutral">nicht in Altium</Badge>
+                  <Badge variant="neutral">{translate("nicht in Altium")}</Badge>
                 )}
               </span>
             </div>
           </div>
           <Button asChild variant="ghost" size="sm">
             <Link to={`/bauteile/${encodeURIComponent(category.table)}`}>
-              Bauteile
-              <ArrowUpRight aria-hidden />
+              {translate("Bauteile")}<ArrowUpRight aria-hidden />
             </Link>
           </Button>
         </div>
 
         <Tabs value={tab} onValueChange={onTab}>
-          <TabsList className="px-3" aria-label="Bereiche der Kategorie">
+          <TabsList className="px-3" aria-label={translate("Bereiche der Kategorie")}>
             <TabsTrigger value="felder" icon={<ListTree />} count={formatNumber(ownFields)}>
-              Felder
-            </TabsTrigger>
+              {translate("Felder")}</TabsTrigger>
             <TabsTrigger value="texte" icon={textErrors ? <TriangleAlert className="text-danger-text" /> : undefined}>
-              Texte
-            </TabsTrigger>
+              {translate("Texte")}</TabsTrigger>
             <TabsTrigger value="eigenschaften" icon={propErrors ? <TriangleAlert className="text-danger-text" /> : undefined}>
-              Eigenschaften
-            </TabsTrigger>
+              {translate("Eigenschaften")}</TabsTrigger>
           </TabsList>
           <TabsContent value="felder">
             <FieldsPanel category={category} kinds={kinds} />

@@ -1,3 +1,4 @@
+import { t as tr } from '@/components/preview/i18n'
 /**
  * Bemaßung für die Footprint-Vorschau: aus dem Rechenprotokoll des Generators (IPC-7351: Zmax, Gmin, Xmax,
  * Raster) bzw. – ohne Protokoll – aus den Pads abgeleitet. Ergebnis sind abstrakte Maßketten in mm; der Abstand zur
@@ -187,7 +188,7 @@ export function footprintDimensions(spec: FootprintSpec, calc: FootprintCalc | n
       base: ext.top,
       level: xLand.g > 0.01 ? 1 : 0,
       label: `Z ${mm(xLand.z)}`,
-      title: `Zmax ${mm(xLand.z)} mm – Außenmaß über die Pads`,
+      title: tr("Zmax {value0} mm – Außenmaß über die Pads", { value0: String(mm(xLand.z)) }),
     })
     if (xLand.g > 0.01) {
       lines.push({
@@ -200,7 +201,7 @@ export function footprintDimensions(spec: FootprintSpec, calc: FootprintCalc | n
         base: ext.top,
         level: 0,
         label: `G ${mm(xLand.g)}`,
-        title: `Gmin ${mm(xLand.g)} mm – Innenabstand der Pads`,
+        title: tr("Gmin {value0} mm – Innenabstand der Pads", { value0: String(mm(xLand.g)) }),
       })
     }
     // Padbreite (Xmax) rechts am obersten Pad der rechten Reihe
@@ -216,7 +217,7 @@ export function footprintDimensions(spec: FootprintSpec, calc: FootprintCalc | n
         base: ext.right,
         level: 0,
         label: `X ${mm(xLand.x)}`,
-        title: `Xmax ${mm(xLand.x)} mm – Padbreite`,
+        title: tr("Xmax {value0} mm – Padbreite", { value0: String(mm(xLand.x)) }),
       })
     }
     const pitch = rowPitch(pads, 'y')
@@ -231,7 +232,7 @@ export function footprintDimensions(spec: FootprintSpec, calc: FootprintCalc | n
         base: ext.left,
         level: 0,
         label: `e ${mm(pitch.pitch)}`,
-        title: `Raster ${mm(pitch.pitch)} mm`,
+        title: tr("Raster {value0} mm", { value0: String(mm(pitch.pitch)) }),
       })
     }
   }
@@ -249,7 +250,7 @@ export function footprintDimensions(spec: FootprintSpec, calc: FootprintCalc | n
       base: ext.right,
       level: yLand.g > 0.01 ? 1 : 0,
       label: `Z ${mm(yLand.z)}`,
-      title: `Zmax ${mm(yLand.z)} mm – Außenmaß über die Pads`,
+      title: tr("Zmax {value0} mm – Außenmaß über die Pads", { value0: String(mm(yLand.z)) }),
     })
     if (yLand.g > 0.01) {
       lines.push({
@@ -262,7 +263,7 @@ export function footprintDimensions(spec: FootprintSpec, calc: FootprintCalc | n
         base: ext.right,
         level: 0,
         label: `G ${mm(yLand.g)}`,
-        title: `Gmin ${mm(yLand.g)} mm – Innenabstand der Pads`,
+        title: tr("Gmin {value0} mm – Innenabstand der Pads", { value0: String(mm(yLand.g)) }),
       })
     }
     if (!xLand) {
@@ -278,7 +279,7 @@ export function footprintDimensions(spec: FootprintSpec, calc: FootprintCalc | n
           base: ext.bottom,
           level: 0,
           label: `e ${mm(pitch.pitch)}`,
-          title: `Raster ${mm(pitch.pitch)} mm`,
+          title: tr("Raster {value0} mm", { value0: String(mm(pitch.pitch)) }),
         })
       }
     }
@@ -315,7 +316,7 @@ export function footprintDimensions(spec: FootprintSpec, calc: FootprintCalc | n
           base: ext.left,
           level: 0,
           label: `e ${mm(pitch.pitch)}`,
-          title: `Raster ${mm(pitch.pitch)} mm`,
+          title: tr("Raster {value0} mm", { value0: String(mm(pitch.pitch)) }),
         })
       } else {
         lines.push({
@@ -328,7 +329,7 @@ export function footprintDimensions(spec: FootprintSpec, calc: FootprintCalc | n
           base: ext.top,
           level: 0,
           label: `e ${mm(pitch.pitch)}`,
-          title: `Raster ${mm(pitch.pitch)} mm`,
+          title: tr("Raster {value0} mm", { value0: String(mm(pitch.pitch)) }),
         })
       }
     }
@@ -349,7 +350,7 @@ export function footprintDimensions(spec: FootprintSpec, calc: FootprintCalc | n
               base: ext.top,
               level: 0,
               label: `${mm(span)}`,
-              title: `Reihenabstand ${mm(span)} mm`,
+              title: tr("Reihenabstand {value0} mm", { value0: String(mm(span)) }),
             }
           : {
               orient: 'v',
@@ -361,7 +362,7 @@ export function footprintDimensions(spec: FootprintSpec, calc: FootprintCalc | n
               base: ext.right,
               level: 0,
               label: `${mm(span)}`,
-              title: `Reihenabstand ${mm(span)} mm`,
+              title: tr("Reihenabstand {value0} mm", { value0: String(mm(span)) }),
             },
       )
     }
@@ -372,7 +373,7 @@ export function footprintDimensions(spec: FootprintSpec, calc: FootprintCalc | n
         x: p1.x + padExtent(p1).ex * 0.7,
         y: p1.y + padExtent(p1).ey * 0.7,
         label: `Ø ${mm(p1.hole)} / ${mm(pad)}`,
-        title: `Bohrung Ø ${mm(p1.hole)} mm, Pad ${mm(pad)} mm`,
+        title: tr("Bohrung Ø {value0} mm, Pad {value1} mm", { value0: String(mm(p1.hole)), value1: String(mm(pad)) }),
       })
     }
   }
@@ -392,7 +393,7 @@ export function footprintDimensions(spec: FootprintSpec, calc: FootprintCalc | n
         base: ext.top,
         level: 0,
         label: `e ${mm(px.pitch)}`,
-        title: `Raster ${mm(px.pitch)} mm`,
+        title: tr("Raster {value0} mm", { value0: String(mm(px.pitch)) }),
       })
     }
     if (py) {
@@ -406,7 +407,7 @@ export function footprintDimensions(spec: FootprintSpec, calc: FootprintCalc | n
         base: ext.left,
         level: 0,
         label: `e ${mm(py.pitch)}`,
-        title: `Raster ${mm(py.pitch)} mm`,
+        title: tr("Raster {value0} mm", { value0: String(mm(py.pitch)) }),
       })
     }
     if (!px || !py) {
@@ -421,7 +422,7 @@ export function footprintDimensions(spec: FootprintSpec, calc: FootprintCalc | n
         base: ext.top,
         level: px ? 1 : 0,
         label: mm(padExt.right - padExt.left),
-        title: `Außenmaß ${mm(padExt.right - padExt.left)} mm`,
+        title: tr("Außenmaß {value0} mm", { value0: String(mm(padExt.right - padExt.left)) }),
       })
     }
     const land = calc?.bga?.land
@@ -431,7 +432,7 @@ export function footprintDimensions(spec: FootprintSpec, calc: FootprintCalc | n
         x: p1.x,
         y: p1.y,
         label: `Ø ${mm(land)}`,
-        title: `Landefläche Ø ${mm(land)} mm${calc?.bga?.ball ? ` (Kugel ${mm(calc.bga.ball)} mm)` : ''}`,
+        title: tr("Landefläche Ø {value0} mm{value1}", { value0: String(mm(land)), value1: String(calc?.bga?.ball ? tr(" (Kugel {value0} mm)", { value0: String(mm(calc.bga.ball)) }) : '') }),
       })
     }
   }

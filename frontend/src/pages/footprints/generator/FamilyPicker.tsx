@@ -1,3 +1,5 @@
+import { useLocalizedMemo } from '@/components/preview/useLocalizedMemo'
+import { t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Auswahl der Gehäusefamilie: großer Auslöser (Glyphe, Name, Gruppe) und eine Befehlsliste (cmdk) mit Suche über
  * Familien, Vorlagen aller Familien und Aliase („SOIC“, „QFN“, „SMA“, „LFCSP“, „MLCC“ …). Ein genauer
@@ -7,7 +9,7 @@
 import { Command } from 'cmdk'
 import { ArrowRight, ChevronsUpDown, CornerDownLeft, Search } from 'lucide-react'
 import { Popover as PopoverPrimitive } from 'radix-ui'
-import { useMemo, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { errorMessage } from '@/api/client'
 import { footprintsApi, type FootprintFamily, type FootprintPreset } from '@/api/footprints'
@@ -61,6 +63,7 @@ const groupClass =
   '[&_[cmdk-group-heading]]:micro-label [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-2.5'
 
 export function FamilyPicker({ families, value, onPick, open, onOpenChange, className }: FamilyPickerProps) {
+  useI18n()
   const [query, setQuery] = useState('')
   const [active, setActive] = useState<string>('')
   const [resolving, setResolving] = useState<string | null>(null)
@@ -73,9 +76,9 @@ export function FamilyPicker({ families, value, onPick, open, onOpenChange, clas
   }
   const q = query.trim()
 
-  const grouped = useMemo(() => groupFamilies(families), [families])
+  const grouped = useLocalizedMemo(() => groupFamilies(families), [families])
 
-  const results = useMemo(() => {
+  const results = useLocalizedMemo(() => {
     if (!q) return null
     const fam = families
       .map((f) => ({ f, s: familyMatches(f, q) }))
@@ -91,13 +94,13 @@ export function FamilyPicker({ families, value, onPick, open, onOpenChange, clas
   }, [families, q])
 
   // Genauer Vorlagenschlüssel („DIP-8“) vor Alias („dip8“); Alias nur, wenn er nicht der Familienschlüssel ist
-  const exact = useMemo(() => (q ? exactPreset(families, q) : null), [families, q])
+  const exact = useLocalizedMemo(() => (q ? exactPreset(families, q) : null), [families, q])
   const aliasHit = q && !exact ? findAliasFamily(families, q) : null
   const aliasFamily = aliasHit && aliasHit.key.toLowerCase() !== q.toLowerCase() ? aliasHit : null
   const aliasIsCurrent = Boolean(aliasFamily && value && aliasFamily.key === value.key)
 
   // Einträge nach ID (für die Detailfläche)
-  const entries = useMemo(() => {
+  const entries = useLocalizedMemo(() => {
     const map = new Map<string, Entry>()
     for (const f of families) {
       map.set(`f:${f.key}`, { kind: 'family', id: `f:${f.key}`, family: f })
@@ -133,15 +136,15 @@ export function FamilyPicker({ families, value, onPick, open, onOpenChange, clas
       const state = useGenerator.getState()
       const implied = preset ? presetValues(family, preset) : resolved
       if (value && family.key === value.key && sameStrongSelectors(implied, state.values)) {
-        state.showNotice(`„${term}“ gehört zur aktuellen Familie – Ihre Eingaben bleiben erhalten.`)
+        state.showNotice(tr("„{value0}“ gehört zur aktuellen Familie – Ihre Eingaben bleiben erhalten.", { value0: String(term) }))
       } else {
-        const note = `„${term}“ ist ein Alias für ${familyShortLabel(family)}`
+        const note = tr("„{value0}“ ist ein Alias für {value1}", { value0: String(term), value1: String(familyShortLabel(family)) })
         if (preset) onPick(family, { preset, note })
         else onPick(family, { values: withoutDefaults(family.params, resolved), note })
       }
       close()
     } catch (error) {
-      toast.error('Alias konnte nicht aufgelöst werden', { description: errorMessage(error) })
+      toast.error(tr('Alias konnte nicht aufgelöst werden'), { description: errorMessage(error) })
     } finally {
       setResolving(null)
     }
@@ -161,7 +164,7 @@ export function FamilyPicker({ families, value, onPick, open, onOpenChange, clas
       {value?.key === f.key && (
         <>
           <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-accent shadow-[0_0_6px_var(--pf-glow-indicator)]" />
-          <span className="sr-only">(gewählt)</span>
+          <span className="sr-only">{tr("(gewählt)")}</span>
         </>
       )}
       <span className="mono shrink-0 text-2xs text-fg-subtle tabular-nums">{f.presets.length}</span>
@@ -169,7 +172,7 @@ export function FamilyPicker({ families, value, onPick, open, onOpenChange, clas
   )
 
   const presetsGroup = results && results.presets.length > 0 && (
-    <Command.Group heading="Vorlagen" className={groupClass}>
+    <Command.Group heading={tr("Vorlagen")} className={groupClass}>
       {results.presets.map(({ f, p, i }) => (
         <Command.Item key={`${f.key}:${i}`} value={`p:${f.key}:${i}`} onSelect={() => pickFamily(f, p)} className={itemClass}>
           <span className="flex size-7 shrink-0 items-center justify-center text-fg-subtle group-data-[selected=true]/item:text-fg-muted">
@@ -209,11 +212,11 @@ export function FamilyPicker({ families, value, onPick, open, onOpenChange, clas
           {/* Name = sichtbarer Text (Familie, Untertitel) – mit Hinweis für Screenreader, was der Knopf tut */}
           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="line-clamp-2 text-sm font-semibold leading-tight tracking-[-0.01em] text-fg">
-              {value && <span className="sr-only">Gehäusefamilie: </span>}
-              {value ? familyShortLabel(value) : 'Gehäusefamilie wählen …'}
+              {value && <span className="sr-only">{tr("Gehäusefamilie:")}{' '}</span>}
+              {value ? familyShortLabel(value) : tr('Gehäusefamilie wählen …')}
             </span>
             {value && <span className="truncate text-2xs leading-4 text-fg-subtle">{familySubtitle(value)}</span>}
-            {value && <span className="sr-only"> – wechseln</span>}
+            {value && <span className="sr-only"> {tr("– wechseln")}</span>}
           </span>
           <ChevronsUpDown aria-hidden className="size-4 shrink-0 text-fg-subtle transition-colors group-hover/trigger:text-fg-muted" />
         </button>
@@ -223,11 +226,11 @@ export function FamilyPicker({ families, value, onPick, open, onOpenChange, clas
           align="start"
           sideOffset={8}
           collisionPadding={12}
-          aria-label="Gehäusefamilie wählen"
+          aria-label={tr("Gehäusefamilie wählen")}
           className="pop-anim z-popover flex w-[min(700px,calc(100vw-2rem))] flex-col overflow-hidden rounded-card border border-line-strong bg-surface p-0 text-fg shadow-pop outline-none"
         >
           <Command
-            label="Gehäusefamilien und Vorlagen"
+            label={tr("Gehäusefamilien und Vorlagen")}
             shouldFilter={false}
             loop
             vimBindings={false}
@@ -240,7 +243,7 @@ export function FamilyPicker({ families, value, onPick, open, onOpenChange, clas
               <Command.Input
                 value={query}
                 onValueChange={setQuery}
-                placeholder="Familie, Vorlage oder Alias – SOIC, QFN-32, SMA, LFCSP, 0805 …"
+                placeholder={tr("Familie, Vorlage oder Alias – SOIC, QFN-32, SMA, LFCSP, 0805 …")}
                 className="h-11 w-full bg-transparent text-ui text-fg outline-none placeholder:text-fg-subtle"
               />
               {resolving && <Spinner size={14} tone="accent" />}
@@ -249,7 +252,7 @@ export function FamilyPicker({ families, value, onPick, open, onOpenChange, clas
             <div className="grid h-[392px] min-h-0 grid-cols-[minmax(0,1fr)_280px]">
               <Command.List className="min-h-0 overflow-y-auto p-1.5 [scrollbar-gutter:stable]">
                 <Command.Empty className="px-3 py-10 text-center text-xs text-fg-muted">
-                  Keine Familie und keine Vorlage für „{q}“.
+                  {tr("Keine Familie und keine Vorlage für „")}{q}“.
                 </Command.Empty>
                 {aliasFamily && (
                   <Command.Group heading="Alias" className={groupClass}>
@@ -265,7 +268,7 @@ export function FamilyPicker({ families, value, onPick, open, onOpenChange, clas
                       <span className="mono shrink-0 text-xs font-semibold uppercase text-fg">{q}</span>
                       <ArrowRight aria-hidden className="size-3.5 shrink-0 text-fg-subtle" />
                       <span className="min-w-0 flex-1 truncate">{familyShortLabel(aliasFamily)}</span>
-                      {aliasIsCurrent && <span className="shrink-0 text-2xs text-fg-subtle">aktuelle Familie</span>}
+                      {aliasIsCurrent && <span className="shrink-0 text-2xs text-fg-subtle">{tr("aktuelle Familie")}</span>}
                     </Command.Item>
                   </Command.Group>
                 )}
@@ -283,13 +286,13 @@ export function FamilyPicker({ families, value, onPick, open, onOpenChange, clas
                   )
                 ) : (
                   grouped.map(({ group, families: list }) => (
-                    <Command.Group key={group} heading={group} className={groupClass}>
+                    <Command.Group key={group} heading={tr(group)} className={groupClass}>
                       {list.map(familyItem)}
                     </Command.Group>
                   ))
                 )}
               </Command.List>
-              <aside aria-label="Details" className="min-h-0 overflow-y-auto border-l border-line bg-[color-mix(in_oklab,var(--pf-surface-2)_45%,transparent)] p-4">
+              <aside aria-label={tr("Details")} className="min-h-0 overflow-y-auto border-l border-line bg-[color-mix(in_oklab,var(--pf-surface-2)_45%,transparent)] p-4">
                 {activeEntry ? (
                   <EntryDetails
                     entry={activeEntry}
@@ -297,22 +300,22 @@ export function FamilyPicker({ families, value, onPick, open, onOpenChange, clas
                     onPickPreset={(f, p) => pickFamily(f, p)}
                   />
                 ) : (
-                  <p className="text-xs text-fg-muted">Familie wählen – Vorlagen erscheinen hier.</p>
+                  <p className="text-xs text-fg-muted">{tr("Familie wählen – Vorlagen erscheinen hier.")}</p>
                 )}
               </aside>
             </div>
             <div className="flex items-center gap-3 border-t border-line px-3.5 py-2 text-2xs text-fg-subtle">
               <span className="flex items-center gap-1">
-                <Kbd keys={['↑', '↓']} size="xs" /> wählen
+                <Kbd keys={['↑', '↓']} size="xs" /> {tr("wählen")}
               </span>
               <span className="flex items-center gap-1">
-                <CornerDownLeft aria-hidden className="size-3" /> übernehmen
+                <CornerDownLeft aria-hidden className="size-3" /> {tr("übernehmen")}
               </span>
               <span className="flex items-center gap-1">
-                <Kbd hotkey="mod+f" size="xs" /> öffnen
+                <Kbd hotkey="mod+f" size="xs" /> {tr("öffnen")}
               </span>
               <span className="ml-auto truncate tabular-nums">
-                {families.length} Familien · {families.reduce((a, f) => a + f.presets.length, 0)} Vorlagen
+                {families.length} {tr("Familien ·")}{' '}{families.reduce((a, f) => a + f.presets.length, 0)} {tr("Vorlagen")}
               </span>
             </div>
           </Command>
@@ -345,6 +348,7 @@ function EntryDetails({
   current: FootprintFamily | null
   onPickPreset: (family: FootprintFamily, preset: FootprintPreset) => void
 }) {
+  useI18n()
   const f = entry.family
   if (entry.kind === 'preset') {
     const p = entry.preset
@@ -356,12 +360,12 @@ function EntryDetails({
         {facts && <p className="mono text-2xs text-fg-muted">{facts}</p>}
         {p.source && (
           <div>
-            <div className="micro-label">Quelle</div>
+            <div className="micro-label">{tr("Quelle")}</div>
             <p className="mt-0.5 text-xs leading-relaxed text-fg-muted">{p.source}</p>
           </div>
         )}
         <p className="flex items-center gap-1.5 text-2xs text-fg-subtle">
-          <CornerDownLeft aria-hidden className="size-3" /> lädt Familie und Vorlage
+          <CornerDownLeft aria-hidden className="size-3" /> {tr("lädt Familie und Vorlage")}
         </p>
       </div>
     )
@@ -374,24 +378,24 @@ function EntryDetails({
         title={familyShortLabel(f)}
         subtitle={
           <>
-            {f.group}
+            {tr(f.group)}
             {f.ipc_table ? ` · IPC ${f.ipc_table}` : ''}
           </>
         }
       />
       {entry.kind === 'alias' && (
         <p className="rounded-control border border-line bg-surface px-2.5 py-1.5 text-2xs leading-4 text-fg-muted">
-          <span className="mono font-semibold uppercase text-fg">{entry.term}</span> ist ein Alias dieser Familie.{' '}
+          <span className="mono font-semibold uppercase text-fg">{entry.term}</span> {tr("ist ein Alias dieser Familie.")}{' '}
           {current?.key === f.key
-            ? 'Meint er denselben Gehäusetyp, bleiben Ihre Eingaben erhalten – sonst wird die passende Vorlage geladen (rückgängig mit Strg+Z).'
-            : 'Die passende Vorlage wird geladen.'}
+            ? tr('Meint er denselben Gehäusetyp, bleiben Ihre Eingaben erhalten – sonst wird die passende Vorlage geladen (rückgängig mit Strg+Z).')
+            : tr('Die passende Vorlage wird geladen.')}
         </p>
       )}
-      {f.description && <p className="text-xs leading-relaxed text-fg-muted">{f.description}</p>}
+      {f.description && <p className="text-xs leading-relaxed text-fg-muted">{tr(f.description)}</p>}
       {shown.length > 0 && (
         <div>
           <div className="micro-label mb-1.5">
-            Vorlagen <span className="tabular-nums">({f.presets.length})</span>
+            {tr("Vorlagen")}{' '}<span className="tabular-nums">({f.presets.length})</span>
           </div>
           <div className="flex flex-wrap gap-1">
             {shown.map((p) => (
@@ -400,20 +404,20 @@ function EntryDetails({
                 type="button"
                 tabIndex={-1}
                 onClick={() => onPickPreset(f, p)}
-                title={p.label}
+                title={tr(p.label)}
                 className="mono h-6 rounded-md border border-line bg-surface px-1.5 text-2xs font-medium text-fg-muted outline-none transition-colors hover:border-line-strong hover:text-fg"
               >
                 {p.key}
               </button>
             ))}
             {f.presets.length > shown.length && (
-              <span className="flex h-6 items-center px-1 text-2xs text-fg-subtle">+{f.presets.length - shown.length} weitere</span>
+              <span className="flex h-6 items-center px-1 text-2xs text-fg-subtle">+{f.presets.length - shown.length} {tr("weitere")}</span>
             )}
           </div>
         </div>
       )}
       {current?.key === f.key && entry.kind === 'family' && (
-        <p className="text-2xs text-fg-subtle">Aktuell gewählt – Ihre Eingaben bleiben erhalten.</p>
+        <p className="text-2xs text-fg-subtle">{tr("Aktuell gewählt – Ihre Eingaben bleiben erhalten.")}</p>
       )}
     </div>
   )

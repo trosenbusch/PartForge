@@ -1,13 +1,4 @@
-/**
- * Stapelbearbeitung – Modell ohne Oberfläche: Auswahl und Anfrage an das Backend (`ConformInput`), Kennung einer
- * Prüfung (ändern sich Auswahl, Regeln oder Hausstil, ist der Bericht veraltet), Texte der Regeln mit den Werten des
- * Hausstils, Lagenrollen von Hand, Kennzahlen des Berichts und Meldungen für Job-Dock und Ergebnis.
- *
- * Semantik wie im Backend (`partforge/altium/conform.py`, `housestyle.py`): geprüft werden nur **registrierte**
- * Symbole und Footprints der geöffneten Bibliothek (nie externe), `sources: null` hieße „alle außer extern“,
- * `libraries`/`names: null` = alle. Eine leere Liste ist im Backend dasselbe wie `null` – die Seite schickt daher nie
- * leere Listen, sondern verlangt eine gültige Auswahl ({@link selectionProblem}).
- */
+import { t as tr, localizeMessage, getLocale } from '@/lib/i18n'
 import {
   DEFAULT_RULES,
   RULE_LABELS,
@@ -33,18 +24,18 @@ export type LibraryFileKind = 'schlib' | 'pcblib'
 export const KINDS: readonly Kind[] = ['symbol', 'footprint']
 export const SOURCES: readonly Source[] = ['imported', 'generated', 'datasheet']
 
-export const KIND_LABEL: Record<Kind, string> = { symbol: 'Symbole', footprint: 'Footprints' }
+export const KIND_LABEL: Record<Kind, string> = { get symbol() { return tr("Symbole") }, footprint: 'Footprints' }
 /** Herkunft eines registrierten Symbols/Footprints (`RecordSource`) */
 export const SOURCE_LABEL: Record<string, string> = {
-  imported: 'Importiert',
-  generated: 'Erzeugt',
-  datasheet: 'Aus Datenblatt',
-  external: 'Extern',
+  get imported() { return tr("Importiert") },
+  get generated() { return tr("Erzeugt") },
+  get datasheet() { return tr("Aus Datenblatt") },
+  get external() { return tr("Extern") },
 }
 const SOURCE_ADJECTIVE: Record<Source, string> = {
-  imported: 'importierte',
-  generated: 'erzeugte',
-  datasheet: 'aus Datenblättern übernommene',
+  get imported() { return tr("importierte") },
+  get generated() { return tr("erzeugte") },
+  get datasheet() { return tr("aus Datenblättern übernommene") },
 }
 export const FILE_KIND_OF: Record<Kind, LibraryFileKind> = { symbol: 'schlib', footprint: 'pcblib' }
 
@@ -77,7 +68,7 @@ export function splitPath(rel: string): { folder: string; name: string } {
   return i < 0 ? { folder: '', name: rel } : { folder: rel.slice(0, i + 1), name: rel.slice(i + 1) }
 }
 
-const byPath = (a: string, b: string) => a.localeCompare(b, 'de', { numeric: true, sensitivity: 'base' })
+const byPath = (a: string, b: string) => a.localeCompare(b, 'en', { numeric: true, sensitivity: 'base' })
 
 /**
  * Bibliotheken, die tatsächlich geprüft werden: die gewählten, deren Art zu Symbolen/Footprints der Auswahl passt
@@ -237,26 +228,26 @@ export function checkKey(input: ConformInput, style: StyleInfo | null): string {
 
 /** Warum gerade nicht geprüft werden kann (`null` = Auswahl und Regeln sind brauchbar) */
 export function selectionProblem(selection: Selection, rules: ConformRules): string | null {
-  if (!selection.kinds.length) return 'Bitte Symbole, Footprints oder beides wählen.'
-  if (!selection.sources.length) return 'Bitte mindestens eine Herkunft wählen.'
+  if (!selection.kinds.length) return tr("Bitte Symbole, Footprints oder beides wählen.")
+  if (!selection.sources.length) return tr("Bitte mindestens eine Herkunft wählen.")
   const libs = effectiveLibraries(selection)
   if (libs && !libs.length) {
     if (selection.kinds.length === 1) {
       return selection.kinds[0] === 'symbol'
-        ? 'Keine der gewählten Bibliotheken ist eine Symbolbibliothek (SchLib).'
-        : 'Keine der gewählten Bibliotheken ist eine Footprint-Bibliothek (PcbLib).'
+        ? tr("Keine der gewählten Bibliotheken ist eine Symbolbibliothek (SchLib).")
+        : tr("Keine der gewählten Bibliotheken ist eine Footprint-Bibliothek (PcbLib).")
     }
-    return 'Keine der gewählten Bibliotheken ist eine SchLib oder PcbLib.'
+    return tr("Keine der gewählten Bibliotheken ist eine SchLib oder PcbLib.")
   }
   const active = selection.kinds.reduce((n, k) => n + activeRules(rules, k).length, 0)
-  if (!active) return 'Alle Regeln der Auswahl sind ausgeschaltet – bitte mindestens eine einschalten.'
+  if (!active) return tr("Alle Regeln der Auswahl sind ausgeschaltet – bitte mindestens eine einschalten.")
   return null
 }
 
 /** „a“, „a und b“, „a, b und c“ */
 export function joinDe(items: string[]): string {
   if (items.length <= 1) return items[0] ?? ''
-  return `${items.slice(0, -1).join(', ')} und ${items[items.length - 1]}`
+  return tr("{0} und {1}", { "0": String(items.slice(0, -1).join(', ')), "1": String(items[items.length - 1]) })
 }
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
@@ -268,17 +259,17 @@ export function describeSelection(selection: ConformInput['selection']): string 
   const kinds = (selection?.kinds ?? KINDS).filter(
     (k) => !libs?.length || libs.some((l) => libraryFileKind(l) === FILE_KIND_OF[k]),
   )
-  const what = kinds.length === 1 ? KIND_LABEL[kinds[0]] : 'Symbole und Footprints'
+  const what = kinds.length === 1 ? KIND_LABEL[kinds[0]] : tr("Symbole und Footprints")
   const sources = SOURCES.filter((s) => !selection?.sources || selection.sources.includes(s))
-  const adjective = sources.length === SOURCES.length ? 'alle' : joinDe(sources.map((s) => SOURCE_ADJECTIVE[s]))
+  const adjective = sources.length === SOURCES.length ? tr("alle") : joinDe(sources.map((s) => SOURCE_ADJECTIVE[s]))
   const where =
     libs === null
-      ? 'aus allen Bibliotheken'
+      ? tr("aus allen Bibliotheken")
       : libs.length === 1
-        ? `aus ${baseName(libs[0])}`
-        : `aus ${plural(libs.length, 'Bibliothek', 'Bibliotheken')}`
+        ? tr("aus {0}", { "0": String(baseName(libs[0])) })
+        : tr("aus {0}", { "0": String(plural(libs.length, tr("Bibliothek"), tr("Bibliotheken"))) })
   const names = selection?.names?.length
-    ? ` · ${plural(selection.names.length, 'einzelnes Bauteil', 'einzelne Bauteile')}`
+    ? ` · ${plural(selection.names.length, tr("einzelnes Bauteil"), tr("einzelne Bauteile"))}`
     : ''
   return `${capitalize(`${adjective} ${what}`)} ${where}${names}`
 }
@@ -304,83 +295,83 @@ const mm = (value: number) => `${formatDecimal(value, 3)}${NBSP}mm`
 export const SYMBOL_RULES: RuleDef<SymbolFlag>[] = [
   {
     key: 'fonts',
-    label: RULE_LABELS.fonts,
+    get label() { return RULE_LABELS.fonts },
     help: (s) =>
       s
-        ? `Bezeichner, Kommentar und Parameter in ${s.symbol.font}${NBSP}${formatDecimal(s.symbol.font_size)}, Pins in der ${s.symbol.pin_font === 'system' ? 'Systemschrift' : 'Hausschrift'}`
-        : 'Hausschrift für Bezeichner, Kommentar, Parameter und Pins',
+        ? tr("Bezeichner, Kommentar und Parameter in {0}{1}{2}, Pins in der {3}", { "0": String(s.symbol.font), "1": String(NBSP), "2": String(formatDecimal(s.symbol.font_size)), "3": String(s.symbol.pin_font === 'system' ? tr("Systemschrift") : tr("Hausschrift")) })
+        : tr("Hausschrift für Bezeichner, Kommentar, Parameter und Pins"),
   },
   {
     key: 'pin_length',
-    label: RULE_LABELS.pin_length,
+    get label() { return RULE_LABELS.pin_length },
     help: (s) =>
       s
-        ? `Pins von IC- und Box-Symbolen auf ${formatNumber(s.symbol.ic_pin_length)}${NBSP}mil – das Ende am Körper bleibt`
-        : 'Pinlänge von IC- und Box-Symbolen wie im Hausstil',
+        ? tr("Pins von IC- und Box-Symbolen auf {0}{1}mil – das Ende am Körper bleibt", { "0": String(formatNumber(s.symbol.ic_pin_length)), "1": String(NBSP) })
+        : tr("Pinlänge von IC- und Box-Symbolen wie im Hausstil"),
   },
   {
     key: 'prefix',
-    label: RULE_LABELS.prefix,
-    help: () => 'Bezeichner-Präfixe nach der Tabelle ersetzen, z. B. IC → U',
+    get label() { return RULE_LABELS.prefix },
+    help: () => tr("Bezeichner-Präfixe nach der Tabelle ersetzen, z. B. IC → U"),
   },
   {
     key: 'colors',
-    label: RULE_LABELS.colors,
-    help: () => 'Rahmen, Füllung und Pinfarbe von IC- und Box-Symbolen wie im Hausstil',
+    get label() { return RULE_LABELS.colors },
+    help: () => tr("Rahmen, Füllung und Pinfarbe von IC- und Box-Symbolen wie im Hausstil"),
   },
 ]
 
 export const FOOTPRINT_RULES: RuleDef<FootprintFlag>[] = [
   {
     key: 'layers',
-    label: RULE_LABELS.layers,
+    get label() { return RULE_LABELS.layers },
     help: (s) =>
       s
-        ? `Primitive nach ihrer Rolle auf die Lagen der Lagenzuordnung – z. B. Bestückungszeichnung auf ${s.layers.assembly}, Courtyard auf ${s.layers.courtyard}`
-        : 'Primitive nach ihrer Rolle auf die Lagen der Lagenzuordnung',
+        ? tr("Primitive nach ihrer Rolle auf die Lagen der Lagenzuordnung – z. B. Bestückungszeichnung auf {0}, Courtyard auf {1}", { "0": String(s.layers.assembly), "1": String(s.layers.courtyard) })
+        : tr("Primitive nach ihrer Rolle auf die Lagen der Lagenzuordnung"),
   },
   {
     key: 'widths',
-    label: RULE_LABELS.widths,
+    get label() { return RULE_LABELS.widths },
     help: (s) =>
       s
-        ? `Bestückungszeichnung und Umriss ${mm(s.footprint.assembly_width)}, Courtyard ${mm(s.footprint.courtyard_width)}, Mittelkreuz ${mm(0.1)}`
-        : 'Linienbreiten je Rolle (Bestückung, Courtyard, Mitte, Umriss)',
+        ? tr("Bestückungszeichnung und Umriss {0}, Courtyard {1}, Mittelkreuz {2}", { "0": String(mm(s.footprint.assembly_width)), "1": String(mm(s.footprint.courtyard_width)), "2": String(mm(0.1)) })
+        : tr("Linienbreiten je Rolle (Bestückung, Courtyard, Mitte, Umriss)"),
   },
   {
     key: 'silk_width',
-    label: 'Auch Bestückungsdruck',
+    get label() { return tr("Auch Bestückungsdruck") },
     parent: 'widths',
     help: (s) =>
       s
-        ? `Auch den Bestückungsdruck auf ${mm(s.footprint.silk_width)} setzen`
-        : 'Auch den Bestückungsdruck auf die Hausstil-Breite setzen',
+        ? tr("Auch den Bestückungsdruck auf {0} setzen", { "0": String(mm(s.footprint.silk_width)) })
+        : tr("Auch den Bestückungsdruck auf die Hausstil-Breite setzen"),
   },
   {
     key: 'texts',
-    label: RULE_LABELS.texts,
+    get label() { return RULE_LABELS.texts },
     help: (s) =>
       s
-        ? `.Designator und .Comment in ${s.footprint.text_font === 'truetype' ? s.footprint.text_font_name || 'Arial' : 'Strichschrift'}, ${mm(s.footprint.text_height)} hoch (kleiner bei winzigen Bauteilen)`
-        : '.Designator und .Comment in Schrift und Höhe des Hausstils',
+        ? tr(".Designator und .Comment in {0}, {1} hoch (kleiner bei winzigen Bauteilen)", { "0": String(s.footprint.text_font === 'truetype' ? s.footprint.text_font_name || 'Arial' : tr("Strichschrift")), "1": String(mm(s.footprint.text_height)) })
+        : tr(".Designator und .Comment in Schrift und Höhe des Hausstils"),
   },
   {
     key: 'add_texts',
-    label: RULE_LABELS.add_texts,
-    help: () => 'Fehlende .Designator und .Comment in der Bauteilmitte ergänzen',
+    get label() { return RULE_LABELS.add_texts },
+    help: () => tr("Fehlende .Designator und .Comment in der Bauteilmitte ergänzen"),
   },
   {
     key: 'add_center',
-    label: RULE_LABELS.add_center,
+    get label() { return RULE_LABELS.add_center },
     help: (s) =>
       s
-        ? `Fehlendes Kreuz der Bauteilmitte auf ${s.layers.component_center} ergänzen`
-        : 'Fehlendes Kreuz der Bauteilmitte ergänzen',
+        ? tr("Fehlendes Kreuz der Bauteilmitte auf {0} ergänzen", { "0": String(s.layers.component_center) })
+        : tr("Fehlendes Kreuz der Bauteilmitte ergänzen"),
   },
   {
     key: 'header',
-    label: RULE_LABELS.header,
-    help: () => 'Lagenaufbau und Lagensatz im Kopf der PcbLib wie im Hausstil',
+    get label() { return RULE_LABELS.header },
+    help: () => tr("Lagenaufbau und Lagensatz im Kopf der PcbLib wie im Hausstil"),
   },
 ]
 
@@ -393,8 +384,8 @@ export const ruleLabel = (rule: string) => RULE_LABELS[rule] ?? rule
 /** Orte des Hausstils in den Einstellungen */
 export const STYLE_PLACES = {
   footprints: { label: 'Footprints', to: '/einstellungen/hausstil' },
-  layers: { label: 'Lagen', to: SETTINGS_PLACE.layers.to },
-  symbols: { label: 'Symbole', to: '/einstellungen/hausstil?ansicht=symbole' },
+  layers: { get label() { return tr("Lagen") }, to: SETTINGS_PLACE.layers.to },
+  symbols: { get label() { return tr("Symbole") }, to: '/einstellungen/hausstil?ansicht=symbole' },
 } as const
 
 // --------------------------------------------------------------------------- Lagenrollen
@@ -414,9 +405,9 @@ export const ROLE_ORDER: readonly LayerRoleName[] = [
 
 /** Wohin die Primitive einer Rolle wandern (Lagenzuordnung des Hausstils) – bzw. dass sie bleiben */
 export function roleTarget(role: LayerRoleName, layers: StyleInfo['layers'] | null | undefined): string {
-  if (role === 'keep') return 'bleiben auf ihrer Lage'
-  if (role === 'silkscreen') return 'bleiben auf ihrer Lage – Linienbreite wie Bestückungsdruck'
-  return layers ? `→ ${layers[role]}` : '→ Lage laut Lagenzuordnung'
+  if (role === 'keep') return tr("bleiben auf ihrer Lage")
+  if (role === 'silkscreen') return tr("bleiben auf ihrer Lage – Linienbreite wie Bestückungsdruck")
+  return layers ? `→ ${layers[role]}` : tr("→ Lage laut Lagenzuordnung")
 }
 
 /** Eigene Rollen einer Bibliothek (Schreibweise des Pfads egal) */
@@ -509,21 +500,22 @@ export function reportStats(report: ConformReport): ReportStats {
 
 /** Dezimalpunkte in Meldungen des Backends („0.05 mm“) deutsch schreiben („0,05 mm“) */
 export function localizeDecimals(text: string): string {
-  return text.replace(/(\d)\.(\d)/g, '$1,$2')
+  const message = localizeMessage(text)
+  return getLocale() === 'de-DE' ? message.replace(/(\d)\.(\d)(?=\d*\s*(?:mm|mil|pt|%))/g, '$1,$2') : message
 }
 
 const firstEntry = (list: { library: string; message: string }[]) =>
-  list.length ? `${baseName(list[0].library)}: ${list[0].message}` : ''
+  list.length ? `${baseName(list[0].library)}: ${localizeMessage(list[0].message)}` : ''
 
 /** Problem im Ergebnis von „Anwenden“ (Warnung im Job-Dock) */
 export function applyProblem(result: ConformApplyResult | null | undefined): string | null {
   if (!result) return null
   const parts: string[] = []
   if (result.errors?.length)
-    parts.push(`${plural(result.errors.length, 'Fehler', 'Fehler')} – ${firstEntry(result.errors)}`)
+    parts.push(`${plural(result.errors.length, tr("Fehler"), tr("Fehler"))} – ${firstEntry(result.errors)}`)
   if (result.skipped?.length) {
     parts.push(
-      `${plural(result.skipped.length, 'Bibliothek', 'Bibliotheken')} übersprungen – ${firstEntry(result.skipped)}`,
+      tr("{0} übersprungen – {1}", { "0": String(plural(result.skipped.length, tr("Bibliothek"), tr("Bibliotheken"))), "1": String(firstEntry(result.skipped)) }),
     )
   }
   return parts.length ? parts.join(' · ') : null
@@ -532,7 +524,7 @@ export function applyProblem(result: ConformApplyResult | null | undefined): str
 /** Problem im Ergebnis von „Rückgängig machen“ */
 export function undoProblem(result: ConformUndoResult | null | undefined): string | null {
   if (!result?.skipped?.length) return null
-  return `${plural(result.skipped.length, 'Bibliothek', 'Bibliotheken')} nicht zurückgesetzt – ${firstEntry(result.skipped)}`
+  return tr("{0} nicht zurückgesetzt – {1}", { "0": String(plural(result.skipped.length, tr("Bibliothek"), tr("Bibliotheken"))), "1": String(firstEntry(result.skipped)) })
 }
 
 // --------------------------------------------------------------------------- Router-State

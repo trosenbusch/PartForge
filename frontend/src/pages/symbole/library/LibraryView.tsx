@@ -1,3 +1,5 @@
+import { useLocalizedMemo } from '@/components/preview/useLocalizedMemo'
+import { t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Bibliothek-Ansicht: alle registrierten Symbole als virtualisierte Galerie (Vorschaubild vom Endpunkt
  * `…/symbols/{name}/thumbnail.svg` – lädt im Sichtbereich, mit Stand dauerhaft im Browser-Cache), Typ, Pins,
@@ -5,7 +7,7 @@
  * Verwendung, „Bearbeiten“ und „Neu generieren“.
  */
 import { ArrowDownWideNarrow, Filter, Plus, RotateCcw, Search, X } from 'lucide-react'
-import { useMemo, useRef } from 'react'
+import { useRef } from 'react'
 import { errorMessage } from '@/api/client'
 import { SYMBOL_GROUPS, useSymbolKinds, useSymbolLibrary, type SymbolEntry, type SymbolKindInfo } from '@/api/symbols'
 import { PageActions } from '@/app/page'
@@ -40,9 +42,10 @@ const fold = (s: string) =>
 
 /** Platzhalter im Raster der Galerie (gleicher Rand, gleiche Spaltenformel wie `VirtualGallery`) */
 function GallerySkeleton() {
+  useI18n()
   return (
     <div className="h-full min-h-0 overflow-hidden px-4 pb-4 pt-3" aria-busy="true">
-      <span className="sr-only">Symbole werden geladen …</span>
+      <span className="sr-only">{tr("Symbole werden geladen …")}</span>
       <div className="grid gap-3 p-2" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${CARD_MIN_WIDTH}px, 1fr))` }} aria-hidden>
         {Array.from({ length: 15 }, (_, i) => (
           <div key={i} className="overflow-hidden rounded-card border border-line bg-surface" style={{ height: CARD_HEIGHT }}>
@@ -60,28 +63,30 @@ function GallerySkeleton() {
 
 /** Typ eines Eintrags: Generator-Typ bzw. Herkunft eigener Symbole („Importiert“, „Datenblatt“ …) */
 function entryTypeLabel(e: SymbolEntry, kindLabel: (key: string) => string | undefined): string {
-  if (e.kind) return kindLabel(e.kind) ?? e.kind
-  return e.source === 'generated' ? 'Eigenes Symbol' : (SOURCE_LABEL[e.source] ?? 'Eigenes Symbol')
+  if (e.kind) return tr(kindLabel(e.kind) ?? e.kind)
+  return e.source === 'generated' ? tr('Eigenes Symbol') : (tr(SOURCE_LABEL[e.source]) ?? tr('Eigenes Symbol'))
 }
 
 function StatusOrUsage({ entry }: { entry: SymbolEntry }) {
+  useI18n()
   const status = STATUS_LABEL[entry.status]
   if (status && status.tone !== 'success') {
     return (
       <Badge variant={status.tone === 'danger' ? 'danger' : 'warning'} dot>
-        {status.label}
+        {tr(status.label)}
       </Badge>
     )
   }
-  if (entry.usage > 0) return <Badge className="bg-surface/90">{plural(entry.usage, 'Bauteil', 'Bauteile')}</Badge>
+  if (entry.usage > 0) return <Badge className="bg-surface/90">{plural(entry.usage, tr('Bauteil'), tr('Bauteile'))}</Badge>
   return (
     <Badge variant="outline" className="bg-surface/90">
-      unbenutzt
+      {tr("unbenutzt")}
     </Badge>
   )
 }
 
 export function LibraryView({ onEdit, onNewSymbol }: LibraryViewProps) {
+  useI18n()
   const { resolvedTheme } = useTheme()
   const lib = useSymbolLibrary()
   const kinds = useSymbolKinds(resolvedTheme)
@@ -93,17 +98,17 @@ export function LibraryView({ onEdit, onNewSymbol }: LibraryViewProps) {
   const contentRef = useRef<HTMLDivElement>(null)
   const startJob = useSymbolJob()
 
-  const kindByKey = useMemo(() => new Map((kinds.data ?? []).map((k) => [k.key, k])), [kinds.data])
+  const kindByKey = useLocalizedMemo(() => new Map((kinds.data ?? []).map((k) => [k.key, k])), [kinds.data])
   const kindOf = detailState?.type === 'kind' ? kindByKey.get(detailState.key) : undefined
   const detail: DetailTarget | null =
     detailState?.type === 'symbol' ? detailState : kindOf ? { type: 'kind', kind: kindOf } : null
   const setDetail = (target: { type: 'symbol'; name: string } | { type: 'kind'; kind: SymbolKindInfo } | null) =>
     setFilters({ detail: target === null ? null : target.type === 'symbol' ? target : { type: 'kind', key: target.kind.key } })
-  const entries = useMemo(() => lib.data ?? [], [lib.data])
+  const entries = useLocalizedMemo(() => lib.data ?? [], [lib.data])
   const kindLabel = (e: SymbolEntry) => entryTypeLabel(e, (key) => kindByKey.get(key)?.label)
 
   // Filter-Optionen nur mit vorhandenen Werten (mit Zählern)
-  const counts = useMemo(() => {
+  const counts = useLocalizedMemo(() => {
     const g = new Map<string, number>()
     const s = new Map<string, number>()
     const st = new Map<string, number>()
@@ -116,7 +121,7 @@ export function LibraryView({ onEdit, onNewSymbol }: LibraryViewProps) {
     return { g, s, st }
   }, [entries, kindByKey])
 
-  const filtered = useMemo(() => {
+  const filtered = useLocalizedMemo(() => {
     const q = fold(query.trim())
     const list = entries.filter((e) => {
       if (group !== 'alle' && (e.kind ? (kindByKey.get(e.kind)?.group ?? OTHER_GROUP) : OTHER_GROUP) !== group) return false
@@ -138,12 +143,12 @@ export function LibraryView({ onEdit, onNewSymbol }: LibraryViewProps) {
   const filtersActive = query.trim() !== '' || group !== 'alle' || source !== 'alle' || status !== 'alle'
 
   const groupOptions = [
-    { value: 'alle', label: 'Alle Typen' },
+    { value: 'alle', label: tr('Alle Typen') },
     ...[...SYMBOL_GROUPS, OTHER_GROUP]
       .filter((g) => counts.g.has(g))
       .map((g) => ({
         value: g,
-        label: g,
+        label: tr(g),
         badge: <span className="text-2xs tabular-nums text-fg-subtle">{formatNumber(counts.g.get(g) ?? 0)}</span>,
       })),
   ]
@@ -161,69 +166,69 @@ export function LibraryView({ onEdit, onNewSymbol }: LibraryViewProps) {
             setQuery('')
           }
         }}
-        placeholder="Symbol, Bibliothek oder Typ suchen"
-        aria-label="Symbole durchsuchen"
+        placeholder={tr("Symbol, Bibliothek oder Typ suchen")}
+        aria-label={tr("Symbole durchsuchen")}
         prefix={<Search />}
         containerClassName="w-64"
       />
-      <Select size="sm" aria-label="Typ-Gruppe" prefix={<Filter />} value={group} onValueChange={(v) => setFilters({ group: v })} options={groupOptions} className="w-44" />
+      <Select size="sm" aria-label={tr("Typ-Gruppe")} prefix={<Filter />} value={group} onValueChange={(v) => setFilters({ group: v })} options={groupOptions} className="w-44" />
       <Select
         size="sm"
-        aria-label="Quelle"
+        aria-label={tr("Quelle")}
         disabled={!loaded}
         value={source}
         onValueChange={(v) => setFilters({ source: v })}
         className="w-40"
         options={[
-          { value: 'alle', label: 'Alle Quellen' },
+          { value: 'alle', label: tr('Alle Quellen') },
           ...[...counts.s.keys()].map((s) => ({
             value: s,
-            label: SOURCE_LABEL[s] ?? s,
+            label: tr(SOURCE_LABEL[s]) ?? s,
             badge: <span className="text-2xs tabular-nums text-fg-subtle">{formatNumber(counts.s.get(s) ?? 0)}</span>,
           })),
         ]}
       />
       <Select
         size="sm"
-        aria-label="Status"
+        aria-label={tr("Status")}
         disabled={!loaded}
         value={status}
         onValueChange={(v) => setFilters({ status: v })}
         className="w-36"
         options={[
-          { value: 'alle', label: 'Jeder Status' },
+          { value: 'alle', label: tr('Jeder Status') },
           ...[...counts.st.keys()].map((s) => ({
             value: s,
-            label: STATUS_LABEL[s]?.label ?? s,
+            label: tr(STATUS_LABEL[s]?.label ?? s),
             badge: <span className="text-2xs tabular-nums text-fg-subtle">{formatNumber(counts.st.get(s) ?? 0)}</span>,
           })),
         ]}
       />
       <Select<LibrarySort>
         size="sm"
-        aria-label="Sortierung"
+        aria-label={tr("Sortierung")}
         disabled={!loaded}
         prefix={<ArrowDownWideNarrow />}
         value={sort}
         onValueChange={(v) => setFilters({ sort: v })}
         className="w-44"
         options={[
-          { value: 'name', label: 'Nach Name' },
-          { value: 'usage', label: 'Meist verwendet' },
-          { value: 'updated', label: 'Zuletzt geändert' },
+          { value: 'name', label: tr('Nach Name') },
+          { value: 'usage', label: tr('Meist verwendet') },
+          { value: 'updated', label: tr('Zuletzt geändert') },
         ]}
       />
       {filtersActive && (
         <Button size="sm" variant="ghost" leftIcon={<X />} onClick={resetFilters}>
-          Filter zurücksetzen
+          {tr("Filter zurücksetzen")}
         </Button>
       )}
       <span className="ml-auto text-xs tabular-nums text-fg-subtle" aria-live="polite">
         {!loaded
           ? null
           : filtersActive
-            ? `${formatNumber(filtered.length)} von ${plural(entries.length, 'Symbol', 'Symbolen')}`
-            : plural(entries.length, 'Symbol', 'Symbole')}
+            ? tr("{value0} von {value1}", { value0: String(formatNumber(filtered.length)), value1: String(plural(entries.length, tr('Symbol'), tr('Symbolen'))) })
+            : plural(entries.length, tr('Symbol'), tr('Symbole'))}
       </span>
     </div>
   )
@@ -236,11 +241,11 @@ export function LibraryView({ onEdit, onNewSymbol }: LibraryViewProps) {
       <EmptyState
         illustration="offline"
         titleAs="h2"
-        title="Symbolbibliothek nicht geladen"
+        title={tr("Symbolbibliothek nicht geladen")}
         description={errorMessage(lib.error)}
         actions={
           <Button variant="secondary" leftIcon={<RotateCcw />} onClick={() => void lib.refetch()}>
-            Erneut versuchen
+            {tr("Erneut versuchen")}
           </Button>
         }
         className="h-full"
@@ -252,11 +257,11 @@ export function LibraryView({ onEdit, onNewSymbol }: LibraryViewProps) {
         illustration="forge"
         titleAs="h2"
         size="lg"
-        title="Noch keine Symbole in der Bibliothek"
-        description="Erzeugen Sie Standardsymbole oder IC-Symbole im Generator und speichern Sie sie – sie erscheinen dann hier mit Vorschau und Verwendung."
+        title={tr("Noch keine Symbole in der Bibliothek")}
+        description={tr("Erzeugen Sie Standardsymbole oder IC-Symbole im Generator und speichern Sie sie – sie erscheinen dann hier mit Vorschau und Verwendung.")}
         actions={
           <Button variant="secondary" leftIcon={<Plus />} onClick={onNewSymbol}>
-            Symbol erzeugen
+            {tr("Symbol erzeugen")}
           </Button>
         }
         className="h-full"
@@ -266,7 +271,7 @@ export function LibraryView({ onEdit, onNewSymbol }: LibraryViewProps) {
     content = (
       <div className="h-full min-h-0 px-4 pb-4 pt-3">
         <VirtualGallery<SymbolEntry>
-          aria-label="Symbole der Bibliothek"
+          aria-label={tr("Symbole der Bibliothek")}
           items={filtered}
           getKey={(e) => e.name}
           minItemWidth={CARD_MIN_WIDTH}
@@ -284,11 +289,11 @@ export function LibraryView({ onEdit, onNewSymbol }: LibraryViewProps) {
               illustration="search-empty"
               titleAs="h2"
               size="sm"
-              title="Keine Symbole gefunden"
-              description="Kein Symbol passt zu Suche und Filtern."
+              title={tr("Keine Symbole gefunden")}
+              description={tr("Kein Symbol passt zu Suche und Filtern.")}
               actions={
                 <Button size="sm" variant="secondary" onClick={resetFilters}>
-                  Filter zurücksetzen
+                  {tr("Filter zurücksetzen")}
                 </Button>
               }
               className="h-full"
@@ -298,9 +303,9 @@ export function LibraryView({ onEdit, onNewSymbol }: LibraryViewProps) {
             <GalleryCard
               title={e.name}
               meta={
-                <span title={`${kindLabel(e)} · ${plural(e.pin_count, 'Pin', 'Pins')}${e.part_count > 1 ? ` · ${formatNumber(e.part_count)} Teile` : ''}`}>
-                  {plural(e.pin_count, 'Pin', 'Pins')}
-                  {e.part_count > 1 ? ` · ${formatNumber(e.part_count)} Teile` : ''} · {kindLabel(e)}
+                <span title={`${kindLabel(e)} · ${plural(e.pin_count, tr('Pin'), tr('Pins'))}${e.part_count > 1 ? tr(" · {value0} Teile", { value0: String(formatNumber(e.part_count)) }) : ''}`}>
+                  {plural(e.pin_count, tr('Pin'), tr('Pins'))}
+                  {e.part_count > 1 ? tr(" · {value0} Teile", { value0: String(formatNumber(e.part_count)) }) : ''} · {kindLabel(e)}
                 </span>
               }
               selected={s.selected}
@@ -318,7 +323,7 @@ export function LibraryView({ onEdit, onNewSymbol }: LibraryViewProps) {
     <div className="flex h-full min-h-0 flex-col">
       <PageActions>
         <Button variant="primary" leftIcon={<Plus />} onClick={onNewSymbol}>
-          Symbol erzeugen
+          {tr("Symbol erzeugen")}
         </Button>
       </PageActions>
       {toolbar}

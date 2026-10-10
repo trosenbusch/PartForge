@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { LucideProvider } from 'lucide-react'
 import { MotionConfig } from 'motion/react'
@@ -8,9 +9,11 @@ import { router } from './router'
 import { useJobDock } from './stores'
 import { useTheme } from './theme'
 import { ThemeProvider } from './ThemeProvider'
+import { LanguageProvider } from './LanguageProvider'
 
 /** Toasts weichen dem Job-Dock aus (Pille oder aufgeklapptes Panel). */
 function ThemedToaster() {
+  useI18n()
   const { resolvedTheme } = useTheme()
   const dockVisible = useJobDock((s) => s.visible)
   const dockHeight = useJobDock((s) => s.height)
@@ -18,8 +21,10 @@ function ThemedToaster() {
 }
 
 export function App() {
+  useI18n()
   return (
     <QueryClientProvider client={queryClient}>
+      <LanguageProvider>
       <ThemeProvider>
         <MotionConfig reducedMotion="user">
           {/* Icons: 1,75 px Strich passt zu 13-px-Inter (Lucide-Standard 2 px wirkt zu schwer) */}
@@ -31,6 +36,7 @@ export function App() {
           </LucideProvider>
         </MotionConfig>
       </ThemeProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   )
 }

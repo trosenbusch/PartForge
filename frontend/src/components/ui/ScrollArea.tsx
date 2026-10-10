@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { ScrollArea as ScrollAreaPrimitive } from 'radix-ui'
 import { useCallback, useEffect, useState, type ReactNode, type Ref } from 'react'
 import { cn } from '@/lib/cn'
@@ -44,6 +45,7 @@ export function ScrollArea({
   focusable = 'auto',
   'aria-label': ariaLabel,
 }: ScrollAreaProps) {
+  useI18n()
   const [viewport, setViewport] = useState<HTMLDivElement | null>(null)
   const [autoFocusable, setAutoFocusable] = useState(false)
   const setRefs = useCallback(
@@ -90,6 +92,7 @@ export function ScrollArea({
 }
 
 function Bar({ orientation }: { orientation: 'vertical' | 'horizontal' }) {
+  useI18n()
   return (
     <ScrollAreaPrimitive.Scrollbar
       orientation={orientation}

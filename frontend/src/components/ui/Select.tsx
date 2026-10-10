@@ -1,3 +1,5 @@
+import { useI18n } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { Check, ChevronDown, ChevronUp } from 'lucide-react'
 import { Select as SelectPrimitive } from 'radix-ui'
 import type { ReactNode } from 'react'
@@ -47,7 +49,7 @@ export function Select<V extends string = string>({
   onValueChange,
   options,
   groups,
-  placeholder = 'Auswählen …',
+  placeholder = tr("Auswählen …"),
   size = 'md',
   disabled,
   invalid,
@@ -58,6 +60,7 @@ export function Select<V extends string = string>({
   prefix,
   'aria-label': ariaLabel,
 }: SelectProps<V>) {
+  useI18n()
   const field = useFieldContext()
   const isInvalid = invalid ?? field?.invalid ?? false
   const allGroups: SelectGroupDef<V>[] = groups ?? [{ label: '', options: options ?? [] }]

@@ -1,3 +1,4 @@
+import { t, useI18n } from '@/lib/i18n'
 import { useReducedMotion } from 'motion/react'
 import { ChevronLeft, ChevronRight, ExternalLink, FileText, Minus, Plus, Sparkles, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
@@ -27,6 +28,7 @@ function nextZoom(current: number, dir: 1 | -1): number {
  * Die Seite bleibt mit der PDF-Spalte verbunden – nach dem Schließen steht dort dieselbe Seite.
  */
 export function PageOverlay({ ds, extraction, device }: { ds: DatasheetDetail; extraction?: ExtractionData; device?: DeviceData }) {
+  useI18n()
   const overlay = useReviewUi((s) => s.overlay)
   const close = useReviewUi((s) => s.closeOverlay)
   return (
@@ -65,6 +67,7 @@ function OverlayBody({
   device?: DeviceData
   origin: { page: number; what?: string }
 }) {
+  const { t: localize } = useI18n()
   const page = useReviewUi((s) => s.page)
   const setPage = useReviewUi((s) => s.setPage)
   const showSection = useReviewUi((s) => s.showSection)
@@ -76,8 +79,8 @@ function OverlayBody({
   const info = useMemo(() => new Map(ds.pages.map((p) => [p.page, p])), [ds.pages])
   const used = useMemo(() => new Set(ds.selected_pages), [ds.selected_pages])
   const refs = useMemo(
-    () => (extraction ? pageReferences(extraction, device) : new Map<number, PageReference[]>()),
-    [extraction, device],
+    () => (extraction ? pageReferences(extraction, device, localize) : new Map<number, PageReference[]>()),
+    [extraction, device, localize],
   )
   const current = info.get(page)
   const aspect = current && current.height_pt > 0 ? current.width_pt / current.height_pt : DEFAULT_PAGE_ASPECT
@@ -159,66 +162,65 @@ function OverlayBody({
         </span>
         <div className="min-w-0 flex-1">
           <DialogTitle className="flex items-baseline gap-2 text-md font-semibold tracking-[-0.015em] text-fg">
-            Seite <span className="tabular-nums">{page}</span>
-            <span className="text-ui font-normal text-fg-subtle tabular-nums">von {ds.page_count}</span>
+            {t("Seite ")}<span className="tabular-nums">{page}</span>
+            <span className="text-ui font-normal text-fg-subtle tabular-nums">{t("von ")}{ds.page_count}</span>
           </DialogTitle>
           <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-fg-muted">
             {what && (
               <span className="inline-flex items-center gap-1 rounded-md bg-surface-3 px-1.5 py-px font-medium text-fg">
-                Fundstelle: {what}
+                {t("Fundstelle: ")}{what}
               </span>
             )}
             {used.has(page) && (
               <span className="inline-flex items-center gap-1 text-spark-text">
                 <Sparkles aria-hidden className="size-3" />
-                Von Claude gelesen
-              </span>
+                {t("Von Claude gelesen")}</span>
             )}
             {topics.length > 0 && <span className="truncate text-fg-subtle">{topics.join(', ')}</span>}
             <span className="truncate text-fg-subtle">{ds.original_name}</span>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          <IconButton size="sm" label="Vorherige Seite" hotkey="arrowleft" icon={<ChevronLeft />} onClick={() => go(page - 1)} disabled={page <= 1} />
+          <IconButton size="sm" label={t("Vorherige Seite")} hotkey="arrowleft" icon={<ChevronLeft />} onClick={() => go(page - 1)} disabled={page <= 1} />
           <IconButton
             size="sm"
-            label="Nächste Seite"
+            label={t("Nächste Seite")}
             hotkey="arrowright"
             icon={<ChevronRight />}
             onClick={() => go(page + 1)}
             disabled={page >= ds.page_count}
           />
           <span aria-hidden className="mx-1 h-5 w-px bg-line" />
-          <IconButton size="sm" label="Verkleinern" icon={<Minus />} onClick={() => setZoom((z) => nextZoom(z, -1))} disabled={zoom <= ZOOMS[0]} />
-          <Tooltip content="Zoom zurücksetzen (0)">
+          <IconButton size="sm" label={t("Verkleinern")} icon={<Minus />} onClick={() => setZoom((z) => nextZoom(z, -1))} disabled={zoom <= ZOOMS[0]} />
+          <Tooltip content={t("Zoom zurücksetzen (0)")}>
             <button
               type="button"
               onClick={() => setZoom(1)}
-              aria-label={`Zoom ${formatPercent(zoom)} – zurücksetzen`}
+              aria-label={t("Zoom {0} – zurücksetzen", { "0": String(formatPercent(zoom)) })}
               className="h-7 min-w-12 rounded-control px-1 text-xs tabular-nums text-fg-muted outline-none hover:bg-surface-2 hover:text-fg focus-ring"
             >
               {formatPercent(zoom)}
             </button>
           </Tooltip>
-          <IconButton size="sm" label="Vergrößern" icon={<Plus />} onClick={() => setZoom((z) => nextZoom(z, 1))} disabled={zoom >= ZOOMS[ZOOMS.length - 1]} />
+          <IconButton size="sm" label={t("Vergrößern")} icon={<Plus />} onClick={() => setZoom((z) => nextZoom(z, 1))} disabled={zoom >= ZOOMS[ZOOMS.length - 1]} />
           <SegmentedControl
             size="sm"
-            aria-label="Einpassen"
+            aria-label={t("Einpassen")}
             value={fit}
             onValueChange={(v) => {
               setFit(v)
               setZoom(1)
             }}
             options={[
-              { value: 'width', label: 'Breite' },
-              { value: 'page', label: 'Ganze Seite' },
+              { value: 'width', label: t("Breite") },
+              { value: 'page', label: t("Ganze Seite") },
             ]}
             className="ml-1"
           />
           <span aria-hidden className="mx-1 h-5 w-px bg-line" />
-          <IconButton size="sm" label="PDF öffnen" icon={<ExternalLink />} onClick={() => void openPdf(ds)} />
+          <IconButton size="sm" label={t("PDF öffnen")} icon={<ExternalLink />} onClick={() => void openPdf(ds)} />
           <DialogClose asChild>
-            <IconButton size="sm" label="Schließen (Esc)" icon={<X />} />
+            <IconButton size="sm" label={t("Schließen (Esc)")} icon={<X />} />
           </DialogClose>
         </div>
       </div>
@@ -231,7 +233,7 @@ function OverlayBody({
           // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollbare Seite per Tastatur
           tabIndex={0}
           role="region"
-          aria-label={`Seite ${page} – ←/→ blättern, +/− zoomen, 0 zurücksetzen`}
+          aria-label={t("Seite {0} – ←/→ blättern, +/− zoomen, 0 zurücksetzen", { "0": String(page) })}
           className="absolute inset-0 overflow-auto bg-bg outline-none focus-ring-inset light:bg-surface-3"
         >
           <div className="flex min-h-full min-w-fit items-start justify-center p-6">
@@ -251,7 +253,7 @@ function OverlayBody({
                 aspect={aspect}
                 loading="eager"
                 placeholder={false}
-                alt={`Seite ${page} des Datenblatts${topics.length ? ` (${topics.join(', ')})` : ''}`}
+                alt={t("Seite {0} des Datenblatts{1}", { "0": String(page), "1": String(topics.length ? ` (${topics.join(', ')})` : '') })}
               />
             </div>
           </div>
@@ -262,7 +264,7 @@ function OverlayBody({
       <div className="flex shrink-0 items-center gap-3 border-t border-line bg-[color-mix(in_oklab,var(--pf-surface-2)_55%,transparent)] px-4 py-2">
         {pageRefs.length > 0 && (
           <div className="flex shrink-0 flex-col gap-1">
-            <span className="micro-label">Auf dieser Seite</span>
+            <span className="micro-label">{t("Auf dieser Seite")}</span>
             <div className="flex max-w-72 flex-wrap gap-1">
               {pageRefs.slice(0, 4).map((r) => (
                 <button
@@ -280,7 +282,7 @@ function OverlayBody({
             </div>
           </div>
         )}
-        <ul ref={stripRef} aria-label="Seiten" className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto scrollbar-none py-1">
+        <ul ref={stripRef} aria-label={t("Seiten")} className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto scrollbar-none py-1">
           {pages.map((p) => {
             const pInfo = info.get(p)
             const isCurrent = p === page
@@ -290,7 +292,7 @@ function OverlayBody({
                   type="button"
                   data-page={p}
                   aria-current={isCurrent ? 'page' : undefined}
-                  aria-label={`Seite ${p}${used.has(p) ? ', von Claude gelesen' : ''}`}
+                  aria-label={t("Seite {0}{1}", { "0": String(p), "1": String(used.has(p) ? t(", von Claude gelesen") : '') })}
                   onClick={() => go(p)}
                   className={cn(
                     'group/strip relative block w-10 rounded-md p-[2px] outline-none transition-colors focus-ring',

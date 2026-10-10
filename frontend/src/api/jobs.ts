@@ -1,22 +1,4 @@
-/**
- * Hintergrundjobs: Live-Status per Server-Sent Events (/api/jobs/{id}/events), Polling als Fallback.
- *
- *   const { job, isActive } = useJob(jobId, { onDone: (j) => navigate(`/bauteile/${j.result.table}`) })
- *
- * Erfolg/Fehler meldet das Job-Dock bereits als Toast – `onDone` nur für Folgeaktionen (Navigation,
- * Daten neu laden) verwenden, nicht für einen zweiten Toast.
- * Neue Jobs (Antwort eines POST-Endpunkts) mit `trackJob(job, { … })` im Job-Dock anzeigen; die Optionen steuern
- * die Rückmeldung (`toast`, `doneMessage`, `warnWhen`, `dock`). Meldet das Ergebnis Probleme (`error_count`, `errors`,
- * `library_problems`, `outcome: 'partial'`, `skipped: true` …, siehe {@link jobResultProblem}), erscheint statt
- * „Fertig“ eine Warnung.
- *
- * Vollständige Ergebnisse: `useJob`/`useJobResult`/`fetchJob` laden immer den ganzen Schnappschuss
- * (`GET /api/jobs/{id}`); die Joblisten (`useJobs`) sind Kurzfassungen (`result_truncated`).
- *
- * Verbindungen: Je Job-ID gibt es höchstens **eine** EventSource (geteilt zwischen allen `useJob`-Aufrufen).
- * Mehr als {@link MAX_STREAMS} gleichzeitige Streams werden nicht geöffnet – weitere Jobs werden gepollt,
- * damit die 6 HTTP/1.1-Verbindungen je Host für normale Anfragen frei bleiben.
- */
+import { t as tr, localizeMessage } from '@/lib/i18n'
 import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -207,7 +189,7 @@ function briefCount(rec: Record<string, unknown>, name: string): number | null {
   return typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.round(v)) : null
 }
 
-const errorsLabel = (n: number) => (n === 1 ? '1 Fehler' : `${formatNumber(n)} Fehler`)
+const errorsLabel = (n: number) => (n === 1 ? tr("1 Fehler") : tr("{0} Fehler", { "0": String(formatNumber(n)) }))
 
 /**
  * Eintrag von `result.library_problems` (Serie, Datenblatt-Übernahme …): ein Symbol bzw. Footprint, das **nicht** in
@@ -247,7 +229,7 @@ const libraryFile = (p: LibraryProblem) => text(p.library)?.split(/[\\/]/).pop()
 
 function problemReason(p: LibraryProblem): string {
   return (
-    text(p.message) ?? (p.status === 'pending' ? 'noch ausstehend' : p.status === 'missing' ? 'nicht erzeugbar' : 'Schreiben fehlgeschlagen')
+    text(p.message) ?? (p.status === 'pending' ? tr("noch ausstehend") : p.status === 'missing' ? tr("nicht erzeugbar") : tr("Schreiben fehlgeschlagen"))
   )
 }
 
@@ -256,8 +238,8 @@ function libraryItemsLabel(problems: LibraryProblem[], count: number): string {
   const kinds = new Set(problems.map(problemKind))
   const only = problems.length > 0 && kinds.size === 1 ? [...kinds][0] : null
   if (only === 'footprint') return count === 1 ? 'Footprint' : `${formatNumber(count)} Footprints`
-  if (only === 'symbol') return count === 1 ? 'Symbol' : `${formatNumber(count)} Symbole`
-  return count === 1 ? '1 Bibliothekseintrag' : `${formatNumber(count)} Bibliothekseinträge`
+  if (only === 'symbol') return count === 1 ? 'Symbol' : tr("{0} Symbole", { "0": String(formatNumber(count)) })
+  return count === 1 ? tr("1 Bibliothekseintrag") : tr("{0} Bibliothekseinträge", { "0": String(formatNumber(count)) })
 }
 
 function describeLibraryProblem(p: LibraryProblem): string {
@@ -277,10 +259,10 @@ function libraryProblemText(rec: Record<string, unknown>): string | null {
     const reason = problemReason(p)
     // nennt der Grund die Datei schon („PF_CHIP.PcbLib wurde nicht geschrieben – …“), nicht doppelt sagen
     if (file && reason.toLowerCase().includes(file.toLowerCase())) return `${what} ${p.name}: ${reason}`
-    return `${what} ${p.name} wurde nicht ${file ? `in ${file}` : 'in die Bibliotheksdatei'} geschrieben – ${reason}`
+    return tr("{0} {1} wurde nicht {2} geschrieben – {3}", { "0": String(what), "1": String(p.name), "2": String(file ? `in ${file}` : tr('in die Bibliotheksdatei')), "3": String(reason) })
   }
   const first = problems.length ? describeLibraryProblem(problems[0]) : null
-  return `${what} nicht in die Bibliotheksdateien geschrieben${first ? ` – ${first}` : ''}`
+  return tr("{0} nicht in die Bibliotheksdateien geschrieben{1}", { "0": String(what), "1": String(first ? ` – ${first}` : '') })
 }
 
 /**
@@ -294,9 +276,9 @@ export function jobResultProblem(job: Pick<Job, 'result'>): string | null {
   const r = job.result
   if (!r || typeof r !== 'object' || Array.isArray(r)) return null
   const rec = r as Record<string, unknown>
-  if (rec.skipped === true) return text(rec.reason) ?? 'Übersprungen – es wurde nichts geändert.'
+  if (rec.skipped === true) return text(rec.reason) ?? tr("Übersprungen – es wurde nichts geändert.")
   if (rec.outcome === 'partial') {
-    return text(rec.message) ?? text(rec.reason) ?? 'Nur teilweise abgeschlossen – Details im Protokoll.'
+    return text(rec.message) ?? text(rec.reason) ?? tr("Nur teilweise abgeschlossen – Details im Protokoll.")
   }
   const errors = problemList(rec.errors)
   const count =
@@ -311,7 +293,7 @@ export function jobResultProblem(job: Pick<Job, 'result'>): string | null {
   if (Array.isArray(rec.missing) && rec.missing.some((m) => m && typeof m === 'object' && 'name' in m)) {
     const first = describeItem(rec.missing[0])
     const n = briefCount(rec, 'missing') ?? rec.missing.length
-    return `${n === 1 ? '1 Eintrag' : `${formatNumber(n)} Einträge`} nicht erzeugbar${first ? ` – ${first}` : ''}`
+    return tr("{0} nicht erzeugbar{1}", { "0": String(n === 1 ? tr('1 Eintrag') : tr('{0} Einträge', {0: formatNumber(n)})), "1": String(first ? ` – ${first}` : '') })
   }
   return null
 }
@@ -333,10 +315,10 @@ export function jobLacksWriter(job: Pick<Job, 'result' | 'message'>): boolean {
 }
 
 /** Knopf „Writer einrichten“ → Einstellungen › Allgemein › Altium Designer */
-export const SETUP_WRITER_ACTION: JobOutcomeAction = { label: 'Writer einrichten', to: SETTINGS_PLACE.altium.to }
+export const SETUP_WRITER_ACTION: JobOutcomeAction = { get label() { return tr("Writer einrichten") }, to: SETTINGS_PLACE.altium.to }
 /** Knopf „Synchronisieren“ → Altium › Bibliotheksdateien synchronisieren (Aktion als Router-State) */
 export const SYNC_LIBRARIES_ACTION: JobOutcomeAction = {
-  label: 'Synchronisieren',
+  get label() { return tr("Synchronisieren") },
   to: ALTIUM_PATH,
   state: altiumActionState('sync'),
 }
@@ -359,11 +341,11 @@ function outcomeAction(job: Job): JobOutcomeAction | null {
 export function jobCancelText(job: Pick<Job, 'cancel_reason' | 'message'>, short = false): string {
   if (job.cancel_reason === JOB_CANCEL_LIBRARY_SWITCH) {
     return short
-      ? 'Abgebrochen – Bibliothek gewechselt'
-      : 'Die Bibliothek wurde gewechselt oder geschlossen – der Job wurde abgebrochen. In die andere Bibliothek wurde nichts geschrieben.'
+      ? tr("Abgebrochen – Bibliothek gewechselt")
+      : tr("Die Bibliothek wurde gewechselt oder geschlossen – der Job wurde abgebrochen. In die andere Bibliothek wurde nichts geschrieben.")
   }
   const own = text(job.message)
-  return own ? formatNumbersInText(own) : 'Abgebrochen'
+  return own ? formatNumbersInText(localizeMessage(own)) : tr("Abgebrochen")
 }
 
 /**
@@ -373,10 +355,21 @@ export function jobCancelText(job: Pick<Job, 'cancel_reason' | 'message'>, short
  * („6.212 Bauteile“).
  */
 export function jobOutcome<TResult>(job: Job<TResult>, opts?: TrackJobOptions<TResult>): JobOutcome | null {
+  const outcome = rawJobOutcome(job, opts)
+  if (!outcome) return null
+  return {
+    ...outcome,
+    title: localizeMessage(outcome.title),
+    description: outcome.description ? localizeMessage(outcome.description) : outcome.description,
+    problem: outcome.problem ? localizeMessage(outcome.problem) : outcome.problem,
+  }
+}
+
+function rawJobOutcome<TResult>(job: Job<TResult>, opts?: TrackJobOptions<TResult>): JobOutcome | null {
   if (!isJobFinished(job)) return null
   const o = (opts ?? feedback.get(job.id) ?? {}) as TrackJobOptions<TResult>
   if (job.status === 'failed') {
-    const error = formatNumbersInText(cleanErrorText(text(job.error) ?? '') || 'Fehlgeschlagen')
+    const error = formatNumbersInText(cleanErrorText(text(job.error) ?? '') || tr("Fehlgeschlagen"))
     return { tone: 'error', title: job.title, description: clipText(error), problem: error, action: null }
   }
   if (job.status === 'cancelled') {
@@ -394,7 +387,7 @@ export function jobOutcome<TResult>(job: Job<TResult>, opts?: TrackJobOptions<TR
     return { tone: 'warning', title: job.title, description: clipText(lead ? formatNumbersInText(lead) : problem), problem, action }
   }
   const done = typeof o.doneMessage === 'function' ? safely(() => (o.doneMessage as (j: Job<TResult>) => unknown)(job), null) : o.doneMessage
-  const description = formatNumbersInText(text(done) ?? text(job.message) ?? 'Erfolgreich abgeschlossen')
+  const description = formatNumbersInText(text(done) ?? text(job.message) ?? tr("Erfolgreich abgeschlossen"))
   return { tone: 'success', title: job.title, description: clipText(description), problem: null, action: null }
 }
 

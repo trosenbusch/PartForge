@@ -1,3 +1,4 @@
+import { t as translate, useI18n, localizeMessage } from '@/lib/i18n'
 /**
  * „Hausstil aus Beispielbibliothek übernehmen“: PartForge liest eine Bibliothek, deren Bauteile so aussehen, wie alle
  * aussehen sollen (.SchLib, .PcbLib, .IntLib, ein .zip davon oder ein Ordner), und schlägt Schriften, Pinlängen,
@@ -48,13 +49,13 @@ const ENUM_TEXT: Record<string, string> = {
 /** Wert des Entwurfs so lesbar wie die Vorschläge des Backends („100 mil“, „0,8 mm“, „ja“) */
 function formatValue(key: string, value: unknown): string {
   if (value === null || value === undefined || value === '') return '–'
-  if (typeof value === 'boolean') return value ? 'ja' : 'nein'
+  if (typeof value === 'boolean') return value ? translate("ja") : translate("nein")
   if (typeof value === 'number') {
     const unit = /length|grid/.test(key) ? ' mil' : /size/.test(key) ? ' pt' : /width|height|radius|clearance/.test(key) ? ' mm' : ''
     return `${formatNumber(value)}${unit}`
   }
   const text = String(value)
-  return ENUM_TEXT[text] ?? text
+  return ENUM_TEXT[text] ? translate(ENUM_TEXT[text]) : text
 }
 
 const keyOf = (f: StyleFinding) => `${f.area}:${f.key}`
@@ -78,6 +79,7 @@ export function LearnStyleDialog({
   draft: { symbol: SymbolStyle; footprint: FootprintStyle; layers: LayerMap }
   onApply: (learned: LearnedStyle, count: number) => void
 }) {
+  useI18n()
   const bridge = useNativeBridge()
   const learn = useLearnStyle()
   const [path, setPath] = useState('')
@@ -156,8 +158,8 @@ export function LearnStyleDialog({
         <DialogHeader
           tone="accent"
           icon={<Pipette />}
-          title="Hausstil aus Beispielbibliothek übernehmen"
-          description="Eine Bibliothek, deren Bauteile so aussehen, wie alle aussehen sollen: PartForge liest Schriften, Pinlängen, Farben, Linienbreiten, Texte und die Lagenzuordnung und schlägt die Einstellungen vor."
+          title={translate("Hausstil aus Beispielbibliothek übernehmen")}
+          description={translate("Eine Bibliothek, deren Bauteile so aussehen, wie alle aussehen sollen: PartForge liest Schriften, Pinlängen, Farben, Linienbreiten, Texte und die Lagenzuordnung und schlägt die Einstellungen vor.")}
         />
         <DialogBody className="flex flex-col gap-4">
           <form onSubmit={run} className="flex flex-col gap-2">
@@ -166,44 +168,42 @@ export function LearnStyleDialog({
                 value={path}
                 onValueChange={setPath}
                 browse="file"
-                fileFilters={['Altium-Bibliotheken (*.SchLib;*.PcbLib;*.IntLib;*.zip)']}
-                placeholder="Beispielbibliothek: .SchLib, .PcbLib, .IntLib, .zip oder Ordner"
-                aria-label="Pfad der Beispielbibliothek"
+                fileFilters={[translate("Altium-Bibliotheken (*.SchLib;*.PcbLib;*.IntLib;*.zip)")]}
+                placeholder={translate("Beispielbibliothek: .SchLib, .PcbLib, .IntLib, .zip oder Ordner")}
+                aria-label={translate("Pfad der Beispielbibliothek")}
                 className="min-w-0 flex-1"
               />
-              {bridge.canPickFolder && <IconButton label="Ordner wählen" variant="secondary" icon={<FolderOpen />} onClick={() => void chooseFolder()} />}
+              {bridge.canPickFolder && <IconButton label={translate("Ordner wählen")} variant="secondary" icon={<FolderOpen />} onClick={() => void chooseFolder()} />}
               <Button type="submit" variant={proposal ? 'secondary' : 'primary'} loading={learn.isPending} disabled={!path.trim()} leftIcon={<Sparkles />}>
-                Auswerten
-              </Button>
+                {translate("Auswerten")}</Button>
             </div>
-            <p className="text-xs text-fg-muted">Nur gelesen – die Beispielbibliothek bleibt unverändert, gespeichert wird erst über die Speicherleiste.</p>
+            <p className="text-xs text-fg-muted">{translate("Nur gelesen – die Beispielbibliothek bleibt unverändert, gespeichert wird erst über die Speicherleiste.")}</p>
           </form>
 
           {learn.isError && (
-            <Callout tone="danger" title="Nicht auswertbar" urgent>
+            <Callout tone="danger" title={translate("Nicht auswertbar")} urgent>
               {errorMessage(learn.error)}
             </Callout>
           )}
 
           {proposal && (
             <div className="flex flex-col gap-3">
-              <Callout tone={differing.length ? 'info' : 'success'} title={differing.length ? 'Vorschläge' : 'Der Entwurf entspricht dem Beispiel'} live>
-                {formatNumber(proposal.symbols)} {proposal.symbols === 1 ? 'Symbol' : 'Symbole'} und {formatNumber(proposal.footprints)}{' '}
-                {proposal.footprints === 1 ? 'Footprint' : 'Footprints'} ausgewertet
-                {differing.length ? ` – ${plural(differing.length, 'Einstellung weicht', 'Einstellungen weichen')} vom Entwurf ab.` : '.'}
+              <Callout tone={differing.length ? 'info' : 'success'} title={differing.length ? translate("Vorschläge") : translate("Der Entwurf entspricht dem Beispiel")} live>
+                {formatNumber(proposal.symbols)} {proposal.symbols === 1 ? 'Symbol' : translate("Symbole")} {' '}{translate("und")}{' '}{formatNumber(proposal.footprints)}{' '}
+                {proposal.footprints === 1 ? 'Footprint' : 'Footprints'} {' '}{translate("ausgewertet")}{differing.length ? translate(" – {value1} vom Entwurf ab.", { value1: plural(differing.length, translate("Einstellung weicht"), translate("Einstellungen weichen")) }) : '.'}
               </Callout>
               {(proposal.notes ?? []).map((n) => (
                 <p key={n} className="text-xs text-warning-text">
-                  {n}
+                  {localizeMessage(n)}
                 </p>
               ))}
               {AREAS.map((area) => {
                 const items = findings.filter((f) => f.area === area.key)
                 if (!items.length) return null
                 return (
-                  <section key={area.key} aria-label={area.label} className="overflow-hidden rounded-card border border-line">
+                  <section key={area.key} aria-label={translate(area.label)} className="overflow-hidden rounded-card border border-line">
                     <h3 className="border-b border-line bg-surface-2/40 px-4 py-2 text-xs font-semibold uppercase tracking-[0.06em] text-fg-muted">
-                      {area.label}
+                      {translate(area.label)}
                     </h3>
                     <ul className="divide-y divide-line">
                       {items.map((f) => {
@@ -215,19 +215,19 @@ export function LearnStyleDialog({
                               checked={diff && chosen.has(id)}
                               disabled={!diff}
                               onCheckedChange={(v) => toggle(f, v === true)}
-                              aria-label={`${f.label} übernehmen`}
+                              aria-label={translate("{value1} übernehmen", { value1: translate(f.label) })}
                               className="mt-0.5"
                             />
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-baseline gap-x-2">
-                                <span className="text-ui font-medium text-fg">{f.label}</span>
-                                {!diff && <Badge className="h-4 px-1.5">wie Entwurf</Badge>}
+                                <span className="text-ui font-medium text-fg">{translate(f.label)}</span>
+                                {!diff && <Badge className="h-4 px-1.5">{translate("wie Entwurf")}</Badge>}
                               </div>
-                              <p className="text-2xs text-fg-subtle">Beleg: {f.evidence}</p>
+                              <p className="text-2xs text-fg-subtle">{translate("Beleg:")}{' '}{localizeMessage(f.evidence)}</p>
                             </div>
                             <div className="flex shrink-0 items-center gap-2 text-xs">
                               {diff && <span className="mono text-fg-subtle line-through decoration-fg-subtle/60">{formatValue(f.key, current(f))}</span>}
-                              <span className={cn('mono', diff ? 'font-medium text-fg' : 'text-fg-muted')}>{f.proposed}</span>
+                              <span className={cn('mono', diff ? 'font-medium text-fg' : 'text-fg-muted')}>{formatValue(f.key, proposedValue(proposal, f))}</span>
                             </div>
                           </li>
                         )
@@ -241,11 +241,11 @@ export function LearnStyleDialog({
         </DialogBody>
         <DialogFooter>
           <Button variant="ghost" onClick={() => close(false)}>
-            {proposal && !differing.length ? 'Schließen' : 'Abbrechen'}
+            {proposal && !differing.length ? translate("Schließen") : translate("Abbrechen")}
           </Button>
           {proposal && differing.length > 0 && (
             <Button variant="primary" onClick={apply} disabled={!selectedCount}>
-              {selectedCount === 1 ? '1 Einstellung übernehmen' : `${formatNumber(selectedCount)} Einstellungen übernehmen`}
+              {selectedCount === 1 ? translate("1 Einstellung übernehmen") : translate("{value1} Einstellungen übernehmen", { value1: formatNumber(selectedCount) })}
             </Button>
           )}
         </DialogFooter>

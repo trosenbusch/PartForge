@@ -1,3 +1,4 @@
+import { t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Vorschaubild eines registrierten Symbols aus `GET /api/libraries/symbols/{name}/thumbnail.svg?v=<content_hash>` –
  * lädt erst im Sichtbereich, im Theme der App. `content_hash` (aus Liste, Detail und Speichern) ändert sich mit
@@ -16,10 +17,11 @@ import { LazyThumbnail } from '@/components/data'
 type ThumbEntry = Pick<SymbolEntry, 'name' | 'content_hash'>
 
 function Placeholder({ small }: { small?: boolean }) {
+  useI18n()
   return (
     <span className="flex size-full items-center justify-center text-fg-subtle">
       <SymbolIcon aria-hidden className={small ? 'size-3.5' : 'size-6'} />
-      <span className="sr-only">Keine Vorschau</span>
+      <span className="sr-only">{tr("Keine Vorschau")}</span>
     </span>
   )
 }

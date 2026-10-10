@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 import { Illustration, type IllustrationName } from './illustrations'
@@ -30,6 +31,7 @@ export function EmptyState({
   className,
   children,
 }: EmptyStateProps) {
+  useI18n()
   const illoSize = size === 'sm' ? 'w-32' : size === 'md' ? 'w-44' : 'w-56'
   return (
     <div

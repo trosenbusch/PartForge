@@ -1,10 +1,5 @@
-/**
- * Kategoriebaum (ARIA-Tree): Kategorien mit Symbol, Farbe und Zähler in einklappbaren Gruppen, Suche, vollständige
- * Tastaturbedienung (↑/↓, ←/→ ein-/ausklappen, Pos1/Ende, Enter/Leertaste, Tippen springt zum Anfangsbuchstaben).
- *
- *   const items = useCategoryTreeItems()          // aus /api/categories, gruppiert
- *   <CategoryTree items={items} value={table} onValueChange={setTable} allItem={{ label: 'Alle Bauteile' }} />
- */
+import { useI18n } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { ChevronRight, Search, X } from 'lucide-react'
 import { Fragment, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Skeleton } from '@/components/ui'
@@ -57,15 +52,16 @@ interface Node {
 
 const ALL_ID = ''
 
-const fold = (s: string) =>
+const fold = (s: string, locale: string) =>
   s
-    .toLocaleLowerCase('de-DE')
+    .toLocaleLowerCase(locale)
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
 
 function Highlight({ text, query }: { text: string; query: string }) {
+  const { locale } = useI18n()
   if (!query) return <>{text}</>
-  const idx = fold(text).indexOf(fold(query))
+  const idx = fold(text, locale).indexOf(fold(query, locale))
   if (idx < 0) return <>{text}</>
   return (
     <>
@@ -83,12 +79,13 @@ export function CategoryTree({
   allItem = false,
   groupOrder,
   searchable = true,
-  searchPlaceholder = 'Kategorie suchen …',
+  searchPlaceholder = tr("Kategorie suchen …"),
   loading,
   persistKey,
   className,
-  'aria-label': ariaLabel = 'Kategorien',
+  'aria-label': ariaLabel = tr("Kategorien"),
 }: CategoryTreeProps) {
+  const { t: tr, locale } = useI18n()
   const uid = useId().replace(/:/g, '')
   const [query, setQuery] = useState('')
   const prefKey = persistKey ? `pf-tree:${persistKey}` : null
@@ -115,8 +112,8 @@ export function CategoryTree({
   // ------------------------------------------------------------------ Struktur (gefiltert)
   const q = query.trim()
   const filtered = useMemo(
-    () => (q ? items.filter((it) => fold(`${it.label} ${it.id} ${it.keywords ?? ''}`).includes(fold(q))) : items),
-    [items, q],
+    () => (q ? items.filter((it) => fold(`${it.label} ${it.id} ${it.keywords ?? ''}`, locale).includes(fold(q, locale))) : items),
+    [items, q, locale],
   )
   const groups = useMemo(() => {
     const map = new Map<string, CategoryTreeItem[]>()
@@ -133,9 +130,9 @@ export function CategoryTree({
       const ia = order.indexOf(a)
       const ib = order.indexOf(b)
       if (ia >= 0 || ib >= 0) return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib)
-      return a.localeCompare(b, 'de')
+      return a.localeCompare(b, locale)
     })
-  }, [filtered, groupOrder])
+  }, [filtered, groupOrder, locale])
 
   const visible: Node[] = useMemo(() => {
     const out: Node[] = []
@@ -147,11 +144,11 @@ export function CategoryTree({
       }
       const open = q ? true : !collapsed.has(group)
       const total = list.reduce((s, it) => s + (it.count ?? 0), 0)
-      out.push({ key: `g:${group}`, kind: 'group', id: `g:${group}`, label: group, level: 1, group, count: total })
+      out.push({ key: `g:${group}`, kind: 'group', id: `g:${group}`, label: tr(group), level: 1, group, count: total })
       if (open) for (const it of list) out.push({ key: `i:${it.id}`, kind: 'item', id: it.id, label: it.label, level: 2, item: it, group })
     }
     return out
-  }, [groups, collapsed, allItem, q])
+  }, [groups, collapsed, allItem, q, tr])
 
   // ------------------------------------------------------------------ Fokus (roving tabindex)
   const [focusKey, setFocusKey] = useState<string | null>(null)
@@ -216,7 +213,7 @@ export function CategoryTree({
           t.at = now
           const start = idx + (t.text.length === 1 ? 1 : 0)
           const order = [...visible.slice(start), ...visible.slice(0, start)]
-          const hit = order.find((n) => n.kind === 'item' && fold(n.label).startsWith(fold(t.text)))
+          const hit = order.find((n) => n.kind === 'item' && fold(n.label, locale).startsWith(fold(t.text, locale)))
           if (hit) moveFocus(hit.key)
         }
     }
@@ -233,7 +230,7 @@ export function CategoryTree({
     const bottom = top + el.offsetHeight
     if (top < box.scrollTop) box.scrollTop = top - 8
     else if (bottom > box.scrollTop + box.clientHeight) box.scrollTop = bottom - box.clientHeight + 8
-  }, [selectedKey, hasSelected])
+  }, [selectedKey, hasSelected, tr])
 
   const rowClass =
     // Mindesthöhe statt fester Höhe: lange Namen („Linearregler und Referenzen“) brechen in eine zweite Zeile um
@@ -380,7 +377,7 @@ export function CategoryTree({
             <button
               type="button"
               onClick={() => setQuery('')}
-              aria-label="Suche leeren"
+              aria-label={tr("Suche leeren")}
               className="flex size-5 items-center justify-center rounded-[5px] text-fg-subtle outline-none hover:bg-surface-3 hover:text-fg focus-ring"
             >
               <X aria-hidden className="size-3" />
@@ -400,7 +397,7 @@ export function CategoryTree({
           {tree}
           {visible.length === 0 && (
             <p className="px-2 py-6 text-center text-xs text-fg-subtle">
-              {q ? `Keine Kategorie zu „${q}“` : 'Noch keine Kategorien'}
+              {q ? tr("Keine Kategorie zu „{0}“", { "0": String(q) }) : tr("Noch keine Kategorien")}
             </p>
           )}
         </div>

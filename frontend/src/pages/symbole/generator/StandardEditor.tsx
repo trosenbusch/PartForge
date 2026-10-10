@@ -1,3 +1,4 @@
+import { localizeMessage, t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Editor für Standardsymbole: Kopf mit Typ und Beschreibung, Ergebnis (Symbolname + Bibliotheksstatus),
  * Parameter aus `SymbolKindInfo.params` (Auswahl mit deutschen Beschriftungen, Pinbelegung mit eigener Eingabe,
@@ -47,7 +48,7 @@ function Section({ title, children, aside, className }: { title: string; childre
   )
 }
 
-const optionLabel = (p: SymbolParamSpec, v: string) => p.option_labels[v] ?? v
+const optionLabel = (p: SymbolParamSpec, v: string) => tr(p.option_labels[v] ?? v)
 
 /**
  * Parameter, die nur unter Bedingungen wirken (sonst ausgeblendet), und Beschriftungen ohne die dann überflüssige
@@ -56,7 +57,7 @@ const optionLabel = (p: SymbolParamSpec, v: string) => p.option_labels[v] ?? v
 const PARAM_APPLIES: Record<string, Record<string, (values: Record<string, unknown>) => boolean>> = {
   connector: { numbering: (v) => String(v.rows) === '2' },
 }
-const paramLabel = (p: SymbolParamSpec) => p.label.replace(/\s*\(2 Reihen\)$/, '')
+const paramLabel = (p: SymbolParamSpec) => tr(p.label.replace(/\s*\(2 Reihen\)$/, ''))
 
 function asText(v: unknown): string {
   if (v === null || v === undefined) return ''
@@ -77,12 +78,13 @@ function parseCustom(text: string): unknown {
 }
 
 function ParamField({ param, value, onChange, error }: { param: SymbolParamSpec; value: unknown; onChange: (v: unknown) => void; error?: string }) {
+  useI18n()
   if (param.kind === 'bool') {
-    return <Switch label={paramLabel(param)} description={param.help ?? undefined} checked={value === true} onCheckedChange={onChange} />
+    return <Switch label={paramLabel(param)} description={param.help ? tr(param.help) : undefined} checked={value === true} onCheckedChange={onChange} />
   }
   if (param.kind === 'int') {
     return (
-      <Field label={paramLabel(param)} help={param.help ?? undefined} error={error} hint={param.minimum != null && param.maximum != null ? `${param.minimum} … ${param.maximum}` : undefined}>
+      <Field label={paramLabel(param)} help={param.help ? tr(param.help) : undefined} error={error ? localizeMessage(error) : error} hint={param.minimum != null && param.maximum != null ? `${param.minimum} … ${param.maximum}` : undefined}>
         <NumberInput
           value={typeof value === 'number' ? value : Number(value) || null}
           onValueChange={(v) => onChange(v ?? paramDefault(param))}
@@ -98,20 +100,20 @@ function ParamField({ param, value, onChange, error }: { param: SymbolParamSpec;
     const current = asText(value)
     const options = param.options.map((o) => ({
       value: o,
-      label: o === 'auto' ? 'Hausstil' : o,
+      label: o === 'auto' ? tr('Hausstil') : o,
       description: optionLabel(param, o),
       keywords: [optionLabel(param, o)],
     }))
     const known = param.options.includes(current)
-    if (!known && current) options.push({ value: current, label: current, description: 'Eigene Belegung', keywords: [] })
+    if (!known && current) options.push({ value: current, label: current, description: tr('Eigene Belegung'), keywords: [] })
     return (
       <Field
         label={paramLabel(param)}
-        error={error}
+        error={error ? localizeMessage(error) : error}
         help={
           <>
-            {known ? optionLabel(param, current) : current ? 'Eigene Belegung' : null}
-            {param.help && <span className="mt-0.5 block text-fg-subtle">{param.help}</span>}
+            {known ? optionLabel(param, current) : current ? tr('Eigene Belegung') : null}
+            {param.help && <span className="mt-0.5 block text-fg-subtle">{tr(param.help)}</span>}
           </>
         }
       >
@@ -120,8 +122,8 @@ function ParamField({ param, value, onChange, error }: { param: SymbolParamSpec;
           value={current || null}
           onValueChange={(v) => onChange(v === null ? paramDefault(param) : parseCustom(v))}
           allowCustom
-          customLabel={(q) => `Eigene Belegung „${q}“ verwenden`}
-          searchPlaceholder="Belegung suchen oder eingeben …"
+          customLabel={(q) => tr("Eigene Belegung „{value0}“ verwenden", { value0: String(q) })}
+          searchPlaceholder={tr("Belegung suchen oder eingeben …")}
           mono
         />
       </Field>
@@ -132,7 +134,7 @@ function ParamField({ param, value, onChange, error }: { param: SymbolParamSpec;
     const short = param.options.length <= 3 && param.options.every((o) => optionLabel(param, o).length <= 16)
     if (short) {
       return (
-        <Field label={paramLabel(param)} help={param.help ?? undefined} error={error}>
+        <Field label={paramLabel(param)} help={param.help ? tr(param.help) : undefined} error={error ? localizeMessage(error) : error}>
           <SegmentedControl
             fullWidth
             size="sm"
@@ -145,13 +147,13 @@ function ParamField({ param, value, onChange, error }: { param: SymbolParamSpec;
       )
     }
     return (
-      <Field label={paramLabel(param)} help={param.help ?? undefined} error={error}>
+      <Field label={paramLabel(param)} help={param.help ? tr(param.help) : undefined} error={error ? localizeMessage(error) : error}>
         <Select value={current} onValueChange={onChange} options={param.options.map((o) => ({ value: o, label: optionLabel(param, o) }))} />
       </Field>
     )
   }
   return (
-    <Field label={paramLabel(param)} help={param.help ?? undefined} error={error}>
+    <Field label={paramLabel(param)} help={param.help ? tr(param.help) : undefined} error={error ? localizeMessage(error) : error}>
       <Input value={asText(value)} onChange={(e) => onChange(e.target.value)} />
     </Field>
   )
@@ -159,6 +161,7 @@ function ParamField({ param, value, onChange, error }: { param: SymbolParamSpec;
 
 /** Pins des Ergebnisses: aufgelöste Pinbelegung (Pad → Funktion) bzw. Pins je Teil */
 function PinSummary({ spec, onHoverPins }: { spec: GeneratedSpec; onHoverPins: (d: string[] | null) => void }) {
+  useI18n()
   const pinmap = resolvedPinmap(spec)
   const chip = (key: string, pad: string, label: string, title?: string) => (
     <button
@@ -179,7 +182,7 @@ function PinSummary({ spec, onHoverPins }: { spec: GeneratedSpec; onHoverPins: (
   )
   if (pinmap?.length) {
     return (
-      <div className="flex flex-wrap gap-1.5" aria-label="Pinbelegung: Pin-Nummer und Funktion">
+      <div className="flex flex-wrap gap-1.5" aria-label={tr("Pinbelegung: Pin-Nummer und Funktion")}>
         {pinmap.map((m) => chip(`${m.pad}-${m.fn}`, m.pad, m.fn))}
       </div>
     )
@@ -187,7 +190,7 @@ function PinSummary({ spec, onHoverPins }: { spec: GeneratedSpec; onHoverPins: (
   const parts = Math.max(1, spec.part_count)
   const named = spec.pins.some((p) => p.name && p.name !== p.designator)
   if (!named && parts === 1) {
-    return <p className="text-xs text-fg-muted">{spec.pins.length === 1 ? 'Ein Pin' : `${spec.pins.length} Pins`} ohne eigene Namen (nur Nummern).</p>
+    return <p className="text-xs text-fg-muted">{spec.pins.length === 1 ? tr('Ein Pin') : tr("{value0} Pins", { value0: String(spec.pins.length) })} {tr("ohne eigene Namen (nur Nummern).")}</p>
   }
   return (
     <div className="space-y-2">
@@ -196,7 +199,7 @@ function PinSummary({ spec, onHoverPins }: { spec: GeneratedSpec; onHoverPins: (
         if (!pins.length) return null
         return (
           <div key={part} className="flex items-start gap-2">
-            {parts > 1 && <span className="mono mt-1 w-12 shrink-0 text-2xs font-semibold text-fg-subtle">Teil {partLetter(part)}</span>}
+            {parts > 1 && <span className="mono mt-1 w-12 shrink-0 text-2xs font-semibold text-fg-subtle">{tr("Teil")}{' '}{partLetter(part)}</span>}
             <div className="flex flex-wrap gap-1.5">
               {pins.map((p) => chip(`${part}-${p.designator}`, p.designator, displayText(p.name) || p.designator))}
             </div>
@@ -222,6 +225,7 @@ export function StandardEditor({
   categoryLabel,
   onShowInLibrary,
 }: StandardEditorProps) {
+  useI18n()
   // ohne Parameter gibt es sonst wenig zu tun – dann die erweiterten Angaben gleich zeigen
   const [advanced, setAdvanced] = useState(Boolean(extras.prefix || extras.description || extras.name) || kind.params.length === 0)
   const nameProblem = symbolNameError(extras.name)
@@ -244,20 +248,20 @@ export function StandardEditor({
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h2 className="text-md font-semibold tracking-[-0.015em] text-fg">{kind.label}</h2>
+              <h2 className="text-md font-semibold tracking-[-0.015em] text-fg">{tr(kind.label)}</h2>
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-1.5">
-              <Badge>{kind.group}</Badge>
+              <Badge>{tr(kind.group)}</Badge>
               <Badge variant="outline">
-                Präfix <span className="mono text-fg">{extras.prefix || kind.prefix}</span>
+                {tr("Präfix")}{' '}<span className="mono text-fg">{extras.prefix || kind.prefix}</span>
               </Badge>
             </div>
           </div>
         </div>
-        {kind.description && <p className="mt-3 text-xs leading-relaxed text-fg-muted">{kind.description}</p>}
+        {kind.description && <p className="mt-3 text-xs leading-relaxed text-fg-muted">{tr(kind.description)}</p>}
         {kind.categories.length > 0 && (
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-            <span className="text-2xs text-fg-subtle">Passt zu</span>
+            <span className="text-2xs text-fg-subtle">{tr("Passt zu")}</span>
             {kind.categories.map((c) => (
               <Badge key={c} variant="outline">
                 {categoryLabel(c)}
@@ -270,11 +274,11 @@ export function StandardEditor({
       <NameResult name={spec?.name ?? null} pending={!spec && !error} library={library} onShowInLibrary={onShowInLibrary} />
 
       <Section
-        title="Parameter"
+        title={tr("Parameter")}
         aside={
           modified && (
             <Button size="xs" variant="ghost" leftIcon={<RotateCcw />} onClick={onReset}>
-              Zurücksetzen
+              {tr("Zurücksetzen")}
             </Button>
           )
         }
@@ -287,20 +291,20 @@ export function StandardEditor({
           </div>
         ) : (
           <p className="text-xs leading-relaxed text-fg-muted">
-            Keine Parameter – Form, Strichstärke und Pinlänge legt der{' '}
+            {tr("Keine Parameter – Form, Strichstärke und Pinlänge legt der")}{' '}
             <Link
               to="/einstellungen/hausstil?ansicht=symbole"
               className="rounded-sm font-medium text-fg underline decoration-line-strong underline-offset-2 outline-none hover:decoration-fg focus-ring"
             >
-              Hausstil
+              {tr("Hausstil")}
             </Link>{' '}
-            der Bibliothek fest. Name, Präfix und Beschreibung lassen sich unten anpassen.
+            {tr("der Bibliothek fest. Name, Präfix und Beschreibung lassen sich unten anpassen.")}
           </p>
         )}
       </Section>
 
       {connector && (
-        <Section title={`Pinnamen (${connector.pairs.flat().filter(Boolean).length} Pins)`}>
+        <Section title={tr("Pinnamen ({value0} Pins)", { value0: String(connector.pairs.flat().filter(Boolean).length) })}>
           <ConnectorPins
             layout={connector}
             pins={extras.pins}
@@ -311,7 +315,7 @@ export function StandardEditor({
       )}
 
       {spec && (
-        <Section title={resolvedPinmap(spec) ? 'Pinbelegung (Ergebnis)' : 'Pins'}>
+        <Section title={resolvedPinmap(spec) ? tr('Pinbelegung (Ergebnis)') : tr('Pins')}>
           <PinSummary spec={spec} onHoverPins={onHoverPins} />
         </Section>
       )}
@@ -325,24 +329,24 @@ export function StandardEditor({
           className="-mx-1 flex items-center gap-1.5 rounded-control px-1 py-0.5 text-xs font-medium text-fg-muted outline-none transition-colors hover:text-fg focus-ring"
         >
           <ChevronDown aria-hidden className={cn('size-3.5 transition-transform duration-200', !advanced && '-rotate-90')} />
-          Erweitert
+          {tr("Erweitert")}
           {extrasChanged && (
             <>
               <span aria-hidden className="size-1.5 rounded-full bg-accent" />
-              <span className="sr-only">(geändert)</span>
+              <span className="sr-only">{tr("(geändert)")}</span>
             </>
           )}
         </button>
         <div id={advancedId} hidden={!advanced} className="mt-3 grid grid-cols-[7rem_minmax(0,1fr)] gap-3">
           <Field
-            label="Eigener Name"
+            label={tr("Eigener Name")}
             className="col-span-2"
             error={nameProblem}
-            help={nameProblem ? undefined : 'Leer lassen: Name nach Hausstil – gleiche Form und Belegung ergeben denselben Namen, das Symbol wird wiederverwendet.'}
+            help={nameProblem ? undefined : tr('Leer lassen: Name nach Hausstil – gleiche Form und Belegung ergeben denselben Namen, das Symbol wird wiederverwendet.')}
           >
             <Input mono value={extras.name} placeholder={spec && !extras.name ? spec.name : kind.default_name} maxLength={64} onChange={(e) => onExtras({ name: e.target.value })} />
           </Field>
-          <Field label="Präfix" hint={`Standard ${kind.prefix}`} error={prefixProblem}>
+          <Field label={tr("Präfix")} hint={tr("Standard {value0}", { value0: String(kind.prefix) })} error={prefixProblem}>
             <Input
               mono
               value={extras.prefix}
@@ -351,21 +355,21 @@ export function StandardEditor({
               onChange={(e) => onExtras({ prefix: e.target.value.replace(/\s/g, '') })}
             />
           </Field>
-          <Field label="Beschreibung" hint="in der SchLib">
-            <Input value={extras.description} placeholder={spec?.description || 'aus dem Hausstil'} onChange={(e) => onExtras({ description: e.target.value })} />
+          <Field label={tr("Beschreibung")} hint={tr("in der SchLib")}>
+            <Input value={extras.description} placeholder={spec?.description || tr('aus dem Hausstil')} onChange={(e) => onExtras({ description: e.target.value })} />
           </Field>
         </div>
       </section>
       <div className="flex-1" />
       <p className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 pb-4 pt-6 text-2xs text-fg-subtle">
         <span className="flex items-center gap-1">
-          <Kbd keys={['↑', '↓']} size="xs" /> Typ wechseln (in der Liste)
+          <Kbd keys={['↑', '↓']} size="xs" /> {tr("Typ wechseln (in der Liste)")}
         </span>
         <span className="flex items-center gap-1">
-          <Kbd hotkey="mod+s" size="xs" /> speichern
+          <Kbd hotkey="mod+s" size="xs" /> {tr("speichern")}
         </span>
         <span className="flex items-center gap-1">
-          <Kbd hotkey="mod+k" size="xs" /> Typ suchen
+          <Kbd hotkey="mod+k" size="xs" /> {tr("Typ suchen")}
         </span>
       </p>
     </div>

@@ -1,21 +1,26 @@
-/** Texte und Formatierung des Datenblatt-Imports (deutsch). */
+import { getLocale, t } from '@/lib/i18n'
 import type { CostEstimate, DatasheetStatus, IssueSeverity } from '@/api/datasheets'
 import type { BadgeProps } from '@/components/ui'
 import { formatNumber } from '@/lib/format'
 
-/**
- * US-Dollar deutsch, **immer zwei Nachkommastellen** – nebeneinander stehende Beträge sehen gleich aus („0,09 $“ neben
- * „0,24 $“, nicht „0,090 $“): 0.229 → „0,23 $“, Beträge unter einem Cent als „< 0,01 $“ (nie „0,00 $“ für eine bezahlte
- * Anfrage), 0 → „0,00 $“. `precise`: drei Stellen für Aufstellungen einzelner Anfragen (dort durchgehend drei).
- */
+/** Currency formatters are cached per locale and precision; tiny paid requests never round down to zero. */
+const usdFormats = new Map<string, Intl.NumberFormat>()
+
 export function formatUsd(value: number | null | undefined, opts: { precise?: boolean } = {}): string {
   if (value === null || value === undefined || !Number.isFinite(value)) return '–'
-  const digits = opts.precise ? 3 : 2
+  const digits = value === 0 ? 2 : opts.precise ? 3 : 2
   const smallest = opts.precise ? 0.001 : 0.01
-  if (value > 0 && value < smallest) return `< ${formatNumber(smallest, digits)} $`
-  // nichts bezahlt: „0,00 $“ – auch in der genauen Darstellung keine „0,000 $“
-  // geschütztes Leerzeichen: Betrag und „$“ bleiben in einer Zeile
-  return `${formatNumber(value, value === 0 ? 2 : digits)} $`
+  const locale = getLocale()
+  const key = `${locale}:${digits}`
+  let formatter = usdFormats.get(key)
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(locale, {
+      style: 'currency', currency: 'USD', currencyDisplay: 'narrowSymbol',
+      minimumFractionDigits: digits, maximumFractionDigits: digits,
+    })
+    usdFormats.set(key, formatter)
+  }
+  return value > 0 && value < smallest ? `< ${formatter.format(smallest)}` : formatter.format(value)
 }
 
 /** Erwartete Kosten einer Backend-Schätzung: typisch („low“) und höchstens („high“: lange Antworten, Kontrolle). */
@@ -32,8 +37,8 @@ export interface EstimateText {
 export function estimateText(est: Pick<CostEstimate, 'est_cost_usd_low' | 'est_cost_usd_high'>, extraUsd = 0): EstimateText {
   const low = est.est_cost_usd_low + extraUsd
   const high = Math.max(low, est.est_cost_usd_high)
-  const typical = `ca. ${formatUsd(Math.max(low, 0.01))}`
-  const upTo = high > low * 1.2 + 0.005 ? `höchstens ${formatUsd(high)}` : null
+  const typical = t("ca. {0}", { "0": String(formatUsd(Math.max(low, 0.01))) })
+  const upTo = high > low * 1.2 + 0.005 ? t("höchstens {0}", { "0": String(formatUsd(high)) }) : null
   return { typical, upTo, full: upTo ? `${typical}, ${upTo}` : typical }
 }
 
@@ -108,10 +113,10 @@ export function parsePageInput(text: string, max = Infinity): PageInput {
 }
 
 export const STATUS_META: Record<DatasheetStatus, { label: string; variant: NonNullable<BadgeProps['variant']> }> = {
-  neu: { label: 'Neu', variant: 'neutral' },
-  gelesen: { label: 'Nicht analysiert', variant: 'neutral' },
-  analysiert: { label: 'Analysiert', variant: 'spark' },
-  übernommen: { label: 'Übernommen', variant: 'success' },
+  neu: { get label() { return t("Neu") }, variant: 'neutral' },
+  gelesen: { get label() { return t("Nicht analysiert") }, variant: 'neutral' },
+  analysiert: { get label() { return t("Analysiert") }, variant: 'spark' },
+  übernommen: { get label() { return t("Übernommen") }, variant: 'success' },
 }
 
 /** Ist die letzte Analyse fehlgeschlagen (und es gibt noch kein verwertbares Ergebnis)? */
@@ -120,11 +125,11 @@ export function analysisFailed(d: { last_error?: string | null; status: Datashee
 }
 
 export const EFFORT_LABEL: Record<string, string> = {
-  low: 'niedrig',
-  medium: 'mittel',
-  high: 'hoch',
-  xhigh: 'sehr hoch',
-  max: 'maximal',
+  get low() { return t("niedrig") },
+  get medium() { return t("mittel") },
+  get high() { return t("hoch") },
+  get xhigh() { return t("sehr hoch") },
+  get max() { return t("maximal") },
 }
 
 export function effortLabel(effort: string | null | undefined): string {
@@ -137,15 +142,15 @@ export function effortLabel(effort: string | null | undefined): string {
  * Oberfläche („Claude Opus 5.5 · Gründlichkeit niedrig“ – wie in Einstellungen › KI).
  */
 export function runLabel(label: string | null | undefined): string {
-  return (label ?? '').replace(/(^|·\s*)Aufwand(?=\s)/, '$1Gründlichkeit').trim()
+  return (label ?? '').replace(/(^|·\s*)(?:Aufwand|Gründlichkeit)\s+([^·]+)/g, (_, prefix: string, effort: string) => `${prefix}${t('Gründlichkeit')} ${t(effort.trim())}`).trim()
 }
 
 /** Woher der Claude-Schlüssel kommt (`/api/ai/status` → `key_source`) */
 export const KEY_SOURCE_LABEL: Record<string, string> = {
-  stored: 'Verschlüsselt gespeichert',
-  env: 'Umgebungsvariable',
-  file: 'Schlüsseldatei',
-  replay: 'Testmodus',
+  get stored() { return t("Verschlüsselt gespeichert") },
+  get env() { return t("Umgebungsvariable") },
+  get file() { return t("Schlüsseldatei") },
+  get replay() { return t("Testmodus") },
 }
 
 export function keySourceLabel(source: string | null | undefined): string | null {
@@ -154,24 +159,24 @@ export function keySourceLabel(source: string | null | undefined): string | null
 }
 
 export const SELECTION_LABEL: Record<string, string> = {
-  heuristic: 'automatisch gewählt',
-  'heuristic+triage': 'mit Vorauswahl durch Claude',
-  manual: 'manuell gewählt',
-  all: 'alle Seiten',
-  scan: 'als Bild gelesen',
-  empty: 'keine',
+  get heuristic() { return t("automatisch gewählt") },
+  get 'heuristic+triage'() { return t("mit Vorauswahl durch Claude") },
+  get manual() { return t("manuell gewählt") },
+  get all() { return t("alle Seiten") },
+  get scan() { return t("als Bild gelesen") },
+  get empty() { return t('keine') },
 }
 
 /** Schlagwörter der Textebene je Seite → kurze Beschreibung („Pinbelegung“, „Gehäuse“ …) */
 export const PAGE_TOPIC: Record<string, string> = {
-  pins: 'Pinbelegung',
-  ordering: 'Bestellangaben',
-  orderable: 'Bestellbare Typen',
-  package: 'Gehäuse',
-  land_pattern: 'Lötflächen',
-  drawing: 'Zeichnung',
-  reel: 'Verpackung',
-  toc: 'Inhalt',
+  get pins() { return t("Pinbelegung") },
+  get ordering() { return t("Bestellangaben") },
+  get orderable() { return t("Bestellbare Typen") },
+  get package() { return t("Gehäuse") },
+  get land_pattern() { return t("Lötflächen") },
+  get drawing() { return t("Zeichnung") },
+  get reel() { return t("Verpackung") },
+  get toc() { return t("Inhalt") },
 }
 
 export function pageTopics(categories: readonly string[]): string[] {
@@ -184,9 +189,9 @@ export function pageTopics(categories: readonly string[]): string[] {
 }
 
 export const SEVERITY_LABEL: Record<IssueSeverity, { one: string; many: string }> = {
-  error: { one: 'Fehler', many: 'Fehler' },
-  warning: { one: 'Warnung', many: 'Warnungen' },
-  info: { one: 'Hinweis', many: 'Hinweise' },
+  error: { get one() { return t("Fehler") }, get many() { return t("Fehler") } },
+  warning: { get one() { return t("Warnung") }, get many() { return t("Warnungen") } },
+  info: { get one() { return t("Hinweis") }, get many() { return t("Hinweise") } },
 }
 
 export function severityCount(severity: IssueSeverity, n: number): string {
@@ -198,10 +203,10 @@ export function severityCount(severity: IssueSeverity, n: number): string {
 export function lifecycleLabel(status: string): string | null {
   const key = status.trim().toUpperCase().replace(/\s+/g, ' ')
   if (!key) return null
-  if (['ACTIVE', 'PRODUCTION', 'IN PRODUCTION'].includes(key)) return 'Aktiv'
+  if (['ACTIVE', 'PRODUCTION', 'IN PRODUCTION'].includes(key)) return t("Aktiv")
   if (['NRND', 'NOT RECOMMENDED FOR NEW DESIGNS'].includes(key)) return 'NRND'
-  if (['LIFEBUY', 'LAST TIME BUY', 'EOL'].includes(key)) return 'Abgekündigt'
-  if (['DISCONTINUED', 'OBSOLETE'].includes(key)) return 'Obsolet'
-  if (key === 'PREVIEW') return 'Vorschau'
+  if (['LIFEBUY', 'LAST TIME BUY', 'EOL'].includes(key)) return t("Abgekündigt")
+  if (['DISCONTINUED', 'OBSOLETE'].includes(key)) return t("Obsolet")
+  if (key === 'PREVIEW') return t("Vorschau")
   return status.trim()
 }

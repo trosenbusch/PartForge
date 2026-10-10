@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { FolderSearch } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react'
 import { cn } from '@/lib/cn'
@@ -44,6 +45,7 @@ export function PathInput({
   className,
   'aria-label': ariaLabel,
 }: PathInputProps) {
+  const { t: tr } = useI18n()
   const ref = useRef<HTMLInputElement>(null)
   const bridge = useNativeBridge()
   const canBrowse = browse === 'folder' ? bridge.canPickFolder : browse === 'file' ? bridge.canPickFile : false
@@ -52,7 +54,7 @@ export function PathInput({
   useLayoutEffect(() => {
     const el = ref.current
     if (el && document.activeElement !== el) el.scrollLeft = el.scrollWidth
-  }, [value])
+  }, [value, tr])
   // … auch nachdem die Monospace-Schrift geladen ist oder sich die Breite ändert
   useEffect(() => {
     const el = ref.current
@@ -64,7 +66,7 @@ export function PathInput({
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(toEnd) : null
     ro?.observe(el)
     return () => ro?.disconnect()
-  }, [])
+  }, [tr])
 
   const onBrowse = async () => {
     const picked = browse === 'folder' ? await pickFolder(value || null) : await pickFile(value || null, fileFilters)
@@ -95,8 +97,7 @@ export function PathInput({
       />
       {canBrowse && (
         <Button variant="secondary" size={size} leftIcon={<FolderSearch />} onClick={() => void onBrowse()} disabled={disabled}>
-          Durchsuchen …
-        </Button>
+          {tr("Durchsuchen …")}</Button>
       )}
     </div>
   )

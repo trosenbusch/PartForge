@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 /**
  * Typisierter Tabellen-Baustein auf Basis von AG Grid (Community, Theme „Forge“):
  * Tastaturnavigation, Zeilenauswahl, gespeicherte Spaltenbreiten/-reihenfolge, Lade-/Leer-Overlays im UI-Kit-Stil,
@@ -80,6 +81,7 @@ export function DataGrid<TData>({
   'aria-label': ariaLabel,
   ...rest
 }: DataGridProps<TData>) {
+  const { language } = useI18n()
   const initialState = useMemo(() => (persistKey ? loadGridState(persistKey) : undefined), [persistKey])
   const saveTimer = useRef<number | undefined>(undefined)
   useEffect(() => () => window.clearTimeout(saveTimer.current), [])
@@ -139,7 +141,7 @@ export function DataGrid<TData>({
     >
       <AgGridReact<TData>
         {...rest}
-        key={persistKey}
+        key={`${persistKey ?? 'grid'}:${language}`}
         ref={gridRef}
         theme={forgeGridTheme}
         rowData={rowData ?? null}
@@ -152,7 +154,7 @@ export function DataGrid<TData>({
         loading={loading}
         overlayComponent={GridOverlay}
         overlayComponentParams={overlayParams}
-        localeText={AG_GRID_LOCALE_DE}
+        localeText={language === 'de' ? AG_GRID_LOCALE_DE : undefined}
         initialState={initialState}
         onStateUpdated={onStateUpdated}
         onGridReady={(e: GridReadyEvent<TData>) => {

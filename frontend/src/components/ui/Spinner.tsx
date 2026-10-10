@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { useId } from 'react'
 import { cn } from '@/lib/cn'
 import { FORGE_STOPS, SPARK_STOPS } from './gradientStops'
@@ -15,6 +16,7 @@ export interface SpinnerProps {
 }
 
 export function Spinner({ size = 16, tone = 'current', className, label }: SpinnerProps) {
+  useI18n()
   const id = useId()
   const gradientId = `sp${id.replace(/:/g, '')}`
   const stroke = tone === 'current' ? 'currentColor' : `url(#${gradientId})`

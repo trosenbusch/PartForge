@@ -1,22 +1,4 @@
-/**
- * Import starten: PDF-Dateien (Drop-Zone, globales Overlay), Web-Adresse oder erneute Analyse.
- *
- * Bezahlte Analysen nie doppelt und nie ungefragt im Stapel:
- * - Vor dem Hochladen wird die Datenblatt-ID (SHA-256 des Inhalts, 16 Zeichen – wie im Backend) berechnet. Ist das
- *   PDF schon analysiert, öffnet sich das vorhandene Ergebnis; ist die letzte Analyse fehlgeschlagen, öffnet sich
- *   ihre Fehleransicht (ein neuer Versuch kostet erneut – das entscheidet der Benutzer dort).
- * - Automatisch analysiert wird nur **ein einzelnes neues** PDF. Mehrere PDFs werden gespeichert, dann fragt
- *   „Datenblätter analysieren?“ mit den erwarteten Kosten (`useBatchPrompt`, Dialog in der Import-Seite).
- * - Ohne Claude-Schlüssel wird nur gespeichert.
- *
- * Rückmeldung: Die Seite zeigt laufende Analysen selbst (Analyseansicht, `useInlineJob`) – sie zählen dann nicht in der
- * Pille des Job-Docks; erst wenn die Ansicht verlassen wird, übernimmt das Dock samt Abschluss-Toast (Schlusssatz des
- * Backends, z. B. „Analyse fertig: 14 Bestellvarianten, 13 Pins, 2 Gehäuse – 0,23 $“). Analysen im Hintergrund
- * (Stapel) laufen gleich über das Dock.
- *
- * Ist Claude nicht nutzbar, antwortet das Backend mit 503 `{ code, message }` – der Fehler-Toast nennt den Grund und
- * bietet bei Schlüssel-/Einstellungsproblemen den Weg zu Einstellungen › KI.
- */
+import { t } from '@/lib/i18n'
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router'
@@ -56,13 +38,13 @@ export const AI_SETTINGS_CODES: ReadonlySet<AiProblemCode> = new Set<AiProblemCo
 
 /** Kurztext je KI-Problem (`detail.code` der 503-Antwort bzw. von `POST /api/ai/test`) */
 export const AI_PROBLEM_TITLE: Record<AiProblemCode, string> = {
-  key_missing: 'Kein Claude-API-Schlüssel hinterlegt',
-  key_rejected: 'Claude-API-Schlüssel abgelehnt',
-  model_unavailable: 'Modell nicht verfügbar',
-  network: 'Claude-API nicht erreichbar',
-  rate_limited: 'Anfragelimit der Claude-API erreicht',
-  ai_disabled: 'KI-Funktionen sind ausgeschaltet',
-  unknown: 'Die Claude-API meldet einen Fehler',
+  get key_missing() { return t("Kein Claude-API-Schlüssel hinterlegt") },
+  get key_rejected() { return t("Claude-API-Schlüssel abgelehnt") },
+  get model_unavailable() { return t("Modell nicht verfügbar") },
+  get network() { return t("Claude-API nicht erreichbar") },
+  get rate_limited() { return t("Anfragelimit der Claude-API erreicht") },
+  get ai_disabled() { return t("KI-Funktionen sind ausgeschaltet") },
+  get unknown() { return t("Die Claude-API meldet einen Fehler") },
 }
 
 /** Ist das ein „Claude nicht nutzbar“-Fehler (503 `{ code, message }`)? Dann Code und deutscher Text. */
@@ -111,7 +93,7 @@ export function useImportActions() {
       toast.error(ai ? AI_PROBLEM_TITLE[ai.code] : title, {
         id: ai ? `ds-ai-${ai.code}` : undefined,
         description: cleanErrorText(ai?.message ?? errorMessage(e)),
-        action: ai && AI_SETTINGS_CODES.has(ai.code) ? { label: 'KI einrichten', onClick: () => navigate('/einstellungen#ki') } : undefined,
+        action: ai && AI_SETTINGS_CODES.has(ai.code) ? { label: t("KI einrichten"), onClick: () => navigate('/einstellungen#ki') } : undefined,
       })
     },
     [navigate],
@@ -155,18 +137,18 @@ export function useImportActions() {
         const base = { id: existing.id, jobId: null, name: existing.original_name, pageCount: existing.page_count }
         if (existing.has_extraction) {
           if (!opts.quiet) {
-            toast.info(`„${file.name}“ ist bereits analysiert`, {
+            toast.info(t("„{0}“ ist bereits analysiert", { "0": String(file.name) }), {
               id: `ds-known-${existing.id}`,
-              description: 'Das vorhandene Ergebnis wird geöffnet. Eine neue Analyse startet „Neu analysieren“.',
+              description: t("Das vorhandene Ergebnis wird geöffnet. Eine neue Analyse startet „Neu analysieren“."),
             })
           }
           return { ...base, state: 'analyzed' }
         }
         if (analysisFailed(existing)) {
           if (!opts.quiet) {
-            toast.info(`Die letzte Analyse von „${file.name}“ ist fehlgeschlagen`, {
+            toast.info(t("Die letzte Analyse von „{0}“ ist fehlgeschlagen", { "0": String(file.name) }), {
               id: `ds-failed-${existing.id}`,
-              description: 'Ursache und Kosten stehen in der Ansicht. Ein neuer Versuch kostet erneut – dort lässt er sich starten.',
+              description: t("Ursache und Kosten stehen in der Ansicht. Ein neuer Versuch kostet erneut – dort lässt er sich starten."),
             })
           }
           return { ...base, state: 'failed', error: existing.last_error }
@@ -184,7 +166,7 @@ export function useImportActions() {
       const base = { id: ds.id, name: ds.original_name, pageCount: ds.page_count }
       // `job` ist im Schema ein untypisiertes dict (Job-Schnappschuss)
       const job = out.job as unknown as Job | null
-      if (out.warning) toast.warning('Datenblatt gespeichert, nicht analysiert', { description: out.warning })
+      if (out.warning) toast.warning(t("Datenblatt gespeichert, nicht analysiert"), { description: out.warning })
       if (job && analyzeNow) {
         track(ds.id, job, { background: opts.background })
         return { ...base, jobId: job.id, state: 'new' }
@@ -216,24 +198,24 @@ export function useImportActions() {
       if (!pdfs.length) return
       if (pdfs.length === 1) {
         const [file] = pdfs
-        setBusy(`Lade ${file.name} …`)
+        setBusy(t("Lade {0} …", { "0": String(file.name) }))
         let started: Started | null = null
         try {
           // ohne Analyseansicht (open: false) läuft die Analyse über das Job-Dock
           started = await importFile(file, { analyze: true, background: opts.open === false })
         } catch (e) {
-          startError(`„${file.name}“ konnte nicht importiert werden`, e)
+          startError(t("„{0}“ konnte nicht importiert werden", { "0": String(file.name) }), e)
         }
         setBusy(null)
         if (!started) return
         if (!aiReady && started.state === 'new') {
-          toast.warning('Datenblatt gespeichert', {
+          toast.warning(t("Datenblatt gespeichert"), {
             id: 'ds-no-ai',
             description:
               ai.data?.enabled === false
-                ? 'Die KI-Analyse ist ausgeschaltet – nach dem Einschalten lässt sie sich starten.'
-                : 'Für die Analyse fehlt ein Claude-API-Schlüssel – nach dem Einrichten lässt sie sich starten.',
-            action: { label: 'KI einrichten', onClick: () => navigate('/einstellungen#ki') },
+                ? t("Die KI-Analyse ist ausgeschaltet – nach dem Einschalten lässt sie sich starten.")
+                : t("Für die Analyse fehlt ein Claude-API-Schlüssel – nach dem Einrichten lässt sie sich starten."),
+            action: { label: t("KI einrichten"), onClick: () => navigate('/einstellungen#ki') },
           })
         }
         if (opts.open !== false) navigate(importPath(started.id, started.jobId))
@@ -243,11 +225,11 @@ export function useImportActions() {
       // mehrere PDFs: speichern (kostenlos), dann fragen
       const results: Started[] = []
       for (const [i, file] of pdfs.entries()) {
-        setBusy(`Speichere ${file.name} (${i + 1} von ${pdfs.length}) …`)
+        setBusy(t("Speichere {0} ({1} von {2}) …", { "0": String(file.name), "1": String(i + 1), "2": String(pdfs.length) }))
         try {
           results.push(await importFile(file, { analyze: false, quiet: true }))
         } catch (e) {
-          startError(`„${file.name}“ konnte nicht gespeichert werden`, e)
+          startError(t("„{0}“ konnte nicht gespeichert werden", { "0": String(file.name) }), e)
         }
       }
       setBusy(null)
@@ -258,13 +240,13 @@ export function useImportActions() {
       if (aiReady && open.length) {
         useBatchPrompt.getState().show(unique.map(({ id, name, pageCount, state, error }) => ({ id, name, pageCount, state, error })))
       } else {
-        toast.success(`${plural(unique.length, 'Datenblatt', 'Datenblätter')} gespeichert`, {
+        toast.success(t("{0} gespeichert", { "0": String(plural(unique.length, t("Datenblatt"), t("Datenblätter"))) }), {
           description: !open.length
-            ? 'Alle waren schon analysiert – die Ergebnisse stehen in der Liste.'
+            ? t("Alle waren schon analysiert – die Ergebnisse stehen in der Liste.")
             : ai.data?.enabled === false
-              ? 'Die KI-Analyse ist ausgeschaltet – analysiert wird erst nach dem Einschalten.'
-              : 'Für die Analyse fehlt ein Claude-API-Schlüssel – nach dem Einrichten lässt sie sich je Datenblatt starten.',
-          action: aiReady || !open.length ? undefined : { label: 'KI einrichten', onClick: () => navigate('/einstellungen#ki') },
+              ? t("Die KI-Analyse ist ausgeschaltet – analysiert wird erst nach dem Einschalten.")
+              : t("Für die Analyse fehlt ein Claude-API-Schlüssel – nach dem Einrichten lässt sie sich je Datenblatt starten."),
+          action: aiReady || !open.length ? undefined : { label: t("KI einrichten"), onClick: () => navigate('/einstellungen#ki') },
         })
       }
       if (opts.open !== false) navigate('/import')
@@ -281,7 +263,7 @@ export function useImportActions() {
           await analyzeExisting(id, null, { background: true })
           started += 1
         } catch (e) {
-          startError('Analyse konnte nicht starten', e)
+          startError(t("Analyse konnte nicht starten"), e)
           // ohne Claude startet auch keine weitere – nicht je Datenblatt denselben Fehler melden
           if (aiUnavailable(e)) break
         }
@@ -298,7 +280,7 @@ export function useImportActions() {
    */
   const startUrl = useCallback(
     async (url: string, opts: { searchJobId?: string | null } = {}): Promise<boolean> => {
-      setBusy('Download wird gestartet …')
+      setBusy(t("Download wird gestartet …"))
       try {
         const { job } = await datasheetsApi.fromUrl({ url, extract: false, search_job_id: opts.searchJobId ?? null })
         trackJob(job, { dock: false, toast: false })
@@ -306,7 +288,7 @@ export function useImportActions() {
         navigate(`/import?job=${encodeURIComponent(job.id)}`)
         return true
       } catch (e) {
-        startError('Download nicht möglich', e)
+        startError(t("Download nicht möglich"), e)
         return false
       } finally {
         setBusy(null)
@@ -323,7 +305,7 @@ export function useImportActions() {
         navigate(importPath(datasheetId, jobId))
         return true
       } catch (e) {
-        startError('Analyse konnte nicht starten', e)
+        startError(t("Analyse konnte nicht starten"), e)
         return false
       }
     },
@@ -336,14 +318,14 @@ export function useImportActions() {
       try {
         const ds = await datasheetsApi.detail(datasheetId)
         if (ds.has_extraction) {
-          toast.info(`„${ds.original_name}“ ist bereits analysiert`, {
+          toast.info(t("„{0}“ ist bereits analysiert", { "0": String(ds.original_name) }), {
             id: `ds-known-${ds.id}`,
-            description: 'Das vorhandene Ergebnis wird geöffnet. Eine neue Analyse startet „Neu analysieren“.',
+            description: t("Das vorhandene Ergebnis wird geöffnet. Eine neue Analyse startet „Neu analysieren“."),
           })
         } else if (analysisFailed(ds)) {
-          toast.info(`Die letzte Analyse von „${ds.original_name}“ ist fehlgeschlagen`, {
+          toast.info(t("Die letzte Analyse von „{0}“ ist fehlgeschlagen", { "0": String(ds.original_name) }), {
             id: `ds-failed-${ds.id}`,
-            description: 'Ursache und Kosten stehen in der Ansicht. Ein neuer Versuch kostet erneut – dort lässt er sich starten.',
+            description: t("Ursache und Kosten stehen in der Ansicht. Ein neuer Versuch kostet erneut – dort lässt er sich starten."),
           })
         } else if (aiReady) {
           const jobId = await analyzeExisting(ds.id)
@@ -351,7 +333,7 @@ export function useImportActions() {
           return
         }
       } catch (e) {
-        startError('Analyse konnte nicht starten', e)
+        startError(t("Analyse konnte nicht starten"), e)
       }
       navigate(importPath(datasheetId), { replace: true })
     },

@@ -1,4 +1,4 @@
-/** Overlays des DataGrid (Laden, keine Einträge, keine Treffer) im Stil des UI-Kits. */
+import { useI18n } from '@/lib/i18n'
 import type { IOverlayParams } from 'ag-grid-community'
 import type { ReactNode } from 'react'
 import { EmptyState, Spinner, type IllustrationName } from '@/components/ui'
@@ -19,13 +19,14 @@ export interface GridOverlayParams {
 
 /** Ein Overlay für alle Fälle (AG Grid `overlayComponent`, Typ über `overlayType`) */
 export function GridOverlay(props: IOverlayParams & GridOverlayParams) {
+  const { t: tr } = useI18n()
   if (props.overlayType === 'noRows' || props.overlayType === 'noMatchingRows') {
-    const state =
+    const state: GridEmptyState =
       props.overlayType === 'noRows'
-        ? (props.empty ?? { title: 'Keine Einträge', description: 'Hier ist noch nichts vorhanden.', illustration: 'no-parts' as const })
+        ? (props.empty ?? { title: tr("Keine Einträge"), description: tr("Hier ist noch nichts vorhanden."), illustration: 'no-parts' as const })
         : (props.noMatch ?? {
-            title: 'Keine Treffer',
-            description: 'Kein Eintrag passt zu Suche oder Filter.',
+            title: tr("Keine Treffer"),
+            description: tr("Kein Eintrag passt zu Suche oder Filter."),
             illustration: 'search-empty' as const,
           })
     return (
@@ -46,7 +47,7 @@ export function GridOverlay(props: IOverlayParams & GridOverlayParams) {
       className="pointer-events-auto flex items-center gap-2.5 rounded-full border border-line-strong bg-surface px-4 py-2 text-ui text-fg-muted shadow-raised"
     >
       <Spinner size={15} tone="accent" />
-      {props.overlayType === 'exporting' ? 'Export läuft …' : (props.loadingText ?? 'Lädt …')}
+      {props.overlayType === 'exporting' ? tr("Export läuft …") : (props.loadingText ?? tr("Lädt …"))}
     </div>
   )
 }

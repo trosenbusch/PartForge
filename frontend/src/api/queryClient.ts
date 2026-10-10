@@ -1,3 +1,4 @@
+import { t as tr } from '@/lib/i18n'
 import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { ApiError, cleanErrorText, errorMessage, isAbortError } from './client'
@@ -47,7 +48,7 @@ export const queryClient = new QueryClient({
     onError: (error, _variables, _result, mutation) => {
       if (mutation.meta?.silentError || isAbortError(error)) return
       if (error instanceof ApiError && (error.status === 401 || error.isNoWorkspace)) return // Shell zeigt eigenen Hinweis
-      toast.error(mutation.meta?.errorTitle ?? 'Aktion fehlgeschlagen', { description: cleanErrorText(errorMessage(error)) })
+      toast.error(mutation.meta?.errorTitle ?? tr("Aktion fehlgeschlagen"), { description: cleanErrorText(errorMessage(error)) })
     },
     onSuccess: (_data, _variables, _result, mutation) => {
       const msg = mutation.meta?.successMessage

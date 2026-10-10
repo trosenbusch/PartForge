@@ -1,3 +1,4 @@
+import { metadataLabel, useI18n } from '@/lib/i18n'
 /**
  * Kontextmenü der Bauteiltabelle (Rechtsklick bzw. Kontextmenü-Taste/⇧F10 auf einer Zeile): Details, Wert der
  * angeklickten Zelle bearbeiten (wie F2), Datenblatt, Teilenummer kopieren, Duplizieren, Texte neu erzeugen, Löschen –
@@ -52,6 +53,7 @@ export function RowContextMenu({
   onBulkEdit,
   onDelete,
 }: RowContextMenuProps) {
+  const { t } = useI18n()
   const [row, setRow] = useState<PartRow | null>(null)
   const [cell, setCell] = useState<{ column: string; label: string; editable: boolean } | null>(null)
   /** „… bearbeiten“ gewählt: der Editor startet erst, wenn das Menü zu ist – sonst holt das Menü den Fokus zurück */
@@ -88,53 +90,53 @@ export function RowContextMenu({
       >
         {!row || inSelection ? (
           <>
-            <ContextMenuLabel>{selectionCount === 1 ? '1 ausgewähltes Bauteil' : `${formatNumber(selectionCount)} ausgewählte Bauteile`}</ContextMenuLabel>
+            <ContextMenuLabel>{selectionCount === 1 ? t("1 ausgewähltes Bauteil") : t("{1} ausgewählte Bauteile", { 1: formatNumber(selectionCount) })}</ContextMenuLabel>
             <ContextMenuItem icon={<PencilLine />} onSelect={onBulkEdit}>
-              Gemeinsam bearbeiten …
+              {t("Gemeinsam bearbeiten …")}
             </ContextMenuItem>
             <ContextMenuItem icon={<CopyPlus />} onSelect={() => onDuplicate('selection')}>
-              Duplizieren …
+              {t("Duplizieren …")}
             </ContextMenuItem>
             <ContextMenuSeparator />
             <ContextMenuItem icon={<Trash2 />} destructive hotkey="delete" onSelect={() => onDelete('selection')}>
-              Auswahl löschen …
+              {t("Auswahl löschen …")}
             </ContextMenuItem>
           </>
         ) : (
           <>
             <ContextMenuLabel className="mono normal-case tracking-normal">{pn}</ContextMenuLabel>
             <ContextMenuItem icon={<PanelRight />} hotkey="enter" onSelect={() => onOpen(row)}>
-              Details öffnen
+              {t("Details öffnen")}
             </ContextMenuItem>
             {cell?.editable && onEditCell && (
               <ContextMenuItem icon={<Pencil />} hotkey="f2" onSelect={() => (pendingEdit.current = { row, column: cell.column })}>
-                „{cell.label}“ bearbeiten
+                {t("„{1}“ bearbeiten", {1: metadataLabel(cell.label, t)})}
               </ContextMenuItem>
             )}
             <ContextMenuItem icon={<ExternalLink />} disabled={!row[DATASHEET]} onSelect={() => onDatasheet(row)}>
-              Datenblatt öffnen
+              {t("Datenblatt öffnen")}
             </ContextMenuItem>
             <ContextMenuItem
               icon={<Copy />}
               onSelect={() => {
                 void navigator.clipboard
                   ?.writeText(pn)
-                  .then(() => toast.success('Teilenummer kopiert', { description: pn, duration: 1600 }))
-                  .catch(() => toast.error('Kopieren nicht möglich'))
+                  .then(() => toast.success(t("Teilenummer kopiert"), { description: pn, duration: 1600 }))
+                  .catch(() => toast.error(t("Kopieren nicht möglich")))
               }}
             >
-              Teilenummer kopieren
+              {t("Teilenummer kopieren")}
             </ContextMenuItem>
             <ContextMenuSeparator />
             <ContextMenuItem icon={<CopyPlus />} onSelect={() => onDuplicate([row])}>
-              Duplizieren …
+              {t("Duplizieren …")}
             </ContextMenuItem>
             <ContextMenuItem icon={<RefreshCw />} onSelect={() => onRegenerate(row)}>
-              Texte neu erzeugen
+              {t("Texte neu erzeugen")}
             </ContextMenuItem>
             <ContextMenuSeparator />
             <ContextMenuItem icon={<Trash2 />} destructive hotkey="delete" onSelect={() => onDelete([row])}>
-              Löschen …
+              {t("Löschen …")}
             </ContextMenuItem>
           </>
         )}

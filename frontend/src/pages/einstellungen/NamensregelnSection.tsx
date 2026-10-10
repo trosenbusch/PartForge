@@ -1,3 +1,5 @@
+import { getLocale, useI18n } from '@/lib/i18n'
+import { t as geometryLabel } from '@/components/preview/i18n'
 /**
  * Namensregeln: Footprint-Namen (IPC-7351 oder Hausnamen) mit echten Beispielen aus dem Generator, Hinweise zu
  * Symbolnamen und die Dioden-Konvention (Pin 1 = Kathode oder Anode) mit Symbol- und Footprint-Vorschau.
@@ -28,9 +30,10 @@ const applyNaming = (s: WorkspaceSettings, v: NamingDraft): WorkspaceSettings =>
 })
 
 export default function NamensregelnSection() {
+  const { t } = useI18n()
   const ws = useWorkspaceDraft(selectNaming, applyNaming, {
-    label: 'Namensregeln',
-    savedDescription: 'Gilt für neu erzeugte Footprints und Symbole.',
+    label: t("Namensregeln"),
+    savedDescription: t("Gilt für neu erzeugte Footprints und Symbole."),
   })
   if (ws.workspace.isPending) {
     return (
@@ -40,7 +43,7 @@ export default function NamensregelnSection() {
       </div>
     )
   }
-  if (!ws.info || !ws.draft) return <NoWorkspace what="Namensregeln" />
+  if (!ws.info || !ws.draft) return <NoWorkspace what={t("Namensregeln")} />
   const draft = ws.draft
   const density = ws.info.settings.footprint.density
 
@@ -48,29 +51,29 @@ export default function NamensregelnSection() {
     <div className="flex flex-col gap-5">
       <SettingsCard
         icon={<CircuitBoard />}
-        title="Footprint-Namen"
-        description="So heißen neu erzeugte Footprints in den PcbLib-Dateien und in der Spalte „Footprint Ref“"
+        title={t("Footprint-Namen")}
+        description={t("So heißen neu erzeugte Footprints in den PcbLib-Dateien und in der Spalte „Footprint Ref“")}
         flush
       >
         <div className="flex flex-col divide-y divide-line px-5">
           <Field
-            label="Namensschema"
+            label={t("Namensschema")}
             layout="row"
             className="py-4"
             help={
               draft.naming === 'ipc'
-                ? 'Genormte Namen nach IPC-7351B – sie beschreiben Bauform, Maße, Höhe und Dichte vollständig.'
-                : 'Sprechende Namen wie in Ihren bisherigen TR-Bibliotheken – kürzer und vertraut.'
+                ? t("Genormte Namen nach IPC-7351B – sie beschreiben Bauform, Maße, Höhe und Dichte vollständig.")
+                : t("Sprechende Namen wie in Ihren bisherigen TR-Bibliotheken – kürzer und vertraut.")
             }
           >
             <SegmentedControl<NamingDraft['naming']>
-              aria-label="Namensschema"
+              aria-label={t("Namensschema")}
               fullWidth
               value={draft.naming}
               onValueChange={(v) => ws.setDraft((d) => ({ ...d, naming: v }))}
               options={[
                 { value: 'ipc', label: 'IPC-7351' },
-                { value: 'house', label: 'Hausnamen' },
+                { value: 'house', label: t("Hausnamen") },
               ]}
             />
           </Field>
@@ -79,9 +82,7 @@ export default function NamensregelnSection() {
         <div className="flex items-start gap-2 border-t border-line px-5 py-3 text-xs text-fg-muted">
           <Info aria-hidden className="mt-px size-3.5 shrink-0 text-fg-subtle" />
           <span>
-            Vorhandene Footprints behalten ihren Namen – Altium-Designs verweisen darauf. Das Schema gilt für neu erzeugte
-            Footprints. Die Dichte – hier {densityLabel(density)} – stellen Sie im Hausstil ein.
-          </span>
+            {t("Vorhandene Footprints behalten ihren Namen – Altium-Designs verweisen darauf. Das Schema gilt für neu erzeugte Footprints. Die Dichte – hier")} {densityLabel(density)}  {t("– stellen Sie im Hausstil ein.")}</span>
         </div>
       </SettingsCard>
 
@@ -89,29 +90,29 @@ export default function NamensregelnSection() {
 
       <SettingsCard
         icon={<DiodeGlyph />}
-        title="Dioden: Pin 1"
-        description="Welcher Anschluss einer Diode die Nummer 1 trägt – in Symbol und Footprint gleich"
+        title={t("Dioden: Pin 1")}
+        description={t("Welcher Anschluss einer Diode die Nummer 1 trägt – in Symbol und Footprint gleich")}
         flush
       >
         <div className="flex flex-col divide-y divide-line px-5">
           <Field
-            label="Pin 1 ist"
+            label={t("Pin 1 ist")}
             layout="row"
             className="py-4"
             help={
               draft.diode_pin1 === 'cathode'
-                ? 'IPC-7351 und die meisten Hersteller: Pin 1 = Kathode (Ring auf dem Gehäuse). Empfohlen.'
-                : 'Wie in älteren Hausbibliotheken: Pin 1 = Anode. Neue Symbole heißen dann z. B. „Diode (AK)“.'
+                ? t("IPC-7351 und die meisten Hersteller: Pin 1 = Kathode (Ring auf dem Gehäuse). Empfohlen.")
+                : t("Wie in älteren Hausbibliotheken: Pin 1 = Anode. Neue Symbole heißen dann z. B. „Diode (AK)“.")
             }
           >
             <SegmentedControl<NamingDraft['diode_pin1']>
-              aria-label="Pin 1 der Diode"
+              aria-label={t("Pin 1 der Diode")}
               fullWidth
               value={draft.diode_pin1}
               onValueChange={(v) => ws.setDraft((d) => ({ ...d, diode_pin1: v }))}
               options={[
-                { value: 'cathode', label: 'Kathode (IPC)' },
-                { value: 'anode', label: 'Anode' },
+                { value: 'cathode', label: t("Kathode (IPC)") },
+                { value: 'anode', label: t("Anode") },
               ]}
             />
           </Field>
@@ -120,14 +121,11 @@ export default function NamensregelnSection() {
         <div className="flex items-start gap-2 border-t border-line px-5 py-3 text-xs text-fg-muted">
           <Info aria-hidden className="mt-px size-3.5 shrink-0 text-fg-subtle" />
           <span>
-            Gilt für neu erzeugte Dioden-Symbole und -Footprints (auch LEDs, Z- und Schottky-Dioden). Vorhandene behalten ihre
-            Belegung – der Symbolname zeigt sie an: „Diode“ = Kathode an Pin 1, „Diode (AK)“ = Anode an Pin 1. So passen
-            Symbol und Footprint immer zusammen.
-          </span>
+            {t("Gilt für neu erzeugte Dioden-Symbole und -Footprints (auch LEDs, Z- und Schottky-Dioden). Vorhandene behalten ihre Belegung – der Symbolname zeigt sie an: „Diode“ = Kathode an Pin 1, „Diode (AK)“ = Anode an Pin 1. So passen Symbol und Footprint immer zusammen.")}</span>
         </div>
       </SettingsCard>
 
-      <UnsavedChanges dirty={ws.dirty} saving={ws.saving} onSave={ws.save} onDiscard={ws.reset} label="Namensregeln" root={ws.root} />
+      <UnsavedChanges dirty={ws.dirty} saving={ws.saving} onSave={ws.save} onDiscard={ws.reset} label={t("Namensregeln")} root={ws.root} />
     </div>
   )
 }
@@ -150,18 +148,18 @@ interface CalcNames {
 }
 
 function NamingExamples({ naming, density }: { naming: NamingDraft['naming']; density: FootprintRequest['density'] }) {
+  const { t } = useI18n()
   return (
     <div className="@container border-t border-line">
-      <div role="table" aria-label="Beispielnamen" className="w-full">
+      <div role="table" aria-label={t("Beispielnamen")} className="w-full">
         <div role="row" className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)_minmax(0,1fr)] gap-4 bg-surface-2/40 px-5 py-2">
           <span role="columnheader" className="micro-label">
-            Gehäuse
-          </span>
+            {t("Gehäuse")}</span>
           <ColumnHead active={naming === 'ipc'}>IPC-7351</ColumnHead>
-          <ColumnHead active={naming === 'house'}>Hausname</ColumnHead>
+          <ColumnHead active={naming === 'house'}>{t("Hausname")}</ColumnHead>
         </div>
         {EXAMPLES.map((ex) => (
-          <ExampleRow key={ex.key} label={ex.label} req={{ ...ex.req, density }} naming={naming} />
+          <ExampleRow key={ex.key} label={t(ex.label)} req={{ ...ex.req, density }} naming={naming} />
         ))}
       </div>
       <IpcAnatomy density={density} />
@@ -170,15 +168,17 @@ function NamingExamples({ naming, density }: { naming: NamingDraft['naming']; de
 }
 
 function ColumnHead({ active, children }: { active: boolean; children: ReactNode }) {
+  const { t } = useI18n()
   return (
     <span role="columnheader" className="flex items-center gap-2">
       <span className={cn('micro-label', active && 'text-accent-text')}>{children}</span>
-      {active && <Badge variant="accent">aktiv</Badge>}
+      {active && <Badge variant="accent">{t("aktiv")}</Badge>}
     </span>
   )
 }
 
 function ExampleRow({ label, req, naming }: { label: string; req: FootprintRequest; naming: NamingDraft['naming'] }) {
+  const { t } = useI18n()
   const q = useFootprintPreview(req)
   const names = (q.data?.calc as CalcNames | undefined)?.names
   const cell = (value: string | undefined, active: boolean) => (
@@ -189,7 +189,7 @@ function ExampleRow({ label, req, naming }: { label: string; req: FootprintReque
         active ? 'bg-accent-soft/60 font-medium text-fg' : 'text-fg-muted',
       )}
     >
-      {q.isPending ? <Skeleton className="h-4 w-32" /> : q.isError ? <span className="font-sans text-danger-text">nicht verfügbar</span> : value ?? '–'}
+      {q.isPending ? <Skeleton className="h-4 w-32" /> : q.isError ? <span className="font-sans text-danger-text">{t("nicht verfügbar")}</span> : value ?? '–'}
     </span>
   )
   return (
@@ -205,20 +205,21 @@ function ExampleRow({ label, req, naming }: { label: string; req: FootprintReque
 
 /** Aufbau eines IPC-Namens am Beispiel 0603 */
 function IpcAnatomy({ density }: { density: FootprintRequest['density'] }) {
+  const { t } = useI18n()
   const q = useFootprintPreview({ ...R0603, density })
   const name = (q.data?.calc as CalcNames | undefined)?.names?.ipc ?? ''
   const m = /^([A-Z]+?C)(\d{2})(\d{2})X(\d+)([MNL])$/.exec(name)
   if (!m) return null
-  const mm = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 1 })
+  const mm = (v: number) => v.toLocaleString(getLocale(), { minimumFractionDigits: 1 })
   const parts: { text: string; label: string; tone: string }[] = [
-    { text: m[1], label: 'Bauart (Chip-Widerstand)', tone: 'var(--pf-chart-1)' },
-    { text: `${m[2]}${m[3]}`, label: `Länge × Breite ${mm(Number(m[2]) / 10)} × ${mm(Number(m[3]) / 10)} mm`, tone: 'var(--pf-chart-2)' },
-    { text: `X${m[4]}`, label: `Höhe ${(Number(m[4]) / 100).toLocaleString('de-DE', { minimumFractionDigits: 2 })} mm`, tone: 'var(--pf-chart-3)' },
-    { text: m[5], label: `Dichte ${densityLabel(m[5])}`, tone: 'var(--pf-chart-4)' },
+    { text: m[1], label: t("Bauart (Chip-Widerstand)"), tone: 'var(--pf-chart-1)' },
+    { text: `${m[2]}${m[3]}`, label: t("Länge × Breite {0} × {1} mm", { "0": mm(Number(m[2]) / 10), "1": mm(Number(m[3]) / 10) }), tone: 'var(--pf-chart-2)' },
+    { text: `X${m[4]}`, label: t("Höhe {0} mm", { "0": (Number(m[4]) / 100).toLocaleString(getLocale(), { minimumFractionDigits: 2 }) }), tone: 'var(--pf-chart-3)' },
+    { text: m[5], label: t("Dichte {0}", { "0": densityLabel(m[5]) }), tone: 'var(--pf-chart-4)' },
   ]
   return (
     <div className="border-t border-line bg-surface-2/30 px-5 py-3.5">
-      <div className="micro-label mb-2">So liest sich ein IPC-Name</div>
+      <div className="micro-label mb-2">{t("So liest sich ein IPC-Name")}</div>
       <div className="flex flex-wrap items-start gap-x-1.5 gap-y-3">
         {parts.map((p) => (
           <span key={p.text} className="flex flex-col items-start gap-1">
@@ -236,30 +237,26 @@ function IpcAnatomy({ density }: { density: FootprintRequest['density'] }) {
 // --------------------------------------------------------------------------- Symbolnamen
 
 function SymbolNamesCard() {
+  const { t } = useI18n()
   const kinds = useSymbolKinds()
   const wanted = ['resistor', 'capacitor', 'capacitor_polarized', 'inductor', 'diode', 'led', 'npn', 'nmos', 'opamp_dual', 'crystal_2']
   const list = (kinds.data ?? []).filter((k) => wanted.includes(k.key)).sort((a, b) => wanted.indexOf(a.key) - wanted.indexOf(b.key))
   return (
-    <SettingsCard icon={<Shapes />} title="Symbolnamen" description="Wie PartForge Schaltplansymbole benennt – automatisch, ohne Einstellung">
+    <SettingsCard icon={<Shapes />} title={t("Symbolnamen")} description={t("Wie PartForge Schaltplansymbole benennt – automatisch, ohne Einstellung")}>
       <div className="@container py-4">
         <div className="grid grid-cols-1 gap-5 @[40rem]:grid-cols-[minmax(0,1fr)_minmax(0,18rem)]">
           <ul className="flex flex-col gap-3 text-xs leading-relaxed text-fg-muted">
             <li>
-              <span className="font-medium text-fg">Standardsymbole</span> heißen nach ihrem Typ und werden von allen passenden
-              Bauteilen geteilt – ein Widerstandssymbol für alle Widerstände.
-            </li>
+              <span className="font-medium text-fg">{t("Standardsymbole")}</span>  {t("heißen nach ihrem Typ und werden von allen passenden Bauteilen geteilt – ein Widerstandssymbol für alle Widerstände.")}</li>
             <li>
-              <span className="font-medium text-fg">Mehrpolige Typen</span> tragen ihre Pinbelegung im Namen, z. B.{' '}
-              <span className="mono text-fg">Diode (AK)</span> oder <span className="mono text-fg">NPN (BCE)</span>. Ein Name
-              ändert so nie seine Belegung.
-            </li>
+              <span className="font-medium text-fg">{t("Mehrpolige Typen")}</span>  {t("tragen ihre Pinbelegung im Namen, z. B.")}{' '}
+              <span className="mono text-fg">Diode (AK)</span>  {t("oder")} <span className="mono text-fg">NPN (BCE)</span>{t(". Ein Name ändert so nie seine Belegung.")}</li>
             <li>
-              <span className="font-medium text-fg">IC-Symbole</span> aus dem Datenblatt-Import heißen nach der
-              Hersteller-Teilenummer, z. B. <span className="mono text-fg">TLV9062IDR</span>.
+              <span className="font-medium text-fg">{t("IC-Symbole")}</span>  {t("aus dem Datenblatt-Import heißen nach der Hersteller-Teilenummer, z. B.")} <span className="mono text-fg">TLV9062IDR</span>.
             </li>
           </ul>
           <div className="rounded-control bg-surface-2/50">
-            <div className="micro-label px-3 pb-1 pt-2.5">In dieser Bibliothek</div>
+            <div className="micro-label px-3 pb-1 pt-2.5">{t("In dieser Bibliothek")}</div>
             {kinds.isPending ? (
               <div className="flex flex-col gap-1.5 p-3">
                 {[0, 1, 2, 3].map((i) => (
@@ -270,7 +267,7 @@ function SymbolNamesCard() {
               <ul className="divide-y divide-line">
                 {list.map((k) => (
                   <li key={k.key} className="flex items-baseline justify-between gap-3 px-3 py-1.5 text-xs">
-                    <span className="min-w-0 text-fg-muted">{k.label}</span>
+                    <span className="min-w-0 text-fg-muted">{geometryLabel(k.label)}</span>
                     <span className="mono shrink-0 text-fg">{k.default_name}</span>
                   </li>
                 ))}
@@ -286,6 +283,7 @@ function SymbolNamesCard() {
 // --------------------------------------------------------------------------- Diode
 
 function DiodePreview({ pin1 }: { pin1: NamingDraft['diode_pin1'] }) {
+  const { t } = useI18n()
   const symbol = useSymbolPreview({ kind: 'diode', params: { pinmap: pin1 === 'cathode' ? 'KA' : 'AK' } })
   const footprint = useFootprintPreview({
     family: 'sod',
@@ -293,7 +291,7 @@ function DiodePreview({ pin1 }: { pin1: NamingDraft['diode_pin1'] }) {
     density: 'N',
     with_3d: false,
   })
-  const caption = pin1 === 'cathode' ? 'Pin 1 = Kathode (K)' : 'Pin 1 = Anode (A)'
+  const caption = pin1 === 'cathode' ? t("Pin 1 = Kathode (K)") : t("Pin 1 = Anode (A)")
   return (
     <div className="@container border-t border-line p-4">
       <div className="grid grid-cols-1 gap-3 @[36rem]:grid-cols-2">
@@ -305,7 +303,7 @@ function DiodePreview({ pin1 }: { pin1: NamingDraft['diode_pin1'] }) {
             interactive={false}
             showInfo={false}
             showLabels={false}
-            aria-label={`Diodensymbol, ${caption}`}
+            aria-label={t("Diodensymbol, {0}", { "0": caption })}
             className="h-full"
           />
         </PreviewFrame>
@@ -323,9 +321,8 @@ function DiodePreview({ pin1 }: { pin1: NamingDraft['diode_pin1'] }) {
         </PreviewFrame>
       </div>
       {(symbol.isError || footprint.isError) && (
-        <Callout tone="warning" className="mt-3" title="Vorschau nicht verfügbar">
-          Der Generator hat nicht geantwortet – die Einstellung lässt sich trotzdem speichern.
-        </Callout>
+        <Callout tone="warning" className="mt-3" title={t("Vorschau nicht verfügbar")}>
+          {t("Der Generator hat nicht geantwortet – die Einstellung lässt sich trotzdem speichern.")}</Callout>
       )}
     </div>
   )

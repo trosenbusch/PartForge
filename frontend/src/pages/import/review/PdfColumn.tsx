@@ -1,3 +1,4 @@
+import { t as translate, useI18n } from '@/lib/i18n'
 import { motion, useReducedMotion } from 'motion/react'
 import { ChevronLeft, ChevronRight, ExternalLink, Maximize2, Minus, PanelLeftClose, Plus, Sparkles } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type WheelEvent } from 'react'
@@ -35,6 +36,7 @@ export function PdfColumn({
   device?: DeviceData
   onCollapse?: () => void
 }) {
+  const { t: localize } = useI18n()
   const page = useReviewUi((s) => s.page)
   const setPage = useReviewUi((s) => s.setPage)
   const zoom = useReviewUi((s) => s.zoom)
@@ -48,8 +50,8 @@ export function PdfColumn({
 
   const used = useMemo(() => new Set(ds.selected_pages), [ds.selected_pages])
   const refs = useMemo(
-    () => (extraction ? pageReferences(extraction, device) : new Map<number, PageReference[]>()),
-    [extraction, device],
+    () => (extraction ? pageReferences(extraction, device, localize) : new Map<number, PageReference[]>()),
+    [extraction, device, localize],
   )
   const info = useMemo(() => new Map(ds.pages.map((p) => [p.page, p])), [ds.pages])
   const all = useMemo(() => Array.from({ length: ds.page_count }, (_, i) => i + 1), [ds.page_count])
@@ -139,27 +141,27 @@ export function PdfColumn({
       <div className="flex h-10 shrink-0 items-center gap-0.5 border-b border-line px-1.5">
         <IconButton
           size="sm"
-          label="Vorherige Seite"
+          label={translate("Vorherige Seite")}
           icon={<ChevronLeft />}
           onClick={() => step(-1)}
           disabled={pages.indexOf(page) <= 0}
           className="hidden @[18rem]:inline-flex"
         />
         <span className="min-w-12 px-1 text-center text-xs tabular-nums text-fg" aria-live="polite">
-          <span className="sr-only">Seite </span>
+          <span className="sr-only">{translate("Seite ")}</span>
           <span className="font-semibold">{page}</span>
           <span className="text-fg-subtle"> / {ds.page_count}</span>
         </span>
         <IconButton
           size="sm"
-          label="Nächste Seite"
+          label={translate("Nächste Seite")}
           icon={<ChevronRight />}
           onClick={() => step(1)}
           disabled={pages.indexOf(page) === pages.length - 1}
           className="hidden @[18rem]:inline-flex"
         />
         {used.size > 0 && (
-          <Tooltip content={onlyUsed ? 'Alle Seiten zeigen' : 'Nur die Seiten zeigen, die Claude gelesen hat'}>
+          <Tooltip content={onlyUsed ? translate("Alle Seiten zeigen") : translate("Nur die Seiten zeigen, die Claude gelesen hat")}>
             <button
               type="button"
               aria-pressed={onlyUsed}
@@ -170,33 +172,33 @@ export function PdfColumn({
               )}
             >
               <Sparkles aria-hidden className="size-3.5" />
-              <span className="hidden @[28rem]:inline">Gelesen</span>
+              <span className="hidden @[28rem]:inline">{translate("Gelesen")}</span>
               <span className="tabular-nums">{used.size}</span>
             </button>
           </Tooltip>
         )}
         <div className="ml-auto flex items-center gap-0.5">
-          <IconButton size="sm" label="Verkleinern" icon={<Minus />} onClick={() => setZoom(nextZoom(zoom, -1))} disabled={zoom <= ZOOMS[0]} />
-          <Tooltip content="Einpassen (0)">
+          <IconButton size="sm" label={translate("Verkleinern")} icon={<Minus />} onClick={() => setZoom(nextZoom(zoom, -1))} disabled={zoom <= ZOOMS[0]} />
+          <Tooltip content={translate("Einpassen (0)")}>
             <button
               type="button"
               onClick={() => setZoom(1)}
               className="hidden h-7 min-w-11 rounded-control px-1 text-xs tabular-nums text-fg-muted outline-none hover:bg-surface-2 hover:text-fg focus-ring @[24rem]:block"
-              aria-label={`Zoom ${formatPercent(zoom)} – einpassen`}
+              aria-label={translate("Zoom {0} – einpassen", { "0": String(formatPercent(zoom)) })}
             >
               {formatPercent(zoom)}
             </button>
           </Tooltip>
-          <IconButton size="sm" label="Vergrößern" icon={<Plus />} onClick={() => setZoom(nextZoom(zoom, 1))} disabled={zoom >= ZOOMS[ZOOMS.length - 1]} />
-          <IconButton size="sm" label="Seite groß anzeigen (Enter)" icon={<Maximize2 />} onClick={() => openOverlay(page)} />
+          <IconButton size="sm" label={translate("Vergrößern")} icon={<Plus />} onClick={() => setZoom(nextZoom(zoom, 1))} disabled={zoom >= ZOOMS[ZOOMS.length - 1]} />
+          <IconButton size="sm" label={translate("Seite groß anzeigen (Enter)")} icon={<Maximize2 />} onClick={() => openOverlay(page)} />
           <IconButton
             size="sm"
-            label="PDF öffnen"
+            label={translate("PDF öffnen")}
             icon={<ExternalLink />}
             onClick={() => void openPdf(ds)}
             className="hidden @[26rem]:inline-flex"
           />
-          {onCollapse && <IconButton size="sm" label="PDF-Spalte ausblenden" icon={<PanelLeftClose />} onClick={onCollapse} />}
+          {onCollapse && <IconButton size="sm" label={translate("PDF-Spalte ausblenden")} icon={<PanelLeftClose />} onClick={onCollapse} />}
         </div>
       </div>
 
@@ -204,7 +206,7 @@ export function PdfColumn({
         {/* Miniaturen */}
         <ul
           ref={railRef}
-          aria-label="Seiten"
+          aria-label={translate("Seiten")}
           className={cn(
             'flex shrink-0 gap-2 overflow-auto scrollbar-none p-2',
             'h-[5.75rem] flex-row border-t border-line @[17rem]:h-auto @[17rem]:w-[5.25rem] @[17rem]:flex-col @[17rem]:border-r @[17rem]:border-t-0',
@@ -222,7 +224,7 @@ export function PdfColumn({
                   data-page={p}
                   tabIndex={isCurrent ? 0 : -1}
                   aria-current={isCurrent ? 'page' : undefined}
-                  aria-label={`Seite ${p}${isUsed ? ', von Claude gelesen' : ''}${t.length ? ` – ${t.join(', ')}` : ''}`}
+                  aria-label={translate("Seite {0}{1}{2}", { "0": String(p), "1": String(isUsed ? translate(", von Claude gelesen") : ''), "2": String(t.length ? ` – ${t.join(', ')}` : '') })}
                   onClick={() => go(p)}
                   onKeyDown={onRailKey}
                   className={cn(
@@ -262,8 +264,7 @@ export function PdfColumn({
               {used.has(page) && (
                 <span className="inline-flex items-center gap-1 text-spark-text">
                   <Sparkles aria-hidden className="size-3" />
-                  Von Claude gelesen
-                </span>
+                  {translate("Von Claude gelesen")}</span>
               )}
               {topics.length > 0 && <span className="truncate">{(used.has(page) ? ' · ' : '') + topics.join(', ')}</span>}
               {pageRefs.length > 0 && (
@@ -290,14 +291,14 @@ export function PdfColumn({
             tabIndex={0}
             role="application"
             aria-roledescription="Seitenansicht"
-            aria-label={`Seite ${page} von ${ds.page_count} – Enter zeigt sie groß, Bild↑/↓ blättern, +/− zoomen, 0 einpassen`}
+            aria-label={translate("Seite {0} von {1} – Enter zeigt sie groß, Bild↑/↓ blättern, +/− zoomen, 0 einpassen", { "0": String(page), "1": String(ds.page_count) })}
             onKeyDown={onViewerKey}
             onWheel={onWheel}
             onClick={onViewerClick}
             className="relative min-h-0 flex-1 overflow-auto bg-bg outline-none focus-ring-inset light:bg-surface-3"
           >
             <div className="flex min-h-full min-w-fit items-start justify-center p-4">
-              <div data-sheet className="relative cursor-zoom-in shadow-pop" style={{ width: displayWidth }} title="Klicken, um die Seite groß anzuzeigen">
+              <div data-sheet className="relative cursor-zoom-in shadow-pop" style={{ width: displayWidth }} title={translate("Klicken, um die Seite groß anzuzeigen")}>
                 {/* Miniatur als Unterlage, bis das scharfe Bild geladen ist */}
                 <img
                   aria-hidden
@@ -313,7 +314,7 @@ export function PdfColumn({
                   dpi={dpi}
                   aspect={aspect}
                   loading="eager"
-                  alt={`Seite ${page} des Datenblatts${topics.length ? ` (${topics.join(', ')})` : ''}`}
+                  alt={translate("Seite {0} des Datenblatts{1}", { "0": String(page), "1": String(topics.length ? ` (${topics.join(', ')})` : '') })}
                   placeholder={false}
                 />
                 {flashKey > 0 && !reduce && (

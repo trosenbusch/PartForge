@@ -1,3 +1,4 @@
+import { t as translate, useI18n } from '@/lib/i18n'
 /**
  * Feld anlegen oder bearbeiten: Spaltenname (= Altium-Parameter), Beschriftung, Art, Einheit, Auswahloptionen,
  * Merkmale, weiche Längengrenze und Hilfetext. Geschützte Felder erlauben nur Beschriftung, Hilfe, Pflicht,
@@ -115,6 +116,7 @@ export interface FieldDialogProps {
 }
 
 export function FieldDialog(props: FieldDialogProps) {
+  useI18n()
   // Formular bei jedem Öffnen neu aufbauen
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
@@ -126,6 +128,7 @@ export function FieldDialog(props: FieldDialogProps) {
 }
 
 function FieldDialogBody({ onOpenChange, category, field, kinds }: FieldDialogProps) {
+  useI18n()
   const editing = Boolean(field)
   const initial = field ? fromField(field) : EMPTY
   const [form, setForm] = useState<FieldForm>(initial)
@@ -135,17 +138,17 @@ function FieldDialogBody({ onOpenChange, category, field, kinds }: FieldDialogPr
   const renameLocked = Boolean(field && (field.protected || field.common))
   const table = category.table
 
-  const add = useFieldMutation((f: FieldInput) => schemaApi.addField(table, f), 'Feld konnte nicht angelegt werden', true)
+  const add = useFieldMutation((f: FieldInput) => schemaApi.addField(table, f), translate("Feld konnte nicht angelegt werden"), true)
   const update = useFieldMutation(
     ({ column, patch }: { column: string; patch: FieldPatch }) => schemaApi.updateField(table, column, patch),
-    'Feld konnte nicht gespeichert werden',
+    translate("Feld konnte nicht gespeichert werden"),
     true,
   )
 
   const set = <K extends keyof FieldForm>(key: K, value: FieldForm[K]) => setForm((f) => ({ ...f, [key]: value }))
 
   const columnError = renameLocked ? null : validateColumnName(form.column, category.fields, field?.column)
-  const labelError = form.label.trim() ? null : 'Bitte eine Beschriftung eingeben.'
+  const labelError = form.label.trim() ? null : translate("Bitte eine Beschriftung eingeben.")
   const patch = field ? diff(initial, form) : null
   const renamed = Boolean(field && patch?.column)
   const nothingChanged = Boolean(field && patch && Object.keys(patch).length === 0)
@@ -178,9 +181,9 @@ function FieldDialogBody({ onOpenChange, category, field, kinds }: FieldDialogPr
       add.mutate(input, {
         onSuccess: () => {
           onOpenChange(false)
-          toast.success(`Feld „${input.label}“ hinzugefügt`, {
-            description: `Neue Spalte ${column} in ${table} – erscheint in Tabelle, Formularen und DbLib.`,
-            action: { label: 'Rückgängig', onClick: () => void runUndo(() => schemaApi.removeField(table, column), `Feld „${input.label}“ wieder entfernt`) },
+          toast.success(translate("Feld „{value1}“ hinzugefügt", { value1: input.label }), {
+            description: translate("Neue Spalte {value1} in {value2} – erscheint in Tabelle, Formularen und DbLib.", { value1: column, value2: table }),
+            action: { label: translate("Rückgängig"), onClick: () => void runUndo(() => schemaApi.removeField(table, column), translate("Feld „{value1}“ wieder entfernt", { value1: input.label })) },
           })
         },
         onError: (err) => setError(errorMessage(err)),
@@ -195,9 +198,9 @@ function FieldDialogBody({ onOpenChange, category, field, kinds }: FieldDialogPr
         onSuccess: () => {
           onOpenChange(false)
           const newColumn = patch.column ?? field.column
-          toast.success(renamed ? `Spalte umbenannt in „${newColumn}“` : `Feld „${form.label.trim()}“ gespeichert`, {
+          toast.success(renamed ? translate("Spalte umbenannt in „{value1}“", { value1: newColumn }) : translate("Feld „{value1}“ gespeichert", { value1: form.label.trim() }), {
             action: {
-              label: 'Rückgängig',
+              label: translate("Rückgängig"),
               onClick: () => void runUndo(() => schemaApi.updateField(table, newColumn, inverse(patch, before))),
             },
           })
@@ -209,8 +212,8 @@ function FieldDialogBody({ onOpenChange, category, field, kinds }: FieldDialogPr
 
   const kindOptions = kinds.map((k) => ({
     value: k.kind,
-    label: k.label,
-    description: FIELD_KIND_META[k.kind]?.help,
+    label: translate(k.label),
+    description: translate(FIELD_KIND_META[k.kind]?.help ?? ''),
     icon: kindIcon(k.kind),
   }))
 
@@ -218,38 +221,36 @@ function FieldDialogBody({ onOpenChange, category, field, kinds }: FieldDialogPr
     <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
       <DialogHeader
         icon={editing ? <Pencil /> : <TableProperties />}
-        title={editing ? `Feld „${field?.label}“ bearbeiten` : 'Feld hinzufügen'}
+        title={editing ? translate("Feld „{value1}“ bearbeiten", { value1: field?.label ?? '' }) : translate("Feld hinzufügen")}
         description={
           editing
-            ? `Kategorie ${category.label} · Spalte ${field?.column}`
-            : `Neue Spalte in ${category.label} – wird zum Altium-Parameter und erscheint in Tabelle und Formularen.`
+            ? translate("Kategorie {value1} · Spalte {value2}", { value1: category.label, value2: field?.column ?? '' })
+            : translate("Neue Spalte in {value1} – wird zum Altium-Parameter und erscheint in Tabelle und Formularen.", { value1: category.label })
         }
       />
       <DialogBody className="@container flex flex-col gap-5">
         {protectedField && (
-          <Callout tone="neutral" icon={<Lock />} title="Geschütztes Feld">
-            Wird für die Altium-Verknüpfung bzw. die Verwaltung gebraucht. Änderbar sind Beschriftung, Hilfetext, Pflichtfeld,
-            Schaltplan-Sichtbarkeit und Länge.
-          </Callout>
+          <Callout tone="neutral" icon={<Lock />} title={translate("Geschütztes Feld")}>
+            {translate("Wird für die Altium-Verknüpfung bzw. die Verwaltung gebraucht. Änderbar sind Beschriftung, Hilfetext, Pflichtfeld, Schaltplan-Sichtbarkeit und Länge.")}</Callout>
         )}
 
         <div className="grid grid-cols-1 gap-4 @[34rem]:grid-cols-2">
-          <Field label="Beschriftung" required error={form.label && labelError ? labelError : undefined} hint="deutsch, frei wählbar">
+          <Field label={translate("Beschriftung")} required error={form.label && labelError ? labelError : undefined} hint={translate("frei wählbar")}>
             <Input
               value={form.label}
               onChange={(e) => {
                 const label = e.target.value
                 setForm((f) => ({ ...f, label, column: columnTouched ? f.column : suggestColumn(label) }))
               }}
-              placeholder="z. B. Nennstrom"
+              placeholder={translate("z. B. Nennstrom")}
             />
           </Field>
           <Field
-            label="Spaltenname"
+            label={translate("Spaltenname")}
             required
-            hint={renameLocked ? 'fest' : 'Altium-Parameter'}
+            hint={renameLocked ? translate("fest") : translate("Altium-Parameter")}
             error={form.column && columnError ? columnError : undefined}
-            help={renameLocked ? 'Standardfelder behalten ihren Namen.' : 'ASCII, ohne . : { } [ ] – z. B. „Current Rating“.'}
+            help={renameLocked ? translate("Standardfelder behalten ihren Namen.") : translate("ASCII, ohne . : { } [ ] – z. B. „Current Rating“.")}
           >
             <Input
               mono
@@ -268,15 +269,12 @@ function FieldDialogBody({ onOpenChange, category, field, kinds }: FieldDialogPr
         </div>
 
         {renamed && (
-          <Callout tone="warning" icon={<TriangleAlert />} title="Altium-Designs behalten den alten Parameternamen">
-            Vorlagen und gespeicherte Ansichten passt PartForge an. In Schaltplänen bereits platzierte Bauteile führen den
-            Parameter aber weiter als „{field?.column}“, bis sie aus der Datenbank aktualisiert werden (Altium: Tools ›
-            Update Parameters From Database).
-          </Callout>
+          <Callout tone="warning" icon={<TriangleAlert />} title={translate("Altium-Designs behalten den alten Parameternamen")}>
+            {translate("Vorlagen und gespeicherte Ansichten passt PartForge an. In Schaltplänen bereits platzierte Bauteile führen den Parameter aber weiter als „")}{field?.column}{translate("“, bis sie aus der Datenbank aktualisiert werden (Altium: Tools › Update Parameters From Database).")}</Callout>
         )}
 
         <div className="grid grid-cols-1 gap-4 @[34rem]:grid-cols-2">
-          <Field label="Art" help={FIELD_KIND_META[form.kind]?.help}>
+          <Field label={translate("Art")} help={translate(FIELD_KIND_META[form.kind]?.help ?? '')}>
             <Select<FieldKind>
               value={form.kind}
               onValueChange={(v) => set('kind', v)}
@@ -285,16 +283,16 @@ function FieldDialogBody({ onOpenChange, category, field, kinds }: FieldDialogPr
             />
           </Field>
           {hasUnit(form.kind) ? (
-            <Field label="Einheit" hint="empfohlen" help="Ohne Einheit werden Werte als reine Zahlen gespeichert.">
+            <Field label={translate("Einheit")} hint={translate("empfohlen")} help={translate("Ohne Einheit werden Werte als reine Zahlen gespeichert.")}>
               <Combobox
-                options={UNIT_SUGGESTIONS.map((u) => ({ value: u.value, label: u.value, description: u.label, keywords: [u.label] }))}
+                options={UNIT_SUGGESTIONS.map((u) => ({ value: u.value, label: u.value, description: translate(u.label), keywords: [u.label, translate(u.label)] }))}
                 value={form.unit}
                 onValueChange={(v) => set('unit', v)}
                 allowCustom
                 clearable
                 mono
-                placeholder="Einheit wählen …"
-                searchPlaceholder="Einheit suchen oder eingeben …"
+                placeholder={translate("Einheit wählen …")}
+                searchPlaceholder={translate("Einheit suchen oder eingeben …")}
                 disabled={protectedField}
               />
             </Field>
@@ -304,7 +302,7 @@ function FieldDialogBody({ onOpenChange, category, field, kinds }: FieldDialogPr
         </div>
 
         {form.kind === 'enum' && (
-          <Field label="Auswahloptionen" hint={`${form.options.length} Optionen`} help="Enter fügt hinzu, Einfügen mehrerer Werte (durch Komma oder Zeilen getrennt) geht auch. Freie Eingabe bleibt erlaubt.">
+          <Field label={translate("Auswahloptionen")} hint={translate("{value1} Optionen", { value1: form.options.length })} help={translate("Enter fügt hinzu, Einfügen mehrerer Werte (durch Komma oder Zeilen getrennt) geht auch. Freie Eingabe bleibt erlaubt.")}>
             <OptionsEditor value={form.options} onChange={(v) => set('options', v)} disabled={protectedField} />
           </Field>
         )}
@@ -314,36 +312,36 @@ function FieldDialogBody({ onOpenChange, category, field, kinds }: FieldDialogPr
             checked={form.required}
             onCheckedChange={(v) => set('required', v)}
             disabled={field?.column === 'Part Number'}
-            label="Pflichtfeld"
-            description="Bauteile ohne Wert gelten als unvollständig."
+            label={translate("Pflichtfeld")}
+            description={translate("Bauteile ohne Wert gelten als unvollständig.")}
           />
           <Switch
             checked={form.show_on_schematic}
             onCheckedChange={(v) => set('show_on_schematic', v)}
-            label="Im Schaltplan sichtbar"
-            description="Parameter wird beim Platzieren angezeigt."
+            label={translate("Im Schaltplan sichtbar")}
+            description={translate("Parameter wird beim Platzieren angezeigt.")}
           />
           <Switch
             checked={form.add_to_design}
             onCheckedChange={(v) => set('add_to_design', v)}
             disabled={protectedField}
-            label="Ins Design übernehmen"
-            description="Als Bauteilparameter in den Schaltplan kopieren."
+            label={translate("Ins Design übernehmen")}
+            description={translate("Als Bauteilparameter in den Schaltplan kopieren.")}
           />
           <Switch
             checked={form.system}
             onCheckedChange={(v) => set('system', v)}
             disabled={protectedField}
-            label="Systemfeld"
-            description="Verknüpfung/Verwaltung statt Bauteilparameter."
+            label={translate("Systemfeld")}
+            description={translate("Verknüpfung/Verwaltung statt Bauteilparameter.")}
           />
         </div>
 
         <div className="grid grid-cols-1 gap-4 @[34rem]:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
           <Field
-            label="Höchstlänge"
-            hint="weiche Grenze"
-            help={`Leer = Standard (${formatNumber(defaultLength({ column: normalizeName(form.column), kind: form.kind }))} Zeichen), 0 = unbegrenzt. Längere Werte werden gespeichert, aber gemeldet.`}
+            label={translate("Höchstlänge")}
+            hint={translate("weiche Grenze")}
+            help={translate("Leer = Standard ({value1} Zeichen), 0 = unbegrenzt. Längere Werte werden gespeichert, aber gemeldet.", { value1: formatNumber(defaultLength({ column: normalizeName(form.column), kind: form.kind })) })}
           >
             <NumberInput
               value={form.length}
@@ -353,34 +351,33 @@ function FieldDialogBody({ onOpenChange, category, field, kinds }: FieldDialogPr
               max={100000}
               step={1}
               decimals={0}
-              unit="Zeichen"
-              placeholder={`Standard (${formatNumber(defaultLength({ column: normalizeName(form.column), kind: form.kind }))})`}
+              unit={translate("Zeichen")}
+              placeholder={translate("Standard ({value1})", { value1: formatNumber(defaultLength({ column: normalizeName(form.column), kind: form.kind })) })}
             />
           </Field>
-          <Field label="Hilfetext" hint="optional">
+          <Field label={translate("Hilfetext")} hint={translate("optional")}>
             <Textarea
               rows={2}
               autoResize
               value={form.help}
               onChange={(e) => set('help', e.target.value)}
-              placeholder="Erscheint als Hinweis in Formularen und Tabellenköpfen."
+              placeholder={translate("Erscheint als Hinweis in Formularen und Tabellenköpfen.")}
             />
           </Field>
         </div>
 
         {error && (
-          <Callout tone="danger" title={editing ? 'Speichern fehlgeschlagen' : 'Anlegen fehlgeschlagen'} urgent>
+          <Callout tone="danger" title={editing ? translate("Speichern fehlgeschlagen") : translate("Anlegen fehlgeschlagen")} urgent>
             {error}
           </Callout>
         )}
       </DialogBody>
       <DialogFooter>
-        {nothingChanged && <span className="mr-auto text-xs text-fg-subtle">Keine Änderungen</span>}
+        {nothingChanged && <span className="mr-auto text-xs text-fg-subtle">{translate("Keine Änderungen")}</span>}
         <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={busy}>
-          Abbrechen
-        </Button>
+          {translate("Abbrechen")}</Button>
         <Button type="submit" variant="primary" loading={busy} disabled={!canSubmit} leftIcon={editing ? undefined : <Plus />}>
-          {editing ? (renamed ? 'Umbenennen und speichern' : 'Speichern') : 'Feld hinzufügen'}
+          {editing ? (renamed ? translate("Umbenennen und speichern") : translate("Speichern")) : translate("Feld hinzufügen")}
         </Button>
       </DialogFooter>
     </form>
@@ -390,6 +387,7 @@ function FieldDialogBody({ onOpenChange, category, field, kinds }: FieldDialogPr
 // --------------------------------------------------------------------------- Optionen
 
 function OptionsEditor({ value, onChange, disabled }: { value: string[]; onChange: (v: string[]) => void; disabled?: boolean }) {
+  useI18n()
   const [text, setText] = useState('')
   const addMany = (raw: string) => {
     const items = raw
@@ -414,7 +412,7 @@ function OptionsEditor({ value, onChange, disabled }: { value: string[]; onChang
   return (
     <div className={cn('flex flex-col gap-2 rounded-button border border-line-control bg-control p-2', disabled && 'opacity-55')}>
       {value.length > 0 && (
-        <ul className="flex flex-wrap gap-1.5" aria-label="Optionen">
+        <ul className="flex flex-wrap gap-1.5" aria-label={translate("Optionen")}>
           {value.map((o) => (
             <li key={o} className="flex h-6 items-center gap-1 rounded-md border border-line bg-surface-2 pl-2 pr-0.5 text-xs text-fg">
               {o}
@@ -422,7 +420,7 @@ function OptionsEditor({ value, onChange, disabled }: { value: string[]; onChang
                 type="button"
                 disabled={disabled}
                 onClick={() => onChange(value.filter((x) => x !== o))}
-                aria-label={`Option „${o}“ entfernen`}
+                aria-label={translate("Option „{value1}“ entfernen", { value1: o })}
                 className="flex size-5 items-center justify-center rounded-sm text-fg-subtle outline-none hover:bg-surface-3 hover:text-fg focus-ring"
               >
                 <X aria-hidden className="size-3" />
@@ -444,13 +442,12 @@ function OptionsEditor({ value, onChange, disabled }: { value: string[]; onChang
               addMany(pasted)
             }
           }}
-          placeholder={value.length ? 'Weitere Option …' : 'Option eingeben und Enter drücken'}
-          aria-label="Option hinzufügen"
+          placeholder={value.length ? translate("Weitere Option …") : translate("Option eingeben und Enter drücken")}
+          aria-label={translate("Option hinzufügen")}
           className="h-7 min-w-0 flex-1 bg-transparent px-1 text-ui text-fg outline-none placeholder:text-fg-subtle"
         />
         <Button size="xs" variant="ghost" leftIcon={<Plus />} onClick={() => addMany(text)} disabled={disabled || !text.trim()}>
-          Hinzufügen
-        </Button>
+          {translate("Hinzufügen")}</Button>
         {value.length > 1 && (
           <Button
             size="xs"

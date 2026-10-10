@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { Slot } from 'radix-ui'
 import { useContext, type ComponentProps, type MouseEvent, type ReactNode } from 'react'
 import { cn } from '@/lib/cn'
@@ -35,6 +36,7 @@ export function Button({
   onClick,
   ...props
 }: ButtonProps) {
+  useI18n()
   const defaults = useContext(ButtonDefaultsContext)
   const effectiveSize = size ?? defaults.size ?? 'md'
   const classes = cn(buttonVariants({ variant, size: effectiveSize, iconOnly }), className)
@@ -105,6 +107,7 @@ export function IconButton({
   variant = 'ghost',
   ...props
 }: IconButtonProps) {
+  useI18n()
   const button = (
     <Button
       aria-label={label}

@@ -1,9 +1,5 @@
-/**
- * Quelle des Bibliotheksimports: Pfadfeld (Ordner oder Bibliotheksdatei, Monospace) mit „Durchsuchen …“ (Ordner bzw.
- * Datei – sobald das Desktop-Fenster Dialoge anbietet), „Einlesen“ (auch Enter), die zuletzt eingelesenen Quellen als
- * Schnellwahl und der Fortschritt des Einlesens (abbrechbar) bzw. sein Fehler. Einlesen liest nur – die Quelle bleibt
- * unverändert.
- */
+import { localizeMessage } from '@/lib/i18n'
+import { t, useI18n } from '@/lib/i18n'
 import { ChevronDown, CircleStop, FileArchive, Folder, FolderInput, FolderSearch, History, ScanSearch, X } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
@@ -73,6 +69,7 @@ export function SourceCard({
   locked,
   primary,
 }: SourceCardProps) {
+  useI18n()
   const navigate = useNavigate()
   const cancel = useCancelJob()
   const recent = useRecentSources((s) => s.recent)
@@ -85,7 +82,7 @@ export function SourceCard({
   const problem = touched ? sourceProblem(path) : null
   const again = Boolean(currentSource && cleanSourcePath(path) && pathKey(cleanSourcePath(path)) === pathKey(currentSource))
   const stopping = scanning && Boolean(job?.cancel_requested)
-  const failed = job?.status === 'failed' ? cleanErrorText(job.error ?? job.message ?? '') || 'Einlesen fehlgeschlagen.' : null
+  const failed = job?.status === 'failed' ? cleanErrorText(job.error ?? job.message ?? '') || t("Einlesen fehlgeschlagen.") : null
   const error = startError ?? failed
   const cancelled = !error && job?.status === 'cancelled'
 
@@ -109,12 +106,12 @@ export function SourceCard({
     <Card>
       <CardHeader
         icon={<FolderInput />}
-        title="Quelle"
-        description="Ein Ordner (mit allen Unterordnern) oder eine Bibliotheksdatei: .SchLib, .PcbLib, .IntLib, .LibPkg oder .zip. PartForge liest die Quelle nur."
+        title={t("Quelle")}
+        description={t("Ein Ordner (mit allen Unterordnern) oder eine Bibliotheksdatei: .SchLib, .PcbLib, .IntLib, .LibPkg oder .zip. PartForge liest die Quelle nur.")}
       />
       <CardContent className="flex flex-col gap-3">
         <form onSubmit={submit} noValidate>
-          <Field label="Ordner oder Bibliotheksdatei" htmlFor={SOURCE_INPUT_ID} error={problem ?? undefined}>
+          <Field label={t("Ordner oder Bibliotheksdatei")} htmlFor={SOURCE_INPUT_ID} error={problem ?? undefined}>
             <div className="flex min-w-0 items-start gap-2">
               <PathInput
                 id={SOURCE_INPUT_ID}
@@ -124,7 +121,7 @@ export function SourceCard({
                   onPathChange(v)
                   if (!v.trim()) setTouched(false)
                 }}
-                placeholder="C:\Bibliotheken\Hersteller"
+                placeholder={t("C:\\Bibliotheken\\Hersteller")}
                 disabled={busy}
                 invalid={Boolean(problem)}
               />
@@ -136,7 +133,7 @@ export function SourceCard({
                 loading={starting || scanning}
                 disabled={Boolean(locked)}
               >
-                {again ? 'Erneut einlesen' : 'Einlesen'}
+                {again ? t("Erneut einlesen") : t("Einlesen")}
               </Button>
             </div>
           </Field>
@@ -148,9 +145,8 @@ export function SourceCard({
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="micro-label mr-1 flex items-center gap-1">
               <History aria-hidden className="size-3" />
-              Zuletzt
-            </span>
-            <ul className="contents" aria-label="Zuletzt eingelesene Quellen">
+              {t("Zuletzt")}</span>
+            <ul className="contents" aria-label={t("Zuletzt eingelesene Quellen")}>
               {recent.map((r) => {
                 const name = baseName(r.path)
                 const current = currentSource !== null && pathKey(r.path) === pathKey(currentSource)
@@ -167,7 +163,7 @@ export function SourceCard({
                         type="button"
                         disabled={busy}
                         onClick={() => picked(r.path)}
-                        aria-label={`${name} einlesen – ${r.path}`}
+                        aria-label={t("{0} einlesen – {1}", { "0": String(name), "1": String(r.path) })}
                         className="h-full max-w-[16rem] truncate rounded-full pl-2.5 pr-1 outline-none hover:text-fg focus-ring disabled:pointer-events-none disabled:opacity-50"
                       >
                         {name}
@@ -176,8 +172,8 @@ export function SourceCard({
                     <button
                       type="button"
                       onClick={() => forget(r.path)}
-                      aria-label={`${name} aus der Liste entfernen`}
-                      title="Aus der Liste entfernen"
+                      aria-label={t("{0} aus der Liste entfernen", { "0": String(name) })}
+                      title={t("Aus der Liste entfernen")}
                       className="mr-0.5 flex size-5 items-center justify-center rounded-full text-fg-subtle outline-none hover:bg-surface-3 hover:text-fg focus-ring"
                     >
                       <X aria-hidden className="size-3" />
@@ -197,7 +193,7 @@ export function SourceCard({
               indeterminate={job.progress <= 0}
               live
               showValue
-              label={stopping ? 'Wird abgebrochen …' : formatNumbersInText(job.message) || 'Quelle wird durchsucht …'}
+              label={stopping ? t("Wird abgebrochen …") : formatNumbersInText(localizeMessage(job.message)) || t("Quelle wird durchsucht …")}
             />
             <Button
               size="sm"
@@ -207,7 +203,7 @@ export function SourceCard({
               disabled={stopping}
               onClick={() => cancel.mutate(job.id)}
             >
-              {stopping ? 'Wird abgebrochen' : 'Abbrechen'}
+              {stopping ? t("Wird abgebrochen") : t("Abbrechen")}
             </Button>
           </div>
         )}
@@ -215,16 +211,15 @@ export function SourceCard({
         {error && (
           <Callout
             tone="danger"
-            title="Einlesen nicht möglich"
+            title={t("Einlesen nicht möglich")}
             urgent
             actions={
               <>
                 {NO_WRITER.test(error) && (
                   <Button size="sm" onClick={() => navigate(SETTINGS_PLACE.altium.to)}>
-                    Writer einrichten
-                  </Button>
+                    {t("Writer einrichten")}</Button>
                 )}
-                <IconButton size="sm" label="Hinweis schließen" icon={<X />} onClick={onDismiss} />
+                <IconButton size="sm" label={t("Hinweis schließen")} icon={<X />} onClick={onDismiss} />
               </>
             }
           >
@@ -232,9 +227,8 @@ export function SourceCard({
           </Callout>
         )}
         {cancelled && job && (
-          <Callout tone="neutral" title="Einlesen abgebrochen" actions={<IconButton size="sm" label="Hinweis schließen" icon={<X />} onClick={onDismiss} />}>
-            {jobCancelText(job) === 'Abgebrochen' ? 'Die Quelle wurde nicht vollständig gelesen.' : jobCancelText(job)} „Einlesen“ startet neu.
-          </Callout>
+          <Callout tone="neutral" title={t("Einlesen abgebrochen")} actions={<IconButton size="sm" label={t("Hinweis schließen")} icon={<X />} onClick={onDismiss} />}>
+            {jobCancelText(job) === 'Abgebrochen' ? t("Die Quelle wurde nicht vollständig gelesen.") : jobCancelText(job)} {t(" „Einlesen“ startet neu.")}</Callout>
         )}
       </CardContent>
     </Card>
@@ -243,13 +237,14 @@ export function SourceCard({
 
 /** „Durchsuchen …“: Ordner bzw. Bibliotheksdatei wählen (nur im Desktop-Fenster) – die Wahl wird gleich eingelesen */
 function BrowseButton({ path, disabled, onPicked }: { path: string; disabled: boolean; onPicked: (path: string) => void }) {
+  useI18n()
   const bridge = useNativeBridge()
   const chooseFolder = async () => {
     const picked = await pickFolder(folderOf(path) || null)
     if (picked) onPicked(picked)
   }
   const chooseFile = async () => {
-    const picked = await pickFile(cleanSourcePath(path) || null, SOURCE_FILE_FILTERS)
+    const picked = await pickFile(cleanSourcePath(path) || null, SOURCE_FILE_FILTERS.map((filter) => t(filter)))
     if (picked) onPicked(picked)
   }
   if (bridge.canPickFolder && bridge.canPickFile) {
@@ -257,16 +252,13 @@ function BrowseButton({ path, disabled, onPicked }: { path: string; disabled: bo
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="secondary" leftIcon={<FolderSearch />} rightIcon={<ChevronDown />} disabled={disabled}>
-            Durchsuchen …
-          </Button>
+            {t("Durchsuchen …")}</Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-72">
-          <DropdownMenuItem icon={<Folder />} description="Mit allen Unterordnern" onSelect={() => void chooseFolder()}>
-            Ordner wählen …
-          </DropdownMenuItem>
-          <DropdownMenuItem icon={<FileArchive />} description="SchLib, PcbLib, IntLib, LibPkg oder ZIP" onSelect={() => void chooseFile()}>
-            Bibliotheksdatei wählen …
-          </DropdownMenuItem>
+          <DropdownMenuItem icon={<Folder />} description={t("Mit allen Unterordnern")} onSelect={() => void chooseFolder()}>
+            {t("Ordner wählen …")}</DropdownMenuItem>
+          <DropdownMenuItem icon={<FileArchive />} description={t("SchLib, PcbLib, IntLib, LibPkg oder ZIP")} onSelect={() => void chooseFile()}>
+            {t("Bibliotheksdatei wählen …")}</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     )
@@ -274,15 +266,13 @@ function BrowseButton({ path, disabled, onPicked }: { path: string; disabled: bo
   if (bridge.canPickFolder) {
     return (
       <Button variant="secondary" leftIcon={<FolderSearch />} disabled={disabled} onClick={() => void chooseFolder()}>
-        Ordner wählen …
-      </Button>
+        {t("Ordner wählen …")}</Button>
     )
   }
   if (bridge.canPickFile) {
     return (
       <Button variant="secondary" leftIcon={<FolderSearch />} disabled={disabled} onClick={() => void chooseFile()}>
-        Datei wählen …
-      </Button>
+        {t("Datei wählen …")}</Button>
     )
   }
   return null

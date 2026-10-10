@@ -1,8 +1,4 @@
-/**
- * Kopf der Altium-Seite: Schlagzeile mit dem nächsten Schritt, die Kette „Bauteile → DbLib → Bibliotheksdateien →
- * Altium“ (wo sie reißt, steht der Grund im Text und die Behebung direkt am Glied) und die Aktionsleiste
- * (DbLib | In Altium). Aktionen, die ein laufendes Altium brauchen, sind sonst gesperrt – mit Grund am Knopf.
- */
+import { useI18n, localizeMessage } from '@/lib/i18n'
 import { useQueryClient } from '@tanstack/react-query'
 import { motion } from 'motion/react'
 import { Check, ChevronDown, Database, Ellipsis, FileCode2, FileStack, PlugZap, type LucideIcon } from 'lucide-react'
@@ -68,6 +64,7 @@ export type VerifyScope =
   | { kind: 'parts'; partNumbers: string[]; label: string }
 
 export function StatusHero({ model, status, backend, actions, onAction, onVerify, blocker }: StatusHeroProps) {
+  const { t: tr } = useI18n()
   const headline = model?.headline
   const primary = headline?.primary ?? null
   return (
@@ -94,14 +91,13 @@ export function StatusHero({ model, status, backend, actions, onAction, onVerify
                 <h2 id="altium-headline" className="mt-1.5 text-h3 font-semibold tracking-[-0.02em] text-fg">
                   {headline.title}
                 </h2>
-                <p className="mt-1 text-ui leading-relaxed text-fg-muted">{headline.text}</p>
+                <p className="mt-1 text-ui leading-relaxed text-fg-muted">{localizeMessage(headline.text)}</p>
                 {headline.link && <HeadlineLink link={headline.link} className="mt-1.5" />}
               </>
             ) : (
               <>
                 <h2 id="altium-headline" className="sr-only">
-                  Status wird geladen
-                </h2>
+                  {tr("Status wird geladen")}</h2>
                 <Skeleton className="mt-2 h-7 w-80" />
                 <Skeleton className="mt-2 h-4 w-[28rem] max-w-full" />
               </>
@@ -140,6 +136,7 @@ export function StatusHero({ model, status, backend, actions, onAction, onVerify
 }
 
 function PrimaryIcon({ action }: { action: ActionKey }) {
+  useI18n()
   const Icon = ACTION_META[action].icon
   return <Icon />
 }
@@ -162,6 +159,7 @@ function Chain({
   /** Zusatz unter einem Glied (z. B. Schalter „Automatisch aktualisieren“ am Altium-Glied) */
   extra?: Partial<Record<ChainNode['key'], ReactNode>>
 }) {
+  const { t: tr } = useI18n()
   if (!nodes) {
     return (
       <div className="mt-5 grid grid-cols-2 gap-x-6 gap-y-5 @[44rem]:grid-cols-4" aria-hidden>
@@ -176,7 +174,7 @@ function Chain({
     )
   }
   return (
-    <ol aria-label="Weg der Bauteile nach Altium" className="mt-5 grid grid-cols-2 gap-x-6 gap-y-5 @[44rem]:grid-cols-4 @[44rem]:gap-x-0">
+    <ol aria-label={tr("Weg der Bauteile nach Altium")} className="mt-5 grid grid-cols-2 gap-x-6 gap-y-5 @[44rem]:grid-cols-4 @[44rem]:gap-x-0">
       {nodes.map((node, i) => {
         const Icon = NODE_ICON[node.key]
         const next = nodes[i + 1]
@@ -221,9 +219,9 @@ function Chain({
                     'mt-0.5 line-clamp-2 text-xs leading-snug',
                     node.emphasis === 'detail' && node.level !== 'ok' ? LEVEL_TEXT[node.level] : 'text-fg-muted',
                   )}
-                  title={node.detail}
+                  title={localizeMessage(node.detail)}
                 >
-                  {node.detail}
+                  {localizeMessage(node.detail)}
                 </div>
               )}
               {node.fix && node.fix.action !== primary && (
@@ -248,6 +246,7 @@ function Chain({
 
 /** Verbindung zwischen zwei Gliedern: durchgezogen, wenn das linke Glied in Ordnung ist, sonst gestrichelt */
 function Connector({ from, to }: { from: Level; to: Level }) {
+  useI18n()
   const solid = from === 'ok' || from === 'busy'
   return (
     <span aria-hidden className="relative mx-3 hidden h-px flex-1 @[44rem]:block">
@@ -297,6 +296,7 @@ function ActionBar({
   onVerify: (scope: VerifyScope) => void
   blocker: string | null
 }) {
+  const { t: tr } = useI18n()
   const installed = model?.altium.installed === true
   const button = (key: ActionKey, blocked: string | null = null) => {
     const Icon = ACTION_META[key].icon
@@ -314,7 +314,7 @@ function ActionBar({
       </GatedButton>
     )
   }
-  const note = !status ? null : !status.altium_exe ? 'nicht gefunden' : status.altium_running ? null : 'nicht gestartet'
+  const note = !status ? null : !status.altium_exe ? tr("nicht gefunden") : status.altium_running ? null : tr("nicht gestartet")
 
   return (
     <div className="relative flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-line bg-[color-mix(in_oklab,var(--pf-surface-2)_45%,transparent)] px-6 py-3">
@@ -324,7 +324,7 @@ function ActionBar({
         {button('odbc')}
       </Group>
       <span aria-hidden className="hidden h-5 w-px bg-line-strong @[52rem]:block" />
-      <Group label="In Altium" note={note}>
+      <Group label={tr("In Altium")} note={note}>
         {installed ? button('uninstall', blocker) : button(primary === 'installReplace' ? 'installReplace' : 'install', blocker)}
         {button('refresh', blocker)}
         <VerifyMenu onVerify={onVerify} pending={actions.pending.verify} blocked={blocker} />
@@ -365,6 +365,7 @@ function GatedButton({
   rightIcon?: ReactNode
   'aria-label'?: string
 }) {
+  useI18n()
   if (!blocked) {
     return (
       <Button size={size} variant={variant} leftIcon={icon} rightIcon={rightIcon} loading={loading} onClick={onClick} aria-label={ariaLabel}>
@@ -391,6 +392,7 @@ function GatedButton({
 }
 
 function Group({ label, note, children }: { label: string; note?: string | null; children: ReactNode }) {
+  useI18n()
   return (
     <div role="group" aria-label={label} className="flex flex-wrap items-center gap-2">
       <span className="micro-label mr-1 flex items-center gap-1.5">
@@ -425,6 +427,7 @@ export function VerifyMenu({
   /** zusätzliche Auswahl oben im Menü */
   extra?: { scope: Extract<VerifyScope, { kind: 'parts' }>; description: string }[]
 }) {
+  const { t: tr } = useI18n()
   const categories = useCategories().data
   const filled = (categories ?? []).filter((c) => (c.part_count ?? 0) > 0 && c.altium_enabled)
   const total = filled.reduce((n, c) => n + (c.part_count ?? 0), 0)
@@ -440,10 +443,10 @@ export function VerifyMenu({
     )
   }
   const sampleText = !categories
-    ? 'anteilig, mindestens ein Bauteil je Kategorie'
+    ? tr("anteilig, mindestens ein Bauteil je Kategorie")
     : everything
-      ? `aus ${plural(filled.length, 'Kategorie', 'Kategorien')} · ${verifyEstimate(total)}`
-      : `${plural(sample, 'Bauteil', 'Bauteile')} aus ${plural(filled.length, 'Kategorie', 'Kategorien')}, anteilig verteilt · ${verifyEstimate(sample)}`
+      ? tr("aus {0} · {1}", { "0": String(plural(filled.length, tr("Kategorie"), tr("Kategorien"))), "1": String(verifyEstimate(total)) })
+      : tr("{0} aus {1}, anteilig verteilt · {2}", { "0": String(plural(sample, tr("Bauteil"), tr("Bauteile"))), "1": String(plural(filled.length, tr("Kategorie"), tr("Kategorien"))), "2": String(verifyEstimate(sample)) })
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -452,7 +455,7 @@ export function VerifyMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-80">
-        <DropdownMenuLabel>Altium löst jedes Bauteil auf – Symbol, Footprints, Pins, Parameter</DropdownMenuLabel>
+        <DropdownMenuLabel>{tr("Altium löst jedes Bauteil auf – Symbol, Footprints, Pins, Parameter")}</DropdownMenuLabel>
         {extra?.map((e) => (
           <DropdownMenuItem key={e.scope.label} description={e.description} onSelect={() => onVerify(e.scope)}>
             {e.scope.label}
@@ -461,21 +464,20 @@ export function VerifyMenu({
         {extra?.length ? <DropdownMenuSeparator /> : null}
         {/* umfasst die Stichprobe ohnehin alles, prüft der Eintrag „Alle …“ auch als „alle Bauteile“ (Titel und Ergebnis) */}
         <DropdownMenuItem description={sampleText} onSelect={() => onVerify(everything ? { kind: 'all' } : { kind: 'sample' })}>
-          {everything ? `Alle ${plural(total, 'Bauteil', 'Bauteile')}` : 'Stichprobe über alle Kategorien'}
+          {everything ? tr("Alle {0}", { "0": String(plural(total, tr("Bauteil"), tr("Bauteile"))) }) : tr("Stichprobe über alle Kategorien")}
         </DropdownMenuItem>
         {!everything && (
           <DropdownMenuItem
-            description={total ? `${plural(total, 'Bauteil', 'Bauteile')} · ${verifyEstimate(total)}` : 'Alle Bauteile der Bibliothek'}
+            description={total ? `${plural(total, tr("Bauteil"), tr("Bauteile"))} · ${verifyEstimate(total)}` : tr("Alle Bauteile der Bibliothek")}
             onSelect={() => onVerify({ kind: 'all' })}
           >
-            Alle Bauteile
-          </DropdownMenuItem>
+            {tr("Alle Bauteile")}</DropdownMenuItem>
         )}
         {filled.length > 0 && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuSub>
-              <DropdownMenuSubTrigger>Eine Kategorie</DropdownMenuSubTrigger>
+              <DropdownMenuSubTrigger>{tr("Eine Kategorie")}</DropdownMenuSubTrigger>
               {/* breit genug für „Optokoppler und Optoelektronik“ samt Anzahl (Mindestbreite 1120 px, nichts gekürzt) */}
               <DropdownMenuSubContent className="max-h-80 w-72 overflow-y-auto">
                 {filled.map((c) => {
@@ -486,7 +488,7 @@ export function VerifyMenu({
                       key={c.table}
                       icon={<span aria-hidden className="size-2 shrink-0 rounded-full" style={{ background: c.color ?? 'var(--pf-fg-subtle)' }} />}
                       trailing={<span className="mono">{formatNumber(count)}</span>}
-                      aria-label={`${c.label}, ${plural(count, 'Bauteil', 'Bauteile')}`}
+                      aria-label={`${c.label}, ${plural(count, tr("Bauteil"), tr("Bauteile"))}`}
                       textValue={c.label}
                       onSelect={() => onVerify({ kind: 'table', table: c.table, label: c.label })}
                     >
@@ -511,50 +513,52 @@ const RECEIPT_MS = 45_000
  * (`reason_text`). Der Toast meldet dasselbe (und wird angesagt); hier bleibt es 45 s stehen.
  */
 function RegenerateNote({ receipt }: { receipt: RegenerateReceipt }) {
+  const { t: tr } = useI18n()
   const [expiredFor, setExpiredFor] = useState<number | null>(null)
   useEffect(() => {
     const left = RECEIPT_MS - (Date.now() - receipt.at)
     const t = setTimeout(() => setExpiredFor(receipt.at), Math.max(0, left))
     return () => clearTimeout(t)
-  }, [receipt.at])
+  }, [receipt.at, tr])
   if (expiredFor === receipt.at) return null
   const { result } = receipt
   return (
     <p className="flex min-w-0 basis-full items-start gap-1.5 text-xs leading-snug text-fg-muted">
       <Check aria-hidden className="mt-px size-3.5 shrink-0 text-success-text" />
       <span className="min-w-0">
-        <span className="font-medium text-fg">{result.written ? 'DbLib neu erzeugt' : 'DbLib geprüft'}</span>
+        <span className="font-medium text-fg">{result.written ? tr("DbLib neu erzeugt") : tr("DbLib geprüft")}</span>
         {' – '}
-        {result.reason_text}
-        {result.warnings.length > 0 && <span className="text-warning-text"> {result.warnings.join(' ')}</span>}
+        {localizeMessage(result.reason_text)}
+        {result.warnings.length > 0 && <span className="text-warning-text"> {result.warnings.map(localizeMessage).join(' ')}</span>}
       </span>
     </p>
   )
 }
 
 function MoreMenu({ onAction, blocked }: { onAction: (key: ActionKey) => void; blocked: string | null }) {
+  const { t: tr } = useI18n()
   const item = (key: ActionKey, description: string, needsAltium = true) => {
     const Icon = ACTION_META[key].icon
     const off = needsAltium && Boolean(blocked)
     return (
-      <DropdownMenuItem icon={<Icon />} description={off ? 'Erst Altium Designer starten' : description} disabled={off} onSelect={() => onAction(key)}>
+      <DropdownMenuItem icon={<Icon />} description={off ? tr("Erst Altium Designer starten") : description} disabled={off} onSelect={() => onAction(key)}>
         {ACTION_META[key].label}
       </DropdownMenuItem>
     )
   }
   return (
     <DropdownMenu>
-      <Tooltip content="Weitere Aktionen">
+      <Tooltip content={tr("Weitere Aktionen")}>
         <DropdownMenuTrigger asChild>
-          <IconButton size="sm" variant="ghost" label="Weitere Altium-Aktionen" icon={<Ellipsis />} tooltip={false} />
+          <IconButton size="sm" variant="ghost" label={tr("Weitere Altium-Aktionen")} icon={<Ellipsis />} tooltip={false} />
         </DropdownMenuTrigger>
       </Tooltip>
       <DropdownMenuContent align="end" className="w-72">
-        {item('open', 'Zeigt die DbLib in Altium an')}
-        {item('installState', 'Liest die installierten Bibliotheken')}
-        {item('refreshRebuild', 'Leert Altiums Cache, baut den Index neu auf')}
+        {item('open', tr("Zeigt die DbLib in Altium an"))}
+        {item('installState', tr("Liest die installierten Bibliotheken"))}
+        {item('refreshRebuild', tr("Leert Altiums Cache, baut den Index neu auf"))}
         <DropdownMenuSeparator />
-        {item('settings', 'Pfad zu Altium, Bibliotheks-Writer, Aktualisierung', false)}
+        {item('settings', tr("Pfad zu Altium, Bibliotheks-Writer, Aktualisierung"), false)}
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -562,6 +566,7 @@ function MoreMenu({ onAction, blocked }: { onAction: (key: ActionKey) => void; b
 
 /** Schalter „Automatisch aktualisieren“ (App-Einstellung `altium.auto_refresh`, wirkt sofort) */
 function AutoRefreshSwitch({ status }: { status: AltiumStatus }) {
+  const { t: tr } = useI18n()
   const qc = useQueryClient()
   const save = useSaveSettings()
   const checked = status.refresh.auto_refresh
@@ -572,26 +577,26 @@ function AutoRefreshSwitch({ status }: { status: AltiumStatus }) {
     })
   }
   return (
-    <span className="flex items-center gap-2" title="Nach Änderungen an der Datenbank liest ein laufendes Altium die Bauteile selbst neu ein.">
+    <span className="flex items-center gap-2" title={tr("Nach Änderungen an der Datenbank liest ein laufendes Altium die Bauteile selbst neu ein.")}>
       <Switch id="altium-auto-refresh" size="sm" checked={checked} disabled={save.isPending} onCheckedChange={setChecked} />
       <label htmlFor="altium-auto-refresh" className="cursor-pointer select-none whitespace-nowrap text-xs leading-tight text-fg-muted">
-        Automatisch aktualisieren
-      </label>
+        {tr("Automatisch aktualisieren")}</label>
     </span>
   )
 }
 
 /** Beide Writer mit Version und Bereitschaft (im Text); der aktive (laut Einstellung bzw. automatisch) ist markiert */
 function WriterList({ status, backend }: { status: AltiumStatus; backend: LibraryBackend | undefined }) {
+  const { t: tr } = useI18n()
   const rust = status.backends.find((b) => b.name === 'rust')
   const altium = status.backends.find((b) => b.name === 'altium')
   const active = backend === 'rust' || backend === 'altium' ? backend : rust?.available ? 'rust' : altium?.available ? 'altium' : null
   const rows = [
-    { key: 'rust', label: 'Bibliotheks-Writer', b: rust, off: 'fehlt' },
-    { key: 'altium', label: 'Altium', b: altium, off: 'nicht bereit' },
+    { key: 'rust', label: tr("Bibliotheks-Writer"), b: rust, off: tr("fehlt") },
+    { key: 'altium', label: 'Altium', b: altium, off: tr("nicht bereit") },
   ]
   return (
-    <ul className="flex flex-col gap-0.5" aria-label="Bibliotheks-Writer">
+    <ul className="flex flex-col gap-0.5" aria-label={tr("Bibliotheks-Writer")}>
       {rows.map(({ key, label, b, off }) => (
         <li key={key} className={cn('flex min-w-0 items-start gap-1.5 text-2xs leading-4', active === key ? 'text-fg-muted' : 'text-fg-subtle')}>
           <span aria-hidden className={cn('mt-[5px] size-1.5 shrink-0 rounded-full', b?.available ? 'bg-success' : 'bg-fg-subtle/60')} />
@@ -600,8 +605,8 @@ function WriterList({ status, backend }: { status: AltiumStatus; backend: Librar
             {b?.version && <span className="mono"> {b.version}</span>}
             {!b?.available && <span className={active === key ? 'text-warning-text' : undefined}> · {off}</span>}
           </span>
-          {active === key && <span className="shrink-0 rounded-sm bg-surface-3 px-1 text-2xs leading-4 text-fg-muted">aktiv</span>}
-          {b?.available && <span className="sr-only"> – bereit</span>}
+          {active === key && <span className="shrink-0 rounded-sm bg-surface-3 px-1 text-2xs leading-4 text-fg-muted">{tr("aktiv")}</span>}
+          {b?.available && <span className="sr-only"> {tr(" – bereit")}</span>}
         </li>
       ))}
     </ul>

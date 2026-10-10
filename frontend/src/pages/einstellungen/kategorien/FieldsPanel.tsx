@@ -1,3 +1,4 @@
+import { t as translate, useI18n, getLocale } from '@/lib/i18n'
 /**
  * Felder einer Kategorie: Reihenfolge per Ziehen (Griff) oder Tastatur (Leertaste aufnehmen, ↑/↓, Leertaste ablegen,
  * Alt+↑/↓ direkt), Beschriftung direkt in der Zeile, Merkmale (Pflicht, Schaltplan, Design) als Umschalter – jede
@@ -27,7 +28,7 @@ import { FieldDialog } from './FieldDialog'
 import { FIELD_KIND_META, kindIcon } from './meta'
 import { runUndo } from './undo'
 
-const fold = (s: string) => s.toLocaleLowerCase('de-DE')
+const fold = (s: string) => s.toLocaleLowerCase(getLocale())
 const sameOrder = (a: string[], b: string[]) => a.join('\u0000') === b.join('\u0000')
 
 /** Neue Reihenfolge der sichtbaren Felder in die Gesamtreihenfolge einsetzen (ausgeblendete bleiben auf ihrem Platz) */
@@ -43,9 +44,9 @@ function pinFirst(columns: string[]): string[] {
 
 function kindText(f: FieldDef, kinds: FieldKindInfo[]): string {
   const base = kinds.find((k) => k.kind === f.kind)?.label ?? FIELD_KIND_META[f.kind]?.label ?? f.kind
-  if ((f.kind === 'quantity' || f.kind === 'range') && f.unit) return `${f.kind === 'range' ? 'Bereich' : 'Messwert'} · ${f.unit}`
-  if (f.kind === 'enum') return `Auswahl · ${f.options?.length ?? 0}`
-  return base
+  if ((f.kind === 'quantity' || f.kind === 'range') && f.unit) return `${f.kind === 'range' ? translate("Bereich") : translate("Messwert")} · ${f.unit}`
+  if (f.kind === 'enum') return translate("Auswahl · {value1}", { value1: f.options?.length ?? 0 })
+  return translate(base)
 }
 
 /** Spalten: Griff · Feld · (Art) · Pflicht · Schaltplan · Design · Aktionen */
@@ -53,6 +54,7 @@ const ROW_GRID =
   'grid grid-cols-[1.75rem_minmax(0,1fr)_4.5rem_5.5rem_4.5rem_3.75rem] items-center gap-x-2 @[40rem]:grid-cols-[1.75rem_minmax(0,1fr)_8.5rem_4.5rem_5.5rem_4.5rem_3.75rem]'
 
 export function FieldsPanel({ category, kinds }: { category: CategoryDef; kinds: FieldKindInfo[] }) {
+  useI18n()
   const navigate = useNavigate()
   const table = category.table
   const fields = category.fields
@@ -116,11 +118,11 @@ export function FieldsPanel({ category, kinds }: { category: CategoryDef; kinds:
       const forget = () => {
         orderUndo.current = null
       }
-      toast.success('Reihenfolge gespeichert', {
+      toast.success(translate("Reihenfolge gespeichert"), {
         id: 'schema-order',
-        description: steps > 1 ? `Gilt für Tabelle, Formulare und die DbLib. „Rückgängig“ nimmt alle ${steps} Schritte zurück.` : 'Gilt für Tabelle, Formulare und die DbLib.',
+        description: steps > 1 ? translate("Gilt für Tabelle, Formulare und die DbLib. „Rückgängig“ nimmt alle {value1} Schritte zurück.", { value1: steps }) : translate("Gilt für Tabelle, Formulare und die DbLib."),
         action: {
-          label: 'Rückgängig',
+          label: translate("Rückgängig"),
           onClick: () => {
             forget()
             void runUndo(() => schemaApi.reorderFields(table, undoTo))
@@ -131,7 +133,7 @@ export function FieldsPanel({ category, kinds }: { category: CategoryDef; kinds:
       })
     } catch (error) {
       setOrder(previous)
-      toast.error('Reihenfolge konnte nicht gespeichert werden', { description: errorMessage(error) })
+      toast.error(translate("Reihenfolge konnte nicht gespeichert werden"), { description: errorMessage(error) })
     }
   }
 
@@ -155,9 +157,9 @@ export function FieldsPanel({ category, kinds }: { category: CategoryDef; kinds:
       }
       toast.success(message, {
         id: `schema-field-${f.column}`,
-        description: steps > 1 ? `„Rückgängig“ nimmt alle ${steps} Änderungen an „${f.label}“ zurück.` : undefined,
+        description: steps > 1 ? translate("„Rückgängig“ nimmt alle {value1} Änderungen an „{value2}“ zurück.", { value1: steps, value2: f.label }) : undefined,
         action: {
-          label: 'Rückgängig',
+          label: translate("Rückgängig"),
           onClick: () => {
             forget()
             void runUndo(() => schemaApi.updateField(table, f.column, undoPatch))
@@ -167,7 +169,7 @@ export function FieldsPanel({ category, kinds }: { category: CategoryDef; kinds:
         onAutoClose: forget,
       })
     } catch (error) {
-      toast.error('Feld konnte nicht geändert werden', { description: errorMessage(error) })
+      toast.error(translate("Feld konnte nicht geändert werden"), { description: errorMessage(error) })
     } finally {
       setBusy(null)
     }
@@ -175,14 +177,12 @@ export function FieldsPanel({ category, kinds }: { category: CategoryDef; kinds:
 
   const removeField = async (f: FieldDef) => {
     const ok = await confirm({
-      title: `Feld „${f.label}“ entfernen?`,
+      title: translate("Feld „{value1}“ entfernen?", { value1: f.label }),
       description: (
         <>
-          Die Spalte <span className="mono text-fg">{f.column}</span> wird mit allen Werten aus „{category.label}“ gelöscht.
-          PartForge legt vorher automatisch eine Sicherung an; Vorlagen, die das Feld nutzen, werden angepasst.
-        </>
+          {translate("Die Spalte")}{' '}<span className="mono text-fg">{f.column}</span> {' '}{translate("wird mit allen Werten aus „")}{category.label}{translate("“ gelöscht. PartForge legt vorher automatisch eine Sicherung an; Vorlagen, die das Feld nutzen, werden angepasst.")}</>
       ),
-      confirmLabel: 'Entfernen',
+      confirmLabel: translate("Entfernen"),
       destructive: true,
       icon: <Trash2 />,
       onConfirm: async () => {
@@ -190,15 +190,15 @@ export function FieldsPanel({ category, kinds }: { category: CategoryDef; kinds:
           const cat = await schemaApi.removeField(table, f.column)
           applySchemaResult(cat)
         } catch (error) {
-          toast.error('Feld konnte nicht entfernt werden', { description: errorMessage(error) })
+          toast.error(translate("Feld konnte nicht entfernt werden"), { description: errorMessage(error) })
           throw error
         }
       },
     })
     if (ok) {
-      toast.success(`Feld „${f.label}“ entfernt`, {
-        description: 'Der vorherige Stand liegt in den Sicherungen.',
-        action: { label: 'Sicherungen', onClick: () => navigate('/einstellungen/bibliothek') },
+      toast.success(translate("Feld „{value1}“ entfernt", { value1: f.label }), {
+        description: translate("Der vorherige Stand liegt in den Sicherungen."),
+        action: { label: translate("Sicherungen"), onClick: () => navigate('/einstellungen/bibliothek') },
       })
     }
   }
@@ -213,14 +213,14 @@ export function FieldsPanel({ category, kinds }: { category: CategoryDef; kinds:
     if (idx < 0 || target < 0 || target >= visible.length) return null
     // An der Teilenummer vorbei geht es nicht – sie bleibt oben
     if (column === PART_NUMBER || visible[target] === PART_NUMBER) {
-      setAnnouncement('Die Teilenummer steht immer an erster Stelle.')
+      setAnnouncement(translate("Die Teilenummer steht immer an erster Stelle."))
       return null
     }
     const nextVisible = [...visible]
     ;[nextVisible[idx], nextVisible[target]] = [nextVisible[target], nextVisible[idx]]
     const next = mergeOrder(order, visibleSet, nextVisible)
     setOrder(next)
-    setAnnouncement(`Position ${target + 1} von ${visible.length}`)
+    setAnnouncement(translate("Position {value1} von {value2}", { value1: target + 1, value2: visible.length }))
     return next
   }
 
@@ -238,12 +238,12 @@ export function FieldsPanel({ category, kinds }: { category: CategoryDef; kinds:
       if (!grabbed) {
         setGrabbed({ column: f.column, before: order })
         setAnnouncement(
-          `„${label}“ aufgenommen, Position ${position(f.column)} von ${visible.length}. Pfeiltasten verschieben, Leertaste legt ab, Escape bricht ab.`,
+          translate("„{value1}“ aufgenommen, Position {value2} von {value3}. Pfeiltasten verschieben, Leertaste legt ab, Escape bricht ab.", { value1: label, value2: position(f.column), value3: visible.length }),
         )
       } else {
         const before = grabbed.before
         setGrabbed(null)
-        setAnnouncement(`„${label}“ abgelegt an Position ${position(f.column)}.`)
+        setAnnouncement(translate("„{value1}“ abgelegt an Position {value2}.", { value1: label, value2: position(f.column) }))
         void commitOrder(order, before)
       }
       return
@@ -258,7 +258,7 @@ export function FieldsPanel({ category, kinds }: { category: CategoryDef; kinds:
       e.stopPropagation()
       setOrder(grabbed.before)
       setGrabbed(null)
-      setAnnouncement('Verschieben abgebrochen.')
+      setAnnouncement(translate("Verschieben abgebrochen."))
     }
   }
 
@@ -271,40 +271,37 @@ export function FieldsPanel({ category, kinds }: { category: CategoryDef; kinds:
           prefix={<Search />}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Feld suchen …"
-          aria-label="Felder durchsuchen"
+          placeholder={translate("Feld suchen …")}
+          aria-label={translate("Felder durchsuchen")}
           containerClassName="w-52 max-w-full"
         />
         <Switch
           size="sm"
           checked={showCommon}
           onCheckedChange={setShowCommon}
-          label={<span className="text-xs font-normal text-fg-muted">Standardfelder ({commonCount})</span>}
+          label={<span className="text-xs font-normal text-fg-muted">{translate("Standardfelder (")}{commonCount})</span>}
           className="gap-2.5"
         />
         <Button size="sm" variant="secondary" leftIcon={<Plus />} className="ml-auto" onClick={() => setDialog({ field: null })}>
-          Feld hinzufügen
-        </Button>
+          {translate("Feld hinzufügen")}</Button>
       </div>
 
       {/* Tabelle */}
-      <div role="table" aria-label={`Felder von ${category.label}`} aria-rowcount={visible.length + 1} className="@container">
+      <div role="table" aria-label={translate("Felder von {value1}", { value1: category.label })} aria-rowcount={visible.length + 1} className="@container">
         <div role="rowgroup">
           <div role="row" className={cn(ROW_GRID, 'border-b border-line bg-surface-2/40 px-5 py-2')}>
             <span role="columnheader">
-              <span className="sr-only">Reihenfolge</span>
+              <span className="sr-only">{translate("Reihenfolge")}</span>
             </span>
             <span role="columnheader" className="micro-label">
-              Feld
-            </span>
+              {translate("Feld")}</span>
             <span role="columnheader" className="micro-label hidden @[40rem]:block">
-              Art
-            </span>
-            <FlagHeader title="Pflicht" hint="Bauteile ohne Wert gelten als unvollständig" />
-            <FlagHeader title="Schaltplan" hint="Parameter beim Platzieren im Schaltplan anzeigen" />
-            <FlagHeader title="Design" hint="Als Bauteilparameter ins Altium-Design übernehmen" />
+              {translate("Art")}</span>
+            <FlagHeader title={translate("Pflicht")} hint={translate("Bauteile ohne Wert gelten als unvollständig")} />
+            <FlagHeader title={translate("Schaltplan")} hint={translate("Parameter beim Platzieren im Schaltplan anzeigen")} />
+            <FlagHeader title="Design" hint={translate("Als Bauteilparameter ins Altium-Design übernehmen")} />
             <span role="columnheader">
-              <span className="sr-only">Aktionen</span>
+              <span className="sr-only">{translate("Aktionen")}</span>
             </span>
           </div>
         </div>
@@ -313,8 +310,8 @@ export function FieldsPanel({ category, kinds }: { category: CategoryDef; kinds:
             <div role="row" className="px-5 py-10 text-center text-xs text-fg-subtle">
               <span role="cell">
                 {q
-                  ? `Kein Feld passt zu „${query.trim()}“.`
-                  : 'Diese Kategorie hat nur Standardfelder – „Feld hinzufügen“ legt das erste eigene Feld an.'}
+                  ? translate("Kein Feld passt zu „{value1}“.", { value1: query.trim() })
+                  : translate("Diese Kategorie hat nur Standardfelder – „Feld hinzufügen“ legt das erste eigene Feld an.")}
               </span>
             </div>
           </div>
@@ -356,7 +353,7 @@ export function FieldsPanel({ category, kinds }: { category: CategoryDef; kinds:
                       void commitOrder(order, before)
                     }
                   }}
-                  onRename={(label) => void patchField(f, { label }, `Beschriftung „${label}“ gespeichert`)}
+                  onRename={(label) => void patchField(f, { label }, translate("Beschriftung „{value1}“ gespeichert", { value1: label }))}
                   onToggle={(key, value) => void patchField(f, { [key]: value }, toggleMessage(f, key, value))}
                   onEdit={() => setDialog({ field: f })}
                   onRemove={() => void removeField(f)}
@@ -370,9 +367,7 @@ export function FieldsPanel({ category, kinds }: { category: CategoryDef; kinds:
         {announcement}
       </p>
       <p className="border-t border-line px-5 py-2.5 text-2xs leading-relaxed text-fg-subtle">
-        Feldänderungen werden sofort gespeichert und lassen sich über „Rückgängig“ in der Meldung zurücknehmen. Reihenfolge:
-        Griff ziehen oder Griff fokussieren, Leertaste, ↑/↓, Leertaste (Alt+↑/↓ verschiebt direkt).
-      </p>
+        {translate("Feldänderungen werden sofort gespeichert und lassen sich über „Rückgängig“ in der Meldung zurücknehmen. Reihenfolge: Griff ziehen oder Griff fokussieren, Leertaste, ↑/↓, Leertaste (Alt+↑/↓ verschiebt direkt).")}</p>
 
       <FieldDialog open={dialog !== null} onOpenChange={(o) => !o && setDialog(null)} category={category} field={dialog?.field} kinds={kinds} />
     </div>
@@ -380,6 +375,7 @@ export function FieldsPanel({ category, kinds }: { category: CategoryDef; kinds:
 }
 
 function FlagHeader({ title, hint }: { title: string; hint: string }) {
+  useI18n()
   return (
     <span role="columnheader" title={hint} className="micro-label text-center">
       {title}
@@ -391,9 +387,9 @@ type FlagKey = 'required' | 'show_on_schematic' | 'add_to_design'
 
 function toggleMessage(f: FieldDef, key: FlagKey, value: boolean): string {
   const name = `„${f.label}“`
-  if (key === 'required') return value ? `${name} ist jetzt Pflichtfeld` : `${name} ist kein Pflichtfeld mehr`
-  if (key === 'show_on_schematic') return value ? `${name} wird im Schaltplan angezeigt` : `${name} wird im Schaltplan ausgeblendet`
-  return value ? `${name} wird ins Design übernommen` : `${name} wird nicht mehr ins Design übernommen`
+  if (key === 'required') return value ? translate("{value1} ist jetzt Pflichtfeld", { value1: name }) : translate("{value1} ist kein Pflichtfeld mehr", { value1: name })
+  if (key === 'show_on_schematic') return value ? translate("{value1} wird im Schaltplan angezeigt", { value1: name }) : translate("{value1} wird im Schaltplan ausgeblendet", { value1: name })
+  return value ? translate("{value1} wird ins Design übernommen", { value1: name }) : translate("{value1} wird nicht mehr ins Design übernommen", { value1: name })
 }
 
 // --------------------------------------------------------------------------- Zeile
@@ -431,13 +427,14 @@ function FieldRow({
   onEdit,
   onRemove,
 }: FieldRowProps) {
+  useI18n()
   const controls = useDragControls()
   const before = useRef<string[]>([])
   const locked = f.protected
   const isPartNumber = f.column === PART_NUMBER
   const lockReason = isPartNumber
-    ? 'die Teilenummer ist der Schlüssel jedes Bauteils'
-    : 'gebraucht für die Altium-Verknüpfung bzw. die Verwaltung'
+    ? translate("die Teilenummer ist der Schlüssel jedes Bauteils")
+    : translate("gebraucht für die Altium-Verknüpfung bzw. die Verwaltung")
 
   return (
     <Reorder.Item
@@ -460,10 +457,10 @@ function FieldRow({
     >
       <span role="cell" className="flex">
         {isPartNumber ? (
-          <Tooltip content="Die Teilenummer steht immer an erster Stelle">
+          <Tooltip content={translate("Die Teilenummer steht immer an erster Stelle")}>
             <button
               type="button"
-              aria-label="„Teilenummer“ verschieben (nicht möglich: steht immer an erster Stelle)"
+              aria-label={translate("„Teilenummer“ verschieben (nicht möglich: steht immer an erster Stelle)")}
               aria-disabled="true"
               onClick={() => undefined}
               className="flex size-7 cursor-not-allowed items-center justify-center rounded-control text-fg-subtle opacity-40 outline-none focus-ring"
@@ -474,7 +471,7 @@ function FieldRow({
         ) : (
           <button
             type="button"
-            aria-label={`„${f.label}“ verschieben`}
+            aria-label={translate("„{value1}“ verschieben", { value1: f.label })}
             aria-pressed={grabbed}
             aria-keyshortcuts="Space Alt+ArrowUp Alt+ArrowDown"
             onPointerDown={(e) => {
@@ -501,22 +498,20 @@ function FieldRow({
           <InlineLabel value={f.label} onCommit={onRename} />
           <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5">
             <span className="mono truncate text-2xs text-fg-subtle">{f.column}</span>
-            {f.common && <Badge className="h-4 px-1.5">Standard</Badge>}
+            {f.common && <Badge className="h-4 px-1.5">{translate("Standard")}</Badge>}
             {isValueField && (
               <Badge variant="accent" className="h-4 px-1.5">
-                Wert
-              </Badge>
+                {translate("Wert")}</Badge>
             )}
             {inTemplate && (
-              <Tooltip content="Wird in der Beschreibungs- oder Kommentarvorlage verwendet">
+              <Tooltip content={translate("Wird in der Beschreibungs- oder Kommentarvorlage verwendet")}>
                 <Badge variant="outline" className="h-4 px-1.5">
-                  Vorlage
-                </Badge>
+                  {translate("Vorlage")}</Badge>
               </Tooltip>
             )}
             {locked && (
-              <Tooltip content={`Geschützt – ${lockReason}`}>
-                <span className="flex shrink-0 text-fg-subtle" role="img" aria-label="geschütztes Feld">
+              <Tooltip content={translate("Geschützt – {value1}", { value1: lockReason })}>
+                <span className="flex shrink-0 text-fg-subtle" role="img" aria-label={translate("geschütztes Feld")}>
                   <Lock aria-hidden className="size-3" />
                 </span>
               </Tooltip>
@@ -533,10 +528,10 @@ function FieldRow({
         <FlagToggle
           on={f.required}
           icon={<Asterisk />}
-          label="Pflichtfeld"
+          label={translate("Pflichtfeld")}
           field={f.label}
           disabled={isPartNumber}
-          disabledReason="Die Teilenummer ist immer Pflicht"
+          disabledReason={translate("Die Teilenummer ist immer Pflicht")}
           onChange={(v) => onToggle('required', v)}
         />
       </span>
@@ -544,7 +539,7 @@ function FieldRow({
         <FlagToggle
           on={f.show_on_schematic}
           icon={<Eye />}
-          label="Im Schaltplan sichtbar"
+          label={translate("Im Schaltplan sichtbar")}
           field={f.label}
           onChange={(v) => onToggle('show_on_schematic', v)}
         />
@@ -553,23 +548,23 @@ function FieldRow({
         <FlagToggle
           on={f.add_to_design}
           icon={<FileInput />}
-          label="Ins Design übernehmen"
+          label={translate("Ins Design übernehmen")}
           field={f.label}
           disabled={locked}
-          disabledReason="Bei geschützten Feldern fest"
+          disabledReason={translate("Bei geschützten Feldern fest")}
           onChange={(v) => onToggle('add_to_design', v)}
         />
       </span>
 
       <span role="cell" className="flex items-center justify-end">
-        <IconButton size="sm" label={`„${f.label}“ bearbeiten`} icon={<Pencil />} onClick={onEdit} />
+        <IconButton size="sm" label={translate("„{value1}“ bearbeiten", { value1: f.label })} icon={<Pencil />} onClick={onEdit} />
         {locked ? (
           // Kein IconButton: dessen aria-disabled schaltet Zeigerereignisse ab – der Grund soll beim Überfahren erscheinen
-          <Tooltip content={`„${f.label}“ kann nicht entfernt werden – ${lockReason}.`}>
+          <Tooltip content={translate("„{value1}“ kann nicht entfernt werden – {value2}.", { value1: f.label, value2: lockReason })}>
             <button
               type="button"
               aria-disabled="true"
-              aria-label={`„${f.label}“ entfernen (nicht möglich: geschütztes Feld)`}
+              aria-label={translate("„{value1}“ entfernen (nicht möglich: geschütztes Feld)", { value1: f.label })}
               onClick={() => undefined}
               className="flex size-7 cursor-not-allowed items-center justify-center rounded-control text-fg-subtle opacity-40 outline-none focus-ring [&_svg]:size-3.5"
             >
@@ -577,7 +572,7 @@ function FieldRow({
             </button>
           </Tooltip>
         ) : (
-          <IconButton size="sm" label={`„${f.label}“ entfernen`} icon={<Trash2 />} className="hover:text-danger-text" onClick={onRemove} />
+          <IconButton size="sm" label={translate("„{value1}“ entfernen", { value1: f.label })} icon={<Trash2 />} className="hover:text-danger-text" onClick={onRemove} />
         )}
       </span>
     </Reorder.Item>
@@ -602,7 +597,8 @@ function FlagToggle({
   disabledReason?: string
   onChange: (value: boolean) => void
 }) {
-  const tip = disabled ? `${label}: ${on ? 'ja' : 'nein'} – ${disabledReason}` : `${label}: ${on ? 'ja' : 'nein'}`
+  useI18n()
+  const tip = disabled ? `${label}: ${on ? translate("ja") : translate("nein")} – ${disabledReason}` : `${label}: ${on ? translate("ja") : translate("nein")}`
   return (
     <Tooltip content={tip}>
       <button
@@ -629,6 +625,7 @@ function FlagToggle({
 
 /** Beschriftung direkt in der Zeile ändern (Klick oder Enter, Enter speichert, Esc bricht ab) */
 function InlineLabel({ value, onCommit }: { value: string; onCommit: (label: string) => void }) {
+  useI18n()
   const [editing, setEditing] = useState(false)
   const [text, setText] = useState(value)
   const cancelled = useRef(false)
@@ -651,8 +648,8 @@ function InlineLabel({ value, onCommit }: { value: string; onCommit: (label: str
           setText(value)
           setEditing(true)
         }}
-        title="Beschriftung ändern"
-        aria-label={`Beschriftung „${value}“ ändern`}
+        title={translate("Beschriftung ändern")}
+        aria-label={translate("Beschriftung „{value1}“ ändern", { value1: value })}
         className="-mx-1 block max-w-full truncate rounded-sm px-1 text-left text-ui font-medium text-fg outline-none transition-colors hover:bg-surface-3/70 focus-ring"
       >
         {value}
@@ -688,7 +685,7 @@ function InlineLabel({ value, onCommit }: { value: string; onCommit: (label: str
           e.currentTarget.blur()
         }
       }}
-      aria-label="Beschriftung"
+      aria-label={translate("Beschriftung")}
       className="-mx-1 block h-6 w-full rounded-sm border border-accent bg-control px-1 text-ui font-medium text-fg outline-none shadow-[0_0_0_3px_var(--pf-accent-soft)]"
     />
   )

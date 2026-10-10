@@ -1,3 +1,4 @@
+import { getLocale, useI18n } from '@/lib/i18n'
 /**
  * Schritt 2 – Hersteller-Serie: Vorlagen der Kategorie als Karten (Beispiel-Teilenummer aus der Vorlagenliste,
  * Prüfstatus mit Quellen), Suche und Filter, eigene Vorlagen anlegen/bearbeiten/löschen.
@@ -28,7 +29,7 @@ export interface TemplateStepProps {
   onRevealed?: () => void
 }
 
-const fold = (s: string) => s.toLocaleLowerCase('de-DE')
+const fold = (s: string) => s.toLocaleLowerCase(getLocale())
 
 export function TemplateStep({
   category,
@@ -41,6 +42,7 @@ export function TemplateStep({
   revealId,
   onRevealed,
 }: TemplateStepProps) {
+  const { t: tr } = useI18n()
   const templates = useSeriesTemplates(category)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
@@ -82,15 +84,15 @@ export function TemplateStep({
     <section aria-labelledby="serien-vorlage" className="flex flex-col gap-5">
       <StepHeading
         id="serien-vorlage"
-        title={`Hersteller-Serie für ${categoryLabel}`}
+        title={tr("Hersteller-Serie für {v0}", { v0: categoryLabel })}
         description={
           all.length
-            ? `${plural(all.length, 'Serie', 'Serien')}, davon ${verifiedCount} gegen das Datenblatt geprüft. Die Beispiele baut PartForge aus den Codetabellen und prüft sie gegen die Pflichtfelder der Kategorie.`
+            ? tr("{v0}, davon {v1} gegen das Datenblatt geprüft. Die Beispiele baut PartForge aus den Codetabellen und prüft sie gegen die Pflichtfelder der Kategorie.", { v0: plural(all.length, tr("Serie"), tr("Serien")), v1: verifiedCount })
             : templates.isError
-              ? 'Die Hersteller-Serien ließen sich nicht laden.'
+              ? tr("Die Hersteller-Serien ließen sich nicht laden.")
               : templates.isPending
-                ? 'Hersteller-Serien werden geladen …'
-                : 'Für diese Kategorie gibt es noch keine Hersteller-Serie.'
+                ? tr("Hersteller-Serien werden geladen …")
+                : tr("Für diese Kategorie gibt es noch keine Hersteller-Serie.")
         }
         actions={
           all.length > 3 ? (
@@ -98,13 +100,13 @@ export function TemplateStep({
               {hasCustom && (
                 <SegmentedControl<Filter>
                   size="sm"
-                  aria-label="Vorlagen filtern"
+                  aria-label={tr("Vorlagen filtern")}
                   value={filter}
                   onValueChange={setFilter}
                   options={[
-                    { value: 'all', label: 'Alle' },
-                    { value: 'verified', label: 'Geprüft' },
-                    { value: 'custom', label: 'Eigene' },
+                    { value: 'all', label: tr("Alle") },
+                    { value: 'verified', label: tr("Geprüft") },
+                    { value: 'custom', label: tr("Eigene") },
                   ]}
                 />
               )}
@@ -113,8 +115,8 @@ export function TemplateStep({
                 type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Hersteller oder Serie …"
-                aria-label="Serien durchsuchen"
+                placeholder={tr("Hersteller oder Serie …")}
+                aria-label={tr("Serien durchsuchen")}
                 prefix={<Search />}
                 containerClassName="w-56"
               />
@@ -125,7 +127,7 @@ export function TemplateStep({
 
       {templates.isError && !templates.data ? (
         <LoadError
-          title="Hersteller-Serien nicht geladen"
+          title={tr("Hersteller-Serien nicht geladen")}
           error={templates.error}
           onRetry={() => void templates.refetch()}
           retrying={templates.isFetching}
@@ -141,12 +143,11 @@ export function TemplateStep({
           <EmptyState
             illustration="forge"
             titleAs="h3"
-            title={`Noch keine Hersteller-Serie für ${categoryLabel}`}
-            description="Eigene Vorlage anlegen: Teilenummern-Muster, Codetabellen und Baugrößen – PartForge prüft sie sofort mit Beispielwerten."
+            title={tr("Noch keine Hersteller-Serie für {v0}", { v0: categoryLabel })}
+            description={tr("Eigene Vorlage anlegen: Teilenummern-Muster, Codetabellen und Baugrößen – PartForge prüft sie sofort mit Beispielwerten.")}
             actions={
               <Button variant="secondary" leftIcon={<FilePlus2 />} onClick={() => onCustomTemplate()}>
-                Eigene Vorlage anlegen
-              </Button>
+                {tr("Eigene Vorlage anlegen")}</Button>
             }
           />
         </div>
@@ -170,8 +171,7 @@ export function TemplateStep({
           </div>
           {!shown.length && (
             <p className="rounded-card border border-dashed border-line px-4 py-8 text-center text-ui text-fg-muted">
-              Keine Serie passt zu „{search}“.
-            </p>
+              {tr("Keine Serie passt zu „")}{search}{tr("“.")}</p>
           )}
           <button
             type="button"
@@ -182,11 +182,9 @@ export function TemplateStep({
               <FilePlus2 aria-hidden className="size-4" />
             </span>
             <span className="min-w-0">
-              <span className="block text-ui font-medium text-fg">Serie fehlt? Eigene Vorlage anlegen</span>
+              <span className="block text-ui font-medium text-fg">{tr("Serie fehlt? Eigene Vorlage anlegen")}</span>
               <span className="block text-xs text-fg-subtle">
-                Teilenummern-Muster wie <span className="mono">ABC{'{size}{value}{tolerance}'}</span> mit Codetabellen –
-                sofort mit Beispielwerten testbar.
-              </span>
+                {tr("Teilenummern-Muster wie")} <span className="mono">ABC{'{size}{value}{tolerance}'}</span> {tr("mit Codetabellen – sofort mit Beispielwerten testbar.")}</span>
             </span>
           </button>
         </>

@@ -28,6 +28,8 @@ before(async () => {
     server: { middlewareMode: true, hmr: false, watch: null },
     optimizeDeps: { noDiscovery: true, include: [] },
   })
+  const i18n = await server.ssrLoadModule('/src/lib/i18n.ts')
+  i18n.setLanguage('de')
   client = await server.ssrLoadModule('/src/api/client.ts')
   system = await server.ssrLoadModule('/src/api/system.ts')
   jobs = await server.ssrLoadModule('/src/api/jobs.ts')

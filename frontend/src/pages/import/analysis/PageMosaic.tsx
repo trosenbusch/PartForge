@@ -1,3 +1,4 @@
+import { t, useI18n } from '@/lib/i18n'
 import { motion, useReducedMotion } from 'motion/react'
 import { Check, Globe } from 'lucide-react'
 import { useMemo } from 'react'
@@ -42,6 +43,7 @@ export interface PageMosaicProps {
  * Funkenrahmen und einen Scan-Strahl, nicht gewählte treten zurück.
  */
 export function PageMosaic({ datasheetId, pageCount, aspects, progress, live }: PageMosaicProps) {
+  useI18n()
   const [ref, size, el] = useElementSize<HTMLDivElement>()
   // scrollt das Raster (sehr viele Seiten, kleines Fenster), ist es per Tastatur erreichbar
   const tabStop = useScrollTabStop(el)
@@ -72,8 +74,8 @@ export function PageMosaic({ datasheetId, pageCount, aspects, progress, live }: 
         </span>
         <p className="max-w-64 text-xs leading-relaxed text-fg-muted">
           {progress.download?.name
-            ? `„${progress.download.name}“ geladen – die Seiten erscheinen gleich.`
-            : 'Das Datenblatt wird geladen. Sobald es da ist, erscheinen hier seine Seiten.'}
+            ? t("„{0}“ geladen – die Seiten erscheinen gleich.", { "0": String(progress.download.name) })
+            : t("Das Datenblatt wird geladen. Sobald es da ist, erscheinen hier seine Seiten.")}
         </p>
       </div>
     )
@@ -86,12 +88,12 @@ export function PageMosaic({ datasheetId, pageCount, aspects, progress, live }: 
       // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- Tab-Stopp nur, wenn das Raster scrollt (WCAG 2.1.1)
       tabIndex={tabStop ? 0 : undefined}
       role={tabStop ? 'region' : undefined}
-      aria-label={tabStop ? 'Seiten des Datenblatts' : undefined}
+      aria-label={tabStop ? t("Seiten des Datenblatts") : undefined}
       className={cn('relative size-full min-h-0 outline-none focus-ring-inset', grid.scroll ? 'overflow-y-auto pr-1' : 'overflow-hidden')}
     >
       {grid.tile > 0 && (
         <ul
-          aria-label="Seiten des Datenblatts"
+          aria-label={t("Seiten des Datenblatts")}
           className="mx-auto grid content-start"
           style={{
             gridTemplateColumns: `repeat(${grid.cols}, ${grid.tile}px)`,
@@ -104,15 +106,15 @@ export function PageMosaic({ datasheetId, pageCount, aspects, progress, live }: 
             const isSelected = selected.has(p)
             const isDone = done.has(p)
             const dim = chosen && !isSelected
-            const roles = [identity.has(p) && 'Pins', geometry.has(p) && 'Maße', vision.has(p) && 'Kontrolle'].filter(Boolean) as string[]
+            const roles = [identity.has(p) && 'Pins', geometry.has(p) && t("Maße"), vision.has(p) && t("Kontrolle")].filter(Boolean) as string[]
             const state = isActive
-              ? 'wird gerade gelesen'
+              ? t("wird gerade gelesen")
               : isDone
-                ? 'gelesen'
+                ? t("gelesen")
                 : isSelected
-                  ? `ausgewählt (${roles.join(', ')})`
+                  ? t("ausgewählt ({0})", { "0": String(roles.join(', ')) })
                   : chosen
-                    ? 'nicht benötigt'
+                    ? t("nicht benötigt")
                     : ''
             return (
               <motion.li
@@ -160,8 +162,7 @@ export function PageMosaic({ datasheetId, pageCount, aspects, progress, live }: 
                   )}
                   {image.has(p) && (
                     <span className="absolute left-1.5 top-1.5 rounded-sm bg-[rgba(9,11,16,.72)] px-1 text-2xs font-medium leading-4 text-white">
-                      Bild
-                    </span>
+                      {t("Bild")}</span>
                   )}
                   {isDone && !isActive && (
                     <span
@@ -178,7 +179,7 @@ export function PageMosaic({ datasheetId, pageCount, aspects, progress, live }: 
                     <span className={cn('truncate', isActive ? 'text-spark-text' : 'text-fg-subtle')}>{roles.join(' · ')}</span>
                   )}
                 </div>
-                {state && <span className="sr-only">Seite {p}: {state}</span>}
+                {state && <span className="sr-only">{t("Seite ")}{p}: {state}</span>}
               </motion.li>
             )
           })}

@@ -1,3 +1,4 @@
+import { t as tr } from '@/components/preview/i18n'
 /**
  * IC-Pinliste: Zeilenmodell des Editors, Umwandlung in `IcPin`, Einfügen aus der Zwischenablage (TSV aus Excel oder
  * Datenblatt), Überstrich-Helfer (Altium-Syntax `R\E\S\E\T\`), nächste freie Pin-Nummer und Prüfungen.
@@ -97,7 +98,7 @@ export const ELECTRICAL_OPTIONS: { value: ElectricalType; label: string; short: 
 ]
 
 export const electricalShort = (type: ElectricalType): string =>
-  ELECTRICAL_OPTIONS.find((o) => o.value === type)?.short ?? type
+  tr(ELECTRICAL_OPTIONS.find((o) => o.value === type)?.short ?? type)
 
 /** Kategoriale Farbe je elektrischem Typ (Punkte in Tabelle und Seiten-Editor) */
 export const ELECTRICAL_COLOR: Record<ElectricalType, { color: string; hollow?: boolean }> = {
@@ -611,13 +612,13 @@ export function validatePins(pins: readonly PinRow[], opts: { partsMode?: '1' | 
   pins.forEach((p, i) => {
     const d = p.designator.trim()
     if (!d) {
-      issues.push({ level: 'error', message: `Zeile ${i + 1}: Die Pin-Nummer fehlt.`, rowId: p.id, field: 'designator' })
-      mark(p.id, 'designator', 'Pin-Nummer fehlt')
+      issues.push({ level: 'error', message: tr("Zeile {value0}: Die Pin-Nummer fehlt.", { value0: String(i + 1) }), rowId: p.id, field: 'designator' })
+      mark(p.id, 'designator', tr('Pin-Nummer fehlt'))
       return
     }
     if (/\s/.test(d)) {
-      issues.push({ level: 'error', message: `Pin-Nummer „${d}“ enthält Leerzeichen.`, rowId: p.id, field: 'designator' })
-      mark(p.id, 'designator', 'Keine Leerzeichen in Pin-Nummern')
+      issues.push({ level: 'error', message: tr("Pin-Nummer „{value0}“ enthält Leerzeichen.", { value0: String(d) }), rowId: p.id, field: 'designator' })
+      mark(p.id, 'designator', tr('Keine Leerzeichen in Pin-Nummern'))
     }
     const key = d.toUpperCase()
     seen.set(key, [...(seen.get(key) ?? []), i])
@@ -627,19 +628,19 @@ export function validatePins(pins: readonly PinRow[], opts: { partsMode?: '1' | 
     const label = pins[rows[0]].designator.trim() || key
     issues.push({
       level: 'error',
-      message: `Pin-Nummer ${label} ist doppelt vergeben (Zeilen ${rows.map((r) => r + 1).join(', ')}).`,
+      message: tr("Pin-Nummer {value0} ist doppelt vergeben (Zeilen {value1}).", { value0: String(label), value1: String(rows.map((r) => r + 1).join(', ')) }),
       rowId: pins[rows[1]].id,
       field: 'designator',
     })
-    for (const r of rows) mark(pins[r].id, 'designator', `Pin-Nummer ${label} ist doppelt vergeben`)
+    for (const r of rows) mark(pins[r].id, 'designator', tr("Pin-Nummer {value0} ist doppelt vergeben", { value0: String(label) }))
   }
 
   let partsValid = true
   for (const p of pins) {
     if (!Number.isInteger(p.part) || p.part < 0 || p.part > MAX_PARTS) {
       partsValid = false
-      issues.push({ level: 'error', message: `Pin ${p.designator || '?'}: Teil ${p.part} ist ungültig (0 … ${MAX_PARTS}).`, rowId: p.id, field: 'part' })
-      mark(p.id, 'part', `Teil 0 … ${MAX_PARTS}`)
+      issues.push({ level: 'error', message: tr("Pin {value0}: Teil {value1} ist ungültig (0 … {value2}).", { value0: String(p.designator || '?'), value1: String(p.part), value2: String(MAX_PARTS) }), rowId: p.id, field: 'part' })
+      mark(p.id, 'part', tr("Teil 0 … {value0}", { value0: String(MAX_PARTS) }))
     }
   }
 
@@ -648,11 +649,11 @@ export function validatePins(pins: readonly PinRow[], opts: { partsMode?: '1' | 
     // „Teile: Anzahl“ verteilt selbst – zusammen mit eigenen Teilen lehnt der Generator ab
     issues.push({
       level: 'error',
-      message: `Die Spalte „Teil“ legt schon Teile fest (${plural(userParts.length, 'Pin', 'Pins')} nicht in Teil 1) – für „Teile: Anzahl“ alle auf 1 setzen oder „Ein Teil“ wählen.`,
+      message: tr("Die Spalte „Teil“ legt schon Teile fest ({value0} nicht in Teil 1) – für „Teile: Anzahl“ alle auf 1 setzen oder „Ein Teil“ wählen.", { value0: String(plural(userParts.length, tr('Pin'), tr('Pins'))) }),
       rowId: userParts[0].id,
       field: 'part',
     })
-    for (const p of userParts) mark(p.id, 'part', 'Bei „Teile: Anzahl“ verteilt der Generator – hier 1 eintragen')
+    for (const p of userParts) mark(p.id, 'part', tr('Bei „Teile: Anzahl“ verteilt der Generator – hier 1 eintragen'))
   } else if (partsValid && !pins.some((p) => p.part === 0)) {
     // Teile lückenlos ab 1 (Pins mit Teil 0 erscheinen in jedem Teil – dann sind Lücken erlaubt)
     const used = new Set(pins.map((p) => p.part))
@@ -663,11 +664,11 @@ export function validatePins(pins: readonly PinRow[], opts: { partsMode?: '1' | 
       const after = pins.filter((p) => p.part > missing[0])
       issues.push({
         level: 'error',
-        message: `${missing.length === 1 ? `Teil ${missing[0]} hat` : `Teile ${formatRanges(missing)} haben`} keine Pins – bitte die Teile lückenlos ab 1 nummerieren (höchster Teil: ${maxPart}).`,
+        message: tr("{value0} keine Pins – bitte die Teile lückenlos ab 1 nummerieren (höchster Teil: {value1}).", { value0: String(missing.length === 1 ? tr("Teil {value0} hat", { value0: String(missing[0]) }) : tr("Teile {value0} haben", { value0: String(formatRanges(missing)) })), value1: String(maxPart) }),
         rowId: after[0]?.id,
         field: 'part',
       })
-      for (const p of after) mark(p.id, 'part', `Teil ${missing[0]} fehlt – Teile lückenlos ab 1 nummerieren`)
+      for (const p of after) mark(p.id, 'part', tr("Teil {value0} fehlt – Teile lückenlos ab 1 nummerieren", { value0: String(missing[0]) }))
     }
   }
 
@@ -677,11 +678,11 @@ export function validatePins(pins: readonly PinRow[], opts: { partsMode?: '1' | 
       level: 'warning',
       message:
         unnamed.length === 1
-          ? `Pin ${unnamed[0].designator} hat keinen Namen.`
-          : `${unnamed.length} Pins ohne Namen: ${unnamed
+          ? tr("Pin {value0} hat keinen Namen.", { value0: String(unnamed[0].designator) })
+          : tr("{value0} Pins ohne Namen: {value1}{value2}", { value0: String(unnamed.length), value1: String(unnamed
               .slice(0, 8)
               .map((p) => p.designator)
-              .join(', ')}${unnamed.length > 8 ? ' …' : ''}`,
+              .join(', ')), value2: String(unnamed.length > 8 ? ' …' : '') }),
       rowId: unnamed[0].id,
       field: 'name',
     })
@@ -689,7 +690,7 @@ export function validatePins(pins: readonly PinRow[], opts: { partsMode?: '1' | 
 
   const maxPart = pins.reduce((m, p) => (Number.isInteger(p.part) ? Math.max(m, p.part) : m), 0)
   if (maxPart > 1 && opts.partsMode !== 'fixed') {
-    issues.push({ level: 'info', message: `Die Pinliste legt ${maxPart} Teile fest (Spalte „Teil“).` })
+    issues.push({ level: 'info', message: tr("Die Pinliste legt {value0} Teile fest (Spalte „Teil“).", { value0: String(maxPart) }) })
   }
 
   // Fehler zuerst (die Fußzeile zeigt die erste Meldung)

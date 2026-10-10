@@ -1,10 +1,12 @@
+import { useLocalizedMemo } from '@/components/preview/useLocalizedMemo'
+import { localizeMessage, t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Symboltypen-Leiste: gruppierte Liste (Passiv, Halbleiter, ICs, Verbinder, Sonstige) mit Vorschaubildern und Suche.
  * Listbox mit „Auswahl folgt dem Fokus“: ↑/↓ wählt sofort (die Vorschau ist schnell), Pos1/Ende, Bild↑/↓;
  * Tippen springt in die Suche, in der Suche wechselt ↓ zurück in die Liste.
  */
 import { Check, RotateCcw, Search, X } from 'lucide-react'
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import { SYMBOL_GROUPS, type SymbolKindInfo } from '@/api/symbols'
 import { Button, Callout, Input, Skeleton } from '@/components/ui'
 import { cn } from '@/lib/cn'
@@ -33,7 +35,7 @@ const fold = (s: string) =>
 
 function matches(kind: SymbolKindInfo, query: string): boolean {
   if (!query) return true
-  const hay = fold([kind.label, kind.key, kind.default_name, kind.group, kind.description, ...kind.categories].join(' '))
+  const hay = fold([kind.label, tr(kind.label), kind.key, kind.default_name, kind.group, tr(kind.group), kind.description, tr(kind.description), ...kind.categories].join(' '))
   return fold(query)
     .split(/\s+/)
     .filter(Boolean)
@@ -41,12 +43,13 @@ function matches(kind: SymbolKindInfo, query: string): boolean {
 }
 
 export function KindBrowser({ kinds, loading, error, onRetry, value, onValueChange, inLibrary, className }: KindBrowserProps) {
+  useI18n()
   const uid = useId().replace(/:/g, '')
   const [query, setQuery] = useState('')
   const listRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
 
-  const groups = useMemo(() => {
+  const groups = useLocalizedMemo(() => {
     const filtered = (kinds ?? []).filter((k) => matches(k, query.trim()))
     const order = [...SYMBOL_GROUPS, ...new Set(filtered.map((k) => k.group).filter((g) => !(SYMBOL_GROUPS as readonly string[]).includes(g)))]
     return order
@@ -57,7 +60,7 @@ export function KindBrowser({ kinds, loading, error, onRetry, value, onValueChan
       }))
       .filter((g) => g.items.length > 0)
   }, [kinds, query])
-  const flat = useMemo(() => groups.flatMap((g) => g.items), [groups])
+  const flat = useLocalizedMemo(() => groups.flatMap((g) => g.items), [groups])
   const optionId = (key: string) => `${uid}-kind-${key}`
 
   // ausgewählten Typ sichtbar halten: bei Auswahl in der Liste nur nachführen, bei Auswahl von außen (Adresse,
@@ -131,11 +134,11 @@ export function KindBrowser({ kinds, loading, error, onRetry, value, onValueChan
       <div className="shrink-0 px-3 pb-2 pt-3">
         <div className="mb-2 flex items-baseline justify-between px-0.5">
           <h2 id={`${uid}-title`} className="micro-label">
-            Symboltypen
+            {tr("Symboltypen")}
           </h2>
           {total > 0 && (
             <span className="text-2xs tabular-nums text-fg-subtle">
-              {query ? `${formatNumber(flat.length)} von ${formatNumber(total)}` : formatNumber(total)}
+              {query ? tr("{value0} von {value1}", { value0: String(formatNumber(flat.length)), value1: String(formatNumber(total)) }) : formatNumber(total)}
             </span>
           )}
         </div>
@@ -146,8 +149,8 @@ export function KindBrowser({ kinds, loading, error, onRetry, value, onValueChan
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onSearchKeyDown}
-          placeholder="Typ suchen, z. B. MOSFET"
-          aria-label="Symboltypen durchsuchen"
+          placeholder={tr("Typ suchen, z. B. MOSFET")}
+          aria-label={tr("Symboltypen durchsuchen")}
           aria-controls={`${uid}-list`}
           prefix={<Search />}
           suffix={
@@ -158,7 +161,7 @@ export function KindBrowser({ kinds, loading, error, onRetry, value, onValueChan
                   setQuery('')
                   searchRef.current?.focus()
                 }}
-                aria-label="Suche leeren"
+                aria-label={tr("Suche leeren")}
                 className="flex size-5 items-center justify-center rounded-sm text-fg-subtle outline-none hover:bg-surface-3 hover:text-fg focus-ring"
               >
                 <X className="size-3.5" />
@@ -170,11 +173,11 @@ export function KindBrowser({ kinds, loading, error, onRetry, value, onValueChan
 
       {error && !kinds ? (
         <div className="px-3">
-          <Callout tone="danger" title="Nicht geladen">
-            <span className="block">{error}</span>
+          <Callout tone="danger" title={tr("Nicht geladen")}>
+            <span className="block">{localizeMessage(error)}</span>
             {onRetry && (
               <Button size="xs" variant="secondary" leftIcon={<RotateCcw />} onClick={onRetry} className="mt-2">
-                Erneut versuchen
+                {tr("Erneut versuchen")}
               </Button>
             )}
           </Callout>
@@ -206,9 +209,9 @@ export function KindBrowser({ kinds, loading, error, onRetry, value, onValueChan
           )}
           {kinds && flat.length === 0 && (
             <div className="flex flex-col items-center gap-3 px-4 py-10 text-center">
-              <p className="text-ui text-fg-muted">Kein Symboltyp passt zu „{query}“.</p>
+              <p className="text-ui text-fg-muted">{tr("Kein Symboltyp passt zu „")}{query}“.</p>
               <Button size="sm" variant="secondary" onClick={() => setQuery('')}>
-                Suche zurücksetzen
+                {tr("Suche zurücksetzen")}
               </Button>
             </div>
           )}
@@ -218,7 +221,7 @@ export function KindBrowser({ kinds, loading, error, onRetry, value, onValueChan
                 id={`${uid}-g-${g.group}`}
                 className="sticky top-0 z-[2] -mx-2 flex items-center justify-between bg-bg-elev px-4 pb-1 pt-2.5"
               >
-                <span className="micro-label">{g.group}</span>
+                <span className="micro-label">{tr(g.group)}</span>
                 <span className="text-2xs tabular-nums text-fg-subtle">{formatNumber(g.items.length)}</span>
               </div>
               {g.items.map((k) => {
@@ -264,14 +267,14 @@ export function KindBrowser({ kinds, loading, error, onRetry, value, onValueChan
                     </span>
                     <span className="flex min-w-0 flex-1 flex-col">
                       <span className={cn('line-clamp-2 text-ui leading-tight', selected ? 'font-semibold text-fg' : 'font-medium text-fg')}>
-                        {k.label}
+                        {tr(k.label)}
                       </span>
                       <span className="flex min-w-0 items-center gap-1.5">
                         <span className="mono truncate text-2xs text-fg-subtle">{k.default_name}</span>
                         {inLibrary?.has(k.default_name.toLowerCase()) && (
                           <>
                             <Check aria-hidden className="size-3 shrink-0 text-success-text" strokeWidth={2.5} />
-                            <span className="sr-only">(in der Bibliothek)</span>
+                            <span className="sr-only">{tr("(in der Bibliothek)")}</span>
                           </>
                         )}
                       </span>

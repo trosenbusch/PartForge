@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 
 import pytest
 from fastapi.testclient import TestClient
@@ -14,6 +15,43 @@ def test_no_developer_paths_in_new_settings() -> None:
     settings = config.AppSettings()
     assert settings.ai.api_key_file is None
     assert "Projekte" not in str(config.default_library_parent())
+
+
+def test_language_defaults_to_english(bare_client: TestClient) -> None:
+    assert config.AppSettings().language == "en"
+    assert bare_client.get("/api/settings").json()["settings"]["language"] == "en"
+
+
+def test_old_settings_gain_english_without_losing_preferences() -> None:
+    old = config.AppSettings(author="Existing user", theme="light").model_dump()
+    old.pop("language")
+    config.settings_path().write_text(json.dumps(old), encoding="utf-8")
+    loaded = config.load_settings(reload=True)
+    assert loaded.language == "en"
+    assert loaded.author == "Existing user"
+    assert loaded.theme == "light"
+    assert not config.settings_path().with_suffix(".corrupt.json").exists()
+
+
+@pytest.mark.parametrize("language", ["en", "de"])
+def test_language_is_saved_and_survives_reload(bare_client: TestClient, language: str) -> None:
+    settings = bare_client.get("/api/settings").json()["settings"]
+    settings["language"] = language
+    response = bare_client.put("/api/settings", json=settings)
+    assert response.status_code == 200, response.text
+    assert response.json()["settings"]["language"] == language
+    assert config.load_settings(reload=True).language == language
+    assert json.loads(config.settings_path().read_text(encoding="utf-8"))["language"] == language
+
+
+@pytest.mark.parametrize("language", ["fr", "EN", "", None])
+def test_unsupported_language_is_rejected_without_changing_settings(bare_client: TestClient, language: str | None) -> None:
+    settings = bare_client.get("/api/settings").json()["settings"]
+    original = settings["language"]
+    settings["language"] = language
+    response = bare_client.put("/api/settings", json=settings)
+    assert response.status_code == 422, response.text
+    assert bare_client.get("/api/settings").json()["settings"]["language"] == original
 
 
 def test_configured_writer_path_is_never_replaced_silently(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

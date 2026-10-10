@@ -1,10 +1,5 @@
-/**
- * Zwei Bereiche mit verschiebbarem Trenner (Maus, Tastatur), Größe dauerhaft gespeichert, optional einklappbar.
- * Die Größe gilt für den **primären** Bereich in Pixeln (z. B. Kategoriebaum links, Detail rechts).
- *
- *   <SplitPane persistKey="bauteile.baum" primary="start" defaultSize={264} minSize={200} maxSize={420}
- *              start={<CategoryTree … />} end={<DataGrid … />} />
- */
+import { useI18n } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 import { readPref, writePref } from '@/lib/prefs'
@@ -49,11 +44,12 @@ export function SplitPane({
   collapsed: collapsedProp,
   onCollapsedChange,
   onSizeChange,
-  label = 'Bereichsgröße',
+  label = tr("Bereichsgröße"),
   className,
   startClassName,
   endClassName,
 }: SplitPaneProps) {
+  const { t: tr } = useI18n()
   const uid = useId().replace(/:/g, '')
   const prefKey = persistKey ? `pf-split:${persistKey}` : null
   const [size, setSize] = useState(() => {
@@ -184,7 +180,7 @@ export function SplitPane({
         aria-valuenow={collapsed ? 0 : size}
         aria-valuemin={collapsible ? 0 : minSize}
         aria-valuemax={maxSize}
-        aria-valuetext={collapsed ? 'eingeklappt' : `${size} Pixel`}
+        aria-valuetext={collapsed ? tr("eingeklappt") : tr("{0} Pixel", { "0": String(size) })}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}

@@ -1,7 +1,4 @@
-/**
- * Leerer Zustand vor dem ersten Einlesen: was übernommen wird, wohin es kommt, warum Namen eindeutig sein müssen und
- * dass die Quelle unverändert bleibt – mit der nächsten Aktion (Ordner wählen bzw. Pfad eingeben).
- */
+import { t, useI18n } from '@/lib/i18n'
 import { motion } from 'motion/react'
 import { FolderOpen, FolderTree, Layers, ShieldCheck, Tags, TextCursorInput } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -18,32 +15,32 @@ export interface IntroStateProps {
 }
 
 export function IntroState({ folders, onPicked, onFocusInput }: IntroStateProps) {
+  useI18n()
   const bridge = useNativeBridge()
   const facts: { icon: ReactNode; title: string; text: ReactNode }[] = [
     {
       icon: <Layers />,
-      title: 'Was übernommen wird',
-      text: 'Symbole aus SchLib- und Footprints aus PcbLib-Dateien – auch aus integrierten Bibliotheken (IntLib), Bibliothekspaketen (LibPkg) und ZIP-Archiven. Datenbankbibliotheken (DbLib) nicht.',
+      title: t("Was übernommen wird"),
+      text: t("Symbole aus SchLib- und Footprints aus PcbLib-Dateien – auch aus integrierten Bibliotheken (IntLib), Bibliothekspaketen (LibPkg) und ZIP-Archiven. Datenbankbibliotheken (DbLib) nicht."),
     },
     {
       icon: <FolderTree />,
-      title: 'Wohin es kommt',
+      title: t("Wohin es kommt"),
       text: (
         <>
-          Unverändert nach <span className="mono text-fg">{folders.symbols}\Import\…</span> bzw.{' '}
-          <span className="mono text-fg">{folders.footprints}\Import\…</span> – die Ordnerstruktur der Quelle bleibt erhalten.
-        </>
+          {t("Unverändert nach ")}<span className="mono text-fg">{folders.symbols}\Import\…</span> {t(" bzw.")}{' '}
+          <span className="mono text-fg">{folders.footprints}\Import\…</span> {t(" – die Ordnerstruktur der Quelle bleibt erhalten.")}</>
       ),
     },
     {
       icon: <Tags />,
-      title: 'Eindeutige Namen',
-      text: 'Altium findet Symbole und Footprints nur über ihren Namen. Ist ein Name schon vergeben oder doppelt, wird er nicht übernommen – Sie sehen vorher, welche.',
+      title: t("Eindeutige Namen"),
+      text: t("Altium findet Symbole und Footprints nur über ihren Namen. Ist ein Name schon vergeben oder doppelt, wird er nicht übernommen – Sie sehen vorher, welche."),
     },
     {
       icon: <ShieldCheck />,
-      title: 'Quelle bleibt unverändert',
-      text: 'PartForge liest die Quelle nur und kopiert die gewählten Dateien. An den Hausstil angleichen ist ein eigener, optionaler Schritt mit Sicherung.',
+      title: t("Quelle bleibt unverändert"),
+      text: t("PartForge liest die Quelle nur und kopiert die gewählten Dateien. An den Hausstil angleichen ist ein eigener, optionaler Schritt mit Sicherung."),
     },
   ]
   return (
@@ -57,8 +54,8 @@ export function IntroState({ folders, onPicked, onFocusInput }: IntroStateProps)
       <EmptyState
         illustration="no-library"
         titleAs="h2"
-        title={<span id="bibliotheksimport-intro">Vorhandene Altium-Bibliotheken übernehmen</span>}
-        description="Firmen- oder Herstellerbibliotheken einlesen, prüfen und übernehmen – danach stehen ihre Symbole und Footprints für Bauteile, Prüfungen und die Stapelbearbeitung bereit."
+        title={<span id="bibliotheksimport-intro">{t("Vorhandene Altium-Bibliotheken übernehmen")}</span>}
+        description={t("Firmen- oder Herstellerbibliotheken einlesen, prüfen und übernehmen – danach stehen ihre Symbole und Footprints für Bauteile, Prüfungen und die Stapelbearbeitung bereit.")}
         actions={
           bridge.canPickFolder ? (
             <Button
@@ -69,12 +66,10 @@ export function IntroState({ folders, onPicked, onFocusInput }: IntroStateProps)
                 })
               }
             >
-              Ordner wählen …
-            </Button>
+              {t("Ordner wählen …")}</Button>
           ) : (
             <Button leftIcon={<TextCursorInput />} onClick={onFocusInput}>
-              Pfad eingeben
-            </Button>
+              {t("Pfad eingeben")}</Button>
           )
         }
         className="pb-6"

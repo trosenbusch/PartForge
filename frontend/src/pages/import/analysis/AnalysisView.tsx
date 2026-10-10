@@ -1,3 +1,5 @@
+import { localizeMessage } from '@/lib/i18n'
+import { t, useI18n } from '@/lib/i18n'
 import { useQueryClient } from '@tanstack/react-query'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { ArrowLeft, Check, CircleStop, FileScan, ListChecks, Sparkles } from 'lucide-react'
@@ -21,7 +23,7 @@ import { modelDisplayName } from '@/app/shell/useSystemStatus'
 import { Button, Callout, EmptyState, ProgressBar, Skeleton } from '@/components/ui'
 import { useCountUp } from '@/lib/useCountUp'
 import { cn } from '@/lib/cn'
-import { formatDuration, formatNumber, formatNumbersInText, plural } from '@/lib/format'
+import { formatDuration, pluralLabel, formatNumber, formatNumbersInText, plural } from '@/lib/format'
 import { analyzeJob, cleanJobError, jobElapsed, type AnalysisCounters, type AnalysisProgress } from '../lib/analysis'
 import { effortLabel, estimateText, formatUsd, runLabel } from '../lib/format'
 import { importPath, useImportActions } from '../lib/useImportActions'
@@ -42,14 +44,14 @@ const CELEBRATE_MS = 1100
 function announcementOf(job: Job<ImportJobResult> | undefined, progress: AnalysisProgress, celebrating: boolean): string {
   if (!job) return ''
   if (job.status === 'done' || celebrating) {
-    const text = formatNumbersInText(job.message || '')
-    return progress.loadOnly ? `Datenblatt geladen. ${text}` : text || 'Analyse abgeschlossen.'
+    const text = formatNumbersInText(localizeMessage(job.message || ''))
+    return progress.loadOnly ? t("Datenblatt geladen. {0}", { "0": String(text) }) : text || t("Analyse abgeschlossen.")
   }
-  if (job.status === 'cancelled') return 'Analyse abgebrochen.'
+  if (job.status === 'cancelled') return t("Analyse abgebrochen.")
   if (job.status === 'failed') return '' // die Fehlermeldung meldet sich selbst (role="alert")
   const index = progress.steps.findIndex((s) => s.state === 'active')
   if (index < 0) return ''
-  return `Schritt ${index + 1} von ${progress.steps.length}: ${progress.steps[index].label}`
+  return t("Schritt {0} von {1}: {2}", { "0": String(index + 1), "1": String(progress.steps.length), "2": String(progress.steps[index].label) })
 }
 
 /**
@@ -58,6 +60,7 @@ function announcementOf(job: Job<ImportJobResult> | undefined, progress: Analysi
  * Ursache, Kosten, erneut versuchen (mit geschätzten Kosten vom Backend).
  */
 export function AnalysisView({ jobId, datasheetId }: { jobId: string; datasheetId: string | null }) {
+  const { locale } = useI18n()
   const navigate = useNavigate()
   const qc = useQueryClient()
   const reduce = useReducedMotion()
@@ -90,7 +93,7 @@ export function AnalysisView({ jobId, datasheetId }: { jobId: string; datasheetI
       }
       // die Bibliothek wurde inzwischen gewechselt: Ergebnis liegt in ihrem Ordner, hier gibt es keine Prüfansicht
       if (summary?.stored === 'pending') {
-        setKeptElsewhere(formatNumbersInText(j.message || summary.message || ''))
+        setKeptElsewhere(formatNumbersInText(localizeMessage(j.message || summary.message || '')))
         return
       }
       // eine hier miterlebte neue Analyse ist eine neue Ausgangslage: frühere Entscheidungen und Bestätigungen verwerfen
@@ -128,7 +131,9 @@ export function AnalysisView({ jobId, datasheetId }: { jobId: string; datasheetI
     [],
   )
 
-  const progress = useMemo(() => analyzeJob(job, { urlJob: !datasheetId }), [job, datasheetId])
+  // analyzeJob reads the active language through its translated step labels and formatting helpers.
+  // oxlint-disable-next-line react-hooks/exhaustive-deps -- changing locale must invalidate those derived display strings
+  const progress = useMemo(() => analyzeJob(job, { urlJob: !datasheetId }), [job, datasheetId, locale])
   // Zähler bleiben stehen, auch wenn ein Schnappschuss (Rückfall ohne `detail`) sie nicht nennt
   const [peak, setPeak] = useState<{ job: string; counters: AnalysisCounters }>({ job: jobId, counters: {} })
   const counters = peak.job === jobId ? mergeCounters(peak.counters, progress.counters) : progress.counters
@@ -174,10 +179,10 @@ export function AnalysisView({ jobId, datasheetId }: { jobId: string; datasheetI
   const switched = cancelled && job?.cancel_reason === JOB_CANCEL_LIBRARY_SWITCH
   const label =
     runLabel(progress.modelLabel) ||
-    (ai ? `${ai.model_label || modelDisplayName(ai.model)} · Gründlichkeit ${effortLabel(ai.effort)}` : '')
+    (ai ? t("{0} · Gründlichkeit {1}", { "0": String(ai.model_label || modelDisplayName(ai.model)), "1": String(effortLabel(ai.effort)) }) : '')
   const budget = progress.budgetUsd ?? ai?.max_cost_per_import_usd ?? null
   const cost = progress.finalCostUsd ?? progress.costUsd
-  const name = progress.fileName ?? ds.data?.original_name ?? urlEntry?.url ?? 'Datenblatt'
+  const name = progress.fileName ?? ds.data?.original_name ?? urlEntry?.url ?? t("Datenblatt")
   const currentStep = progress.steps.find((s) => s.state === 'active')
   // „Erneut analysieren“ kostet erneut – die erwarteten Kosten (Schätzung des Backends) stehen am Knopf
   const canRetry = Boolean(guessed && actions.aiReady && (failed || cancelled) && !progress.loadOnly)
@@ -186,41 +191,39 @@ export function AnalysisView({ jobId, datasheetId }: { jobId: string; datasheetI
 
   const title = failed
     ? progress.loadOnly
-      ? 'Download fehlgeschlagen'
-      : 'Analyse fehlgeschlagen'
+      ? t("Download fehlgeschlagen")
+      : t("Analyse fehlgeschlagen")
     : cancelled
-      ? 'Abgebrochen'
+      ? t("Abgebrochen")
       : progress.loadOnly
         ? done
-          ? 'Datenblatt geladen – die Analyse startet …'
-          : 'Datenblatt wird geladen'
+          ? t("Datenblatt geladen – die Analyse startet …")
+          : t("Datenblatt wird geladen")
         : done || celebrating
-          ? 'Analyse abgeschlossen'
-          : 'Claude liest das Datenblatt'
+          ? t("Analyse abgeschlossen")
+          : t("Claude liest das Datenblatt")
   const announcement = announcementOf(job, progress, celebrating)
 
   if (error && !job) {
     return (
       <PageBody width="narrow">
-        <PageTitle title="Analyse" />
+        <PageTitle title={t("Analyse")} />
         <EmptyState
           illustration="search-empty"
           titleAs="h2"
-          title="Diese Analyse ist nicht mehr verfügbar"
-          description="PartForge wurde inzwischen neu gestartet oder der Job ist abgelaufen. Das Ergebnis einer abgeschlossenen Analyse steht in der Prüfansicht."
+          title={t("Diese Analyse ist nicht mehr verfügbar")}
+          description={t("PartForge wurde inzwischen neu gestartet oder der Job ist abgelaufen. Das Ergebnis einer abgeschlossenen Analyse steht in der Prüfansicht.")}
           actions={
             <>
               {datasheetId && (
                 <Button asChild variant="secondary">
                   <Link to={importPath(datasheetId)}>
-                    <ListChecks aria-hidden />Prüfansicht öffnen
-                  </Link>
+                    <ListChecks aria-hidden />{t("Prüfansicht öffnen")}</Link>
                 </Button>
               )}
               <Button asChild variant="ghost">
                 <Link to="/import">
-                  <ArrowLeft aria-hidden />Zur Übersicht
-                </Link>
+                  <ArrowLeft aria-hidden />{t("Zur Übersicht")}</Link>
               </Button>
             </>
           }
@@ -233,7 +236,7 @@ export function AnalysisView({ jobId, datasheetId }: { jobId: string; datasheetI
     <PageBody width="wide" className="flex h-[calc(100dvh-var(--pf-topbar-height,3.5rem))] min-h-[36rem] flex-col pb-6 pt-4">
       <PageTitle
         title={(ds.data?.has_extraction && ds.data.title) || name}
-        subtitle={failed ? 'Analyse fehlgeschlagen' : cancelled ? 'Analyse abgebrochen' : currentStep ? `Analyse · ${currentStep.label}` : 'Analyse'}
+        subtitle={failed ? t("Analyse fehlgeschlagen") : cancelled ? t("Analyse abgebrochen") : currentStep ? t("Analyse · {0}", { "0": String(currentStep.label) }) : t("Analyse")}
       />
       {/* Ansage für Screenreader: Schrittwechsel und Abschluss (höflich, ohne Zählerstände) */}
       <div aria-live="polite" aria-atomic="true" className="sr-only">
@@ -277,31 +280,31 @@ export function AnalysisView({ jobId, datasheetId }: { jobId: string; datasheetI
             {done || celebrating ? <Check /> : failed || cancelled ? <FileScan /> : <Sparkles className={cn(isActive && 'animate-pulse-soft')} />}
           </span>
           <div className="min-w-0 flex-1">
-            <div className="micro-label truncate">KI-Analyse{label ? ` · ${label}` : ''}</div>
+            <div className="micro-label truncate">{t("KI-Analyse")}{label ? ` · ${label}` : ''}</div>
             <h2 id="analysis-title" className="mt-0.5 text-h3 font-semibold tracking-[-0.02em] text-fg">
               {title}
             </h2>
             <p className="mt-0.5 truncate text-xs text-fg-muted">
               <span className="mono">{name}</span>
-              {pageCount ? ` · ${plural(pageCount, 'Seite', 'Seiten')}` : ''}
+              {pageCount ? ` · ${plural(pageCount, t("Seite"), t("Seiten"))}` : ''}
               {progress.manufacturer ? ` · ${progress.manufacturer}` : ''}
               {progress.devicesText ? ` · ${progress.devicesText}` : ''}
             </p>
           </div>
           <dl className="flex shrink-0 items-stretch gap-5">
-            <Metric label="Laufzeit" value={job ? formatDuration(Math.round(elapsed)) : '–'} />
+            <Metric label={t("Laufzeit")} value={job ? formatDuration(Math.round(elapsed)) : '–'} />
             <div className="min-w-32">
-              <dt className="micro-label">{done || failed || cancelled ? 'Kosten' : 'Kosten bisher'}</dt>
+              <dt className="micro-label">{done || failed || cancelled ? t("Kosten") : t("Kosten bisher")}</dt>
               <dd className="mono mt-0.5 text-md font-semibold text-fg tabular-nums">
                 {formatUsd(cost)}
-                {budget ? <span className="ml-1 text-2xs font-normal text-fg-subtle">von {formatUsd(budget)}</span> : null}
+                {budget ? <span className="ml-1 text-2xs font-normal text-fg-subtle">{t("von ")}{formatUsd(budget)}</span> : null}
                 {budget ? (
                   <ProgressBar
                     value={Math.min(cost, budget)}
                     max={budget}
                     size="xs"
                     tone="spark"
-                    label="Anteil am Kostenlimit"
+                    label={t("Anteil am Kostenlimit")}
                     hideLabel
                     className="mt-1"
                   />
@@ -318,7 +321,7 @@ export function AnalysisView({ jobId, datasheetId }: { jobId: string; datasheetI
               onClick={() => cancel.mutate(jobId)}
               className="self-center"
             >
-              {job?.cancel_requested ? 'Wird abgebrochen …' : 'Abbrechen'}
+              {job?.cancel_requested ? t("Wird abgebrochen …") : t("Abbrechen")}
             </Button>
           )}
         </header>
@@ -326,7 +329,7 @@ export function AnalysisView({ jobId, datasheetId }: { jobId: string; datasheetI
         {(failed || cancelled || keptElsewhere) && (
           <div className="relative border-b border-line px-5 py-3">
             {keptElsewhere ? (
-              <Callout tone="info" title="Ergebnis für die andere Bibliothek gesichert">
+              <Callout tone="info" title={t("Ergebnis für die andere Bibliothek gesichert")}>
                 {keptElsewhere}
               </Callout>
             ) : (
@@ -336,20 +339,20 @@ export function AnalysisView({ jobId, datasheetId }: { jobId: string; datasheetI
                 title={
                   failed
                     ? progress.loadOnly
-                      ? 'Das Datenblatt konnte nicht geladen werden'
-                      : 'Die Analyse konnte nicht abgeschlossen werden'
-                    : 'Die Analyse wurde abgebrochen'
+                      ? t("Das Datenblatt konnte nicht geladen werden")
+                      : t("Die Analyse konnte nicht abgeschlossen werden")
+                    : t("Die Analyse wurde abgebrochen")
                 }
               >
                 <p>
                   {failed
-                    ? cleanErrorText(cleanJobError(job?.error || job?.message)) || 'Unbekannter Fehler.'
+                    ? cleanErrorText(cleanJobError(job?.error || job?.message)) || t("Unbekannter Fehler.")
                     : switched
                       ? jobCancelText(job as Job)
                       : cost > 0
-                        ? 'Bereits bezahlte Anfragen sind gespeichert.'
-                        : 'Es sind keine Kosten entstanden.'}
-                  {cost > 0 ? ` Kosten bis hierhin: ${formatUsd(cost)} – im Datenblatt vermerkt.` : ''}
+                        ? t("Bereits bezahlte Anfragen sind gespeichert.")
+                        : t("Es sind keine Kosten entstanden.")}
+                  {cost > 0 ? t(" Kosten bis hierhin: {0} – im Datenblatt vermerkt.", { "0": String(formatUsd(cost)) }) : ''}
                 </p>
                 {/* Aktionen unter dem Text: lange Fehlermeldungen behalten die volle Breite */}
                 <div className="mt-2.5 flex flex-wrap items-center gap-2">
@@ -360,22 +363,20 @@ export function AnalysisView({ jobId, datasheetId }: { jobId: string; datasheetI
                         variant="spark"
                         leftIcon={<FileScan />}
                         onClick={() => void actions.reanalyze(guessed)}
-                        title={retryCost ? `Erwartet ${retryCost.full} (Schätzung, ein neuer Versuch kostet erneut)` : undefined}
+                        title={retryCost ? t("Erwartet {0} (Schätzung, ein neuer Versuch kostet erneut)", { "0": String(retryCost.full) }) : undefined}
                       >
-                        Erneut analysieren
-                        {retryCost && (
+                        {t("Erneut analysieren")}{retryCost && (
                           <span className="mono ml-0.5 rounded-sm bg-[color-mix(in_oklab,var(--pf-surface)_40%,transparent)] px-1 text-2xs font-medium">
                             {retryCost.typical}
                           </span>
                         )}
                       </Button>
                       <Button size="sm" variant="secondary" onClick={() => setRetryOpen(true)}>
-                        Seiten wählen …
-                      </Button>
+                        {t("Seiten wählen …")}</Button>
                     </>
                   )}
                   <Button asChild size="sm" variant="ghost">
-                    <Link to={guessed ? importPath(guessed) : '/import'}>{guessed ? 'Zum Datenblatt' : 'Zur Übersicht'}</Link>
+                    <Link to={guessed ? importPath(guessed) : '/import'}>{guessed ? t("Zum Datenblatt") : t("Zur Übersicht")}</Link>
                   </Button>
                 </div>
               </Callout>
@@ -412,8 +413,8 @@ export function AnalysisView({ jobId, datasheetId }: { jobId: string; datasheetI
                     <span className="flex size-14 items-center justify-center rounded-full bg-gradient-spark text-on-spark shadow-glow-spark [&_svg]:size-7">
                       <Check />
                     </span>
-                    <div className="text-md font-semibold text-fg">Fertig – die Prüfansicht öffnet sich</div>
-                    <div className="text-xs leading-relaxed text-fg-muted">{formatNumbersInText(job?.message || formatUsd(cost))}</div>
+                    <div className="text-md font-semibold text-fg">{t("Fertig – die Prüfansicht öffnet sich")}</div>
+                    <div className="text-xs leading-relaxed text-fg-muted">{formatNumbersInText(localizeMessage(job?.message || formatUsd(cost)))}</div>
                   </motion.div>
                 </motion.div>
               )}
@@ -448,6 +449,7 @@ export function AnalysisView({ jobId, datasheetId }: { jobId: string; datasheetI
 
 /** Zeitleiste der Schritte – scrollt sie (kleines Fenster, viele Hinweise), ist sie per Tastatur erreichbar. */
 function StepColumn({ progress, live }: { progress: AnalysisProgress; live: boolean }) {
+  useI18n()
   const [el, setEl] = useState<HTMLDivElement | null>(null)
   const stop = useScrollTabStop(el)
   return (
@@ -456,7 +458,7 @@ function StepColumn({ progress, live }: { progress: AnalysisProgress; live: bool
       // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- Tab-Stopp nur, wenn der Bereich scrollt (WCAG 2.1.1)
       tabIndex={stop ? 0 : undefined}
       role={stop ? 'region' : undefined}
-      aria-label={stop ? 'Schritte der Analyse' : undefined}
+      aria-label={stop ? t("Schritte der Analyse") : undefined}
       className="flex min-h-0 flex-col overflow-y-auto border-r border-line px-5 py-5 outline-none focus-ring-inset"
     >
       <StepTimeline steps={progress.steps} live={live} />
@@ -479,6 +481,7 @@ function sameCounters(a: AnalysisCounters, b: AnalysisCounters): boolean {
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
+  useI18n()
   return (
     <div>
       <dt className="micro-label">{label}</dt>
@@ -497,12 +500,13 @@ const COUNTER_LABELS: [keyof AnalysisCounters, string, string][] = [
 
 /** „Bisher erkannt“ – Zähler über dem Seitenraster (`detail.counters`, live aus der gestreamten Antwort) */
 function Counters({ counters }: { counters: AnalysisCounters }) {
+  useI18n()
   return (
     <div className="flex shrink-0 items-center gap-5 border-b border-line px-5 py-2.5">
-      <div className="micro-label shrink-0">Bisher erkannt</div>
+      <div className="micro-label shrink-0">{t("Bisher erkannt")}</div>
       <dl className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-5 gap-y-1">
         {COUNTER_LABELS.map(([key, one, many]) => (
-          <CounterValue key={key} label={counters[key] === 1 ? one : many} value={counters[key]} />
+          <CounterValue key={key} label={pluralLabel(counters[key] ?? 0, one, many)} value={counters[key]} />
         ))}
       </dl>
     </div>
@@ -510,6 +514,7 @@ function Counters({ counters }: { counters: AnalysisCounters }) {
 }
 
 function CounterValue({ label, value }: { label: string; value: number | undefined }) {
+  useI18n()
   const shown = useCountUp(value ?? 0, 0.8)
   return (
     <div className="flex min-w-0 flex-row-reverse items-baseline gap-1.5">

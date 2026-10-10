@@ -1,3 +1,4 @@
+import { t as translate, useI18n, getLocale } from '@/lib/i18n'
 /** Kompakte Einstellungszeilen für den Hausstil: Beschriftung + Hilfe links, Wert rechts, Standardwert mit Zurücksetzen. */
 import { Hourglass, RotateCcw } from 'lucide-react'
 import { useId, type ReactNode } from 'react'
@@ -21,6 +22,7 @@ export interface StyleRowProps {
 }
 
 export function StyleRow({ label, help, children, defaultText, isDefault = true, onReset, pending, className }: StyleRowProps) {
+  useI18n()
   const id = `st-${useId().replace(/:/g, '')}`
   const helpId = help ? `${id}-help` : undefined
   return (
@@ -33,11 +35,10 @@ export function StyleRow({ label, help, children, defaultText, isDefault = true,
                 {label}
               </label>
               {pending && (
-                <Tooltip content="Die Vorschau zeigt diese Änderung nach dem Speichern exakt.">
+                <Tooltip content={translate("Die Vorschau zeigt diese Änderung nach dem Speichern exakt.")}>
                   <span className="inline-flex items-center gap-1 rounded-sm bg-surface-3 px-1.5 py-px text-2xs text-fg-muted">
                     <Hourglass aria-hidden className="size-3" />
-                    nach dem Speichern
-                  </span>
+                    {translate("nach dem Speichern")}</span>
                 </Tooltip>
               )}
             </div>
@@ -60,7 +61,7 @@ export function StyleRow({ label, help, children, defaultText, isDefault = true,
 }
 
 const fixed = (v: number, decimals: number) =>
-  v.toLocaleString('de-DE', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
+  v.toLocaleString(getLocale(), { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
 
 /** Zahl in Millimetern (oder anderer Einheit) mit Standardwert – feste Nachkommastellen (0,10 / 0,05 / 1,00 mm) */
 export function NumberRow({
@@ -88,6 +89,7 @@ export function NumberRow({
   unit?: string
   pending?: boolean
 }) {
+  useI18n()
   return (
     <StyleRow
       label={label}
@@ -113,6 +115,7 @@ export function NumberRow({
 
 /** Gruppe innerhalb der Hausstil-Karten – Überschrift ist die oberste Ebene des Reiters (`<h2>`) */
 export function StyleGroup({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
+  useI18n()
   return (
     <section className="py-1">
       <div className="pb-1 pt-4">
@@ -126,9 +129,10 @@ export function StyleGroup({ title, description, children }: { title: string; de
 
 /** „Alles auf Standard“ am Ende einer Hausstil-Karte (Änderung bleibt ein Entwurf bis zum Speichern) */
 export function ResetAll({ disabled, onReset, label }: { disabled: boolean; onReset: () => void; label: string }) {
+  useI18n()
   return (
     <div className="flex items-center justify-between gap-3 border-t border-line py-3">
-      <span className="text-xs text-fg-subtle">{disabled ? 'Alle Werte entsprechen dem Standard.' : 'Einige Werte weichen vom Standard ab.'}</span>
+      <span className="text-xs text-fg-subtle">{disabled ? translate("Alle Werte entsprechen dem Standard.") : translate("Einige Werte weichen vom Standard ab.")}</span>
       <Button size="sm" variant="ghost" leftIcon={<RotateCcw />} disabled={disabled} onClick={onReset}>
         {label}
       </Button>

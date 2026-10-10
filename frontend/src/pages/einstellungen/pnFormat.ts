@@ -1,3 +1,4 @@
+import { t } from '@/lib/i18n'
 /**
  * Vorschau interner Teilenummern – dieselben Regeln wie `partforge/db/parts.py::_next_internal_pn`
  * (Python `str.format` mit `prefix`, `counter`, `table`). Unterstützt werden die Formatangaben, die in der Praxis
@@ -41,7 +42,7 @@ function parse(format: string): Piece[] | string {
         continue
       }
       const end = format.indexOf('}', i)
-      if (end < 0) return 'Eine geschweifte Klammer „{“ ist nicht geschlossen.'
+      if (end < 0) return t("Eine geschweifte Klammer „{“ ist nicht geschlossen.")
       if (text) pieces.push({ kind: 'text', text })
       text = ''
       const inner = format.slice(i + 1, end)
@@ -57,7 +58,7 @@ function parse(format: string): Piece[] | string {
         i++
         continue
       }
-      return 'Eine geschweifte Klammer „}“ steht ohne „{“.'
+      return t("Eine geschweifte Klammer „}“ steht ohne „{“.")
     }
     text += ch
   }
@@ -74,10 +75,10 @@ const FORBIDDEN_PN_CHARS = /['{}|\u0000-\u001f\u007f]/g
 function describeChars(chars: string[]): string {
   return chars
     .map((c) => {
-      if (c === '\t') return 'Tab'
-      if (c === '\n' || c === '\r') return 'Zeilenumbruch'
+      if (c === '\t') return t("Tab")
+      if (c === '\n' || c === '\r') return t("Zeilenumbruch")
       const code = c.charCodeAt(0)
-      return code < 32 || code === 127 ? `Steuerzeichen ${code}` : c
+      return code < 32 || code === 127 ? t("Steuerzeichen {0}", { "0": code }) : c
     })
     .join(' ')
 }
@@ -86,11 +87,11 @@ function describeChars(chars: string[]): string {
 export function checkGeneratedPn(pn: string): string | null {
   const bad = [...new Set(pn.match(FORBIDDEN_PN_CHARS) ?? [])]
   if (bad.length) {
-    return `Das Format erzeugt Zeichen, die in Teilenummern nicht erlaubt sind (${describeChars(bad)}). Nicht erlaubt sind ' { } | und Steuerzeichen.`
+    return t("Das Format erzeugt Zeichen, die in Teilenummern nicht erlaubt sind ({0}). Nicht erlaubt sind ' { } | und Steuerzeichen.", { "0": describeChars(bad) })
   }
-  if (pn !== pn.trim()) return 'Das Format erzeugt Leerzeichen am Anfang oder Ende der Teilenummer.'
+  if (pn !== pn.trim()) return t("Das Format erzeugt Leerzeichen am Anfang oder Ende der Teilenummer.")
   if (/\s{2,}/.test(pn)) {
-    return 'Das Format erzeugt mehrere Leerzeichen hintereinander (z. B. durch {counter:6}) – bitte {counter:06d} (mit Nullen) verwenden.'
+    return t("Das Format erzeugt mehrere Leerzeichen hintereinander (z. B. durch {counter:6}) – bitte {counter:06d} (mit Nullen) verwenden.")
   }
   return null
 }
@@ -98,7 +99,7 @@ export function checkGeneratedPn(pn: string): string | null {
 export function compilePnFormat(format: string): PnFormatResult {
   const fallback = (prefix: string, counter: number) => `${prefix}-${String(counter).padStart(6, '0')}`
   if (!format.trim()) {
-    return { ok: false, error: 'Das Format darf nicht leer sein.', render: fallback }
+    return { ok: false, error: t("Das Format darf nicht leer sein."), render: fallback }
   }
   const parsed = parse(format)
   if (typeof parsed === 'string') return { ok: false, error: parsed, render: fallback }
@@ -108,31 +109,31 @@ export function compilePnFormat(format: string): PnFormatResult {
     if (p.name === 'counter') {
       counters += 1
       if (!COUNTER_SPEC.test(p.spec)) {
-        return { ok: false, error: `Die Zählerangabe „{counter:${p.spec}}“ wird nicht unterstützt (z. B. {counter:06d}).`, render: fallback }
+        return { ok: false, error: t("Die Zählerangabe „{counter:{0}}“ wird nicht unterstützt (z. B. {counter:06d}).", { "0": p.spec }), render: fallback }
       }
     } else if (p.name === 'prefix' || p.name === 'table') {
       if (p.spec && p.spec !== 's') {
-        return { ok: false, error: `Die Formatangabe „{${p.name}:${p.spec}}“ wird nicht unterstützt.`, render: fallback }
+        return { ok: false, error: t("Die Formatangabe „{{0}:{1}}“ wird nicht unterstützt.", { "0": p.name, "1": p.spec }), render: fallback }
       }
     } else if (/\s/.test(p.name) && ['prefix', 'counter', 'table'].includes(p.name.trim())) {
       return {
         ok: false,
-        error: `Leerzeichen im Platzhalter „{${p.name}}“ – bitte {${p.name.trim()}} schreiben.`,
+        error: t("Leerzeichen im Platzhalter „{{0}}“ – bitte {{1}} schreiben.", { "0": p.name, "1": p.name.trim() }),
         render: fallback,
       }
     } else {
       return {
         ok: false,
-        error: p.name.trim() ? `Unbekannter Platzhalter „{${p.name}}“ – erlaubt sind {prefix}, {counter} und {table}.` : 'Leerer Platzhalter „{}“.',
+        error: p.name.trim() ? t("Unbekannter Platzhalter „{{0}}“ – erlaubt sind {prefix}, {counter} und {table}.", { "0": p.name }) : t("Leerer Platzhalter „{}“."),
         render: fallback,
       }
     }
   }
   if (counters === 0) {
-    return { ok: false, error: 'Ohne {counter} hätten alle Bauteile dieselbe Nummer.', render: fallback }
+    return { ok: false, error: t("Ohne {counter} hätten alle Bauteile dieselbe Nummer."), render: fallback }
   }
   if (counters > 1) {
-    return { ok: false, error: '{counter} darf nur einmal vorkommen.', render: fallback }
+    return { ok: false, error: t("{counter} darf nur einmal vorkommen."), render: fallback }
   }
   const render = (prefix: string, counter: number, table: string) =>
     parsed

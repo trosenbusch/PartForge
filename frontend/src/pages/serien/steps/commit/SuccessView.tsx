@@ -1,3 +1,4 @@
+import { localizeMessage, t as tr, useI18n } from '@/lib/i18n'
 /**
  * Ergebnis nach dem Erzeugen – volle Breite wie die anderen Schritte, gleiche Gliederung wie der Fortschritt davor:
  * links schließt sich der Ring (Forge-Verlauf des UI-Kits) mit einem Funkenstoß (ohne Konfetti), daneben Überschrift
@@ -38,20 +39,21 @@ export function TemplateTrustNote({
   done?: boolean
   className?: string
 }) {
+  const { t: tr } = useI18n()
   if (verified && availabilityCertain) return null
   const parts: string[] = []
   if (!verified) {
     parts.push(
       done
-        ? 'Codes und Werte dieser Serie sind nicht gegen das Datenblatt geprüft – die Bauteile vor der Freigabe kontrollieren.'
-        : 'Codes und Werte dieser Serie sind nicht gegen das Datenblatt geprüft – die Bauteile nach dem Erzeugen vor der Freigabe kontrollieren.',
+        ? tr("Codes und Werte dieser Serie sind nicht gegen das Datenblatt geprüft – die Bauteile vor der Freigabe kontrollieren.")
+        : tr("Codes und Werte dieser Serie sind nicht gegen das Datenblatt geprüft – die Bauteile nach dem Erzeugen vor der Freigabe kontrollieren."),
     )
   }
   if (!availabilityCertain) {
-    parts.push('Nicht jede Teilenummer ist sicher lieferbar – vor der Bestellung beim Hersteller oder Distributor prüfen.')
+    parts.push(tr('Nicht jede Teilenummer ist sicher lieferbar – vor der Bestellung beim Hersteller oder Distributor prüfen.'))
   }
   return (
-    <Callout tone="warning" title={verified ? 'Lieferbarkeit nicht geprüft' : 'Ungeprüfte Vorlage'} className={className}>
+    <Callout tone="warning" title={verified ? tr("Lieferbarkeit nicht geprüft") : tr("Ungeprüfte Vorlage")} className={className}>
       {parts.join(' ')}
     </Callout>
   )
@@ -246,41 +248,41 @@ function libraryIssues(r: SeriesCommitResult, log: JobLogEntry[]): { problems: S
 /** Überschrift und Unterzeile je Ergebnis (`ring`: error = nichts geschrieben, warning = mit Fehlern/unvollständig) */
 function outcome(r: SeriesCommitResult, categoryLabel: string, issues: { failed: boolean; pendingOnly: boolean }) {
   const written = r.created + r.updated
-  const where = `Kategorie\u00a0„${categoryLabel}“`
+  const where = tr("Kategorie „{v0}“", { v0: categoryLabel })
   if (written === 0) {
     if (r.errors > 0) {
       return {
-        headline: 'Keine Bauteile geschrieben',
-        text: `${plural(r.errors, 'Bauteil', 'Bauteile')} ließen sich nicht speichern – Gründe unten.`,
+        headline: tr("Keine Bauteile geschrieben"),
+        text: tr("{v0} ließen sich nicht speichern – Gründe unten.", { v0: plural(r.errors, tr("Bauteil"), tr("Bauteile")) }),
         ring: 'error' as RingTone,
       }
     }
     if (r.unchanged > 0 && r.skipped === 0) {
       // Modus „aktualisieren“, alles schon auf dem Stand
       return {
-        headline: 'Serie ist aktuell',
-        text: `${plural(r.unchanged, 'Bauteil', 'Bauteile')} geprüft – keines brauchte eine Änderung · ${where}`,
+        headline: tr("Serie ist aktuell"),
+        text: tr("{v0} geprüft – keines brauchte eine Änderung · {v1}", { v0: plural(r.unchanged, tr("Bauteil"), tr("Bauteile")), v1: where }),
         ring: (issues.failed ? 'warning' : 'success') as RingTone,
       }
     }
     if (r.skipped + r.unchanged > 0) {
       return {
-        headline: 'Nichts Neues zu erzeugen',
-        text: `Alle Bauteile der Serie sind schon in der ${where}.`,
+        headline: tr("Nichts Neues zu erzeugen"),
+        text: tr("Alle Bauteile der Serie sind schon in der {v0}.", { v0: where }),
         ring: (issues.failed ? 'warning' : 'success') as RingTone,
       }
     }
-    return { headline: 'Keine Bauteile angelegt', text: 'Die Auswahl ergab keine anlegbaren Bauteile.', ring: 'error' as RingTone }
+    return { headline: tr("Keine Bauteile angelegt"), text: tr("Die Auswahl ergab keine anlegbaren Bauteile."), ring: 'error' as RingTone }
   }
-  const verb = r.created && r.updated ? 'angelegt und aktualisiert' : r.created ? 'angelegt' : 'aktualisiert'
+  const verb = r.created && r.updated ? tr("angelegt und aktualisiert") : r.created ? tr("angelegt") : tr("aktualisiert")
   return {
     headline:
       r.errors || (issues.failed && !issues.pendingOnly)
-        ? `Serie mit Fehlern ${verb}`
+        ? tr("Serie mit Fehlern {v0}", { v0: verb })
         : issues.failed
-          ? `Serie ${verb} – Bibliotheksdateien ausstehend`
-          : `Serie ${verb}`,
-    text: `${plural(written, 'Bauteil', 'Bauteile')} in der ${where}`,
+          ? tr("Serie {v0} – Bibliotheksdateien ausstehend", { v0: verb })
+          : tr("Serie {v0}", { v0: verb }),
+    text: tr("{v0} in der {v1}", { v0: plural(written, tr("Bauteil"), tr("Bauteile")), v1: where }),
     ring: (r.errors || issues.failed ? 'warning' : 'success') as RingTone,
   }
 }
@@ -305,6 +307,7 @@ function LibraryProblems({
   onShowLog: () => void
   onRetry: () => void
 }) {
+  const { t: tr } = useI18n()
   const navigate = useNavigate()
   const status = useAltiumStatus().data
   const backend = useSettings().data?.settings.altium.library_backend
@@ -315,14 +318,14 @@ function LibraryProblems({
   const listed = failed.length ? failed : pending
   const symbols = listed.filter((p) => problemKind(p, symbol) === 'symbol').length
   const footprints = listed.length - symbols
-  const what = [symbols ? plural(symbols, 'Symbol', 'Symbole') : null, footprints ? plural(footprints, 'Footprint', 'Footprints') : null]
+  const what = [symbols ? plural(symbols, tr("Symbol"), tr("Symbole")) : null, footprints ? plural(footprints, tr("Footprint"), tr("Footprints")) : null]
     .filter(Boolean)
-    .join(' und ')
+    .join(tr("und"))
   const title = failed.length
-    ? `${what} nicht in die Bibliotheksdateien geschrieben`
+    ? tr("{v0} nicht in die Bibliotheksdateien geschrieben", { v0: what })
     : pending.length
-      ? `${what} noch nicht in die Bibliotheksdateien geschrieben`
-      : 'Beim Schreiben der Bibliotheksdateien gab es Fehler'
+      ? tr("{v0} noch nicht in die Bibliotheksdateien geschrieben", { v0: what })
+      : tr("Beim Schreiben der Bibliotheksdateien gab es Fehler")
   const shown = [...failed, ...pending].slice(0, 6)
   // derselbe Grund bei allen (z. B. „Kein Bibliotheks-Writer verfügbar …“): einmal darunter statt an jedem Eintrag
   const reasons = [...new Set(shown.map((p) => p.message?.trim()).filter((m): m is string => Boolean(m)))]
@@ -334,12 +337,10 @@ function LibraryProblems({
       leftIcon={<FolderSync />}
       onClick={() => navigate(ALTIUM_PATH, { state: altiumActionState('sync') })}
     >
-      Bibliotheksdateien synchronisieren
-    </Button>
+      {tr("Bibliotheksdateien synchronisieren")}</Button>
   ) : (
     <Button size="sm" variant="secondary" leftIcon={<FileCog />} onClick={() => navigate(SETTINGS_PLACE.altium.to)}>
-      Bibliotheks-Writer einrichten
-    </Button>
+      {tr("Bibliotheks-Writer einrichten")}</Button>
   )
   return (
     <Callout
@@ -348,15 +349,13 @@ function LibraryProblems({
       actions={
         failed.length ? (
           <Button size="sm" variant="secondary" leftIcon={<RotateCw />} onClick={onRetry}>
-            Serie erneut erzeugen
-          </Button>
+            {tr("Serie erneut erzeugen")}</Button>
         ) : (
           <>
             {syncButton}
             {logErrors.length > 0 && (
               <Button size="sm" variant="ghost" onClick={onShowLog}>
-                Protokoll zeigen
-              </Button>
+                {tr("Protokoll zeigen")}</Button>
             )}
           </>
         )
@@ -366,51 +365,51 @@ function LibraryProblems({
         <ul className="mb-1.5 flex flex-col gap-1">
           {shown.map((p) => (
             <li key={`${p.kind ?? ''}|${p.name}|${p.library ?? ''}`} className="text-xs leading-snug">
-              <span className="text-fg-muted">{problemKind(p, symbol) === 'symbol' ? 'Symbol' : 'Footprint'}</span>{' '}
+              <span className="text-fg-muted">{problemKind(p, symbol) === 'symbol' ? tr("Symbol") : tr("Footprint")}</span>{' '}
               <span className="mono font-medium text-fg">{p.name}</span>
               {p.library && <span className="text-fg-muted"> → {baseName(p.library)}</span>}
-              {p.message && !sharedReason && <span className="text-fg-muted">: {formatNumbersInText(p.message)}</span>}
+              {p.message && !sharedReason && <span className="text-fg-muted">: {formatNumbersInText(localizeMessage(p.message))}</span>}
               {p.parts ? (
                 <span className={p.status === 'pending' ? 'text-fg-muted' : 'text-danger-text'}>
                   {' '}
                   ·{' '}
                   {p.status === 'pending'
-                    ? `${plural(p.parts, 'Bauteil verweist', 'Bauteile verweisen')} darauf`
-                    : `${plural(p.parts, 'Bauteil', 'Bauteile')} nicht angelegt`}
+                    ? tr("{v0} darauf", { v0: plural(p.parts, tr("Bauteil verweist"), tr("Bauteile verweisen")) })
+                    : tr("{v0} nicht angelegt", { v0: plural(p.parts, tr("Bauteil"), tr("Bauteile")) })}
                 </span>
               ) : null}
             </li>
           ))}
           {problems.length > shown.length && (
-            <li className="text-xs text-fg-muted">… und {plural(problems.length - shown.length, 'weiterer', 'weitere')}</li>
+            <li className="text-xs text-fg-muted">{tr("… und")} {plural(problems.length - shown.length, tr("weiterer"), tr("weitere"))}</li>
           )}
         </ul>
       )}
       {sharedReason && (
         <p className="mb-1.5 text-xs leading-snug text-fg-muted">
-          {sharedReason.includes('Grund:') ? '' : 'Grund: '}
-          {formatNumbersInText(sharedReason)}
+          {sharedReason.includes('Grund:') ? '' : tr("Grund:")}
+          {formatNumbersInText(localizeMessage(sharedReason))}
         </p>
       )}
       {logErrors.length > 0 && (
         <ul className="mb-1.5 flex flex-col gap-1">
           {logErrors.slice(0, 4).map((line, i) => (
             <li key={i} className="text-xs leading-snug text-fg">
-              {formatNumbersInText(line)}
+              {formatNumbersInText(localizeMessage(line))}
             </li>
           ))}
         </ul>
       )}
       <span className="text-xs leading-snug">
         {failed.length
-          ? 'Bauteile damit sind nicht angelegt – Altium fände ihr Symbol bzw. ihren Footprint nicht. Ursache beheben (z. B. die Datei in Altium speichern und schließen), dann die Serie erneut erzeugen: Schon Angelegtes bleibt, es kommen nur die fehlenden Bauteile dazu.'
+          ? tr("Bauteile damit sind nicht angelegt – Altium fände ihr Symbol bzw. ihren Footprint nicht. Ursache beheben (z. B. die Datei in Altium speichern und schließen), dann die Serie erneut erzeugen: Schon Angelegtes bleibt, es kommen nur die fehlenden Bauteile dazu.")
           : pending.length
             ? writerOk
-              ? 'Die Bauteile sind angelegt und verweisen darauf – Altium findet sie erst, wenn sie in der Datei stehen. „Bibliotheksdateien synchronisieren“ schreibt sie jetzt.'
-              : 'Die Bauteile sind angelegt und verweisen darauf – Altium findet sie erst, wenn sie in der Datei stehen.'
+              ? tr("Die Bauteile sind angelegt und verweisen darauf – Altium findet sie erst, wenn sie in der Datei stehen. „Bibliotheksdateien synchronisieren“ schreibt sie jetzt.")
+              : tr("Die Bauteile sind angelegt und verweisen darauf – Altium findet sie erst, wenn sie in der Datei stehen.")
             : writerOk
-              ? 'Die Bauteile verweisen darauf – Altium findet sie erst, wenn sie in der Datei stehen. „Bibliotheksdateien synchronisieren“ holt das Schreiben nach (gesperrte Dateien vorher schließen).'
-              : `Die Bauteile verweisen darauf – Altium findet sie erst, wenn sie in der Datei stehen. Dafür braucht PartForge einen Bibliotheks-Writer (${SETTINGS_PLACE.altium.label}) oder ein laufendes Altium Designer.`}
+              ? tr("Die Bauteile verweisen darauf – Altium findet sie erst, wenn sie in der Datei stehen. „Bibliotheksdateien synchronisieren“ holt das Schreiben nach (gesperrte Dateien vorher schließen).")
+              : tr("Die Bauteile verweisen darauf – Altium findet sie erst, wenn sie in der Datei stehen. Dafür braucht PartForge einen Bibliotheks-Writer ({v0}) oder ein laufendes Altium Designer.", { v0: SETTINGS_PLACE.altium.label })}
       </span>
     </Callout>
   )
@@ -428,6 +427,7 @@ export function SuccessView({
   onRetry,
   headingRef,
 }: SuccessViewProps) {
+  const { t: tr } = useI18n()
   const uid = useId().replace(/:/g, '')
   const [showErrors, setShowErrors] = useState(false)
   const [showLog, setShowLog] = useState(false)
@@ -453,7 +453,7 @@ export function SuccessView({
     <div className="@container relative overflow-hidden rounded-panel border border-line bg-surface shadow-raised">
       {/* Zusammenfassung des Backends („Serie erzeugt: 1.248 neu, …“) für Screenreader – die Kacheln zeigen dasselbe */}
       <p className="sr-only" role="status">
-        {formatNumbersInText(r.message)}
+        {formatNumbersInText(localizeMessage(r.message))}
       </p>
       <div className="relative flex items-center gap-5 px-6 py-5">
         {/* Punktraster nur hinter dem Ring */}
@@ -476,12 +476,10 @@ export function SuccessView({
           {/* nächste Schritte gleich beim Ergebnis – auch in kleinen Fenstern ohne Scrollen sichtbar */}
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <Button variant={inTable ? 'secondary' : 'primary'} size="lg" leftIcon={<Layers />} onClick={onNewSeries}>
-              Neue Serie
-            </Button>
+              {tr("Neue Serie")}</Button>
             {inTable && (
               <Button variant="primary" size="lg" rightIcon={<ArrowRight />} onClick={onShowTable}>
-                In Tabelle anzeigen
-              </Button>
+                {tr("In Tabelle anzeigen")}</Button>
             )}
           </div>
         </div>
@@ -499,32 +497,32 @@ export function SuccessView({
         </div>
       )}
       <div className="relative grid grid-cols-3 gap-px border-t border-line bg-line @[44rem]:grid-cols-6 [&>*]:bg-surface">
-        <Tile label="Neu" value={r.created} hint={r.created ? 'angelegt' : undefined} />
-        <Tile label="Aktualisiert" value={r.updated} hint={r.unchanged ? `${formatNumber(r.unchanged)} unverändert` : undefined} />
-        <Tile label="Übersprungen" value={r.skipped} hint={r.skipped ? 'schon vorhanden' : undefined} />
+        <Tile label={tr("Neu")} value={r.created} hint={r.created ? tr("angelegt") : undefined} />
+        <Tile label={tr("Aktualisiert")} value={r.updated} hint={r.unchanged ? tr("{v0} unverändert", { v0: formatNumber(r.unchanged) }) : undefined} />
+        <Tile label={tr("Übersprungen")} value={r.skipped} hint={r.skipped ? tr("schon vorhanden") : undefined} />
         <Tile
-          label="Ausgelassen"
+          label={tr("Ausgelassen")}
           value={left}
           tone="warning"
           hint={
             left
-              ? [r.conflicts ? plural(r.conflicts, 'Konflikt', 'Konflikte') : null, r.invalid ? `${formatNumber(r.invalid)} ungültig` : null]
+              ? [r.conflicts ? plural(r.conflicts, tr("Konflikt"), tr("Konflikte")) : null, r.invalid ? tr("{v0} ungültig", { v0: formatNumber(r.invalid) }) : null]
                   .filter(Boolean)
                   .join(' · ')
               : undefined
           }
         />
-        <Tile label="Fehler" value={r.errors} tone="danger" hint={r.errors ? 'beim Schreiben' : undefined} />
+        <Tile label={tr("Fehler")} value={r.errors} tone="danger" hint={r.errors ? tr("beim Schreiben") : undefined} />
         <Tile
-          label="Footprints"
+          label={tr("Footprints")}
           value={r.footprints_created.length}
           tone={failedFootprints ? 'warning' : undefined}
           hint={
             failedFootprints
-              ? `${formatNumber(failedFootprints)} nicht geschrieben`
+              ? tr("{v0} nicht geschrieben", { v0: formatNumber(failedFootprints) })
               : r.footprints_created.length
-                ? 'neu angelegt'
-                : 'alle vorhanden'
+                ? tr("neu angelegt")
+                : tr("alle vorhanden")
           }
           title={r.footprints_created.length ? r.footprints_created.join(', ') : undefined}
         />
@@ -541,20 +539,20 @@ export function SuccessView({
                 )
               }
             >
-              Symbol <span className="mono text-fg">{r.symbol}</span>{' '}
+              {tr("Symbol")} <span className="mono text-fg">{r.symbol}</span>{' '}
               {problems.some((p) => problemKind(p, r.symbol) === 'symbol')
                 ? problems.some((p) => problemKind(p, r.symbol) === 'symbol' && p.status !== 'pending')
-                  ? 'nicht in die Bibliotheksdatei geschrieben'
-                  : 'noch nicht in die Bibliotheksdatei geschrieben (ausstehend)'
+                  ? tr("nicht in die Bibliotheksdatei geschrieben")
+                  : tr("noch nicht in die Bibliotheksdatei geschrieben (ausstehend)")
                 : r.symbol_created
-                  ? 'neu angelegt'
-                  : 'verwendet (vorhanden)'}
+                  ? tr("neu angelegt")
+                  : tr("verwendet (vorhanden)")}
             </Detail>
           )}
           <AltiumLine />
           {r.backup && (
             <Detail icon={<ShieldCheck className="text-success" />}>
-              Sicherung vorher: <span className="mono break-all text-fg">{r.backup}</span>
+              {tr("Sicherung vorher:")} <span className="mono break-all text-fg">{r.backup}</span>
             </Detail>
           )}
         </ul>
@@ -562,14 +560,13 @@ export function SuccessView({
           <ul className="flex flex-col gap-2">
             {notes.map((w) => (
               <Detail key={w} icon={<span className="size-1.5 rounded-full bg-warning" />}>
-                {formatNumbersInText(w)}
+                {formatNumbersInText(localizeMessage(w))}
               </Detail>
             ))}
             {firstPartWarning && (
               <Detail icon={<span className="size-1.5 rounded-full bg-warning" />}>
-                {partWarnings.length >= 100 ? 'Mindestens 100' : formatNumber(partWarnings.length)}{' '}
-                {partWarnings.length === 1 ? 'Bauteil hat' : 'Bauteile haben'} Hinweise der Feldprüfung (gespeichert wurde
-                trotzdem), z. B. <span className="mono text-fg">{firstPartWarning[0]}</span>: {firstPartWarning[1][0]}
+                {partWarnings.length >= 100 ? tr("Mindestens 100") : formatNumber(partWarnings.length)}{' '}
+                {partWarnings.length === 1 ? tr("Bauteil hat") : tr("Bauteile haben")} {tr("Hinweise der Feldprüfung (gespeichert wurde trotzdem), z. B.")} <span className="mono text-fg">{firstPartWarning[0]}</span>: {localizeMessage(firstPartWarning[1][0])}
               </Detail>
             )}
             {errors.length > 0 && (
@@ -581,7 +578,7 @@ export function SuccessView({
                   onClick={() => setShowErrors((v) => !v)}
                   className="rounded-sm font-medium text-danger-text underline-offset-2 outline-none hover:underline focus-ring"
                 >
-                  {showErrors ? 'Fehler ausblenden' : `${plural(errors.length, 'Fehler', 'Fehler')} anzeigen`}
+                  {showErrors ? tr("Fehler ausblenden") : tr("{v0} anzeigen", { v0: plural(errors.length, tr("Fehler"), tr("Fehler")) })}
                 </button>
                 {showErrors && (
                   <ul
@@ -590,7 +587,7 @@ export function SuccessView({
                   >
                     {errors.slice(0, 100).map(([pn, msg]) => (
                       <li key={pn} className="text-2xs">
-                        <span className="mono text-fg">{pn}</span>: {msg}
+                        <span className="mono text-fg">{pn}</span>: {localizeMessage(msg)}
                       </li>
                     ))}
                   </ul>
@@ -610,8 +607,7 @@ export function SuccessView({
             className="-mx-2 flex items-center gap-2 rounded-control px-2 py-1 text-xs font-medium text-fg-muted outline-none transition-colors hover:bg-surface-2 hover:text-fg focus-ring"
           >
             <ChevronDown aria-hidden className={cn('size-3.5 transition-transform', showLog && 'rotate-180')} />
-            Protokoll
-            <span className="font-normal text-fg-subtle">{plural(log.length, 'Eintrag', 'Einträge')}</span>
+            {tr("Protokoll")}<span className="font-normal text-fg-subtle">{plural(log.length, tr("Eintrag"), tr("Einträge"))}</span>
           </button>
           {showLog && (
             <div id={`${uid}-log`} className="pb-1 pt-2">

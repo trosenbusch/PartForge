@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 /**
  * Einstellungen: App-weite Einstellungen (Allgemein: Profil, Darstellung, KI, Altium) und die Einstellungen der
  * geöffneten Bibliothek (Bibliothek, Kategorien und Felder, Namensregeln, Hausstil).
@@ -50,6 +51,7 @@ const SECTIONS: SectionDef[] = [
 ]
 
 export default function EinstellungenPage() {
+  const { t } = useI18n()
   const { section = 'allgemein' } = useParams()
   const current = SECTIONS.find((s) => s.id === section) ?? SECTIONS[0]
   const root = useWorkspace().data?.root ?? null
@@ -59,7 +61,7 @@ export default function EinstellungenPage() {
 
   return (
     <PageBody>
-      <PageTitle title={current.label} />
+      <PageTitle title={t(current.label)} />
       <SettingsNav current={current.id} />
       <div className={cn('@container mt-6 min-w-0', current.layout === 'form' && 'max-w-[56rem]')}>
         <motion.div
@@ -102,8 +104,9 @@ function SectionContent({ id }: { id: SectionId }) {
 }
 
 function SectionSkeleton() {
+  const { t } = useI18n()
   return (
-    <div className="flex max-w-[56rem] flex-col gap-5" aria-busy="true" aria-label="Bereich wird geladen">
+    <div className="flex max-w-[56rem] flex-col gap-5" aria-busy="true" aria-label={t("Bereich wird geladen")}>
       {[0, 1].map((i) => (
         <Card key={i} padding="lg" className="flex flex-col gap-4">
           <Skeleton className="h-5 w-56" />
@@ -118,6 +121,7 @@ function SectionSkeleton() {
 // --------------------------------------------------------------------------- Navigation
 
 function SettingsNav({ current }: { current: SectionId }) {
+  const { t } = useI18n()
   const workspace = useWorkspace()
   const libraryName = workspace.data?.name ?? null
   const ref = useRef<HTMLElement>(null)
@@ -150,7 +154,7 @@ function SettingsNav({ current }: { current: SectionId }) {
         to={s.id === 'allgemein' ? '/einstellungen' : `/einstellungen/${s.id}`}
         end
         aria-current={active ? 'page' : undefined}
-        title={s.description}
+        title={t(s.description)}
         onKeyDown={onKeyDown}
         className={cn(
           'group/sn relative isolate flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-button px-3 text-ui font-medium outline-none transition-colors focus-ring',
@@ -166,25 +170,25 @@ function SettingsNav({ current }: { current: SectionId }) {
           />
         )}
         <s.icon aria-hidden className={cn('size-4 shrink-0', active ? 'text-fg' : 'text-fg-subtle')} />
-        {s.label}
+        {t(s.label)}
       </NavLink>
     )
   }
 
   return (
-    <nav ref={ref} aria-label="Einstellungsbereiche" className="@container">
+    <nav ref={ref} aria-label={t("Einstellungsbereiche")} className="@container">
       <div className="-mx-1 flex items-center gap-1 overflow-x-auto px-1 py-0.5 scrollbar-none">
         {SECTIONS.filter((s) => s.scope === 'app').map(link)}
         <span aria-hidden className="mx-2 h-5 w-px shrink-0 bg-line-strong" />
-        <span className="sr-only">Einstellungen der Bibliothek {libraryName ?? '(keine geöffnet)'}:</span>
+        <span className="sr-only">{t("Einstellungen der Bibliothek")} {libraryName ?? t("(keine geöffnet)")}:</span>
         {SECTIONS.filter((s) => s.scope === 'library').map(link)}
         <span
           aria-hidden
-          title={libraryName ? `Diese Bereiche gelten für die Bibliothek „${libraryName}“` : 'Keine Bibliothek geöffnet'}
+          title={libraryName ? t("Diese Bereiche gelten für die Bibliothek „{0}“", { "0": libraryName }) : t("Keine Bibliothek geöffnet")}
           className="ml-auto hidden min-w-0 shrink items-center gap-1.5 pl-4 text-xs text-fg-subtle @[52rem]:flex"
         >
           <FolderClosed className="size-3.5 shrink-0" />
-          <span className="truncate">{libraryName ?? 'Keine Bibliothek geöffnet'}</span>
+          <span className="truncate">{libraryName ?? t("Keine Bibliothek geöffnet")}</span>
         </span>
       </div>
     </nav>

@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 /**
  * Duplizieren: ein Bauteil unter neuer Teilenummer oder mehrere Bauteile mit einem Suffix. Kopien starten als
  * „Entwurf“. Teilenummern-Schema „mpn“: Teilenummer = Hersteller-Teilenummer – vorbelegt ist die Nummer der
@@ -39,6 +40,7 @@ export interface DuplicateDialogProps {
 const MPN = 'Manufacturer Part Number'
 
 export function DuplicateDialog({ open, onOpenChange, category, rows, scheme, onDone }: DuplicateDialogProps) {
+  const { t } = useI18n()
   const single = rows.length === 1 ? rows[0] : null
   const sourcePn = single ? String(single[PART_NUMBER] ?? '') : ''
   const sourceMpn = single ? String(single[MPN] ?? '') : ''
@@ -116,12 +118,12 @@ export function DuplicateDialog({ open, onOpenChange, category, rows, scheme, on
       invalidate(category.table)
       if (errors.length) setFailed(errors)
       if (created.length) {
-        toast.success(created.length === 1 ? `„${created[0]}“ angelegt` : `${plural(created.length, 'Kopie', 'Kopien')} angelegt`, {
-          description: 'Kopien starten als Entwurf.',
+        toast.success(created.length === 1 ? t("„{1}“ angelegt", { 1: created[0] }) : t("{1} angelegt", { 1: plural(created.length, t("Kopie"), t("Kopien")) }), {
+          description: t("Kopien starten als Entwurf."),
         })
         if (mpnProblems.length) {
-          toast.warning('Hersteller-Teilenummer nicht geändert', {
-            description: `${mpnProblems.slice(0, 3).join(' · ')} – die Kopie trägt noch die der Vorlage.`,
+          toast.warning(t("Hersteller-Teilenummer nicht geändert"), {
+            description: t("{1} – die Kopie trägt noch die der Vorlage.", { 1: mpnProblems.slice(0, 3).join(' · ') }),
           })
         }
         onDone(created)
@@ -142,36 +144,36 @@ export function DuplicateDialog({ open, onOpenChange, category, rows, scheme, on
         <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
           <DialogHeader
             icon={<CopyPlus />}
-            title={single ? 'Bauteil duplizieren' : `${plural(rows.length, 'Bauteil', 'Bauteile')} duplizieren`}
+            title={single ? t("Bauteil duplizieren") : t("{1} duplizieren", { 1: plural(rows.length, t("Bauteil"), t("Bauteile")) })}
             description={
               single
-                ? `Alle Werte von „${sourcePn}“ werden übernommen – Symbol, Footprint und Datenblatt eingeschlossen.`
-                : 'Jede Kopie erhält die bisherige Teilenummer mit dem Suffix. Alle Werte werden übernommen.'
+                ? t("Alle Werte von „{1}“ werden übernommen – Symbol, Footprint und Datenblatt eingeschlossen.", { 1: sourcePn })
+                : t("Jede Kopie erhält die bisherige Teilenummer mit dem Suffix. Alle Werte werden übernommen.")
             }
           />
           <DialogBody className="flex flex-col gap-4">
             {single ? (
               mpnScheme ? (
                 <Field
-                  label={hasMpn ? 'Neue Hersteller-Teilenummer' : 'Neue Teilenummer'}
+                  label={hasMpn ? t("Neue Hersteller-Teilenummer") : t("Neue Teilenummer")}
                   required
                   help={
                     unchanged
-                      ? 'Noch die Nummer der Vorlage – abwandeln, z. B. den Wert-Code.'
+                      ? t("Noch die Nummer der Vorlage – abwandeln, z. B. den Wert-Code.")
                       : hasMpn
-                        ? 'Wird auch die Teilenummer (Schema dieser Bibliothek). Muss in der ganzen Bibliothek eindeutig sein.'
-                        : 'Muss in der ganzen Bibliothek eindeutig sein.'
+                        ? t("Wird auch die Teilenummer (Schema dieser Bibliothek). Muss in der ganzen Bibliothek eindeutig sein.")
+                        : t("Muss in der ganzen Bibliothek eindeutig sein.")
                   }
                 >
                   <Input value={pn} onChange={(e) => setPn(e.target.value)} mono onFocus={(e) => e.target.select()} />
                 </Field>
               ) : (
                 <>
-                  <Field label="Neue Teilenummer" help="Leer lassen – PartForge vergibt die nächste freie Nummer.">
-                    <Input value={pn} onChange={(e) => setPn(e.target.value)} mono placeholder="automatisch" />
+                  <Field label={t("Neue Teilenummer")} help={t("Leer lassen – PartForge vergibt die nächste freie Nummer.")}>
+                    <Input value={pn} onChange={(e) => setPn(e.target.value)} mono placeholder={t("automatisch")} />
                   </Field>
                   {hasMpn && (
-                    <Field label="Hersteller-Teilenummer" help="Von der Vorlage übernommen – für eine Variante anpassen.">
+                    <Field label={t("Hersteller-Teilenummer")} help={t("Von der Vorlage übernommen – für eine Variante anpassen.")}>
                       <Input value={mpn} onChange={(e) => setMpn(e.target.value)} mono onFocus={(e) => e.target.select()} />
                     </Field>
                   )}
@@ -179,7 +181,7 @@ export function DuplicateDialog({ open, onOpenChange, category, rows, scheme, on
               )
             ) : (
               <>
-                <Field label="Suffix für die Teilenummern" required>
+                <Field label={t("Suffix für die Teilenummern")} required>
                   <Input value={suffix} onChange={(e) => setSuffix(e.target.value)} mono />
                 </Field>
                 <ul className="flex max-h-44 flex-col gap-1 overflow-y-auto rounded-button border border-line bg-surface-2/50 px-3 py-2 text-xs">
@@ -192,13 +194,13 @@ export function DuplicateDialog({ open, onOpenChange, category, rows, scheme, on
                       <span className="truncate text-fg">{t.to}</span>
                     </li>
                   ))}
-                  {targets.length > 50 && <li className="text-fg-subtle">… und {formatNumber(targets.length - 50)} weitere</li>}
+                  {targets.length > 50 && <li className="text-fg-subtle">{t("… und")} {formatNumber(targets.length - 50)}  {t("weitere")}</li>}
                 </ul>
-                {progress !== null && <ProgressBar value={progress} live={run.isPending} label="Kopien werden angelegt" showValue />}
+                {progress !== null && <ProgressBar value={progress} live={run.isPending} label={t("Kopien werden angelegt")} showValue />}
               </>
             )}
             {failed.length > 0 && (
-              <Callout tone="danger" title={single ? 'Nicht dupliziert' : 'Einige Kopien wurden nicht angelegt'} urgent>
+              <Callout tone="danger" title={single ? t("Nicht dupliziert") : t("Einige Kopien wurden nicht angelegt")} urgent>
                 <ul className="mt-1 flex flex-col gap-0.5">
                   {failed.slice(0, 6).map((f) => (
                     <li key={f}>{f}</li>
@@ -209,7 +211,7 @@ export function DuplicateDialog({ open, onOpenChange, category, rows, scheme, on
           </DialogBody>
           <DialogFooter>
             <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={run.isPending}>
-              {failed.length && !single ? 'Schließen' : 'Abbrechen'}
+              {failed.length && !single ? t("Schließen") : t("Abbrechen")}
             </Button>
             <Button
               type="submit"
@@ -217,7 +219,7 @@ export function DuplicateDialog({ open, onOpenChange, category, rows, scheme, on
               loading={run.isPending}
               disabled={single ? mpnScheme && (!pn.trim() || unchanged) : !suffix.trim()}
             >
-              {single ? 'Duplizieren' : `${formatNumber(rows.length)} duplizieren`}
+              {single ? t("Duplizieren") : t("{1} duplizieren", { 1: formatNumber(rows.length) })}
             </Button>
           </DialogFooter>
         </form>

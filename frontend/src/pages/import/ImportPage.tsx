@@ -1,15 +1,4 @@
-/**
- * Modul „Datenblatt-Import“ (/import): Teilenummer suchen (Claude findet das PDF im Web), PDF ablegen oder per
- * Web-Adresse laden → Claude analysiert (Job mit Live-Schritten und Kosten) → Prüfansicht in drei Spalten (PDF-Seiten ·
- * extrahierte Daten · Live-Vorschau) → „Bauteile anlegen“ (Job) → Ergebnis mit Links zu den neuen Bauteilen.
- *
- * Adressen: `/import` (Übersicht) · `/import?suche=1` bzw. `?suche=<Teilenummer>` (Suchfeld fokussieren/vorbelegen –
- * gesucht wird erst auf Knopfdruck) · `/import?url=1` (URL-Feld) · `/import?ds=<id>` (Prüfansicht) ·
- * `/import?ds=<id>&job=<job>` (laufende Analyse) · `/import?job=<job>` (URL-Import, Datenblatt noch unbekannt) ·
- * `/import?ds=<id>&ansicht=ergebnis`.
- * Per Drag & Drop ins Fenster gezogene PDFs (globales Overlay → `useDroppedFiles`): ein einzelnes neues PDF wird
- * sofort analysiert, mehrere werden gespeichert und erst nach Rückfrage (mit erwarteten Kosten) analysiert.
- */
+import { t, useI18n } from '@/lib/i18n'
 import { ArrowLeft, FileScan, Globe, Search } from 'lucide-react'
 import { useEffect } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router'
@@ -30,6 +19,7 @@ import { BatchAnalyzeDialog } from './shared/BatchAnalyzeDialog'
 import { useActiveImports } from './store'
 
 export default function ImportPage() {
+  useI18n()
   const [params] = useSearchParams()
   const location = useLocation()
   const navigate = useNavigate()
@@ -50,7 +40,7 @@ export default function ImportPage() {
   useRegisterCommands([
     {
       id: 'import.overview',
-      title: 'Datenblatt-Übersicht',
+      title: t("Datenblatt-Übersicht"),
       group: 'Navigation',
       icon: FileScan,
       run: () => navigate('/import'),
@@ -58,8 +48,8 @@ export default function ImportPage() {
     },
     {
       id: 'import.find',
-      title: 'Datenblatt suchen …',
-      subtitle: 'Claude sucht das PDF zur Teilenummer im Web',
+      title: t("Datenblatt suchen …"),
+      subtitle: t("Claude sucht das PDF zur Teilenummer im Web"),
       group: 'Aktionen',
       icon: Search,
       ai: true,
@@ -68,7 +58,7 @@ export default function ImportPage() {
     },
     {
       id: 'import.url',
-      title: 'Datenblatt aus URL laden',
+      title: t("Datenblatt aus URL laden"),
       group: 'Aktionen',
       icon: Globe,
       ai: true,
@@ -100,6 +90,7 @@ export default function ImportPage() {
 }
 
 function DatasheetRoute({ id, jobId, view }: { id: string; jobId: string | null; view: string | null }) {
+  useI18n()
   const ds = useDatasheet(id)
   const activeJob = useActiveImports((s) => s.jobs[id])
   const watched = useJob(jobId ? null : activeJob)
@@ -117,17 +108,16 @@ function DatasheetRoute({ id, jobId, view }: { id: string; jobId: string | null;
     const missing = ds.error instanceof ApiError && ds.error.isNotFound
     return (
       <PageBody width="narrow">
-        <PageTitle title="Datenblatt" />
+        <PageTitle title={t("Datenblatt")} />
         <EmptyState
           illustration={missing ? 'search-empty' : 'offline'}
           titleAs="h2"
-          title={missing ? 'Datenblatt nicht gefunden' : 'Datenblatt konnte nicht geladen werden'}
-          description={missing ? 'Es wurde gelöscht oder gehört zu einer anderen Bibliothek.' : ds.error.message}
+          title={missing ? t("Datenblatt nicht gefunden") : t("Datenblatt konnte nicht geladen werden")}
+          description={missing ? t("Es wurde gelöscht oder gehört zu einer anderen Bibliothek.") : ds.error.message}
           actions={
             <Button asChild variant="secondary">
               <Link to="/import">
-                <ArrowLeft aria-hidden />Zur Übersicht
-              </Link>
+                <ArrowLeft aria-hidden />{t("Zur Übersicht")}</Link>
             </Button>
           }
         />
@@ -137,8 +127,8 @@ function DatasheetRoute({ id, jobId, view }: { id: string; jobId: string | null;
   if (!ds.data) {
     return (
       <PageBody width="full" flush className="flex h-[calc(100dvh-var(--pf-topbar-height,3.5rem))] flex-col border-t border-line">
-        <PageTitle title="Datenblatt" />
-        <div className="grid min-h-0 flex-1 grid-cols-[18rem_minmax(0,1fr)_24rem] gap-px bg-line" aria-busy aria-label="Wird geladen">
+        <PageTitle title={t("Datenblatt")} />
+        <div className="grid min-h-0 flex-1 grid-cols-[18rem_minmax(0,1fr)_24rem] gap-px bg-line" aria-busy aria-label={t("Wird geladen")}>
           {[0, 1, 2].map((i) => (
             <div key={i} className="flex flex-col gap-3 bg-bg p-4">
               <Skeleton className="h-6 w-1/2" />

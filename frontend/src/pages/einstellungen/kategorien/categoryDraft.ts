@@ -1,3 +1,4 @@
+import { t as translate } from '@/lib/i18n'
 /** Entwurf der Kategorie-Eigenschaften (alles außer den Feldern) – Prüfung und Patch wie im Backend. */
 import type { CategoryDef, CategoryPatch } from '@/api/settings'
 import { templateColumns } from '../templateRender'
@@ -54,9 +55,9 @@ export type DraftErrors = Partial<Record<keyof CategoryDraft, string>>
 
 export function draftErrors(draft: CategoryDraft, category: CategoryDef, all: CategoryDef[]): DraftErrors {
   const errors: DraftErrors = {}
-  if (!normalizeName(draft.label)) errors.label = 'Bitte eine Bezeichnung eingeben.'
-  if (!/^[A-Za-z]{1,8}$/.test(draft.prefix.trim())) errors.prefix = '1–8 Buchstaben, z. B. R, C, U oder FB.'
-  if (!HEX_COLOR.test(draft.color)) errors.color = 'Farbe im Format #RRGGBB.'
+  if (!normalizeName(draft.label)) errors.label = translate("Bitte eine Bezeichnung eingeben.")
+  if (!/^[A-Za-z]{1,8}$/.test(draft.prefix.trim())) errors.prefix = translate("1–8 Buchstaben, z. B. R, C, U oder FB.")
+  if (!HEX_COLOR.test(draft.color)) errors.color = translate("Farbe im Format #RRGGBB.")
   if (normalizeName(draft.table) !== category.table) {
     const problem = validateTableName(draft.table, all, category.table)
     if (problem) errors.table = problem
@@ -64,9 +65,9 @@ export function draftErrors(draft: CategoryDraft, category: CategoryDef, all: Ca
   const columns = new Set(category.fields.map((f) => f.column.toLowerCase()))
   const unknown = (tpl: string) => templateColumns(tpl).filter((c) => !columns.has(c.toLowerCase()))
   const badDescription = unknown(draft.description_template)
-  if (badDescription.length) errors.description_template = `Unbekannte Felder: ${badDescription.map((c) => `{${c}}`).join(', ')}`
+  if (badDescription.length) errors.description_template = translate("Unbekannte Felder: {value1}", { value1: badDescription.map((c) => `{${c}}`).join(', ') })
   const badComment = unknown(draft.comment_template)
-  if (badComment.length) errors.comment_template = `Unbekannte Felder: ${badComment.map((c) => `{${c}}`).join(', ')}`
-  if (draft.value_field && !columns.has(draft.value_field.toLowerCase())) errors.value_field = `Das Feld „${draft.value_field}“ gibt es nicht.`
+  if (badComment.length) errors.comment_template = translate("Unbekannte Felder: {value1}", { value1: badComment.map((c) => `{${c}}`).join(', ') })
+  if (draft.value_field && !columns.has(draft.value_field.toLowerCase())) errors.value_field = translate("Das Feld „{value1}“ gibt es nicht.", { value1: draft.value_field })
   return errors
 }

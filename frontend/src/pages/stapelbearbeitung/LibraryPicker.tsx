@@ -1,10 +1,5 @@
-/**
- * Auswahl der Bibliotheksdateien (Mehrfachauswahl) für die Stapelbearbeitung. Suchfeld und Liste nach dem
- * Combobox-Muster: ↑/↓ bewegen die Markierung, Enter schaltet um, Esc leert erst die Suche und schließt dann.
- * „Alle Bibliotheken“ hebt die Auswahl auf. Angeboten werden Dateien mit registrierten Symbolen bzw. Footprints der
- * gewählten Art (`useLibraryFiles`); lange Listen (eine Datei je Bauteil) zeigen höchstens {@link MAX_OPTIONS} Treffer.
- * Unter dem Auslöser stehen die gewählten Dateien als entfernbare Chips.
- */
+import { useI18n, localizeMessage } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { Check, ChevronsUpDown, CircuitBoard, RotateCw, Search, Shapes, X } from 'lucide-react'
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { libraryKey, type LibraryFile } from '@/api/libraries'
@@ -28,8 +23,8 @@ const MAX_OPTIONS = 200
 const MAX_CHIPS = 6
 
 const KIND_META: Record<LibraryFileKind, { title: string; icon: typeof Shapes }> = {
-  schlib: { title: 'Symbolbibliotheken', icon: Shapes },
-  pcblib: { title: 'Footprint-Bibliotheken', icon: CircuitBoard },
+  schlib: { get title() { return tr("Symbolbibliotheken") }, icon: Shapes },
+  pcblib: { get title() { return tr("Footprint-Bibliotheken") }, icon: CircuitBoard },
 }
 
 interface Option {
@@ -55,9 +50,9 @@ export interface LibraryPickerProps {
   labelId: string
 }
 
-const byPath = (a: Option, b: Option) => a.rel.localeCompare(b.rel, 'de', { numeric: true, sensitivity: 'base' })
 
 export function LibraryPicker({ files, loading, error, onRetry, kinds, value, onChange, labelId }: LibraryPickerProps) {
+  const { t: tr, locale } = useI18n()
   const uid = useId().replace(/:/g, '')
   const listId = `${uid}-list`
   const valueId = `${uid}-value`
@@ -87,8 +82,8 @@ export function LibraryPicker({ files, loading, error, onRetry, kinds, value, on
       seen.add(key)
       out.push({ rel, key, kind, ...splitPath(rel), registered: null })
     }
-    return out.sort(byPath)
-  }, [files, value, allowed])
+    return out.sort((a, b) => a.rel.localeCompare(b.rel, locale, { numeric: true, sensitivity: 'base' }))
+  }, [files, value, allowed, locale])
 
   const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean)
   const matches = terms.length ? options.filter((o) => terms.every((t) => o.rel.toLowerCase().includes(t))) : options
@@ -105,7 +100,7 @@ export function LibraryPicker({ files, loading, error, onRetry, kinds, value, on
   // markierte Zeile sichtbar halten
   useEffect(() => {
     if (open) document.getElementById(`${uid}-opt-${activeIndex}`)?.scrollIntoView({ block: 'nearest' })
-  }, [open, activeIndex, uid])
+  }, [open, activeIndex, uid, tr])
 
   const toggle = (option: Option) => {
     const current = value ?? []
@@ -137,10 +132,10 @@ export function LibraryPicker({ files, loading, error, onRetry, kinds, value, on
   })
   const summary =
     value === null
-      ? 'Alle Bibliotheken'
+      ? tr("Alle Bibliotheken")
       : effective.length === 1
         ? splitPath(effective[0]).name
-        : `${formatNumber(effective.length)} Bibliotheken`
+        : tr("{0} Bibliotheken", { "0": String(formatNumber(effective.length)) })
 
   return (
     <div className="flex flex-col gap-2">
@@ -192,7 +187,7 @@ export function LibraryPicker({ files, loading, error, onRetry, kinds, value, on
               size="sm"
               type="search"
               role="combobox"
-              aria-label="Bibliotheksdateien durchsuchen"
+              aria-label={tr("Bibliotheksdateien durchsuchen")}
               aria-controls={listId}
               aria-expanded
               aria-autocomplete="list"
@@ -203,23 +198,22 @@ export function LibraryPicker({ files, loading, error, onRetry, kinds, value, on
                 setActive(0)
               }}
               onKeyDown={onKeyDown}
-              placeholder="Datei oder Ordner suchen …"
+              placeholder={tr("Datei oder Ordner suchen …")}
               prefix={<Search />}
             />
           </div>
           {error && !files ? (
             <div className="flex flex-col items-start gap-2 px-3 py-3 text-xs text-danger-text" role="alert">
-              Bibliotheksdateien konnten nicht gelesen werden: {error.message}
+              {tr("Bibliotheksdateien konnten nicht gelesen werden: ")}{localizeMessage(error.message)}
               <Button size="xs" leftIcon={<RotateCw />} onClick={onRetry}>
-                Erneut laden
-              </Button>
+                {tr("Erneut laden")}</Button>
             </div>
           ) : null}
           <div
             id={listId}
             role="listbox"
             aria-multiselectable="true"
-            aria-label="Bibliotheksdateien"
+            aria-label={tr("Bibliotheksdateien")}
             className="max-h-72 overflow-y-auto p-1"
           >
             <PickerOption
@@ -230,8 +224,8 @@ export function LibraryPicker({ files, loading, error, onRetry, kinds, value, on
               onToggle={() => choose(0)}
               onKeyDown={onKeyDown}
             >
-              <span className="min-w-0 flex-1 text-ui text-fg">Alle Bibliotheken</span>
-              <span className="text-2xs text-fg-subtle">keine Einschränkung</span>
+              <span className="min-w-0 flex-1 text-ui text-fg">{tr("Alle Bibliotheken")}</span>
+              <span className="text-2xs text-fg-subtle">{tr("keine Einschränkung")}</span>
             </PickerOption>
             {groups.map((g) => {
               const meta = KIND_META[g.kind]
@@ -264,7 +258,7 @@ export function LibraryPicker({ files, loading, error, onRetry, kinds, value, on
                         </span>
                         <span className="mono shrink-0 text-2xs text-fg-subtle">
                           {o.registered === null ? '–' : formatNumber(o.registered)}
-                          <span className="sr-only"> registriert</span>
+                          <span className="sr-only"> {' '}{tr("registriert")}</span>
                         </span>
                       </PickerOption>
                     )
@@ -283,25 +277,24 @@ export function LibraryPicker({ files, loading, error, onRetry, kinds, value, on
           {(hidden > 0 || (files && !options.length) || (terms.length > 0 && !matches.length)) && (
             <p className="border-t border-line px-3 py-2 text-2xs text-fg-subtle" aria-live="polite">
               {hidden > 0
-                ? `… und ${formatNumber(hidden)} weitere – Suche eingrenzen`
+                ? tr("… und {0} weitere – Suche eingrenzen", { "0": String(formatNumber(hidden)) })
                 : terms.length && !matches.length
-                  ? `Keine Datei passt zu „${query.trim()}“.`
-                  : 'Keine Bibliothek mit registrierten Bauteilen dieser Art.'}
+                  ? tr("Keine Datei passt zu „{0}“.", { "0": String(query.trim()) })
+                  : tr("Keine Bibliothek mit registrierten Bauteilen dieser Art.")}
             </p>
           )}
           <div className="flex items-center justify-between gap-3 border-t border-line px-3 py-2">
             <span className="text-2xs text-fg-subtle" aria-live="polite">
-              {value === null ? 'Alle Bibliotheken' : `${plural(effective.length, 'Datei', 'Dateien')} gewählt`}
+              {value === null ? tr("Alle Bibliotheken") : tr("{0} gewählt", { "0": String(plural(effective.length, tr("Datei"), tr("Dateien"))) })}
             </span>
             <Button size="xs" variant="secondary" onClick={() => setOpen(false)}>
-              Fertig
-            </Button>
+              {tr("Fertig")}</Button>
           </div>
         </PopoverContent>
       </Popover>
 
       {value !== null && value.length > 0 && (
-        <ul className="flex flex-wrap gap-1.5" aria-label="Gewählte Bibliotheken">
+        <ul className="flex flex-wrap gap-1.5" aria-label={tr("Gewählte Bibliotheken")}>
           {value.slice(0, MAX_CHIPS).map((rel) => {
             const kind = libraryFileKind(rel)
             const fits = kind !== null && allowed.has(kind)
@@ -309,18 +302,18 @@ export function LibraryPicker({ files, loading, error, onRetry, kinds, value, on
             return (
               <li
                 key={rel}
-                title={fits ? rel : `${rel} – passt nicht zur gewählten Art und wird nicht geprüft`}
+                title={fits ? rel : tr("{0} – passt nicht zur gewählten Art und wird nicht geprüft", { "0": String(rel) })}
                 className={cn(
                   'inline-flex h-6 max-w-full items-center gap-1 rounded-full border border-line-strong bg-surface-2 pl-2.5 pr-0.5 text-2xs text-fg',
                   !fits && 'border-dashed text-fg-subtle',
                 )}
               >
                 <span className="min-w-0 truncate">{name}</span>
-                {!fits && <span className="sr-only"> (passt nicht zur gewählten Art)</span>}
+                {!fits && <span className="sr-only"> {tr(" (passt nicht zur gewählten Art)")}</span>}
                 <IconButton
                   size="xs"
                   className="size-5 rounded-full"
-                  label={`${name} aus der Auswahl entfernen`}
+                  label={tr("{0} aus der Auswahl entfernen", { "0": String(name) })}
                   icon={<X />}
                   tooltip={false}
                   onClick={() => {
@@ -334,8 +327,7 @@ export function LibraryPicker({ files, loading, error, onRetry, kinds, value, on
           {value.length > MAX_CHIPS && (
             <li>
               <Button size="xs" variant="ghost" className="h-6" onClick={() => setOpen(true)}>
-                + {formatNumber(value.length - MAX_CHIPS)} weitere
-              </Button>
+                + {formatNumber(value.length - MAX_CHIPS)} {' '}{tr("weitere")}</Button>
             </li>
           )}
         </ul>
@@ -361,6 +353,7 @@ function PickerOption({
   onKeyDown: (e: KeyboardEvent<HTMLElement>) => void
   children: ReactNode
 }) {
+  useI18n()
   return (
     <div
       id={id}

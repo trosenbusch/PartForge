@@ -1,3 +1,4 @@
+import { t as tr } from '@/components/preview/i18n'
 /**
  * Zustand des Footprint-Generators (zustand, im Browser gespeichert): Familie, Vorlage, Formularwerte, Dichte,
  * Herstellerempfehlung, Name/Beschreibung – plus Entwürfe je Familie (ein Familienwechsel verliert keine Eingaben).
@@ -203,8 +204,8 @@ function announceReplaced(label: string, lost: number) {
   if (lost <= 0) return
   toast(label, {
     id: 'fp-undo',
-    description: lost === 1 ? '1 eigene Eingabe ersetzt' : `${lost} eigene Eingaben ersetzt`,
-    action: { label: 'Rückgängig', onClick: () => void useGenerator.getState().undo() },
+    description: lost === 1 ? tr('1 eigene Eingabe ersetzt') : tr("{value0} eigene Eingaben ersetzt", { value0: String(lost) }),
+    action: { label: tr('Rückgängig'), onClick: () => void useGenerator.getState().undo() },
   })
 }
 
@@ -264,7 +265,7 @@ export const useGenerator = create<GeneratorState>()(
             const p = preferredPreset(family)
             next = { preset: p?.key ?? null, values: p ? presetValues(family, p) : {}, landPattern: EMPTY_LAND, overrides: NO_OVERRIDES }
           }
-          const label = preset ? `Vorlage „${preset.key}“ geladen` : `Familie ${family.label.replace(/\s*\([^)]*\)\s*$/, '')} gewählt`
+          const label = preset ? tr("Vorlage „{value0}“ geladen", { value0: String(preset.key) }) : tr("Familie {value0} gewählt", { value0: String(family.label.replace(/\s*\([^)]*\)\s*$/, '')) })
           commit(label, null, {
             family: family.key,
             preset: next.preset,
@@ -282,7 +283,7 @@ export const useGenerator = create<GeneratorState>()(
         selectPreset: (family, preset) => {
           const s = get()
           const lost = s.family === family.key ? editCount(family, s) : 0
-          const label = `Vorlage „${preset.key}“ geladen`
+          const label = tr("Vorlage „{value0}“ geladen", { value0: String(preset.key) })
           commit(label, null, {
             family: family.key,
             preset: preset.key,
@@ -301,7 +302,7 @@ export const useGenerator = create<GeneratorState>()(
           const { mode = 'typing', commit: applySelectors = true } = opts
           const s = get()
           const spec = family.params.find((p) => p.name === name)
-          const label = `${spec?.label ?? name} geändert`
+          const label = tr("{value0} geändert", { value0: tr(spec?.label ?? name) })
           const key = mode === 'typing' ? `param:${name}` : null
           const values: ParamValues = { ...s.values }
           if (value === null || value === undefined || value === '') delete values[name]
@@ -319,7 +320,7 @@ export const useGenerator = create<GeneratorState>()(
                   preset: match.key,
                   values: presetValues(family, match),
                   lastChange: 'discrete',
-                  notice: notice(`Vorlage „${match.key}“ übernommen`),
+                  notice: notice(tr("Vorlage „{value0}“ übernommen", { value0: String(match.key) })),
                   suggestion: null,
                 })
                 return
@@ -329,7 +330,7 @@ export const useGenerator = create<GeneratorState>()(
               // Keine Vorlage für diese Auswahl: Maße aus den Standardtabellen der Familie ableiten lassen
               for (const p of family.params) if (p.kind === 'tol') delete values[p.name]
               preset = null
-              note = notice('Keine Vorlage für diese Auswahl – Maße kommen aus den Standardtabellen.')
+              note = notice(tr('Keine Vorlage für diese Auswahl – Maße kommen aus den Standardtabellen.'))
             }
           }
           commit(label, key, { values, preset, lastChange: mode, notice: note ?? s.notice, suggestion })
@@ -343,14 +344,14 @@ export const useGenerator = create<GeneratorState>()(
           if (base[name] === undefined) delete values[name]
           else values[name] = base[name]
           const spec = family.params.find((p) => p.name === name)
-          commit(`${spec?.label ?? name} zurückgesetzt`, null, { values, lastChange: 'discrete', suggestion: null })
+          commit(tr("{value0} zurückgesetzt", { value0: tr(spec?.label ?? name) }), null, { values, lastChange: 'discrete', suggestion: null })
         },
 
         resetAll: (family) => {
           const s = get()
           const preset = findPreset(family, s.preset)
           const lost = changedParams(family.params, s.values, preset ? presetValues(family, preset) : {}).length
-          const label = preset ? `Werte von „${preset.key}“ wiederhergestellt` : 'Werte zurückgesetzt'
+          const label = preset ? tr("Werte von „{value0}“ wiederhergestellt", { value0: String(preset.key) }) : tr('Werte zurückgesetzt')
           commit(label, null, {
             values: preset ? presetValues(family, preset) : {},
             lastChange: 'discrete',
@@ -360,16 +361,16 @@ export const useGenerator = create<GeneratorState>()(
           announceReplaced(label, lost)
         },
 
-        setDensity: (density) => commit(`Dichte ${densityLabel(density)}`, null, { density, lastChange: 'discrete' }),
+        setDensity: (density) => commit(tr("Dichte {value0}", { value0: String(densityLabel(density)) }), null, { density, lastChange: 'discrete' }),
 
         setLandPattern: (patch, mode = 'typing') =>
-          commit('Herstellerempfehlung geändert', mode === 'typing' ? `land:${Object.keys(patch).join(',')}` : null, {
+          commit(tr('Herstellerempfehlung geändert'), mode === 'typing' ? `land:${Object.keys(patch).join(',')}` : null, {
             landPattern: { ...get().landPattern, ...patch },
             lastChange: mode,
           }),
 
         setOverrides: (patch, mode = 'discrete') =>
-          commit(patch.name !== undefined ? 'Name geändert' : 'Beschreibung geändert', mode === 'typing' ? `ov:${Object.keys(patch).join(',')}` : null, {
+          commit(patch.name !== undefined ? tr('Name geändert') : tr('Beschreibung geändert'), mode === 'typing' ? `ov:${Object.keys(patch).join(',')}` : null, {
             overrides: { ...get().overrides, ...patch },
             lastChange: 'discrete',
           }),
@@ -388,7 +389,7 @@ export const useGenerator = create<GeneratorState>()(
           const presetKey = typeof snapshot.preset === 'string' ? snapshot.preset : null
           const preset = findPreset(family, presetKey) ?? closestPreset(family, values)
           const density = snapshot.density === 'L' || snapshot.density === 'N' || snapshot.density === 'M' ? snapshot.density : s.density
-          const label = opts.label ?? 'Gespeicherte Parameter geladen'
+          const label = opts.label ?? tr('Gespeicherte Parameter geladen')
           commit(label, null, {
             family: family.key,
             preset: preset?.key ?? null,
@@ -398,7 +399,7 @@ export const useGenerator = create<GeneratorState>()(
             overrides: opts.name?.trim() ? { name: opts.name.trim(), description: null } : NO_OVERRIDES,
             drafts,
             lastChange: 'discrete',
-            notice: opts.notice === null ? null : notice(opts.notice ?? 'Parameter des gespeicherten Footprints geladen'),
+            notice: opts.notice === null ? null : notice(opts.notice ?? tr('Parameter des gespeicherten Footprints geladen')),
             suggestion: null,
           })
           announceReplaced(label, lost)
@@ -461,16 +462,16 @@ export function undoWithFeedback(direction: 'undo' | 'redo'): void {
   const st = useGenerator.getState()
   const label = direction === 'undo' ? st.undo() : st.redo()
   if (!label) {
-    toast(direction === 'undo' ? 'Nichts rückgängig zu machen' : 'Nichts zu wiederholen', { id: 'fp-undo' })
+    toast(direction === 'undo' ? tr('Nichts rückgängig zu machen') : tr('Nichts zu wiederholen'), { id: 'fp-undo' })
     return
   }
-  toast(direction === 'undo' ? 'Rückgängig gemacht' : 'Wiederholt', {
+  toast(direction === 'undo' ? tr('Rückgängig gemacht') : tr('Wiederholt'), {
     id: 'fp-undo',
     description: label,
     action:
       direction === 'undo'
-        ? { label: 'Wiederholen', onClick: () => undoWithFeedback('redo') }
-        : { label: 'Rückgängig', onClick: () => undoWithFeedback('undo') },
+        ? { label: tr('Wiederholen'), onClick: () => undoWithFeedback('redo') }
+        : { label: tr('Rückgängig'), onClick: () => undoWithFeedback('undo') },
   })
 }
 

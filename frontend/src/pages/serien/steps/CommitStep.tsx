@@ -1,3 +1,4 @@
+import { localizeMessage, t as tr, useI18n } from '@/lib/i18n'
 /**
  * Schritt 5 – Erzeugen: Zusammenfassung und Modus für vorhandene Bauteile (überspringen/aktualisieren), Start als
  * Hintergrundjob (POST /api/series/commit), Fortschritt und Protokoll (`useJob`), danach der Erfolgsbildschirm mit
@@ -140,17 +141,17 @@ function phaseNote(i: number, state: PhaseState, detail: Partial<SeriesCommitDet
       : null
   switch (id) {
     case 'plan':
-      return state === 'done' ? plural(plan.rows, 'Zeile', 'Zeilen') : state === 'active' ? 'läuft …' : ''
+      return state === 'done' ? plural(plan.rows, tr("Zeile"), tr("Zeilen")) : state === 'active' ? tr("läuft …") : ''
     case 'symbol':
-      return plan.symbol ? `${plan.symbol}${plan.symbolExists ? '' : ' · neu'}` : '–'
+      return plan.symbol ? `${plan.symbol}${plan.symbolExists ? '' : tr("· neu")}` : '–'
     case 'footprints':
-      if (state === 'skipped') return 'alle vorhanden'
+      if (state === 'skipped') return tr("alle vorhanden")
       // neue laut Vorschau (das Backend gleicht beim Anlegen auch vorhandene ab – der Zähler der Phase zählt sie mit)
-      return counter ?? `${formatNumber(plan.footprints)} neu`
+      return counter ?? tr("{v0} neu", { v0: formatNumber(plan.footprints) })
     case 'backup':
-      return state === 'done' ? 'angelegt' : state === 'active' ? 'läuft …' : 'vor dem Schreiben'
+      return state === 'done' ? tr("angelegt") : state === 'active' ? tr("läuft …") : tr("vor dem Schreiben")
     default:
-      return counter ?? (state === 'done' ? `${formatNumber(plan.writes)} gespeichert` : plural(plan.writes, 'Bauteil', 'Bauteile'))
+      return counter ?? (state === 'done' ? tr("{v0} gespeichert", { v0: formatNumber(plan.writes) }) : plural(plan.writes, tr("Bauteil"), tr("Bauteile")))
   }
 }
 
@@ -169,6 +170,7 @@ function JobProgress({
   onStart: () => void
   onBack: () => void
 }) {
+  const { t: tr } = useI18n()
   const cancel = useCancelJob()
   const headingRef = useRef<HTMLHeadingElement>(null)
   const failed = job?.status === 'failed'
@@ -190,21 +192,21 @@ function JobProgress({
   useEffect(() => focusWhenReady(() => headingRef.current), [info.id])
 
   const headline = failed
-    ? 'Erzeugen fehlgeschlagen'
+    ? tr("Erzeugen fehlgeschlagen")
     : cancelled
-      ? 'Abgebrochen'
+      ? tr("Abgebrochen")
       : stopping
-        ? 'Wird abgebrochen …'
+        ? tr("Wird abgebrochen …")
         : queued
-          ? 'Wartet auf den Start …'
-          : 'Serie wird erzeugt …'
+          ? tr("Wartet auf den Start …")
+          : tr("Serie wird erzeugt …")
   const message = failed
-    ? cleanErrorText(job?.error ?? 'Unbekannter Fehler')
+    ? cleanErrorText(job?.error ?? tr("Unbekannter Fehler"))
     : cancelled && job
-      ? `${jobCancelText(job)} Schon angelegte Symbole und Footprints bleiben erhalten – die Vorschau zeigt den aktuellen Stand.`
-      : formatNumbersInText(job?.message || 'Wird vorbereitet …')
+      ? tr("{v0} Schon angelegte Symbole und Footprints bleiben erhalten – die Vorschau zeigt den aktuellen Stand.", { v0: jobCancelText(job) })
+      : formatNumbersInText(localizeMessage(job?.message || tr("Wird vorbereitet …")))
   /** Ansage für Screenreader: Abschnitt bzw. Ergebnis – nicht jede Zahl des Fortschritts */
-  const announcement = failed || cancelled ? `${headline}. ${message}` : activePhase >= 0 ? `${PHASES[activePhase].running} …` : headline
+  const announcement = failed || cancelled ? `${headline}. ${message}` : activePhase >= 0 ? `${tr(PHASES[activePhase].running)} …` : headline
 
   return (
     <section aria-labelledby="serien-job" className="flex w-full flex-col">
@@ -227,8 +229,8 @@ function JobProgress({
             stroke={7}
             tone={failed ? 'danger' : cancelled ? 'neutral' : 'accent'}
             indeterminate={queued}
-            label="Fortschritt der Serie"
-            valueText={queued ? 'wartet' : undefined}
+            label={tr("Fortschritt der Serie")}
+            valueText={queued ? tr("wartet") : undefined}
           >
             <span className="mono text-h3 font-semibold tabular-nums text-fg">
               {failed ? '!' : cancelled ? '–' : formatPercent(progress).replace(/\s/g, ' ')}
@@ -255,21 +257,19 @@ function JobProgress({
                 disabled={!job || stopping}
                 onClick={() => job && cancel.mutate(job.id)}
               >
-                {stopping ? 'Wird abgebrochen' : 'Abbrechen'}
+                {stopping ? tr("Wird abgebrochen") : tr("Abbrechen")}
               </Button>
             ) : (
               <>
                 <Button variant="ghost" leftIcon={<ArrowLeft />} onClick={onBack}>
-                  Zur Vorschau
-                </Button>
+                  {tr("Zur Vorschau")}</Button>
                 <Button variant="secondary" leftIcon={<RefreshCw />} onClick={onStart} loading={starting} disabled={Boolean(busyWith)}>
-                  Erneut starten
-                </Button>
+                  {tr("Erneut starten")}</Button>
               </>
             )}
           </div>
         </div>
-        <ol aria-label="Ablauf" className="relative grid grid-cols-5 gap-px border-t border-line bg-line">
+        <ol aria-label={tr("Ablauf")} className="relative grid grid-cols-5 gap-px border-t border-line bg-line">
           {PHASES.map((ph, i) => {
             const state = states[i]
             const note = phaseNote(i, state, detail, info.plan)
@@ -297,8 +297,8 @@ function JobProgress({
                           : 'text-fg',
                     )}
                   >
-                    {ph.label}
-                    <span className="sr-only">{` – ${PHASE_STATE_TEXT[state]}`}</span>
+                    {tr(ph.label)}
+                    <span className="sr-only">{` – ${tr(PHASE_STATE_TEXT[state])}`}</span>
                   </span>
                 </span>
                 <span className={cn('mono truncate pl-4 text-2xs tabular-nums', state === 'active' ? 'text-fg-muted' : 'text-fg-subtle')}>
@@ -310,13 +310,13 @@ function JobProgress({
         </ol>
         <div className="relative border-t border-line px-6 py-4">
           <div className="mb-2 flex items-baseline justify-between gap-3">
-            <h3 className="micro-label">Protokoll</h3>
-            {log.length > 0 && <span className="text-2xs text-fg-subtle">{plural(log.length, 'Eintrag', 'Einträge')}</span>}
+            <h3 className="micro-label">{tr("Protokoll")}</h3>
+            {log.length > 0 && <span className="text-2xs text-fg-subtle">{plural(log.length, tr("Eintrag"), tr("Einträge"))}</span>}
           </div>
           <JobLog
             entries={log}
             live={live}
-            emptyText={queued ? 'Der Job wartet auf den Start …' : 'Noch keine Einträge …'}
+            emptyText={queued ? tr("Der Job wartet auf den Start …") : tr("Noch keine Einträge …")}
             className="h-56"
           />
         </div>
@@ -341,6 +341,7 @@ export function CommitStep({
   onShowTable,
   onNewSeries,
 }: CommitStepProps) {
+  const { t: tr } = useI18n()
   const { job } = useJob<SeriesCommitResult>(jobInfo?.id)
   // Fortschritt und Ergebnis stehen hier – solange der Schritt sichtbar ist, nicht in der Pille und ohne Toast
   useInlineJob(jobInfo?.id)
@@ -355,7 +356,7 @@ export function CommitStep({
   if (jobInfo && job?.status === 'done' && job.result) {
     const duration = job.started && job.finished ? job.finished - job.started : null
     return (
-      <section aria-label="Ergebnis" className="flex w-full flex-col">
+      <section aria-label={tr("Ergebnis")} className="flex w-full flex-col">
         <SuccessView
           result={job.result}
           title={jobInfo.title}
@@ -391,12 +392,12 @@ export function CommitStep({
     <section aria-labelledby="serien-erzeugen" className="flex flex-col gap-5">
       <StepHeading
         id="serien-erzeugen"
-        title="Erzeugen"
-        description={`${template.title} → ${categoryLabel}. PartForge legt zuerst eine Sicherung an, dann Symbol, Footprints und Bauteile.`}
+        title={tr("Erzeugen")}
+        description={tr("{v0} → {v1}. PartForge legt zuerst eine Sicherung an, dann Symbol, Footprints und Bauteile.", { v0: template.title, v1: categoryLabel })}
       />
       {!preview ? (
         previewError ? (
-          <Callout tone="danger" urgent title="Vorschau nicht möglich">
+          <Callout tone="danger" urgent title={tr("Vorschau nicht möglich")}>
             {errorMessage(previewError)}
           </Callout>
         ) : (
@@ -406,13 +407,13 @@ export function CommitStep({
         <div className="grid grid-cols-1 items-start gap-5 @[64rem]:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="overflow-hidden rounded-panel border border-line bg-surface shadow-card">
             <div className="grid grid-cols-3 gap-px border-b border-line bg-line">
-              <Stat label="Neu" value={created} hint={`Kategorie ${categoryLabel}`} />
+              <Stat label={tr("Neu")} value={created} hint={tr("Kategorie {v0}", { v0: categoryLabel })} />
               <Stat
-                label="Vorhanden"
+                label={tr("Vorhanden")}
                 value={existing}
-                hint={existing ? (mode === 'update' ? 'werden aktualisiert' : 'werden übersprungen') : undefined}
+                hint={existing ? (mode === 'update' ? tr("werden aktualisiert") : tr("werden übersprungen")) : undefined}
               />
-              <Stat label="Footprints neu" value={needed.length} hint={needed.length ? 'nach IPC-7351B' : 'alle vorhanden'} />
+              <Stat label={tr("Footprints neu")} value={needed.length} hint={needed.length ? tr("nach IPC-7351B") : tr("alle vorhanden")} />
             </div>
             <ul className="divide-y divide-line">
               {existing > 0 && (
@@ -420,42 +421,39 @@ export function CommitStep({
                   <div className="flex flex-col gap-2.5 @[40rem]:flex-row @[40rem]:items-center @[40rem]:justify-between">
                     <span>
                       <span className="mono font-semibold">{formatNumber(existing)}</span>{' '}
-                      {existing === 1 ? 'Bauteil ist' : 'Bauteile sind'} schon vorhanden
-                    </span>
+                      {existing === 1 ? tr("Bauteil ist") : tr("Bauteile sind")} {tr("schon vorhanden")}</span>
                     <SegmentedControl<CommitMode>
                       size="sm"
-                      aria-label="Vorhandene Bauteile"
+                      aria-label={tr("Vorhandene Bauteile")}
                       value={mode}
                       onValueChange={onModeChange}
                       options={[
-                        { value: 'skip', label: 'Überspringen' },
-                        { value: 'update', label: 'Aktualisieren' },
+                        { value: 'skip', label: tr("Überspringen") },
+                        { value: 'update', label: tr("Aktualisieren") },
                       ]}
                     />
                   </div>
                   <p className="mt-1.5 text-xs text-fg-muted">
                     {mode === 'update'
-                      ? 'Werte und Texte werden erneuert. Freigabestatus, ein abweichender Lebenszyklus, Datenblatt-Link, Symbol und Footprint bleiben erhalten.'
-                      : 'Vorhandene Bauteile bleiben unverändert.'}
+                      ? tr("Werte und Texte werden erneuert. Freigabestatus, ein abweichender Lebenszyklus, Datenblatt-Link, Symbol und Footprint bleiben erhalten.")
+                      : tr("Vorhandene Bauteile bleiben unverändert.")}
                   </p>
                 </Row>
               )}
               {blocked > 0 && (
                 <Row icon={<CircleSlash />} muted>
-                  {plural(blocked, 'Zeile wird', 'Zeilen werden')} nicht angelegt (
-                  {[
-                    counts.conflict ? plural(counts.conflict, 'Konflikt', 'Konflikte') : null,
-                    counts.invalid ? `${formatNumber(counts.invalid)} ungültig` : null,
+                  {plural(blocked, tr("Zeile wird"), tr("Zeilen werden"))} {tr("nicht angelegt (")}{[
+                    counts.conflict ? plural(counts.conflict, tr("Konflikt"), tr("Konflikte")) : null,
+                    counts.invalid ? tr("{v0} ungültig", { v0: formatNumber(counts.invalid) }) : null,
                   ]
                     .filter(Boolean)
                     .join(', ')}
-                  ) – Gründe stehen in der Vorschau.
-                </Row>
+                  {tr(") – Gründe stehen in der Vorschau.")}</Row>
               )}
               <Row icon={<CircuitBoard />} muted={!needed.length}>
                 {needed.length ? (
                   <>
-                    {plural(needed.length, 'Footprint wird', 'Footprints werden')} erzeugt:{' '}
+                    {plural(needed.length, tr("Footprint wird"), tr("Footprints werden"))} {tr('erzeugt:')}{' '}
                     <FootprintList footprints={needed} />
                     {marked.length > 0 && (
                       <p className="mt-1.5 flex items-start gap-1.5 text-xs text-fg-muted">
@@ -465,22 +463,21 @@ export function CommitStep({
                     )}
                   </>
                 ) : (
-                  'Alle Footprints sind schon vorhanden.'
+                  tr("Alle Footprints sind schon vorhanden.")
                 )}
               </Row>
               <Row icon={<Component />}>
                 {preview.symbol ? (
                   <>
-                    Symbol <span className="mono">{preview.symbol.name}</span>{' '}
-                    {preview.symbol.exists ? '– vorhanden, wird verwendet' : '– wird angelegt'}
+                    {tr("Symbol")} <span className="mono">{preview.symbol.name}</span>{' '}
+                    {preview.symbol.exists ? tr("– vorhanden, wird verwendet") : tr("– wird angelegt")}
                   </>
                 ) : (
-                  <span className="text-warning-text">Kein sicheres Symbol – es wird nichts angelegt.</span>
+                  <span className="text-warning-text">{tr("Kein sicheres Symbol – es wird nichts angelegt.")}</span>
                 )}
               </Row>
               <Row icon={<DatabaseBackup />} muted>
-                Vor dem Schreiben sichert PartForge die Datenbank (Ordner „Backups“).
-              </Row>
+                {tr("Vor dem Schreiben sichert PartForge die Datenbank (Ordner „Backups“).")}</Row>
             </ul>
             {(!template.verified || !template.availability_certain) && (
               <div className="border-t border-line px-5 py-3">
@@ -492,17 +489,15 @@ export function CommitStep({
                 {busy ? (
                   <Callout
                     tone="warning"
-                    title="Die Bibliothek wird gerade geschrieben"
+                    title={tr("Die Bibliothek wird gerade geschrieben")}
                     actions={
                       <Button size="sm" variant="secondary" leftIcon={<RefreshCw />} loading={starting} onClick={onStart}>
-                        Erneut versuchen
-                      </Button>
+                        {tr("Erneut versuchen")}</Button>
                     }
                   >
-                    Ein anderer Vorgang schreibt gerade in die Bibliothek. In einigen Sekunden erneut versuchen.
-                  </Callout>
+                    {tr("Ein anderer Vorgang schreibt gerade in die Bibliothek. In einigen Sekunden erneut versuchen.")}</Callout>
                 ) : (
-                  <Callout tone="danger" title="Serie konnte nicht gestartet werden" urgent>
+                  <Callout tone="danger" title={tr("Serie konnte nicht gestartet werden")} urgent>
                     {cleanErrorText(errorMessage(startError))}
                   </Callout>
                 )}
@@ -511,10 +506,10 @@ export function CommitStep({
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line bg-surface-2/40 px-5 py-4">
               <span className={cn('text-xs', busyWith ? 'text-warning-text' : 'text-fg-muted')} aria-live="polite">
                 {busyWith
-                  ? `„${busyWith}“ wird gerade erzeugt – danach kann diese Serie starten.`
+                  ? tr("„{v0}“ wird gerade erzeugt – danach kann diese Serie starten.", { v0: busyWith })
                   : writes
-                    ? `${plural(writes, 'Bauteil wird', 'Bauteile werden')} geschrieben.`
-                    : 'Nichts zu schreiben – alle Bauteile sind schon vorhanden.'}
+                    ? tr("{v0} geschrieben.", { v0: plural(writes, tr("Bauteil wird"), tr("Bauteile werden")) })
+                    : tr("Nichts zu schreiben – alle Bauteile sind schon vorhanden.")}
               </span>
               <div className="ml-auto flex items-center gap-2.5">
                 <Kbd hotkey="mod+enter" />
@@ -527,20 +522,19 @@ export function CommitStep({
                   aria-keyshortcuts="Control+Enter"
                   onClick={onStart}
                 >
-                  Serie erzeugen
-                </Button>
+                  {tr("Serie erzeugen")}</Button>
               </div>
             </div>
           </div>
-          <section aria-label="So läuft es ab" className="rounded-panel border border-line bg-surface/60 p-5">
-            <h3 className="micro-label">So läuft es ab</h3>
+          <section aria-label={tr("So läuft es ab")} className="rounded-panel border border-line bg-surface/60 p-5">
+            <h3 className="micro-label">{tr("So läuft es ab")}</h3>
             <ol className="mt-3 flex flex-col gap-3">
               {[
-                ['Sicherung', 'Kopie der Datenbank vor jeder Änderung.'],
-                ['Symbol', 'Standardsymbol der Kategorie – nie geraten.'],
-                ['Footprints', 'IPC-7351B im Hausstil, in die PcbLib der Familie.'],
-                ['Bauteile', 'Werte wie bei der Handeingabe, Texte aus den Vorlagen.'],
-                ['Altium Designer', 'sieht die neuen Bauteile nach der Aktualisierung.'],
+                [tr("Sicherung"), tr("Kopie der Datenbank vor jeder Änderung.")],
+                [tr("Symbol"), tr("Standardsymbol der Kategorie – nie geraten.")],
+                [tr("Footprints"), tr("IPC-7351B im Hausstil, in die PcbLib der Familie.")],
+                [tr("Bauteile"), tr("Werte wie bei der Handeingabe, Texte aus den Vorlagen.")],
+                ['Altium Designer', tr("sieht die neuen Bauteile nach der Aktualisierung.")],
               ].map(([t, d], i) => (
                 <li key={t} className="flex gap-3">
                   <span className="mono flex size-5 shrink-0 items-center justify-center rounded-full border border-line-strong bg-surface-2 text-2xs text-fg-muted">
@@ -555,8 +549,7 @@ export function CommitStep({
             {blocked > 0 && (
               <p className="mt-4 flex gap-2 text-xs text-warning-text">
                 <TriangleAlert aria-hidden className="mt-0.5 size-3.5 shrink-0" />
-                Konflikte und ungültige Zeilen werden ausgelassen.
-              </p>
+                {tr("Konflikte und ungültige Zeilen werden ausgelassen.")}</p>
             )}
           </section>
         </div>
@@ -569,20 +562,21 @@ export function CommitStep({
 /** „3 davon mit Kennung im Namen: eigene Land Patterns statt der Standard-Footprints (Footprint-Höhe „Exakt“).“ */
 function markedText(marked: SeriesFootprintRef[], total: number): string {
   const topics = [...new Set(marked.map((f) => nameReasonTopic(f.name_reason ?? '')))].slice(0, 2).join('; ')
-  if (total === 1) return `Mit Kennung im Namen: ein eigenes Land Pattern statt des Standard-Footprints (${topics}).`
-  const who = marked.length === total ? 'Alle' : `${formatNumber(marked.length)} davon`
-  return `${who} mit Kennung im Namen: eigene Land Patterns statt der Standard-Footprints (${topics}).`
+  if (total === 1) return tr("Mit Kennung im Namen: ein eigenes Land Pattern statt des Standard-Footprints ({v0}).", { v0: topics })
+  const who = marked.length === total ? tr("Alle") : tr("{v0} davon", { v0: formatNumber(marked.length) })
+  return tr("{v0} mit Kennung im Namen: eigene Land Patterns statt der Standard-Footprints ({v1}).", { v0: who, v1: topics })
 }
 
 /** Die ersten Footprint-Namen (Kennung gedämpft, Grund als Tooltip), Rest als „+ n weitere“ */
 function FootprintList({ footprints }: { footprints: SeriesFootprintRef[] }) {
+  const { t: tr } = useI18n()
   const shown = footprints.slice(0, 4)
   return (
     <span className="mono text-xs text-fg-muted">
       {shown.map((f, i) => (
         <span key={f.name}>
           {f.name_reason ? (
-            <Tooltip content={<span className="block max-w-sm font-sans">{f.name_reason}</span>}>
+            <Tooltip content={<span className="block max-w-sm font-sans">{localizeMessage(f.name_reason)}</span>}>
               <span className="cursor-help rounded-sm underline decoration-dotted decoration-fg-subtle underline-offset-2">
                 <FootprintName footprint={f} />
               </span>
@@ -594,7 +588,7 @@ function FootprintList({ footprints }: { footprints: SeriesFootprintRef[] }) {
         </span>
       ))}
       {footprints.length > shown.length ? (
-        <span className="font-sans"> und {plural(footprints.length - shown.length, 'weiterer', 'weitere')}</span>
+        <span className="font-sans"> {tr("und")} {plural(footprints.length - shown.length, tr("weiterer"), tr("weitere"))}</span>
       ) : null}
     </span>
   )

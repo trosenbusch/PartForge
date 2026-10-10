@@ -1,3 +1,4 @@
+import { localizeMessage, t } from '@/lib/i18n'
 /**
  * „Rückgängig“ für Massenänderungen und „Texte neu erzeugen“: Die Antwort nennt die Einträge der Änderungshistorie
  * (`audit_ids`), `POST /api/parts/{table}/restore-updates` setzt damit die alten Werte zurück – je Bauteil ganz oder gar
@@ -52,36 +53,36 @@ export function restoreUpdatesOutcome(
   if (conflicts.length) {
     const named = conflicts
       .slice(0, NAMED_CONFLICTS)
-      .map(([pn, why]) => `${pn}: ${conflictReason(why)}`)
+      .map(([pn, why]) => `${pn}: ${localizeMessage(conflictReason(why))}`)
       .join(' · ')
-    const more = conflicts.length > NAMED_CONFLICTS ? ` … und ${formatNumber(conflicts.length - NAMED_CONFLICTS)} weitere` : ''
-    problems.push(`${plural(conflicts.length, 'Bauteil', 'Bauteile')} übersprungen – ${named}${more}`)
+    const more = conflicts.length > NAMED_CONFLICTS ? t(" … und {1} weitere", { 1: formatNumber(conflicts.length - NAMED_CONFLICTS) }) : ''
+    problems.push(t("{1} übersprungen – {2}{3}", { 1: plural(conflicts.length, t("Bauteil"), t("Bauteile")), 2: named, 3: more }))
   }
   if (res.not_found.length) {
-    problems.push(`${plural(res.not_found.length, 'Änderung ist', 'Änderungen sind')} nicht mehr in der Änderungshistorie`)
+    problems.push(t("{1} nicht mehr in der Änderungshistorie", { 1: plural(res.not_found.length, t("Änderung ist"), t("Änderungen sind")) }))
   }
   if (!restored) {
     return problems.length
-      ? { tone: 'warning', title: 'Nichts zurückgesetzt', description: problems.join('. ') }
-      : { tone: 'info', title: 'Nichts zurückzusetzen', description: 'Die Bauteile haben schon wieder die alten Werte.' }
+      ? { tone: 'warning', title: t("Nichts zurückgesetzt"), description: problems.join('. ') }
+      : { tone: 'info', title: t("Nichts zurückzusetzen"), description: t("Die Bauteile haben schon wieder die alten Werte.") }
   }
   if (problems.length) {
     return {
       tone: 'warning',
-      title: `${formatNumber(restored)} von ${plural(Math.max(total, restored), 'Bauteil', 'Bauteilen')} zurückgesetzt`,
+      title: t("{1} von {2} zurückgesetzt", { 1: formatNumber(restored), 2: plural(Math.max(total, restored), t("Bauteil"), t("Bauteilen")) }),
       description: problems.join('. '),
     }
   }
   return {
     tone: 'success',
-    title: restored === 1 ? `„${res.restored[0]}“ zurückgesetzt` : `${plural(restored, 'Bauteil', 'Bauteile')} zurückgesetzt`,
-    description: res.warnings[0],
+    title: restored === 1 ? t("„{1}“ zurückgesetzt", { 1: res.restored[0] }) : t("{1} zurückgesetzt", { 1: plural(restored, t("Bauteil"), t("Bauteile")) }),
+    description: res.warnings[0] ? localizeMessage(res.warnings[0]) : undefined,
   }
 }
 
 /** „Rückgängig“: alte Werte zurück, Tabelle, Details, Verlauf und Kennzahlen neu laden, Ergebnis melden */
 export async function restoreUpdates(qc: QueryClient, table: string, auditIds: number[]): Promise<RestoreUpdatesResult | null> {
-  const id = toast.loading('Änderung wird zurückgenommen …')
+  const id = toast.loading(t("Änderung wird zurückgenommen …"))
   try {
     const res = await partsApi.restoreUpdates(table, auditIds)
     invalidateParts(qc, table)
@@ -92,7 +93,7 @@ export async function restoreUpdates(qc: QueryClient, table: string, auditIds: n
     else toast.info(outcome.title, opts)
     return res
   } catch (err) {
-    toast.error('Rückgängig fehlgeschlagen', { id, description: errorMessage(err) })
+    toast.error(t("Rückgängig fehlgeschlagen"), { id, description: errorMessage(err) })
     return null
   }
 }
@@ -103,11 +104,11 @@ export async function restoreUpdates(qc: QueryClient, table: string, auditIds: n
  */
 export function showChangeToast(qc: QueryClient, table: string, res: ChangeResult, title: string, description?: string): void {
   const ids = res.audit_ids ?? []
-  const text = [description, res.backup ? 'Vorher gesichert im Ordner „Backups“.' : null].filter(Boolean).join(' ')
+  const text = [description, res.backup ? t("Vorher gesichert im Ordner „Backups“.") : null].filter(Boolean).join(' ')
   toast.success(title, {
     id: `changed:${table}:${++changeToastCounter}`,
     description: text || undefined,
     duration: ids.length ? UNDO_TOAST_MS : undefined,
-    action: ids.length ? { label: 'Rückgängig', onClick: () => void restoreUpdates(qc, table, ids) } : undefined,
+    action: ids.length ? { label: t("Rückgängig"), onClick: () => void restoreUpdates(qc, table, ids) } : undefined,
   })
 }

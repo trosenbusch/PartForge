@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useLayoutEffect, useState, type ReactNode } from 'react'
 import { systemApi, systemKeys, useSettings } from '@/api/system'
@@ -12,6 +13,7 @@ import { applyTheme, prefersLight, resolveTheme, ThemeContext, watchSystemTheme 
  * Lesen/Wechseln: `useTheme()` aus `@/app/theme`.
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  useI18n()
   const theme = useUi((s) => s.theme)
   const themeExplicit = useUi((s) => s.themeExplicit)
   const [systemLight, setSystemLight] = useState(prefersLight)

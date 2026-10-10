@@ -1,3 +1,4 @@
+import { t as tr } from '@/components/preview/i18n'
 /**
  * Ein gespeichertes Symbol im Generator öffnen („Bearbeiten“ aus der Bibliothek): `spec.generator.request` wird
  * in den Generator-Zustand übernommen (Standardsymbol mit Parametern bzw. IC-Pinliste). Ein eigener Name kommt aus
@@ -33,8 +34,8 @@ export function pinListName(name: string, entries: readonly SymbolEntry[] | unde
 /** Ziel beim Speichern (Bibliotheksdatei, Verwendung) als Hinweis */
 function targetNote(name: string, record: SymbolEntry | undefined): string | undefined {
   if (!record) return undefined
-  const usage = record.usage ? ` – ${plural(record.usage, 'Bauteil verwendet', 'Bauteile verwenden')} es` : ''
-  return `Speichern aktualisiert „${name}“ in ${baseName(record.library)}${usage}. Unter neuem Namen: Strg+⇧+S.`
+  const usage = record.usage ? tr(" – {value0} es", { value0: String(plural(record.usage, tr('Bauteil verwendet'), tr('Bauteile verwenden'))) }) : ''
+  return tr("Speichern aktualisiert „{value0}“ in {value1}{value2}. Unter neuem Namen: Strg+⇧+S.", { value0: String(name), value1: String(baseName(record.library)), value2: String(usage) })
 }
 
 export function openSpecInGenerator(
@@ -73,7 +74,7 @@ export function openSpecInGenerator(
       pins: pins.map((p) => fromIcPin(p)),
       origin,
     })
-    return { ok: true, kind: IC_KIND, noteTitle: 'Im Generator geöffnet', note: targetNote(name, library.record) }
+    return { ok: true, kind: IC_KIND, noteTitle: tr('Im Generator geöffnet'), note: targetNote(name, library.record) }
   }
 
   if (req && kindKey) {
@@ -87,7 +88,7 @@ export function openSpecInGenerator(
         pins,
         origin,
       })
-      return { ok: true, kind: kind.key, noteTitle: 'Im Generator geöffnet', note: targetNote(spec.name, library.record) }
+      return { ok: true, kind: kind.key, noteTitle: tr('Im Generator geöffnet'), note: targetNote(spec.name, library.record) }
     }
   }
 
@@ -119,8 +120,8 @@ export function openSpecInGenerator(
     return {
       ok: true,
       kind: IC_KIND,
-      noteTitle: 'Als IC-Pinliste übernommen',
-      note: `„${spec.name}“ hat keine Generator-Angaben – seine Pins stehen jetzt in der Pinliste (Seiten wie im Original). Gespeichert wird als neues Kastensymbol „${name}“; die Originalzeichnung bleibt erhalten.`,
+      noteTitle: tr('Als IC-Pinliste übernommen'),
+      note: tr("„{value0}“ hat keine Generator-Angaben – seine Pins stehen jetzt in der Pinliste (Seiten wie im Original). Gespeichert wird als neues Kastensymbol „{value1}“; die Originalzeichnung bleibt erhalten.", { value0: String(spec.name), value1: String(name) }),
     }
   }
   return { ok: false }

@@ -1,3 +1,4 @@
+import { t, useI18n } from '@/lib/i18n'
 import { FileText } from 'lucide-react'
 import { Tooltip } from '@/components/ui'
 import { cn } from '@/lib/cn'
@@ -18,12 +19,13 @@ export interface SourceChipProps {
  * Überfahren hebt die Miniatur hervor.
  */
 export function SourceChip({ pages, what, className, navItem }: SourceChipProps) {
+  useI18n()
   const list = [...new Set(pages.filter((p): p is number => typeof p === 'number' && p > 0))].sort((a, b) => a - b)
   const openOverlay = useReviewUi((s) => s.openOverlay)
   const hover = useReviewUi((s) => s.setHoverPage)
   if (!list.length) return null
-  const label = `S. ${pagesText(list)}`
-  const tip = `${what ? `${what} – ` : ''}Seite ${pagesText(list)} groß anzeigen`
+  const label = t("S. {0}", { "0": String(pagesText(list)) })
+  const tip = t("{0}Seite {1} groß anzeigen", { "0": String(what ? `${what} – ` : ''), "1": String(pagesText(list)) })
   return (
     <Tooltip content={tip}>
       <button

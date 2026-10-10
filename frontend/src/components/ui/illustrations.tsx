@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { useId, type ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 
@@ -12,6 +13,7 @@ export type IllustrationName =
 
 /** Kleiner Vierstrahl-Funke */
 function Spark({ x, y, r = 5, fill }: { x: number; y: number; r?: number; fill: string }) {
+  useI18n()
   const k = r * 0.28
   return (
     <path
@@ -22,6 +24,7 @@ function Spark({ x, y, r = 5, fill }: { x: number; y: number; r?: number; fill: 
 }
 
 function Frame({ children, gid, className }: { children: ReactNode; gid: string; className?: string }) {
+  useI18n()
   return (
     <svg
       viewBox="0 0 160 120"
@@ -59,6 +62,7 @@ const ACCENT = 'var(--pf-accent)'
 const BG = 'var(--pf-bg-elev)'
 
 export function Illustration({ name, className }: { name: IllustrationName; className?: string }) {
+  useI18n()
   const gid = `il${useId().replace(/:/g, '')}`
   const forge = `url(#${gid}-forge)`
   const spark = `url(#${gid}-spark)`

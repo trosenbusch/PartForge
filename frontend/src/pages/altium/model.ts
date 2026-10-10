@@ -1,10 +1,4 @@
-/**
- * Zustandsmodell der Altium-Seite (rein, ohne React): aus Altium-Status, Bibliotheksdateien, Prüfbericht und
- * Einstellungen entstehen die Glieder der Kette „Bauteile → DbLib → Bibliotheksdateien → Altium“, die Schlagzeile und
- * der nächste sinnvolle Schritt (die eine Primäraktion der Seite). Auch die Übersicht nutzt diese Ableitungen.
- *
- * Jedes Glied zeigt seinen Grund **im Text** (Detailzeile) – keine Erklärung nur im Tooltip.
- */
+import { t as tr, localizeMessage } from '@/lib/i18n'
 import {
   odbcDriverStatus,
   type AltiumStatus,
@@ -94,7 +88,7 @@ export interface Headline {
 
 /** Fehlermeldung für eine Detailzeile kürzen (die volle Meldung steht in der Schlagzeile bzw. im Prüfbericht) */
 function shortReason(text: string, max = 90): string {
-  const clean = text.replace(/\s+/g, ' ').trim()
+  const clean = localizeMessage(text).replace(/\s+/g, ' ').trim()
   return clean.length > max ? `${clean.slice(0, max - 1).trimEnd()} …` : clean
 }
 
@@ -106,39 +100,39 @@ const BLOCKING_CODES = new Set(['wal', 'network', 'db_missing', 'db_path_chars',
 
 /** Kurzer Grund je DbLib-Befund (Detailzeile des Glieds) */
 const DBLIB_REASON: Record<string, string> = {
-  missing: 'Datei fehlt im Bibliotheksordner',
-  outdated: 'Kategorien oder Felder geändert',
-  format: 'Nicht im Altium-Format gespeichert',
-  db_path: 'Verweist auf eine andere Datenbank',
-  unreadable: 'Datei nicht lesbar',
-  parse: 'Auffälligkeit beim Lesen',
-  wal: 'Datenbank nicht im WAL-Modus',
-  network: 'Datenbank auf einem Netzlaufwerk',
-  db_missing: 'Datenbankdatei fehlt',
-  db_path_chars: 'Datenbankpfad für Altium ungeeignet',
-  file_name: 'Ungültiger Dateiname',
-  build: 'Soll-Stand unbekannt',
-  library_ref: 'Tabelle ohne Spalte „Library Ref“',
-  unsafe_name: 'Name für Altium ungeeignet',
-  no_key: 'Kategorie ohne Schlüsselspalte',
-  encoding: 'Zeichen außerhalb von Windows-1252',
-  no_enabled_tables: 'Keine Tabelle für Altium aktiviert',
-  open_in_editor: 'In Altium im Editor geöffnet',
+  get missing() { return tr("Datei fehlt im Bibliotheksordner") },
+  get outdated() { return tr("Kategorien oder Felder geändert") },
+  get format() { return tr("Nicht im Altium-Format gespeichert") },
+  get db_path() { return tr("Verweist auf eine andere Datenbank") },
+  get unreadable() { return tr("Datei nicht lesbar") },
+  get parse() { return tr("Auffälligkeit beim Lesen") },
+  get wal() { return tr("Datenbank nicht im WAL-Modus") },
+  get network() { return tr("Datenbank auf einem Netzlaufwerk") },
+  get db_missing() { return tr("Datenbankdatei fehlt") },
+  get db_path_chars() { return tr("Datenbankpfad für Altium ungeeignet") },
+  get file_name() { return tr("Ungültiger Dateiname") },
+  get build() { return tr("Soll-Stand unbekannt") },
+  get library_ref() { return tr("Tabelle ohne Spalte „Library Ref“") },
+  get unsafe_name() { return tr("Name für Altium ungeeignet") },
+  get no_key() { return tr("Kategorie ohne Schlüsselspalte") },
+  get encoding() { return tr("Zeichen außerhalb von Windows-1252") },
+  get no_enabled_tables() { return tr("Keine Tabelle für Altium aktiviert") },
+  get open_in_editor() { return tr("In Altium im Editor geöffnet") },
 }
 
 /** Schlagzeile je DbLib-Fehler; `strip` = der Meldung den ersten Satzteil („… – “) nehmen, er wiederholt den Titel */
 const DBLIB_PROBLEM: Record<string, { title: string; strip?: boolean }> = {
-  missing: { title: 'Die DbLib fehlt' },
-  unreadable: { title: 'Die DbLib ist nicht lesbar' },
-  db_path: { title: 'Die DbLib verweist auf eine andere Datenbank' },
-  wal: { title: 'Die Datenbank ist nicht im WAL-Modus', strip: true },
-  network: { title: 'Die Datenbank liegt auf einem Netzlaufwerk', strip: true },
-  db_missing: { title: 'Die Datenbankdatei fehlt' },
-  db_path_chars: { title: 'Der Datenbankpfad ist für Altium ungeeignet' },
-  file_name: { title: 'Der DbLib-Dateiname ist ungültig' },
-  build: { title: 'Der Soll-Stand der DbLib ist unbekannt' },
-  library_ref: { title: 'Eine Kategorie ist für Altium unvollständig' },
-  unsafe_name: { title: 'Ein Name ist für die DbLib ungeeignet' },
+  missing: { get title() { return tr("Die DbLib fehlt") } },
+  unreadable: { get title() { return tr("Die DbLib ist nicht lesbar") } },
+  db_path: { get title() { return tr("Die DbLib verweist auf eine andere Datenbank") } },
+  wal: { get title() { return tr("Die Datenbank ist nicht im WAL-Modus") }, strip: true },
+  network: { get title() { return tr("Die Datenbank liegt auf einem Netzlaufwerk") }, strip: true },
+  db_missing: { get title() { return tr("Die Datenbankdatei fehlt") } },
+  db_path_chars: { get title() { return tr("Der Datenbankpfad ist für Altium ungeeignet") } },
+  file_name: { get title() { return tr("Der DbLib-Dateiname ist ungültig") } },
+  build: { get title() { return tr("Der Soll-Stand der DbLib ist unbekannt") } },
+  library_ref: { get title() { return tr("Eine Kategorie ist für Altium unvollständig") } },
+  unsafe_name: { get title() { return tr("Ein Name ist für die DbLib ungeeignet") } },
 }
 
 export function dblibIssue(dblib: DbLibStatus | null | undefined, ...codes: string[]): DbLibIssue | undefined {
@@ -176,24 +170,24 @@ export function summarizeDblib(
   state: { loaded: boolean; error?: string | null } = { loaded: true },
 ): DblibSummary {
   if (!dblib) {
-    if (state.error) return { level: 'off', value: 'Nicht verfügbar', detail: shortReason(state.error) }
+    if (state.error) return { level: 'off', value: tr("Nicht verfügbar"), detail: shortReason(state.error) }
     return state.loaded
-      ? { level: 'off', value: 'Unbekannt', detail: 'Keine Bibliothek geöffnet' }
-      : { level: 'off', value: 'Wird geprüft …', detail: '' }
+      ? { level: 'off', value: tr("Unbekannt"), detail: tr("Keine Bibliothek geöffnet") }
+      : { level: 'off', value: tr("Wird geprüft …"), detail: '' }
   }
   const tables = dblib.enabled_tables.length
-  const facts = `${plural(tables, 'Tabelle', 'Tabellen')} · ${plural(dblib.field_maps, 'Feld', 'Felder')}`
+  const facts = `${plural(tables, tr("Tabelle"), tr("Tabellen"))} · ${plural(dblib.field_maps, tr("Feld"), tr("Felder"))}`
   const errors = dblib.issues.filter((i) => i.severity === 'error' && i.code !== 'duplicates')
   if (!dblib.exists) {
-    return { level: 'error', value: 'Fehlt', detail: `„${dblib.file_name}“ nicht im Bibliotheksordner`, issue: dblibIssue(dblib, 'missing'), fix: 'regenerate' }
+    return { level: 'error', value: tr("Fehlt"), detail: tr("„{0}“ nicht im Bibliotheksordner", { "0": String(dblib.file_name) }), issue: dblibIssue(dblib, 'missing'), fix: 'regenerate' }
   }
   const blocking = errors.find((i) => BLOCKING_CODES.has(i.code))
-  if (blocking) return { level: 'error', value: 'Fehlerhaft', detail: reasonOf(blocking) ?? facts, issue: blocking }
+  if (blocking) return { level: 'error', value: tr("Fehlerhaft"), detail: reasonOf(blocking) ?? facts, issue: blocking }
   const fixable = errors.find((i) => REGENERATE_CODES.has(i.code))
   if (fixable) {
     return {
       level: 'error',
-      value: fixable.code === 'db_path' ? 'Falsche Datenbank' : 'Fehlerhaft',
+      value: fixable.code === 'db_path' ? tr("Falsche Datenbank") : tr("Fehlerhaft"),
       detail: reasonOf(fixable) ?? facts,
       issue: fixable,
       fix: 'regenerate',
@@ -201,11 +195,11 @@ export function summarizeDblib(
   }
   if (!dblib.up_to_date) {
     const issue = dblibIssue(dblib, 'outdated', 'format')
-    return { level: 'warn', value: 'Veraltet', detail: reasonOf(issue) ?? facts, issue, fix: 'regenerate' }
+    return { level: 'warn', value: tr("Veraltet"), detail: reasonOf(issue) ?? facts, issue, fix: 'regenerate' }
   }
   const warning = dblib.issues.find((i) => i.severity === 'warning' && !['moved_install', 'open_in_editor'].includes(i.code))
-  if (warning) return { level: 'warn', value: 'Aktuell', detail: reasonOf(warning) ?? facts, issue: warning }
-  return { level: 'ok', value: 'Aktuell', detail: facts }
+  if (warning) return { level: 'warn', value: tr("Aktuell"), detail: reasonOf(warning) ?? facts, issue: warning }
+  return { level: 'ok', value: tr("Aktuell"), detail: facts }
 }
 
 // --------------------------------------------------------------------------- Bibliotheksdateien
@@ -267,54 +261,54 @@ export function summarizeFiles(
   }
   const facts = `${formatNumber(s.schlib)} SchLib · ${formatNumber(s.pcblib)} PcbLib`
   let level: Level = 'ok'
-  let value = 'Synchron'
+  let value = tr("Synchron")
   let detail = facts
   if (s.total === 0) {
     level = 'off'
-    value = 'Noch keine Dateien'
-    detail = 'entstehen mit den ersten Bauteilen'
+    value = tr("Noch keine Dateien")
+    detail = tr("entstehen mit den ersten Bauteilen")
   } else if (s.missingFiles) {
     level = 'error'
-    value = s.missingFiles === 1 ? '1 Datei fehlt' : `${formatNumber(s.missingFiles)} Dateien fehlen`
+    value = s.missingFiles === 1 ? tr("1 Datei fehlt") : tr("{0} Dateien fehlen", { "0": String(formatNumber(s.missingFiles)) })
     const names = files.filter((f) => !f.exists).map((f) => baseName(f.rel))
     detail = names.slice(0, 2).join(', ') + (names.length > 2 ? ' …' : '')
   } else if (s.damaged) {
     level = 'error'
-    value = s.damaged === 1 ? '1 Datei beschädigt' : `${formatNumber(s.damaged)} Dateien beschädigt`
+    value = s.damaged === 1 ? tr("1 Datei beschädigt") : tr("{0} Dateien beschädigt", { "0": String(formatNumber(s.damaged)) })
     const names = files.filter((f) => f.exists && f.unreadable).map((f) => baseName(f.rel))
-    detail = `nicht lesbar: ${names.slice(0, 2).join(', ')}${names.length > 2 ? ' …' : ''}`
+    detail = tr("nicht lesbar: {0}{1}", { "0": String(names.slice(0, 2).join(', ')), "1": String(names.length > 2 ? ' …' : '') })
   } else if (s.errors) {
     level = 'error'
-    value = plural(s.errors, 'Fehler', 'Fehler')
-    detail = 'Schreiben fehlgeschlagen'
+    value = plural(s.errors, tr("Fehler"), tr("Fehler"))
+    detail = tr("Schreiben fehlgeschlagen")
   } else if (s.pending) {
     level = 'warn'
-    value = `${formatNumber(s.pending)} ausstehend`
-    detail = 'warten auf das Schreiben'
+    value = tr("{0} ausstehend", { "0": String(formatNumber(s.pending)) })
+    detail = tr("warten auf das Schreiben")
   } else if (s.absent) {
     level = 'warn'
-    value = plural(s.absent, 'Eintrag fehlt', 'Einträge fehlen')
-    detail = 'registriert, aber nicht in der Datei'
+    value = plural(s.absent, tr("Eintrag fehlt"), tr("Einträge fehlen"))
+    detail = tr("registriert, aber nicht in der Datei")
   } else if (s.outside) {
     level = 'warn'
-    value = `${formatNumber(s.outside)} außerhalb geändert`
-    detail = 'z. B. in Altium gespeichert'
+    value = tr("{0} außerhalb geändert", { "0": String(formatNumber(s.outside)) })
+    detail = tr("z. B. in Altium gespeichert")
   } else if (s.links) {
     level = 'error'
-    value = plural(s.links, 'Verweis ungültig', 'Verweise ungültig')
-    detail = 'Bauteile verweisen auf Fehlendes'
+    value = plural(s.links, tr("Verweis ungültig"), tr("Verweise ungültig"))
+    detail = tr("Bauteile verweisen auf Fehlendes")
   } else if (s.layersOff) {
     level = 'warn'
-    value = 'Lagen abweichend'
-    detail = plural(s.layersOff, 'PcbLib mit anderem Lagen-Kopf', 'PcbLibs mit anderem Lagen-Kopf')
+    value = tr("Lagen abweichend")
+    detail = plural(s.layersOff, tr("PcbLib mit anderem Lagen-Kopf"), tr("PcbLibs mit anderem Lagen-Kopf"))
   } else if (s.unreadable) {
     level = 'warn'
-    value = `${formatNumber(s.unreadable)} nicht lesbar`
-    detail = 'kein Bibliotheks-Writer oder Datei beschädigt'
+    value = tr("{0} nicht lesbar", { "0": String(formatNumber(s.unreadable)) })
+    detail = tr("kein Bibliotheks-Writer oder Datei beschädigt")
   } else if (s.heights) {
     level = 'warn'
-    value = plural(s.heights, 'Höhe fehlt', 'Höhen fehlen')
-    detail = 'Footprints mit Bauhöhe 0 in der PcbLib'
+    value = plural(s.heights, tr("Höhe fehlt"), tr("Höhen fehlen"))
+    detail = tr("Footprints mit Bauhöhe 0 in der PcbLib")
   }
   return { ...s, level, value, detail }
 }
@@ -326,19 +320,19 @@ export function summarizeFiles(
 export function writerLabel(status: AltiumStatus | undefined, backend: LibraryBackend | undefined): { label: string; ok: boolean } {
   const rust = status?.backends.find((b) => b.name === 'rust')
   const altium = status?.backends.find((b) => b.name === 'altium')
-  const rustLabel = `Bibliotheks-Writer${rust?.version ? ` ${rust.version}` : ''}`
-  if (backend === 'altium') return { label: altium?.available ? 'Schreiben über Altium' : 'Altium nicht bereit', ok: Boolean(altium?.available) }
-  if (backend === 'rust') return { label: rust?.available ? rustLabel : 'Bibliotheks-Writer fehlt', ok: Boolean(rust?.available) }
+  const rustLabel = tr("Bibliotheks-Writer{0}", { "0": String(rust?.version ? ` ${rust.version}` : '') })
+  if (backend === 'altium') return { label: altium?.available ? tr("Schreiben über Altium") : tr("Altium nicht bereit"), ok: Boolean(altium?.available) }
+  if (backend === 'rust') return { label: rust?.available ? rustLabel : tr("Bibliotheks-Writer fehlt"), ok: Boolean(rust?.available) }
   if (rust?.available) return { label: rustLabel, ok: true }
-  if (altium?.available) return { label: 'Schreiben über Altium', ok: true }
-  return { label: 'Kein Bibliotheks-Writer', ok: false }
+  if (altium?.available) return { label: tr("Schreiben über Altium"), ok: true }
+  return { label: tr("Kein Bibliotheks-Writer"), ok: false }
 }
 
 /** Was zu tun ist, wenn kein Bibliotheks-Writer bereit ist (ohne Schlusspunkt) */
-export const WRITER_REMEDY = `den Pfad zu altium-designer-mcp.exe unter ${SETTINGS_PLACE.altium.label} eintragen oder Altium Designer starten`
+export const writerRemedy = () => tr("den Pfad zu altium-designer-mcp.exe unter {0} eintragen oder Altium Designer starten", { "0": SETTINGS_PLACE.altium.label })
 
 /** Was fehlt, damit Bibliotheksdateien entstehen – Satz für Hinweise und Toasts (ohne Schlusspunkt) */
-export const WRITER_MISSING_TEXT = `Ohne Bibliotheks-Writer entstehen keine SchLib-/PcbLib-Dateien – ${WRITER_REMEDY}`
+export const writerMissingText = () => tr("Ohne Bibliotheks-Writer entstehen keine SchLib-/PcbLib-Dateien – {0}", { "0": writerRemedy() })
 
 // --------------------------------------------------------------------------- ODBC-Treiber
 
@@ -359,7 +353,7 @@ export function odbcDriverLink(odbc: OdbcDriverStatus): { label: string; href: s
   } catch {
     // keine gültige Adresse – dann der Text selbst
   }
-  return { label: `${sqlite ? 'SQLite-ODBC-Treiber' : 'ODBC-Treiber'} herunterladen (${host})`, href }
+  return { label: tr("{0} herunterladen ({1})", { "0": String(sqlite ? tr("SQLite-ODBC-Treiber") : tr("ODBC-Treiber")), "1": String(host) }), href }
 }
 
 // --------------------------------------------------------------------------- Deinstallieren
@@ -391,13 +385,13 @@ export function uninstallWarning(job: { message?: string | null; result?: Uninst
   if (!r || r.database_released !== false) return null
   const message = (job.message || r.message || '').trim()
   const hint = r.database_hint?.trim()
-  if (hint) return message.includes(hint) ? message : [message, hint].filter(Boolean).join(' ')
-  if (/verschiebbar|offen/i.test(message)) return message
+  if (hint) return message.includes(hint) ? localizeMessage(message) : [message, hint].filter(Boolean).map(localizeMessage).join(' ')
+  if (/verschiebbar|offen/i.test(message)) return localizeMessage(message)
   const names = [...new Set((r.database_holders ?? []).map((h) => h.name.trim()).filter(Boolean))]
   const held = names.length
-    ? `${names.join(', ')} ${names.length === 1 ? 'hält' : 'halten'} die Datenbank noch offen`
-    : 'Ein anderes Programm hält die Datenbank noch offen'
-  return [message, `Ordner erst danach verschiebbar – ${held}.`].filter(Boolean).join(' ')
+    ? tr("{0} {1} die Datenbank noch offen", { "0": String(names.join(', ')), "1": String(names.length === 1 ? tr("hält") : tr("halten")) })
+    : tr("Ein anderes Programm hält die Datenbank noch offen")
+  return [localizeMessage(message), tr("Ordner erst danach verschiebbar – {0}.", { "0": String(held) })].filter(Boolean).join(' ')
 }
 
 // --------------------------------------------------------------------------- Altium
@@ -433,8 +427,8 @@ export interface AltiumSummary {
 export function summarizeAltium(status: AltiumStatus | undefined, error?: string | null): AltiumSummary {
   if (!status) {
     return error
-      ? { level: 'off', value: 'Nicht verfügbar', detail: shortReason(error), short: 'Status nicht verfügbar', running: false, installed: null }
-      : { level: 'off', value: 'Wird geprüft …', detail: '', short: 'Altium wird geprüft …', running: false, installed: null }
+      ? { level: 'off', value: tr("Nicht verfügbar"), detail: shortReason(error), short: tr("Status nicht verfügbar"), running: false, installed: null }
+      : { level: 'off', value: tr("Wird geprüft …"), detail: '', short: tr("Altium wird geprüft …"), running: false, installed: null }
   }
   const installed = status.dblib?.installed_in_altium ?? null
   const duplicates = dblibIssue(status.dblib, 'duplicates')
@@ -443,10 +437,10 @@ export function summarizeAltium(status: AltiumStatus | undefined, error?: string
   if (!status.altium_exe) {
     return {
       level: 'warn',
-      value: 'Nicht gefunden',
-      detail: 'X2.EXE nicht gefunden',
-      short: 'Altium nicht gefunden',
-      fix: { action: 'settings', label: 'Pfad festlegen' },
+      value: tr("Nicht gefunden"),
+      detail: tr("X2.EXE nicht gefunden"),
+      short: tr("Altium nicht gefunden"),
+      fix: { action: 'settings', label: tr("Pfad festlegen") },
       running: false,
       installed,
     }
@@ -455,79 +449,79 @@ export function summarizeAltium(status: AltiumStatus | undefined, error?: string
   if (!status.altium_running) {
     return {
       level: duplicates || moved ? 'warn' : 'off',
-      value: 'Nicht gestartet',
+      value: tr("Nicht gestartet"),
       detail: duplicates
-        ? 'Gleichnamige DbLib installiert'
+        ? tr("Gleichnamige DbLib installiert")
         : moved
-          ? 'Alte Installation aus anderem Ordner'
+          ? tr("Alte Installation aus anderem Ordner")
           : status.version
             ? `Altium Designer ${status.version}`
             : 'Altium Designer',
       emphasis: duplicates || moved ? 'detail' : undefined,
-      short: 'Altium nicht gestartet',
+      short: tr("Altium nicht gestartet"),
       running: false,
       installed,
     }
   }
-  const running = { running: true, installed, short: `Altium läuft${version}` }
+  const running = { running: true, installed, short: tr("Altium läuft{0}", { "0": String(version) }) }
   if (status.bridge_wedged) {
-    return { ...running, level: 'error', value: `Skript hängt${version}`, detail: 'In Altium Strg+F3 drücken', short: 'Altium-Skript hängt' }
+    return { ...running, level: 'error', value: tr("Skript hängt{0}", { 0: String(version) }), detail: tr("In Altium Strg+F3 drücken"), short: tr("Altium-Skript hängt") }
   }
   if (status.refresh.running) {
-    return { ...running, level: 'busy', value: `Läuft${version}`, detail: 'Wird gerade aktualisiert …' }
+    return { ...running, level: 'busy', value: tr("Läuft{0}", { 0: String(version) }), detail: tr("Wird gerade aktualisiert …") }
   }
   if (duplicates) {
     return {
       ...running,
       level: 'error',
-      value: `Läuft${version}`,
-      detail: 'Gleichnamige DbLib aktiv',
+      value: tr("Läuft{0}", { 0: String(version) }),
+      detail: tr("Gleichnamige DbLib aktiv"),
       emphasis: 'detail',
-      fix: replaceable ? { action: 'installReplace', label: 'Ersetzen und installieren' } : undefined,
+      fix: replaceable ? { action: 'installReplace', label: tr("Ersetzen und installieren") } : undefined,
     }
   }
   if (moved) {
     return {
       ...running,
       level: 'warn',
-      value: `Läuft${version}`,
-      detail: 'Alte Installation aus anderem Ordner',
+      value: tr("Läuft{0}", { 0: String(version) }),
+      detail: tr("Alte Installation aus anderem Ordner"),
       emphasis: 'detail',
-      fix: { action: 'installReplace', label: 'Ersetzen und installieren' },
+      fix: { action: 'installReplace', label: tr("Ersetzen und installieren") },
     }
   }
   if (installed === null) {
     return {
       ...running,
       level: 'ok',
-      value: `Läuft${version}`,
-      detail: 'Installation ungeprüft',
+      value: tr("Läuft{0}", { 0: String(version) }),
+      detail: tr("Installation ungeprüft"),
       emphasis: 'detail',
-      fix: { action: 'installState', label: 'Status prüfen' },
+      fix: { action: 'installState', label: tr("Status prüfen") },
     }
   }
   if (!installed) {
     return {
       ...running,
       level: 'warn',
-      value: `Läuft${version}`,
-      detail: 'DbLib nicht installiert',
+      value: tr("Läuft{0}", { 0: String(version) }),
+      detail: tr("DbLib nicht installiert"),
       emphasis: 'detail',
-      fix: { action: 'install', label: 'Installieren' },
+      fix: { action: 'install', label: tr("Installieren") },
     }
   }
   if (status.refresh.last_error) {
     return {
       ...running,
       level: 'warn',
-      value: `Läuft${version}`,
-      detail: 'Aktualisieren fehlgeschlagen',
+      value: tr("Läuft{0}", { 0: String(version) }),
+      detail: tr("Aktualisieren fehlgeschlagen"),
       emphasis: 'detail',
-      fix: { action: 'refresh', label: 'Erneut aktualisieren' },
+      fix: { action: 'refresh', label: tr("Erneut aktualisieren") },
     }
   }
   const last = lastRefreshText(status)
-  return { ...running, level: 'ok', value: `Läuft${version}`, detail: last ? `Installiert · aktualisiert ${last}` : 'Installiert' }
+  return { ...running, level: 'ok', value: tr("Läuft{0}", { 0: String(version) }), detail: last ? tr("Installiert · aktualisiert {0}", { "0": String(last) }) : tr("Installiert") }
 }
 
 // --------------------------------------------------------------------------- Nach dem Anlegen neuer Bauteile
@@ -555,35 +549,35 @@ export interface AfterWriteNotice {
 export function altiumAfterWrite(status: AltiumStatus | undefined): AfterWriteNotice | null {
   if (!status) return null
   const { refresh, dblib } = status
-  const file = dblib?.file_name ? `„${dblib.file_name}“` : 'dieser Bibliothek'
+  const file = dblib?.file_name ? `„${dblib.file_name}“` : tr("dieser Bibliothek")
   const installed = dblib?.installed_in_altium ?? null
-  const refreshNext = { action: 'refresh', label: 'In Altium aktualisieren' } as const
+  const refreshNext = { action: 'refresh', label: tr("In Altium aktualisieren") } as const
   if (status.bridge_wedged) {
-    return { tone: 'error', text: 'Das Altium-Skript hängt – in Altium Designer Strg+F3 drücken, danach aktualisieren.', next: refreshNext }
+    return { tone: 'error', text: tr("Das Altium-Skript hängt – in Altium Designer Strg+F3 drücken, danach aktualisieren."), next: refreshNext }
   }
   if (!status.altium_running) {
     return {
       tone: 'off',
       text:
         installed === false
-          ? `Altium Designer läuft nicht. Laut letzter Prüfung ist die DbLib ${file} dort nicht installiert – nach dem Start „In Altium installieren“ wählen.`
-          : 'Altium Designer läuft nicht – beim nächsten Start sind die Bauteile in der DbLib.',
+          ? tr("Altium Designer läuft nicht. Laut letzter Prüfung ist die DbLib {0} dort nicht installiert – nach dem Start „In Altium installieren“ wählen.", { "0": String(file) })
+          : tr("Altium Designer läuft nicht – beim nächsten Start sind die Bauteile in der DbLib."),
     }
   }
   if (dblibIssue(dblib, 'duplicates')) {
     return {
       tone: 'warn',
       text: installed
-        ? `In Altium ist neben der DbLib ${file} eine gleichnamige weitere installiert – Altium verwendet die zuerst installierte.`
-        : `Die DbLib ${file} ist in Altium nicht installiert, aber eine gleichnamige andere – die neuen Bauteile erscheinen dort nicht.`,
-      next: { action: 'page', label: 'Zur Altium-Seite' },
+        ? tr("In Altium ist neben der DbLib {0} eine gleichnamige weitere installiert – Altium verwendet die zuerst installierte.", { "0": String(file) })
+        : tr("Die DbLib {0} ist in Altium nicht installiert, aber eine gleichnamige andere – die neuen Bauteile erscheinen dort nicht.", { "0": String(file) }),
+      next: { action: 'page', label: tr("Zur Altium-Seite") },
     }
   }
   if (installed === false) {
     return {
       tone: 'warn',
-      text: `Die DbLib ${file} ist in Altium nicht installiert – die neuen Bauteile erscheinen dort erst nach dem Installieren.`,
-      next: { action: 'install', label: 'In Altium installieren' },
+      text: tr("Die DbLib {0} ist in Altium nicht installiert – die neuen Bauteile erscheinen dort erst nach dem Installieren.", { "0": String(file) }),
+      next: { action: 'install', label: tr("In Altium installieren") },
     }
   }
   // eine wartende Änderung mit Grund wurde übersprungen (z. B. Prüfung gescheitert) – sie kommt nicht von selbst
@@ -592,17 +586,17 @@ export function altiumAfterWrite(status: AltiumStatus | undefined): AfterWriteNo
     return {
       tone: 'busy',
       text: installed
-        ? 'Altium Designer wird aktualisiert – die neuen Bauteile erscheinen gleich im Bauteilbrowser.'
-        : 'Altium Designer wird aktualisiert – PartForge prüft dabei, ob die DbLib dort installiert ist.',
+        ? tr("Altium Designer wird aktualisiert – die neuen Bauteile erscheinen gleich im Bauteilbrowser.")
+        : tr("Altium Designer wird aktualisiert – PartForge prüft dabei, ob die DbLib dort installiert ist."),
     }
   }
   if (installed && refresh.last_error) {
-    return { tone: 'warn', text: 'Altium Designer konnte nicht aktualisiert werden – die neuen Bauteile fehlen dort evtl. noch.', next: refreshNext }
+    return { tone: 'warn', text: tr("Altium Designer konnte nicht aktualisiert werden – die neuen Bauteile fehlen dort evtl. noch."), next: refreshNext }
   }
   if (installed && refresh.auto_refresh && !skipped) {
-    return { tone: 'ok', text: 'Altium Designer läuft – PartForge aktualisiert die Bibliothek dort automatisch.' }
+    return { tone: 'ok', text: tr("Altium Designer läuft – PartForge aktualisiert die Bibliothek dort automatisch.") }
   }
-  return { tone: 'manual', text: 'Altium Designer läuft – die neuen Bauteile erscheinen nach dem Aktualisieren.', next: refreshNext }
+  return { tone: 'manual', text: tr("Altium Designer läuft – die neuen Bauteile erscheinen nach dem Aktualisieren."), next: refreshNext }
 }
 
 // --------------------------------------------------------------------------- Prüfung in Altium: Parameter
@@ -663,9 +657,9 @@ export function parameterRows(
 export function verifyEstimate(parts: number): string {
   const n = Math.max(1, parts)
   const seconds = 2.6 + Math.ceil(n / 50) * 1.6 + n * 0.067
-  if (seconds < 55) return `etwa ${Math.max(5, Math.round(seconds / 5) * 5)} s`
+  if (seconds < 55) return tr("etwa {0} s", { "0": String(Math.max(5, Math.round(seconds / 5) * 5)) })
   const minutes = Math.round(seconds / 60)
-  return minutes < 90 ? `etwa ${formatNumber(Math.max(1, minutes))} min` : `etwa ${formatNumber(Math.round(minutes / 6) / 10)} h`
+  return minutes < 90 ? tr("etwa {0} min", { "0": String(formatNumber(Math.max(1, minutes))) }) : tr("etwa {0} h", { "0": String(formatNumber(Math.round(minutes / 6) / 10)) })
 }
 
 /**
@@ -736,34 +730,34 @@ export function buildModel(input: ModelInput): PageModel {
   const dbIssue = dblibIssue(dblibStatus, 'wal', 'network', 'db_missing')
   const kind = (dbKind ?? dblibStatus?.db_kind) === 'postgres' ? 'PostgreSQL' : 'SQLite'
   const dbText = dbIssue
-    ? `${kind} ${dbIssue.code === 'wal' ? 'ohne WAL' : dbIssue.code === 'network' ? 'auf Netzlaufwerk' : 'fehlt'}`
+    ? `${kind} ${dbIssue.code === 'wal' ? tr("ohne WAL") : dbIssue.code === 'network' ? tr("auf Netzlaufwerk") : tr("fehlt")}`
     : kind === 'SQLite'
       ? 'SQLite · WAL'
       : 'PostgreSQL'
-  const partsText = partCount === undefined ? (input.dbFile ?? 'Datenbank') : plural(partCount, 'Bauteil', 'Bauteile')
+  const partsText = partCount === undefined ? (input.dbFile ?? tr("Datenbank")) : plural(partCount, tr("Bauteil"), tr("Bauteile"))
   const errors = findings?.errors ?? 0
   const warnings = findings?.warnings ?? 0
   const empty = partCount === 0
   const findingsError = findings ? null : (input.findingsError ?? null)
   const partsNode: ChainNode = empty && !dbIssue
-    ? { key: 'parts', label: 'Bauteile', value: 'Noch keine', detail: dbText, level: 'off' }
+    ? { key: 'parts', label: tr("Bauteile"), value: tr("Noch keine"), detail: dbText, level: 'off' }
     : findingsError && !dbIssue
       ? {
           key: 'parts',
-          label: 'Bauteile',
+          label: tr("Bauteile"),
           value: partsText,
-          detail: 'Prüfung nicht verfügbar',
+          detail: tr("Prüfung nicht verfügbar"),
           level: 'warn',
           emphasis: 'detail',
-          fix: { action: 'check', label: 'Erneut prüfen' },
+          fix: { action: 'check', label: tr("Erneut prüfen") },
         }
       : {
         key: 'parts',
-        label: 'Bauteile',
-        value: dbIssue ? dbText : errors ? plural(errors, 'Fehler', 'Fehler') : warnings ? plural(warnings, 'Warnung', 'Warnungen') : partsText,
+        label: tr("Bauteile"),
+        value: dbIssue ? dbText : errors ? plural(errors, tr("Fehler"), tr("Fehler")) : warnings ? plural(warnings, tr("Warnung"), tr("Warnungen")) : partsText,
         detail: dbIssue || errors || warnings ? `${partsText} · ${dbText}` : dbText,
         level: dbIssue || errors ? 'error' : warnings ? 'warn' : status || statusError || findings ? 'ok' : 'off',
-        fix: !dbIssue && (errors || warnings) ? { action: 'report', label: 'Zum Prüfbericht' } : undefined,
+        fix: !dbIssue && (errors || warnings) ? { action: 'report', label: tr("Zum Prüfbericht") } : undefined,
         }
 
   // --- Glied 2: DbLib (Altium liest sie über den ODBC-Treiber – fehlt er, ist das Glied nicht in Ordnung)
@@ -773,10 +767,10 @@ export function buildModel(input: ModelInput): PageModel {
           key: 'dblib',
           label: 'DbLib',
           value: dblib.value,
-          detail: 'ODBC-Treiber fehlt – Altium kann die Datenbank nicht lesen',
+          detail: tr("ODBC-Treiber fehlt – Altium kann die Datenbank nicht lesen"),
           level: 'warn',
           emphasis: 'detail',
-          fix: { action: 'odbc', label: 'ODBC testen' },
+          fix: { action: 'odbc', label: tr("ODBC testen") },
         }
       : {
           key: 'dblib',
@@ -784,39 +778,39 @@ export function buildModel(input: ModelInput): PageModel {
           value: dblib.value,
           detail: dblib.detail,
           level: dblib.level,
-          fix: dblib.fix === 'regenerate' ? { action: 'regenerate', label: 'Neu erzeugen' } : undefined,
+          fix: dblib.fix === 'regenerate' ? { action: 'regenerate', label: tr("Neu erzeugen") } : undefined,
         }
 
   // --- Glied 3: Bibliotheksdateien
   const filesNode: ChainNode = filesError
     ? {
         key: 'files',
-        label: 'Bibliotheksdateien',
-        value: 'Nicht verfügbar',
+        label: tr("Bibliotheksdateien"),
+        value: tr("Nicht verfügbar"),
         detail: shortReason(filesError),
         level: 'off',
-        fix: { action: 'reload', label: 'Erneut versuchen' },
+        fix: { action: 'reload', label: tr("Erneut versuchen") },
       }
     : {
         key: 'files',
-        label: 'Bibliotheksdateien',
-        value: filesSum?.value ?? 'Wird geprüft …',
+        label: tr("Bibliotheksdateien"),
+        value: filesSum?.value ?? tr("Wird geprüft …"),
         detail: filesSum?.detail ?? '',
         level: filesSum?.level ?? 'off',
         fix:
           filesSum && (filesSum.pending || filesSum.errors || filesSum.missingFiles)
             ? writerMissing
-              ? { action: 'writer', label: 'Writer einrichten' }
-              : { action: 'sync', label: 'Synchronisieren' }
+              ? { action: 'writer', label: tr("Writer einrichten") }
+              : { action: 'sync', label: tr("Synchronisieren") }
             : filesSum?.damaged
-              ? { action: 'report', label: 'Zum Prüfbericht' }
+              ? { action: 'report', label: tr("Zum Prüfbericht") }
               : filesSum && (filesSum.absent || filesSum.outside)
-              ? { action: 'scanSync', label: 'Prüfen und synchronisieren' }
+              ? { action: 'scanSync', label: tr("Prüfen und synchronisieren") }
               : filesSum?.links
-                ? { action: 'report', label: 'Zum Prüfbericht' }
+                ? { action: 'report', label: tr("Zum Prüfbericht") }
                 : // nur, wenn das Glied die fehlenden Höhen auch nennt (Lagen/Lesbarkeit gehen in der Anzeige vor)
                   filesSum?.heightsRepairable && !filesSum.layersOff && !filesSum.unreadable
-                  ? { action: 'repairHeights', label: 'Höhen nachtragen' }
+                  ? { action: 'repairHeights', label: tr("Höhen nachtragen") }
                   : undefined,
       }
 
@@ -876,25 +870,25 @@ function headline(m: {
     if (m.statusError) {
       return {
         tone: 'danger',
-        eyebrow: 'Status nicht verfügbar',
-        title: 'Der Altium-Status konnte nicht gelesen werden',
-        text: `${m.statusError.replace(/[.\s]+$/, '')}. PartForge fragt alle 15 Sekunden erneut nach.`,
+        eyebrow: tr("Status nicht verfügbar"),
+        title: tr("Der Altium-Status konnte nicht gelesen werden"),
+        text: tr("{0}. PartForge fragt alle 15 Sekunden erneut nach.", { "0": String(m.statusError.replace(/[.\s]+$/, '')) }),
         primary: 'reload',
       }
     }
-    return { tone: 'neutral', eyebrow: 'Status', title: 'Verbindung wird geprüft …', text: 'PartForge liest den Zustand von DbLib, Bibliotheksdateien und Altium.', primary: null }
+    return { tone: 'neutral', eyebrow: 'Status', title: tr("Verbindung wird geprüft …"), text: tr("PartForge liest den Zustand von DbLib, Bibliotheksdateien und Altium."), primary: null }
   }
   const dblibStatus = status.dblib
   const running = status.altium_running
 
   // 1. Skript hängt
   if (status.bridge_wedged) {
-    const step = typeof status.bridge_wedged.last_step === 'string' ? ` (letzter Schritt: ${status.bridge_wedged.last_step})` : ''
+    const step = typeof status.bridge_wedged.last_step === 'string' ? tr(" (letzter Schritt: {0})", { "0": String(status.bridge_wedged.last_step) }) : ''
     return {
       tone: 'danger',
-      eyebrow: 'Altium reagiert nicht',
-      title: 'Ein PartForge-Skript hängt in Altium',
-      text: `Das letzte Skript wurde nicht beendet${step}. In Altium Strg+F3 drücken (Skript anhalten) und die Aktion danach erneut starten.`,
+      eyebrow: tr("Altium reagiert nicht"),
+      title: tr("Ein PartForge-Skript hängt in Altium"),
+      text: tr("Das letzte Skript wurde nicht beendet{0}. In Altium Strg+F3 drücken (Skript anhalten) und die Aktion danach erneut starten.", { "0": String(step) }),
       primary: null,
     }
   }
@@ -903,9 +897,9 @@ function headline(m: {
   if (duplicates) {
     return {
       tone: 'danger',
-      eyebrow: 'Gleichnamige DbLib',
-      title: 'Altium kennt mehrere DbLibs mit diesem Namen',
-      text: duplicates.message,
+      eyebrow: tr("Gleichnamige DbLib"),
+      title: tr("Altium kennt mehrere DbLibs mit diesem Namen"),
+      text: localizeMessage(duplicates.message),
       primary: duplicatesReplaceable(dblibStatus) && running ? 'installReplace' : null,
     }
   }
@@ -913,26 +907,26 @@ function headline(m: {
   if (dblib.level === 'error') {
     const code = dblib.issue?.code ?? ''
     const problem = DBLIB_PROBLEM[code]
-    let text = dblib.issue?.message ?? 'Ohne gültige DbLib findet Altium keine Bauteile.'
+    let text = dblib.issue?.message ? localizeMessage(dblib.issue.message) : tr("Ohne gültige DbLib findet Altium keine Bauteile.")
     if (code === 'missing') {
-      text = `Ohne „${dblibStatus?.file_name ?? 'DbLib'}“ findet Altium keine Bauteile. „DbLib neu erzeugen“ legt sie im Bibliotheksordner an.`
+      text = tr("Ohne „{0}“ findet Altium keine Bauteile. „DbLib neu erzeugen“ legt sie im Bibliotheksordner an.", { "0": String(dblibStatus?.file_name ?? 'DbLib') })
     } else if (problem?.strip && text.includes(' – ')) {
       const rest = text.slice(text.indexOf(' – ') + 3)
       text = rest.charAt(0).toUpperCase() + rest.slice(1)
     }
-    return { tone: 'danger', eyebrow: 'DbLib', title: problem?.title ?? 'Die DbLib hat ein Problem', text, primary: dblib.fix ?? null }
+    return { tone: 'danger', eyebrow: 'DbLib', title: problem?.title ?? tr("Die DbLib hat ein Problem"), text, primary: dblib.fix ?? null }
   }
   // 4. DbLib veraltet
-  if (dblib.value === 'Veraltet') {
-    const followUp = running && status.refresh.auto_refresh ? ' – das laufende Altium liest ihn danach selbst ein' : ''
+  if (dblib.level === 'warn' && dblib.fix === 'regenerate') {
+    const followUp = running && status.refresh.auto_refresh ? tr(" – das laufende Altium liest ihn danach selbst ein") : ''
     return {
       tone: 'warning',
       eyebrow: 'DbLib',
-      title: 'Die DbLib ist veraltet',
+      title: tr("Die DbLib ist veraltet"),
       text:
         dblib.issue?.code === 'format'
-          ? 'Die Datei ist nicht im Altium-Format gespeichert (Windows-1252, CRLF, ohne BOM). „Neu erzeugen“ schreibt sie so, wie Altium sie erwartet.'
-          : `${dblib.detail}. „Neu erzeugen“ schreibt den aktuellen Stand${followUp}.`,
+          ? tr("Die Datei ist nicht im Altium-Format gespeichert (Windows-1252, CRLF, ohne BOM). „Neu erzeugen“ schreibt sie so, wie Altium sie erwartet.")
+          : tr("{0}. „Neu erzeugen“ schreibt den aktuellen Stand{1}.", { "0": String(dblib.detail), "1": String(followUp) }),
       primary: 'regenerate',
     }
   }
@@ -941,11 +935,9 @@ function headline(m: {
     const sqlite = m.odbc.kind ? m.odbc.kind === 'sqlite' : /sqlite/i.test(m.odbc.driver)
     return {
       tone: 'warning',
-      eyebrow: 'ODBC-Treiber',
-      title: `Der ODBC-Treiber „${m.odbc.driver}“ fehlt`,
-      text: `Altium liest die Bibliothek über ODBC – ohne den 64-Bit-Treiber findet Altium keine Bauteile, auch wenn DbLib und Bibliotheksdateien bereit sind. ${
-        sqlite ? 'Den SQLite-ODBC-Treiber (sqliteodbc_w64) installieren' : 'Den 64-Bit-Treiber psqlODBC installieren'
-      }, danach „ODBC testen“.`,
+      eyebrow: tr("ODBC-Treiber"),
+      title: tr("Der ODBC-Treiber „{0}“ fehlt", { "0": String(m.odbc.driver) }),
+      text: tr("Altium liest die Bibliothek über ODBC – ohne den 64-Bit-Treiber findet Altium keine Bauteile, auch wenn DbLib und Bibliotheksdateien bereit sind. {0}, danach „ODBC testen“.", { "0": String(sqlite ? tr("Den SQLite-ODBC-Treiber (sqliteodbc_w64) installieren") : tr("Den 64-Bit-Treiber psqlODBC installieren")) }),
       primary: 'odbc',
       link: odbcDriverLink(m.odbc),
     }
@@ -954,11 +946,11 @@ function headline(m: {
   if (files && (files.missingFiles || files.errors)) {
     return {
       tone: 'danger',
-      eyebrow: 'Bibliotheksdateien',
-      title: files.missingFiles ? 'Bibliotheksdateien fehlen' : 'Einträge konnten nicht geschrieben werden',
+      eyebrow: tr("Bibliotheksdateien"),
+      title: files.missingFiles ? tr("Bibliotheksdateien fehlen") : tr("Einträge konnten nicht geschrieben werden"),
       text: m.writerOk
-        ? 'Altium findet betroffene Symbole und Footprints erst, wenn sie in den SchLib-/PcbLib-Dateien stehen. „Synchronisieren“ schreibt sie neu.'
-        : `Altium findet betroffene Symbole und Footprints erst, wenn sie in den SchLib-/PcbLib-Dateien stehen. Dafür braucht PartForge einen Bibliotheks-Writer – ${WRITER_REMEDY}.`,
+        ? tr("Altium findet betroffene Symbole und Footprints erst, wenn sie in den SchLib-/PcbLib-Dateien stehen. „Synchronisieren“ schreibt sie neu.")
+        : tr("Altium findet betroffene Symbole und Footprints erst, wenn sie in den SchLib-/PcbLib-Dateien stehen. Dafür braucht PartForge einen Bibliotheks-Writer – {0}.", { "0": String(writerRemedy()) }),
       primary: m.writerOk ? 'sync' : 'writer',
     }
   }
@@ -966,9 +958,9 @@ function headline(m: {
   if (m.empty) {
     return {
       tone: 'info',
-      eyebrow: 'Erste Schritte',
-      title: 'Noch keine Bauteile in der Bibliothek',
-      text: 'Der Serien-Assistent legt eine ganze Widerstands- oder Kondensatorserie an – mit Symbolen und Footprints. DbLib und Bibliotheksdateien entstehen dabei automatisch.',
+      eyebrow: tr("Erste Schritte"),
+      title: tr("Noch keine Bauteile in der Bibliothek"),
+      text: tr("Der Serien-Assistent legt eine ganze Widerstands- oder Kondensatorserie an – mit Symbolen und Footprints. DbLib und Bibliotheksdateien entstehen dabei automatisch."),
       primary: 'series',
     }
   }
@@ -976,9 +968,9 @@ function headline(m: {
   if (running && altium.installed === null) {
     return {
       tone: 'info',
-      eyebrow: 'Altium läuft',
-      title: 'Ist die DbLib in Altium installiert?',
-      text: 'PartForge fragt Altium nur auf Wunsch – „Status prüfen“ liest die installierten Bibliotheken (dauert wenige Sekunden).',
+      eyebrow: tr("Altium läuft"),
+      title: tr("Ist die DbLib in Altium installiert?"),
+      text: tr("PartForge fragt Altium nur auf Wunsch – „Status prüfen“ liest die installierten Bibliotheken (dauert wenige Sekunden)."),
       primary: 'installState',
     }
   }
@@ -986,9 +978,9 @@ function headline(m: {
     // nicht „noch nicht“: auch nach „Aus Altium deinstallieren“ zutreffend (E2E-Regression, Wortlaut)
     return {
       tone: 'warning',
-      eyebrow: 'Altium läuft',
-      title: 'Die DbLib ist in Altium nicht installiert',
-      text: 'Nach dem Installieren stehen alle Bauteile im Components-Panel von Altium bereit und bleiben automatisch aktuell.',
+      eyebrow: tr("Altium läuft"),
+      title: tr("Die DbLib ist in Altium nicht installiert"),
+      text: tr("Nach dem Installieren stehen alle Bauteile im Components-Panel von Altium bereit und bleiben automatisch aktuell."),
       primary: 'install',
     }
   }
@@ -996,22 +988,22 @@ function headline(m: {
   if (files && files.pending) {
     return {
       tone: 'warning',
-      eyebrow: 'Bibliotheksdateien',
-      title: `${plural(files.pending, 'Eintrag wartet', 'Einträge warten')} auf das Schreiben`,
+      eyebrow: tr("Bibliotheksdateien"),
+      title: tr("{0} auf das Schreiben", { "0": String(plural(files.pending, tr("Eintrag wartet"), tr("Einträge warten"))) }),
       text: m.writerOk
-        ? 'Neue oder geänderte Symbole und Footprints stehen erst nach dem Synchronisieren in den SchLib-/PcbLib-Dateien.'
-        : `${WRITER_MISSING_TEXT}.`,
+        ? tr("Neue oder geänderte Symbole und Footprints stehen erst nach dem Synchronisieren in den SchLib-/PcbLib-Dateien.")
+        : `${writerMissingText()}.`,
       primary: m.writerOk ? 'sync' : 'writer',
     }
   }
   if (files && (files.absent || files.outside)) {
     return {
       tone: 'warning',
-      eyebrow: 'Bibliotheksdateien',
-      title: files.absent ? `${plural(files.absent, 'Eintrag fehlt', 'Einträge fehlen')} in den Dateien` : 'Dateien wurden außerhalb geändert',
+      eyebrow: tr("Bibliotheksdateien"),
+      title: files.absent ? tr("{0} in den Dateien", { "0": String(plural(files.absent, tr("Eintrag fehlt"), tr("Einträge fehlen"))) }) : tr("Dateien wurden außerhalb geändert"),
       text: files.absent
-        ? 'Registrierte Symbole oder Footprints stehen nicht mehr in ihren Dateien. „Prüfen und synchronisieren“ schreibt sie neu.'
-        : 'Seit PartForges letztem Schreiben wurden Dateien geändert (z. B. in Altium gespeichert). PartForge schreibt dort nur noch geänderte Einträge.',
+        ? tr("Registrierte Symbole oder Footprints stehen nicht mehr in ihren Dateien. „Prüfen und synchronisieren“ schreibt sie neu.")
+        : tr("Seit PartForges letztem Schreiben wurden Dateien geändert (z. B. in Altium gespeichert). PartForge schreibt dort nur noch geänderte Einträge."),
       primary: 'scanSync',
     }
   }
@@ -1019,8 +1011,8 @@ function headline(m: {
   if (running && altium.installed && status.refresh.last_error) {
     return {
       tone: 'warning',
-      eyebrow: 'Aktualisierung',
-      title: 'Altium zeigt evtl. nicht den aktuellen Stand',
+      eyebrow: tr("Aktualisierung"),
+      title: tr("Altium zeigt evtl. nicht den aktuellen Stand"),
       text: status.refresh.last_error,
       primary: 'refresh',
     }
@@ -1029,9 +1021,9 @@ function headline(m: {
   if (m.reportErrors) {
     return {
       tone: 'danger',
-      eyebrow: 'Prüfbericht',
-      title: `${plural(m.reportErrors, 'Fehler', 'Fehler')} im Prüfbericht`,
-      text: 'Je Befund nennt der Prüfbericht Ursache und Lösungsweg – und behebt mit einem Klick, was PartForge selbst beheben kann.',
+      eyebrow: tr("Prüfbericht"),
+      title: tr("{0} im Prüfbericht", { "0": String(plural(m.reportErrors, tr("Fehler"), tr("Fehler"))) }),
+      text: tr("Je Befund nennt der Prüfbericht Ursache und Lösungsweg – und behebt mit einem Klick, was PartForge selbst beheben kann."),
       primary: 'report',
     }
   }
@@ -1039,18 +1031,18 @@ function headline(m: {
   if (files && files.heightsRepairable) {
     return {
       tone: 'warning',
-      eyebrow: 'Bibliotheksdateien',
-      title: `${plural(files.heights, 'Footprint', 'Footprints')} ohne Bauhöhe in der PcbLib`,
-      text: 'Eine ältere PartForge-Version hat sie mit der Höhe 0 geschrieben – Altium kennt ihre Bauhöhe dann nicht (3D-Abstände, Höhenregeln). „Footprint-Höhen nachtragen“ schreibt sie mit ihrer Höhe neu.',
+      eyebrow: tr("Bibliotheksdateien"),
+      title: tr("{0} ohne Bauhöhe in der PcbLib", { "0": String(plural(files.heights, 'Footprint', 'Footprints')) }),
+      text: tr("Eine ältere PartForge-Version hat sie mit der Höhe 0 geschrieben – Altium kennt ihre Bauhöhe dann nicht (3D-Abstände, Höhenregeln). „Footprint-Höhen nachtragen“ schreibt sie mit ihrer Höhe neu."),
       primary: 'repairHeights',
     }
   }
   if (m.findingsError) {
     return {
       tone: 'warning',
-      eyebrow: 'Prüfbericht',
-      title: 'Die Bibliothek konnte nicht geprüft werden',
-      text: `${m.findingsError.replace(/[.\s]+$/, '')}. Ohne Prüfung zeigt PartForge keine Fehler und Warnungen der Bauteile – „Erneut prüfen“ versucht es noch einmal.`,
+      eyebrow: tr("Prüfbericht"),
+      title: tr("Die Bibliothek konnte nicht geprüft werden"),
+      text: tr("{0}. Ohne Prüfung zeigt PartForge keine Fehler und Warnungen der Bauteile – „Erneut prüfen“ versucht es noch einmal.", { "0": String(m.findingsError.replace(/[.\s]+$/, '')) }),
       primary: 'check',
     }
   }
@@ -1058,17 +1050,17 @@ function headline(m: {
     return {
       tone: 'neutral',
       eyebrow: 'Altium Designer',
-      title: 'Altium Designer wurde nicht gefunden',
-      text: `DbLib und Bibliotheksdateien sind bereit. Für Installieren, Aktualisieren und Prüfen in Altium den Pfad zu X2.EXE unter ${SETTINGS_PLACE.altium.label} festlegen.`,
+      title: tr("Altium Designer wurde nicht gefunden"),
+      text: tr("DbLib und Bibliotheksdateien sind bereit. Für Installieren, Aktualisieren und Prüfen in Altium den Pfad zu X2.EXE unter {0} festlegen.", { "0": String(SETTINGS_PLACE.altium.label) }),
       primary: 'settings',
     }
   }
   if (!running) {
     return {
       tone: 'neutral',
-      eyebrow: 'Bereit für Altium',
-      title: 'Alles bereit – Altium ist nicht gestartet',
-      text: 'DbLib und Bibliotheksdateien sind aktuell. Sobald Altium Designer läuft, lässt sich die DbLib installieren, aktualisieren und in Altium prüfen.',
+      eyebrow: tr("Bereit für Altium"),
+      title: tr("Alles bereit – Altium ist nicht gestartet"),
+      text: tr("DbLib und Bibliotheksdateien sind aktuell. Sobald Altium Designer läuft, lässt sich die DbLib installieren, aktualisieren und in Altium prüfen."),
       primary: null,
     }
   }
@@ -1077,35 +1069,35 @@ function headline(m: {
     if (!status.refresh.auto_refresh && !status.refresh.running && !status.refresh.manual_pending) {
       return {
         tone: 'info',
-        eyebrow: 'Aktualisierung',
-        title: 'Altium kennt noch nicht alle Änderungen',
-        text: 'Die automatische Aktualisierung ist ausgeschaltet. „In Altium aktualisieren“ lässt Altium die Bibliothek neu lesen.',
+        eyebrow: tr("Aktualisierung"),
+        title: tr("Altium kennt noch nicht alle Änderungen"),
+        text: tr("Die automatische Aktualisierung ist ausgeschaltet. „In Altium aktualisieren“ lässt Altium die Bibliothek neu lesen."),
         primary: 'refresh',
       }
     }
     return {
       tone: 'info',
-      eyebrow: 'Aktualisierung',
-      title: 'Änderungen werden an Altium übergeben …',
-      text: 'PartForge wartet einen Moment, bis keine weiteren Änderungen folgen, und lässt Altium dann neu lesen.',
+      eyebrow: tr("Aktualisierung"),
+      title: tr("Änderungen werden an Altium übergeben …"),
+      text: tr("PartForge wartet einen Moment, bis keine weiteren Änderungen folgen, und lässt Altium dann neu lesen."),
       primary: 'refresh',
     }
   }
   const last = lastRefreshText(status)
   return {
     tone: 'success',
-    eyebrow: 'Alles verbunden',
-    title: 'Altium sieht den aktuellen Stand',
-    text: `Bauteile lassen sich direkt aus dem Components-Panel platzieren${last ? ` (zuletzt aktualisiert ${last})` : ''}. „In Altium prüfen“ lässt Altium jedes Bauteil auflösen – wie beim Platzieren.`,
+    eyebrow: tr("Alles verbunden"),
+    title: tr("Altium sieht den aktuellen Stand"),
+    text: tr("Bauteile lassen sich direkt aus dem Components-Panel platzieren{0}. „In Altium prüfen“ lässt Altium jedes Bauteil auflösen – wie beim Platzieren.", { "0": String(last ? tr(" (zuletzt aktualisiert {0})", { 0: String(last) }) : '') }),
     primary: 'verify',
   }
 }
 
 /** Warum eine Altium-Aktion gerade nicht geht (Tooltip am gesperrten Knopf) – `null` = Altium bereit */
 export function altiumBlocker(status: AltiumStatus | undefined, statusError?: string | null): string | null {
-  if (!status) return statusError ? 'Altium-Status nicht verfügbar – erst „Erneut versuchen“' : 'Altium-Status wird geprüft …'
-  if (!status.altium_exe) return `Altium Designer nicht gefunden – Pfad zu X2.EXE unter ${SETTINGS_PLACE.altium.label} festlegen`
-  if (!status.altium_running) return 'Altium Designer starten – Installieren, Aktualisieren und Prüfen brauchen ein laufendes Altium Designer'
-  if (status.bridge_wedged) return 'Ein PartForge-Skript hängt in Altium – dort Strg+F3 drücken'
+  if (!status) return statusError ? tr("Altium-Status nicht verfügbar – erst „Erneut versuchen“") : tr("Altium-Status wird geprüft …")
+  if (!status.altium_exe) return tr("Altium Designer nicht gefunden – Pfad zu X2.EXE unter {0} festlegen", { "0": String(SETTINGS_PLACE.altium.label) })
+  if (!status.altium_running) return tr("Altium Designer starten – Installieren, Aktualisieren und Prüfen brauchen ein laufendes Altium Designer")
+  if (status.bridge_wedged) return tr("Ein PartForge-Skript hängt in Altium – dort Strg+F3 drücken")
   return null
 }

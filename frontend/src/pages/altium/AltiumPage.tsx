@@ -1,15 +1,4 @@
-/**
- * Altium: Status der Kette (Bauteile → DbLib → Bibliotheksdateien → Altium) mit dem nächsten Schritt,
- * Aktionen (DbLib neu erzeugen, Vorschau, ODBC-Test, Installieren, Aktualisieren, In Altium prüfen) und darunter
- * Prüfbericht, Bibliotheksdateien, Ergebnis der Prüfung in Altium und externe Bibliotheken.
- *
- * Adresse: `/altium?bereich=pruefbericht|dateien|altium|extern` (Reiter), `&pruefung=<check>` (Gruppe im Prüfbericht
- * öffnen), `&schwere=fehler|warnungen|hinweise` (Filter des Prüfberichts). Aktionen anderer Stellen (Shell-Befehle,
- * Übersicht, Job-Toasts: `dblib|sync|pruefen|installieren|aktualisieren|odbc|vorschau`) kommen als **Router-State**
- * (`altiumActionState` in `@/app/navigation`) – nie aus der Adresse: ein `?aktion=` (Link einer fremden Seite,
- * Lesezeichen) führt nichts aus und wird entfernt. Solange die Seite offen ist, führen die Befehle der Palette die
- * Aktionen direkt aus.
- */
+import { useI18n } from '@/lib/i18n'
 import { useQueryClient } from '@tanstack/react-query'
 import { Cable, FileCode2, FolderSearch, FolderSync, PlugZap, RefreshCw, RotateCw, ScanSearch, Settings2, ShieldCheck } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -46,6 +35,7 @@ const TABS: TabKey[] = ['pruefbericht', 'dateien', 'altium', 'extern']
 const SEVERITY_PARAM: Record<string, SeverityFilter> = { fehler: 'error', warnungen: 'warning', hinweise: 'info' }
 
 export default function AltiumPage() {
+  const { t: tr } = useI18n()
   const qc = useQueryClient()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
@@ -67,7 +57,7 @@ export default function AltiumPage() {
   const odbcOpen = useRef(false)
   useEffect(() => {
     odbcOpen.current = odbc.open
-  }, [odbc.open])
+  }, [odbc.open, tr])
 
   const rawTab = params.get('bereich') as TabKey | null
   const tab: TabKey = rawTab && TABS.includes(rawTab) ? rawTab : 'pruefbericht'
@@ -89,9 +79,7 @@ export default function AltiumPage() {
   const statusError = statusQ.isError && !status ? statusQ.error.message : null
   const report = health.report
   const lib = useMemo(() => libraryFindings(report), [report])
-  const model = useMemo(
-    () =>
-      status || statusError
+  const model = status || statusError
         ? buildModel({
             status,
             statusError,
@@ -107,9 +95,7 @@ export default function AltiumPage() {
             linkErrors: lib?.linkErrors ?? 0,
             heights: lib ? { total: lib.heights, repairable: lib.heightsRepairable } : undefined,
           })
-        : null,
-    [status, statusError, filesQ.data, filesQ.error, backend, stats?.total_parts, workspace, report, health.error, lib],
-  )
+        : null
   const blocker = altiumBlocker(status, statusError)
   const tabsRef = useRef<HTMLDivElement>(null)
   const writer = writerLabel(status, backend)
@@ -253,14 +239,14 @@ export default function AltiumPage() {
         break
     }
     // nur bei neuer Navigation bzw. sobald der Status da ist – die Funktionen kommen aktuell über `latest`
-  }, [aktion, staleParam, statusReady, location.key, setParams])
+  }, [aktion, staleParam, statusReady, location.key, setParams, tr])
 
   // ------------------------------------------------------------------ Befehlspalette (überlagert die Shell-Befehle)
 
   useRegisterCommands([
     {
       id: 'altium.regenerate',
-      title: 'DbLib neu erzeugen',
+      title: tr("DbLib neu erzeugen"),
       group: 'Aktionen',
       icon: RefreshCw,
       priority: 60,
@@ -269,8 +255,8 @@ export default function AltiumPage() {
     },
     {
       id: 'library.sync',
-      title: 'Bibliotheksdateien synchronisieren',
-      subtitle: 'Ausstehende Symbole und Footprints in SchLib/PcbLib schreiben',
+      title: tr("Bibliotheksdateien synchronisieren"),
+      subtitle: tr("Ausstehende Symbole und Footprints in SchLib/PcbLib schreiben"),
       group: 'Aktionen',
       icon: FolderSync,
       priority: 55,
@@ -279,18 +265,18 @@ export default function AltiumPage() {
     },
     {
       id: 'library.check',
-      title: 'Bibliothek prüfen',
-      subtitle: 'Fehlende Symbole, Footprints und Felder finden',
+      title: tr("Bibliothek prüfen"),
+      subtitle: tr("Fehlende Symbole, Footprints und Felder finden"),
       group: 'Aktionen',
       icon: ShieldCheck,
       priority: 50,
-      keywords: ['validieren', 'prüfbericht', 'fehler'],
+      keywords: ['validieren', tr("prüfbericht"), 'fehler'],
       run: () => onAction('check'),
     },
     {
       id: 'altium.install',
-      title: model?.altium.installed ? 'Aus Altium deinstallieren' : 'In Altium installieren',
-      subtitle: model?.altium.installed ? 'DbLib aus Altium Designer entfernen' : 'DbLib in Altium Designer einbinden',
+      title: model?.altium.installed ? tr("Aus Altium deinstallieren") : tr("In Altium installieren"),
+      subtitle: model?.altium.installed ? tr("DbLib aus Altium Designer entfernen") : tr("DbLib in Altium Designer einbinden"),
       group: 'Aktionen',
       icon: PlugZap,
       priority: 40,
@@ -298,26 +284,26 @@ export default function AltiumPage() {
     },
     {
       id: 'altium.refresh',
-      title: 'In Altium aktualisieren',
-      subtitle: 'Altium liest die Datenbank neu ein',
+      title: tr("In Altium aktualisieren"),
+      subtitle: tr("Altium liest die Datenbank neu ein"),
       group: 'Altium',
       icon: RotateCw,
-      keywords: ['refresh', 'neu laden'],
+      keywords: ['refresh', tr("neu laden")],
       run: () => onAction('refresh'),
     },
     {
       id: 'altium.verify',
-      title: 'Bibliothek in Altium prüfen',
-      subtitle: `Stichprobe über alle Kategorien (${VERIFY_SAMPLE} Bauteile, mindestens eines je Kategorie)`,
+      title: tr("Bibliothek in Altium prüfen"),
+      subtitle: tr("Stichprobe über alle Kategorien ({0} Bauteile, mindestens eines je Kategorie)", { "0": String(VERIFY_SAMPLE) }),
       group: 'Altium',
       icon: ScanSearch,
-      keywords: ['verify', 'auflösen', 'symbol', 'footprint', 'pins'],
+      keywords: ['verify', tr("auflösen"), 'symbol', 'footprint', 'pins'],
       run: () => onAction('verify'),
     },
     {
       id: 'altium.odbc',
-      title: 'ODBC-Verbindung testen',
-      subtitle: 'Datenbank lesen wie Altium',
+      title: tr("ODBC-Verbindung testen"),
+      subtitle: tr("Datenbank lesen wie Altium"),
       group: 'Altium',
       icon: Cable,
       keywords: ['treiber', 'verbindung', 'sqlite'],
@@ -325,7 +311,7 @@ export default function AltiumPage() {
     },
     {
       id: 'altium.preview',
-      title: 'DbLib-Vorschau anzeigen',
+      title: tr("DbLib-Vorschau anzeigen"),
       group: 'Altium',
       icon: FileCode2,
       keywords: ['dblib', 'text', 'ini'],
@@ -333,8 +319,8 @@ export default function AltiumPage() {
     },
     {
       id: 'library.scan',
-      title: 'Bibliotheksdateien prüfen',
-      subtitle: 'Dateien und Registrierung vergleichen',
+      title: tr("Bibliotheksdateien prüfen"),
+      subtitle: tr("Dateien und Registrierung vergleichen"),
       group: 'Altium',
       icon: FolderSearch,
       keywords: ['scan', 'schlib', 'pcblib'],
@@ -358,14 +344,13 @@ export default function AltiumPage() {
       <PageTitle title="Altium" subtitle={subtitle || undefined} />
       <PageActions>
         <IconButton
-          label="Status neu laden"
+          label={tr("Status neu laden")}
           icon={<RotateCw />}
           loading={statusQ.isFetching || filesQ.isFetching}
           onClick={() => actions.reload()}
         />
         <Button variant="ghost" leftIcon={<Settings2 />} onClick={() => navigate('/einstellungen#altium')}>
-          Einstellungen
-        </Button>
+          {tr("Einstellungen")}</Button>
       </PageActions>
 
       <div className="flex flex-col gap-5">
@@ -380,26 +365,22 @@ export default function AltiumPage() {
         />
 
         <Tabs ref={tabsRef} value={tab} onValueChange={(v) => setTab(v as TabKey)} className="scroll-mt-16">
-          <TabsList aria-label="Bereiche">
+          <TabsList aria-label={tr("Bereiche")}>
             <TabsTrigger value="pruefbericht" count={issues ? formatNumber(issues) : undefined}>
-              Prüfbericht
-            </TabsTrigger>
+              {tr("Prüfbericht")}</TabsTrigger>
             <TabsTrigger value="dateien" count={filesQ.data ? formatNumber(filesQ.data.length) : undefined}>
-              Bibliotheksdateien
-            </TabsTrigger>
+              {tr("Bibliotheksdateien")}</TabsTrigger>
             <TabsTrigger
               value="altium"
               count={verifyRunning ? <Spinner size={10} tone="accent" className="my-[3px]" /> : verifyCount !== undefined ? formatNumber(verifyCount) : undefined}
             >
-              In Altium geprüft
-            </TabsTrigger>
+              {tr("In Altium geprüft")}</TabsTrigger>
             <TabsTrigger value="extern" count={externals.data?.length ? formatNumber(externals.data.length) : undefined}>
-              Externe Bibliotheken
-            </TabsTrigger>
+              {tr("Externe Bibliotheken")}</TabsTrigger>
           </TabsList>
           {/* Panels enthalten eigene Bedienelemente – kein zusätzlicher (unsichtbarer) Tabstopp */}
           <TabsContent value="pruefbericht" tabIndex={-1} className="pt-4">
-            <h2 className="sr-only">Prüfbericht</h2>
+            <h2 className="sr-only">{tr("Prüfbericht")}</h2>
             <HealthReport
               report={report}
               loading={health.isLoading}
@@ -414,7 +395,7 @@ export default function AltiumPage() {
             />
           </TabsContent>
           <TabsContent value="dateien" tabIndex={-1} className="pt-4">
-            <h2 className="sr-only">Bibliotheksdateien</h2>
+            <h2 className="sr-only">{tr("Bibliotheksdateien")}</h2>
             <LibraryFilesPanel
               files={filesQ.data}
               heightsByLibrary={lib?.heightsByLibrary}
@@ -428,11 +409,11 @@ export default function AltiumPage() {
             />
           </TabsContent>
           <TabsContent value="altium" tabIndex={-1} className="pt-4">
-            <h2 className="sr-only">In Altium geprüft</h2>
+            <h2 className="sr-only">{tr("In Altium geprüft")}</h2>
             <VerifyPanel blocker={blocker} pending={actions.pending.verify} onVerify={(scope) => void startVerify(scope)} />
           </TabsContent>
           <TabsContent value="extern" tabIndex={-1} className="pt-4">
-            <h2 className="sr-only">Externe Bibliotheken</h2>
+            <h2 className="sr-only">{tr("Externe Bibliotheken")}</h2>
             <ExternalPanel />
           </TabsContent>
         </Tabs>

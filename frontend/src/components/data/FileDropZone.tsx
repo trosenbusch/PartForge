@@ -1,13 +1,5 @@
-/**
- * Datei-Drop-Zone (react-dropzone) mit Varianten für Datenblätter (PDF, KI-Stil) und Tabellen (CSV/XLSX).
- * Die ganze Fläche ist ein Knopf (Klick, Enter, Leertaste öffnen die Dateiauswahl); beim Ziehen animiert der Rahmen,
- * falsche Dateitypen werden rot markiert und auf Deutsch erklärt. Das globale Datenblatt-Overlay ist unterdrückt,
- * solange die Zone sichtbar ist.
- *
- *   <FileDropZone variant="pdf" onFiles={(files) => startImport(files)} />   // KI-Analyse (Funken); KI aus/kein Schlüssel → neutral
- *   <FileDropZone variant="pdf" tone="neutral" onFiles={…} />               // PDF ablegen ohne KI-Bezug (z. B. Datenblatt anhängen)
- *   <FileDropZone variant="table" size="sm" onFiles={([file]) => preview(file)} multiple={false} />
- */
+import { useI18n } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { motion, useReducedMotion } from 'motion/react'
 import { FilePlus2, FileSpreadsheet, FileText, Sparkles } from 'lucide-react'
 import { useId, type ReactNode } from 'react'
@@ -43,16 +35,16 @@ const TYPES_LABEL: Record<FileDropVariant, string> = {
 }
 
 const DEFAULT_TITLE: Record<FileDropVariant, string> = {
-  pdf: 'Datenblatt hierher ziehen',
-  csv: 'CSV-Datei hierher ziehen',
-  xlsx: 'Excel-Datei hierher ziehen',
+  get pdf() { return tr("Datenblatt hierher ziehen") },
+  get csv() { return tr("CSV-Datei hierher ziehen") },
+  get xlsx() { return tr("Excel-Datei hierher ziehen") },
   table: 'Tabelle hierher ziehen',
 }
 
 const DEFAULT_DESCRIPTION: Record<FileDropVariant, string> = {
-  pdf: 'Parameter, Pinbelegung und Gehäusemaße werden mit KI erkannt und als Bauteil-Vorschlag aufbereitet.',
-  csv: 'Spalten werden automatisch den Feldern der Kategorie zugeordnet.',
-  xlsx: 'Das erste Tabellenblatt wird gelesen; Spalten werden automatisch zugeordnet.',
+  get pdf() { return tr("Parameter, Pinbelegung und Gehäusemaße werden mit KI erkannt und als Bauteil-Vorschlag aufbereitet.") },
+  get csv() { return tr("Spalten werden automatisch den Feldern der Kategorie zugeordnet.") },
+  get xlsx() { return tr("Das erste Tabellenblatt wird gelesen; Spalten werden automatisch zugeordnet.") },
   table: 'Spalten werden automatisch den Feldern der Kategorie zugeordnet – Vorschau vor dem Import.',
 }
 
@@ -102,10 +94,10 @@ export interface FileDropZoneProps {
 }
 
 const GERMAN: Record<string, (e: FileError, f: File, max?: number) => string> = {
-  'file-invalid-type': (_e, f) => `„${f.name}“ hat ein nicht unterstütztes Format.`,
-  'file-too-large': (_e, f, max) => `„${f.name}“ ist zu groß (${formatBytes(f.size)}${max ? `, höchstens ${formatBytes(max)}` : ''}).`,
-  'file-too-small': (_e, f) => `„${f.name}“ ist leer.`,
-  'too-many-files': () => 'Bitte nur eine Datei ablegen.',
+  'file-invalid-type': (_e, f) => tr("„{0}“ hat ein nicht unterstütztes Format.", { "0": String(f.name) }),
+  'file-too-large': (_e, f, max) => tr("„{0}“ ist zu groß ({1}{2}).", { "0": String(f.name), "1": String(formatBytes(f.size)), "2": String(max ? tr(', höchstens {0}', {0: formatBytes(max)}) : '') }),
+  'file-too-small': (_e, f) => tr("„{0}“ ist leer.", { "0": String(f.name) }),
+  'too-many-files': () => tr("Bitte nur eine Datei ablegen."),
 }
 
 /** Animiertes Dokument (PDF) bzw. Tabellenblatt */
@@ -121,6 +113,7 @@ function DropIllustration({
   active: boolean
   reject: boolean
 }) {
+  useI18n()
   const reduce = useReducedMotion()
   const gid = `dz${useId().replace(/:/g, '')}`
   const pdf = variant === 'pdf'
@@ -232,6 +225,7 @@ export function FileDropZone({
   hint: hintProp,
   className,
 }: FileDropZoneProps) {
+  const { t: tr } = useI18n()
   useSuppressGlobalDrop(!disabled)
   const uid = useId().replace(/:/g, '')
   const limit = maxSize ?? (variant === 'pdf' ? 50 * 1024 * 1024 : 20 * 1024 * 1024)
@@ -258,23 +252,23 @@ export function FileDropZone({
   const active = isDragActive && !isDragReject
   const reject = isDragReject
   const titleText = reject
-    ? 'Dieser Dateityp wird nicht unterstützt'
+    ? tr("Dieser Dateityp wird nicht unterstützt")
     : active
       ? spark
-        ? 'Loslassen zum Analysieren'
+        ? tr("Loslassen zum Analysieren")
         : pdf
-          ? 'Loslassen zum Hinzufügen'
-          : 'Loslassen zum Importieren'
-      : (title ?? DEFAULT_TITLE[variant])
-  const busyText = typeof busy === 'string' ? busy : 'Wird verarbeitet …'
-  const types = typesLabel ?? TYPES_LABEL[variant]
+          ? tr("Loslassen zum Hinzufügen")
+          : tr("Loslassen zum Importieren")
+      : (title ?? tr(DEFAULT_TITLE[variant]))
+  const busyText = typeof busy === 'string' ? busy : tr("Wird verarbeitet …")
+  const types = typesLabel ?? tr(TYPES_LABEL[variant])
   const hint =
     hintProp === false
       ? null
-      : (hintProp ?? `${types} · bis ${formatBytes(limit)}${multiple ? ' · mehrere Dateien möglich' : ''}`)
+      : (hintProp ?? tr("{0} · bis {1}{2}", { "0": String(types), "1": String(formatBytes(limit)), "2": String(multiple ? tr(' · mehrere Dateien möglich') : '') }))
   const descriptionText = reject
-    ? `Erlaubt: ${types}.`
-    : (description ?? (pdf && !spark ? NEUTRAL_PDF_DESCRIPTION : DEFAULT_DESCRIPTION[variant]))
+    ? tr("Erlaubt: {0}.", { "0": String(types) })
+    : (description ?? (pdf && !spark ? tr(NEUTRAL_PDF_DESCRIPTION) : tr(DEFAULT_DESCRIPTION[variant])))
   const showDescription = size !== 'sm' && !busy
   const Icon = pdf ? FileText : FileSpreadsheet
   const ChipIcon = spark ? Sparkles : pdf ? FilePlus2 : FileSpreadsheet
@@ -378,7 +372,7 @@ export function FileDropZone({
             )}
           >
             {busy ? busyText : titleText}
-            {!busy && <span className="sr-only"> – oder klicken, um Dateien auszuwählen</span>}
+            {!busy && <span className="sr-only"> {tr(" – oder klicken, um Dateien auszuwählen")}</span>}
           </div>
           {showDescription && (
             <p id={`${uid}-desc`} aria-hidden className="text-ui leading-relaxed text-fg-muted">
@@ -387,7 +381,7 @@ export function FileDropZone({
           )}
           {hint !== null && (
             <p id={`${uid}-hint`} aria-hidden className={cn('text-xs text-fg-subtle', size === 'sm' ? 'mt-0.5 truncate' : 'mt-1')}>
-              {size === 'sm' && reject ? `Erlaubt: ${types}` : hint}
+              {size === 'sm' && reject ? tr("Erlaubt: {0}", { "0": String(types) }) : hint}
             </p>
           )}
         </div>
@@ -404,8 +398,7 @@ export function FileDropZone({
             )}
           >
             <ChipIcon />
-            Datei auswählen
-          </span>
+            {tr("Datei auswählen")}</span>
         )}
       </div>
       <div aria-live="polite" className="empty:hidden">
@@ -414,7 +407,7 @@ export function FileDropZone({
             {fileRejections.slice(0, 4).map((r) => (
               <li key={`${r.file.name}-${r.file.size}`}>{r.errors.map((e) => e.message).join(' ')}</li>
             ))}
-            {fileRejections.length > 4 && <li>… und {fileRejections.length - 4} weitere</li>}
+            {fileRejections.length > 4 && <li>{tr("… und ")}{fileRejections.length - 4} {tr('weitere')}</li>}
           </ul>
         )}
       </div>

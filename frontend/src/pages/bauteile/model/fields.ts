@@ -1,3 +1,4 @@
+import { metadataLabel, t, getLocale } from '@/lib/i18n'
 /**
  * Felder einer Kategorie: Gruppen (Allgemein, Werte, Altium, Beschaffung, Verwaltung), Bearbeitbarkeit,
  * Standard-Sichtbarkeit und -Breite in der Tabelle, Filter-Operatoren je Feldart und Formatierung.
@@ -15,11 +16,11 @@ export type FieldKind = FieldDef['kind']
 export type FieldGroupId = 'allgemein' | 'werte' | 'altium' | 'beschaffung' | 'verwaltung'
 
 export const FIELD_GROUPS: { id: FieldGroupId; label: string; description: string }[] = [
-  { id: 'allgemein', label: 'Allgemein', description: 'Teilenummer, Hersteller, Beschreibung, Gehäuse' },
-  { id: 'werte', label: 'Werte', description: 'Kategoriespezifische Kennwerte' },
-  { id: 'altium', label: 'Altium', description: 'Symbol, Footprint und Datenblatt-Verknüpfung' },
-  { id: 'beschaffung', label: 'Beschaffung', description: 'Lieferanten, Lebenszyklus, RoHS' },
-  { id: 'verwaltung', label: 'Verwaltung', description: 'Freigabe, Notizen, Änderungsdaten' },
+  { id: 'allgemein', get label() { return t("Allgemein") }, get description() { return t("Teilenummer, Hersteller, Beschreibung, Gehäuse") } },
+  { id: 'werte', get label() { return t("Werte") }, get description() { return t("Kategoriespezifische Kennwerte") } },
+  { id: 'altium', label: 'Altium', get description() { return t("Symbol, Footprint und Datenblatt-Verknüpfung") } },
+  { id: 'beschaffung', get label() { return t("Beschaffung") }, get description() { return t("Lieferanten, Lebenszyklus, RoHS") } },
+  { id: 'verwaltung', get label() { return t("Verwaltung") }, get description() { return t("Freigabe, Notizen, Änderungsdaten") } },
 ]
 
 const COMMON_GROUP: Record<string, FieldGroupId> = {
@@ -63,8 +64,8 @@ export function groupOf(field: FieldDef): FieldGroupId {
 }
 
 /** Felder einer Kategorie nach Gruppen (Reihenfolge wie in der Datenbank) */
-export function groupFields(fields: FieldDef[]): { id: FieldGroupId; label: string; fields: FieldDef[] }[] {
-  return FIELD_GROUPS.map((g) => ({ id: g.id, label: g.label, fields: fields.filter((f) => groupOf(f) === g.id) })).filter(
+export function groupFields(fields: FieldDef[], translate = t): { id: FieldGroupId; label: string; fields: FieldDef[] }[] {
+  return FIELD_GROUPS.map((g) => ({ id: g.id, label: metadataLabel(g.label, translate), fields: fields.filter((f) => groupOf(f) === g.id) })).filter(
     (g) => g.fields.length > 0,
   )
 }
@@ -194,14 +195,14 @@ export function columnOrder(category: CategoryDef): FieldDef[] {
 /** Feldart für Menschen */
 export const KIND_LABEL: Record<FieldKind, string> = {
   text: 'Text',
-  quantity: 'Messwert',
-  range: 'Bereich',
-  enum: 'Auswahl',
-  bool: 'Ja/Nein',
-  int: 'Ganzzahl',
+  get quantity() { return t("Messwert") },
+  get range() { return metadataLabel("Bereich", t) },
+  get enum() { return t("Auswahl") },
+  get bool() { return t("Ja/Nein") },
+  get int() { return t("Ganzzahl") },
   url: 'Link',
-  path: 'Dateipfad',
-  date: 'Datum',
+  get path() { return t("Dateipfad") },
+  get date() { return t("Datum") },
 }
 
 /** Typische Eingaben je Einheit (Platzhalter) */
@@ -210,16 +211,16 @@ const UNIT_EXAMPLE: Record<string, string> = {
   F: '100n',
   H: '4u7',
   V: '50 V',
-  A: '1,5 A',
-  W: '0,1 W',
+  get A() { return t("1,5 A") },
+  get W() { return t("0,1 W") },
   Hz: '16M',
   '%': '1 %',
   ppm: '20 ppm',
   'ppm/K': '100 ppm/K',
-  mm: '1,6 mm',
+  get mm() { return t("1,6 mm") },
   '°C': '85 °C',
   nm: '525 nm',
-  cd: '0,2 cd',
+  get cd() { return t("0,2 cd") },
   '°': '120°',
   C: '15n',
 }
@@ -228,17 +229,17 @@ const UNIT_EXAMPLE: Record<string, string> = {
 export function placeholderFor(field: FieldDef): string {
   switch (field.kind) {
     case 'quantity':
-      return `z. B. ${(field.unit && UNIT_EXAMPLE[field.unit]) || (field.unit ? `10 ${field.unit}` : '10k')}`
+      return t("z. B. {1}", { 1: (field.unit && UNIT_EXAMPLE[field.unit]) || (field.unit ? `10 ${field.unit}` : '10k') })
     case 'range':
-      return `z. B. −40 … 85${field.unit ? ` ${field.unit}` : ''}`
+      return t("z. B. −40 … 85{1}", { 1: field.unit ? ` ${field.unit}` : '' })
     case 'int':
-      return 'z. B. 4'
+      return t("z. B. 4")
     case 'url':
       return 'https://…'
     case 'path':
-      return 'Pfad relativ zur Bibliothek'
+      return t("Pfad relativ zur Bibliothek")
     case 'date':
-      return 'TT.MM.JJJJ'
+      return t("TT.MM.JJJJ")
     case 'enum':
       return field.options.length ? field.options.slice(0, 3).join(', ') + ' …' : ''
     default:
@@ -254,14 +255,15 @@ export function displayValue(field: FieldDef | undefined, value: string | null |
   if (!field) return value
   if (field.kind === 'quantity' || field.kind === 'range') return isUnreadable(field, value) ? value : formatQuantityText(value)
   if (field.kind === 'date') return formatDateText(value)
-  return value
+  return field.kind === 'bool' || (field.kind === 'enum' && field.options.includes(value)) ? metadataLabel(value, t) : value
 }
 
 /** „2026-10-08 02:34:48“ → „08.10.2026, 02:34“ (reine Daten „2026-10-08“ → „08.10.2026“) */
 export function formatDateText(value: string): string {
   const m = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/)
   if (!m) return value
-  return m[4] ? `${m[3]}.${m[2]}.${m[1]}, ${m[4]}:${m[5]}` : `${m[3]}.${m[2]}.${m[1]}`
+  const date = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4] ?? 0), Number(m[5] ?? 0))
+  return new Intl.DateTimeFormat(getLocale(), { year: 'numeric', month: '2-digit', day: '2-digit', ...(m[4] ? { hour: '2-digit', minute: '2-digit' } as const : {}) }).format(date)
 }
 
 /** „2026-10-08 02:34:48“ → Millisekunden (für relative Zeitangaben) */
@@ -281,8 +283,8 @@ const isoDay = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2
 export function parseDateInput(text: string | null | undefined, now: Date = new Date()): string | null {
   const t = (text ?? '').trim().toLowerCase()
   if (!t) return null
-  if (t === 'heute') return isoDay(now)
-  if (t === 'gestern') return isoDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1))
+  if (t === 'heute' || t === 'today') return isoDay(now)
+  if (t === 'gestern' || t === 'yesterday') return isoDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1))
   let year: number
   let month: number
   let day: number
@@ -305,7 +307,7 @@ export function parseDateInput(text: string | null | undefined, now: Date = new 
 /** ISO-Tag → „09.10.2026“ (für Eingabefelder und Filter-Chips) */
 export function formatDateInput(iso: string): string {
   const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/)
-  return m ? `${m[3]}.${m[2]}.${m[1]}` : iso
+  return m && getLocale() === 'de-DE' ? `${m[3]}.${m[2]}.${m[1]}` : iso
 }
 
 /** Tag relativ zu heute als Eingabetext („vor 7 Tagen“ → „01.10.2026“) */
@@ -378,19 +380,19 @@ export interface FilterCondition {
 }
 
 export const OP_LABEL: Record<UiFilterOp, string> = {
-  contains: 'enthält',
-  startswith: 'beginnt mit',
-  eq: 'ist gleich',
-  ne: 'ist ungleich',
-  gt: 'größer als',
-  ge: 'mindestens',
-  lt: 'kleiner als',
-  le: 'höchstens',
-  between: 'zwischen',
-  in: 'ist',
-  notin: 'ist nicht',
-  empty: 'ist leer',
-  notempty: 'ist nicht leer',
+  get contains() { return t("enthält") },
+  get startswith() { return t("beginnt mit") },
+  get eq() { return t("ist gleich") },
+  get ne() { return t("ist ungleich") },
+  get gt() { return t("größer als") },
+  get ge() { return t("mindestens") },
+  get lt() { return t("kleiner als") },
+  get le() { return t("höchstens") },
+  get between() { return t("zwischen") },
+  get in() { return t("ist") },
+  get notin() { return t("ist nicht") },
+  get empty() { return t("ist leer") },
+  get notempty() { return t("ist nicht leer") },
 }
 
 /** Kurzform in Filter-Chips */
@@ -408,17 +410,17 @@ export const OP_SYMBOL: Partial<Record<UiFilterOp, string>> = {
  * „vor“/„nach“ ohne den Tag selbst)
  */
 const DATE_OP_LABEL: Partial<Record<UiFilterOp, string>> = {
-  ge: 'ab',
-  le: 'bis',
-  eq: 'am',
-  between: 'zwischen',
-  lt: 'vor',
-  gt: 'nach',
+  get ge() { return t("ab") },
+  get le() { return t("bis") },
+  get eq() { return t("am") },
+  get between() { return t("zwischen") },
+  get lt() { return t("vor") },
+  get gt() { return t("nach") },
 }
 
 /** Beschriftung des Datumsfelds einer Bedingung („ab“, „bis einschließlich“, „vor“ …) */
 export function dateInputLabel(op: UiFilterOp): string {
-  if (op === 'le') return 'bis einschließlich'
+  if (op === 'le') return t("bis einschließlich")
   return DATE_OP_LABEL[op] ?? OP_LABEL[op]
 }
 
@@ -589,7 +591,7 @@ export function quantityLabel(field: FieldDef | undefined, raw: string): string 
 
 /** Text eines Filter-Chips, z. B. „Widerstand ≥ 1 kΩ“, „Baugröße: 0603, 0805“, „Geändert ab 09.10.2026“ */
 export function conditionLabel(c: FilterCondition, field: FieldDef | undefined): { field: string; rest: string } {
-  const name = field?.label ?? c.column
+  const name = metadataLabel(field?.label ?? c.column, t)
   const q = (v: string | undefined) => {
     if (field?.kind === 'date') {
       const iso = parseDateInput(v)
@@ -601,17 +603,17 @@ export function conditionLabel(c: FilterCondition, field: FieldDef | undefined):
     case 'between':
       return { field: name, rest: field?.kind === 'date' ? ` ${q(c.value)} – ${q(c.to)}` : ` ${q(c.value)} … ${q(c.to)}` }
     case 'in':
-      return { field: name, rest: `: ${(c.values ?? []).join(', ')}` }
+      return { field: name, rest: `: ${(c.values ?? []).map((value) => field?.kind === 'bool' || field?.options.includes(value) ? metadataLabel(value, t) : value).join(', ')}` }
     case 'notin':
-      return { field: name, rest: ` ist nicht ${(c.values ?? []).join(', ')}` }
+      return { field: name, rest: t(" ist nicht {1}", { 1: (c.values ?? []).map((value) => field?.kind === 'bool' || field?.options.includes(value) ? metadataLabel(value, t) : value).join(', ') }) }
     case 'empty':
-      return { field: name, rest: ' ist leer' }
+      return { field: name, rest: t(" ist leer") }
     case 'notempty':
-      return { field: name, rest: ' ist gesetzt' }
+      return { field: name, rest: t(" ist gesetzt") }
     case 'contains':
-      return { field: name, rest: ` enthält „${c.value ?? ''}“` }
+      return { field: name, rest: t(" enthält „{1}“", { 1: c.value ?? '' }) }
     case 'startswith':
-      return { field: name, rest: ` beginnt mit „${c.value ?? ''}“` }
+      return { field: name, rest: t(" beginnt mit „{1}“", { 1: c.value ?? '' }) }
     default:
       if (field?.kind === 'date') return { field: name, rest: ` ${opLabel(c.op, field)} ${q(c.value)}` }
       return {

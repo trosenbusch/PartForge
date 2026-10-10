@@ -1,3 +1,4 @@
+import { t as tr } from '@/lib/i18n'
 /**
  * Footprint-Geometrie für die Vorschau einer Serie: vorhandene aus der Bibliothek, noch zu erzeugende über den
  * Generator (gleiche Anfrage wie das Backend beim Erzeugen). Gemeinsamer Cache mit den Verweis-Zellen der Tabelle
@@ -30,7 +31,7 @@ export async function loadFootprintPreview(
         signal,
         query: { theme: 'dark' },
       })
-      if (detail.spec) return { footprint: detail.spec, description: ref.library ? `vorhanden · ${ref.library}` : 'vorhanden' }
+      if (detail.spec) return { footprint: detail.spec, description: ref.library ? tr("vorhanden · {v0}", { v0: ref.library }) : tr("vorhanden") }
     } catch (error) {
       if (signal.aborted) throw error
     }
@@ -38,7 +39,7 @@ export async function loadFootprintPreview(
   const req = ref.size ? footprintRequestFor(t, ref.size, density) : null
   if (!req) return { footprint: null, description: null }
   const preview = await api.post<FootprintPreviewData>('/api/footprints/preview', req, { signal })
-  return { footprint: preview.spec, description: ref.exists ? 'vorhanden' : 'wird erzeugt' }
+  return { footprint: preview.spec, description: ref.exists ? tr("vorhanden") : tr("wird erzeugt") }
 }
 
 export function useFootprintPreviewFor(

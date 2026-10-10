@@ -4,6 +4,7 @@
  * Screenreader hören die Teilenummer und ihre Bedeutung als einen Text. Segmente kommen vom Backend
  * (`TemplateSummary.example`) oder aus `splitMpn` – Werte wie „10kΩ“ erscheinen deutsch („10 kΩ“).
  */
+import { useI18n } from '@/lib/i18n'
 import type { CSSProperties } from 'react'
 import type { MpnSegment } from '@/api/series'
 import { formatQuantityText } from '@/components/grid/cellFormat'
@@ -26,6 +27,7 @@ export interface MpnAnatomyProps {
 }
 
 export function MpnAnatomy({ mpn, segments, labels = false, size = 'md', className }: MpnAnatomyProps) {
+  const { t: tr } = useI18n()
   const text = size === 'lg' ? 'text-h3' : size === 'md' ? 'text-md' : 'text-ui'
   if (!segments?.length) {
     return (
@@ -46,7 +48,7 @@ export function MpnAnatomy({ mpn, segments, labels = false, size = 'md', classNa
     .filter((s) => s.kind !== 'literal')
     .map((s) => {
       const meaning = meaningText(s)
-      return `${s.label} ${s.text}${meaning ? ` (${meaning})` : ''}`
+      return `${tr(s.label)} ${s.text}${meaning ? ` (${meaning})` : ''}`
     })
     .join(', ')
   return (
@@ -72,7 +74,7 @@ export function MpnAnatomy({ mpn, segments, labels = false, size = 'md', classNa
             </span>
             {labels && (
               <span className="mt-1 h-3 whitespace-nowrap text-2xs leading-3 text-fg-subtle">
-                {s.kind === 'literal' ? '' : labels === 'short' ? s.short : s.label}
+                {s.kind === 'literal' ? '' : labels === 'short' ? tr(s.short) : tr(s.label)}
               </span>
             )}
           </span>
@@ -83,7 +85,7 @@ export function MpnAnatomy({ mpn, segments, labels = false, size = 'md', classNa
             key={i}
             content={
               <span>
-                <span className="font-medium text-fg">{s.label}</span>
+                <span className="font-medium text-fg">{tr(s.label)}</span>
                 <span className="mono text-fg-muted"> {s.text}</span>
                 {s.meaning ? <span className="text-fg-muted"> · {meaningText(s)}</span> : null}
               </span>

@@ -1,3 +1,4 @@
+import { localizeMessage, useI18n } from '@/lib/i18n'
 /**
  * „MPN prüfen“: eine Teilenummer mit der gewählten Serie lesen (`/api/series/decode`) – gültig? In dieser Vorschau
  * enthalten (Status, „Zeile zeigen“)? Passt sie nicht, wird mit allen Vorlagen gelesen („erkannt als …“).
@@ -31,6 +32,7 @@ export interface MpnCheckProps {
 }
 
 export function MpnCheck({ templateId, templateTitle, rows, sizes, onReveal }: MpnCheckProps) {
+  const { t: tr } = useI18n()
   const [text, setText] = useState('')
   const [result, setResult] = useState<CheckResult | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -60,28 +62,28 @@ export function MpnCheck({ templateId, templateTitle, rows, sizes, onReveal }: M
     const d = result.own
     if (d && result.row) {
       tone = result.row.status === 'new' || result.row.status === 'exists' ? 'success' : 'warning'
-      title = `${d.mpn} ist in dieser Vorschau – Status „${ROW_STATUS[result.row.status].label}“`
+      title = tr("{v0} ist in dieser Vorschau – Status „{v1}“", { v0: d.mpn, v1: tr(ROW_STATUS[result.row.status].label) })
       detail = result.row.messages[0] ?? null
     } else if (d && d.valid) {
       tone = 'warning'
-      title = `${d.mpn} gehört zur Serie, aber nicht zu dieser Auswahl`
-      detail = d.size && !sizes.includes(d.size) ? `Bauform ${d.size} ist nicht gewählt.` : 'Wert oder Variante liegt außerhalb der Auswahl.'
+      title = tr("{v0} gehört zur Serie, aber nicht zu dieser Auswahl", { v0: d.mpn })
+      detail = d.size && !sizes.includes(d.size) ? tr("Bauform {v0} ist nicht gewählt.", { v0: d.size }) : tr("Wert oder Variante liegt außerhalb der Auswahl.")
     } else if (d) {
       tone = 'warning'
-      title = `${d.mpn} folgt dem Muster, ist aber nicht lieferbar`
+      title = tr("{v0} folgt dem Muster, ist aber nicht lieferbar", { v0: d.mpn })
       detail = d.messages[0] ?? null
     } else if (result.other) {
-      title = `Passt nicht zu ${templateTitle}`
-      detail = `Erkannt als ${result.other.template_title} (${result.other.mpn}).`
+      title = tr("Passt nicht zu {v0}", { v0: templateTitle })
+      detail = tr("Erkannt als {v0} ({v1}).", { v0: result.other.template_title, v1: result.other.mpn })
     } else {
-      title = `Keine Vorlage erkennt „${result.input}“`
-      detail = 'Schreibweise prüfen oder eine eigene Vorlage anlegen.'
+      title = tr("Keine Vorlage erkennt „{v0}“", { v0: result.input })
+      detail = tr("Schreibweise prüfen oder eine eigene Vorlage anlegen.")
     }
   }
   const facts = result?.own
     ? [
-        result.own.size ? `Bauform ${result.own.size}` : null,
-        result.own.jumper ? '0-Ω-Brücke' : result.own.value_text ? formatQuantityText(result.own.value_text) : null,
+        result.own.size ? tr("Bauform {v0}", { v0: result.own.size }) : null,
+        result.own.jumper ? tr("0-Ω-Brücke") : result.own.value_text ? formatQuantityText(result.own.value_text) : null,
         ...['Tolerance', 'TCR', 'Voltage', 'Power'].map((f) => (result.own?.fields[f] ? formatQuantityText(result.own.fields[f]) : null)),
       ].filter((x): x is string => Boolean(x))
     : []
@@ -111,16 +113,15 @@ export function MpnCheck({ templateId, templateTitle, rows, sizes, onReveal }: M
             mono
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Teilenummer prüfen …"
-            aria-label="Teilenummer prüfen"
+            placeholder={tr("Teilenummer prüfen …")}
+            aria-label={tr("Teilenummer prüfen")}
             spellCheck={false}
             autoComplete="off"
             prefix={<ScanSearch />}
             containerClassName="w-56"
           />
           <Button type="submit" size="sm" variant="secondary" loading={check.isPending} disabled={!text.trim()}>
-            Prüfen
-          </Button>
+            {tr("Prüfen")}</Button>
         </form>
       </PopoverAnchor>
       <PopoverContent
@@ -133,7 +134,7 @@ export function MpnCheck({ templateId, templateTitle, rows, sizes, onReveal }: M
           if (!revealing.current) inputRef.current?.focus()
           revealing.current = false
         }}
-        aria-label="Ergebnis der Prüfung"
+        aria-label={tr("Ergebnis der Prüfung")}
       >
         {check.isError ? (
           <p className="px-4 py-3 text-xs text-danger-text">{errorMessage(check.error)}</p>
@@ -153,7 +154,7 @@ export function MpnCheck({ templateId, templateTitle, rows, sizes, onReveal }: M
             <div className="min-w-0 flex-1">
               <p className="text-ui font-medium leading-snug text-fg">{title}</p>
               {facts.length > 0 && <p className="mono mt-1 text-2xs text-fg-muted">{facts.join(' · ')}</p>}
-              {detail && <p className="mt-1 text-xs text-fg-muted">{detail}</p>}
+              {detail && <p className="mt-1 text-xs text-fg-muted">{localizeMessage(detail)}</p>}
               {result.row && (
                 <Button
                   size="xs"
@@ -165,11 +166,10 @@ export function MpnCheck({ templateId, templateTitle, rows, sizes, onReveal }: M
                     if (result.row) onReveal(result.row)
                   }}
                 >
-                  Zeile zeigen
-                </Button>
+                  {tr("Zeile zeigen")}</Button>
               )}
             </div>
-            <IconButton size="xs" label="Schließen" icon={<X />} onClick={() => setResult(null)} />
+            <IconButton size="xs" label={tr("Schließen")} icon={<X />} onClick={() => setResult(null)} />
           </div>
         ) : null}
       </PopoverContent>

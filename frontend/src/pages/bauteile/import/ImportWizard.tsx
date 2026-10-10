@@ -1,3 +1,4 @@
+import { metadataLabel, localizeMessage, t, useI18n } from '@/lib/i18n'
 /**
  * Tabellen-Import (CSV, XLSX, ODS) in vier Schritten: Datei → Zuordnung (Tabellenblatt, Kopfzeile, Spalte → Feld mit
  * Vorschlägen, Treffergüte und Einheiten-Hinweis, feste Werte) → Prüfen (**Probelauf des Backends je Zeile**: neu,
@@ -82,9 +83,9 @@ import { BOOKKEEPING, FIELD_GROUPS, groupOf } from '../model/fields'
 type Step = 0 | 1 | 2 | 3
 
 const STEPS = [
-  { id: 'datei', label: 'Datei' },
-  { id: 'zuordnung', label: 'Zuordnung' },
-  { id: 'pruefen', label: 'Prüfen' },
+  { id: 'datei', get label() { return t("Datei") } },
+  { id: 'zuordnung', get label() { return t("Zuordnung") } },
+  { id: 'pruefen', get label() { return t("Prüfen") } },
   { id: 'import', label: 'Import' },
 ]
 
@@ -128,6 +129,7 @@ export interface ImportWizardProps {
 let defaultCounter = 0
 
 export function ImportWizard({ open, onOpenChange, defaultTable, onImported, initialUpload = null }: ImportWizardProps) {
+  const { t } = useI18n()
   const categories = useCategories()
   const [step, setStep] = useState<Step>(0)
   /** vorbereitete Tabelle (statt der Drop-Zone) – `null` nach „Andere Datei wählen“ */
@@ -200,7 +202,7 @@ export function ImportWizard({ open, onOpenChange, defaultTable, onImported, ini
     onSuccess: ({ preview: p, headerRow: hr }) => {
       applyPreview(p)
       setHeaderRow(hr)
-      setHeaderNote(hr === 'auto' ? null : `Kopfzeile in Zeile ${hr} erkannt – darüber stehen Titelzeilen.`)
+      setHeaderNote(hr === 'auto' ? null : t("Kopfzeile in Zeile {1} erkannt – darüber stehen Titelzeilen.", { 1: hr ?? '' }))
       setPreviewLabel(null)
       setStep(1)
     },
@@ -330,18 +332,18 @@ export function ImportWizard({ open, onOpenChange, defaultTable, onImported, ini
   const outcome = result ? importOutcome(result) : null
   const title =
     step !== 3
-      ? 'Bauteile importieren'
+      ? t("Bauteile importieren")
       : job?.status === 'failed'
-        ? 'Import fehlgeschlagen'
+        ? t("Import fehlgeschlagen")
         : job?.status === 'cancelled'
-          ? 'Import abgebrochen'
+          ? t("Import abgebrochen")
           : outcome === 'failed'
-            ? 'Nichts importiert'
+            ? t("Nichts importiert")
             : outcome === 'partial'
-              ? 'Teilweise importiert'
+              ? t("Teilweise importiert")
               : outcome === 'success'
-                ? 'Import abgeschlossen'
-                : 'Import läuft'
+                ? t("Import abgeschlossen")
+                : t("Import läuft")
   const draftable = result ? draftableRows(result) : 0
   // Würde jede Zeile abgelehnt? Laut Probelauf (sonst: Pflichtfeld weder zugeordnet noch fest gesetzt, ohne Entwurf)
   const counts = dryRun.data?.check?.counts
@@ -369,10 +371,10 @@ export function ImportWizard({ open, onOpenChange, defaultTable, onImported, ini
           description={
             step === 0
               ? prepared
-                ? 'Die Tabelle ist vorbereitet – Zielkategorie wählen, dann ordnet PartForge die Spalten zu. Vorher legt PartForge eine Sicherung an.'
-                : 'Spalten werden automatisch den Feldern zugeordnet – Sie prüfen vor dem Import. Vorher legt PartForge eine Sicherung an.'
+                ? t("Die Tabelle ist vorbereitet – Zielkategorie wählen, dann ordnet PartForge die Spalten zu. Vorher legt PartForge eine Sicherung an.")
+                : t("Spalten werden automatisch den Feldern zugeordnet – Sie prüfen vor dem Import. Vorher legt PartForge eine Sicherung an.")
               : preview
-                ? `${preview.file_name}${previewLabel ? ` (${previewLabel})` : ''} · ${plural(preview.row_count, 'Zeile', 'Zeilen')}`
+                ? `${preview.file_name}${previewLabel ? ` (${previewLabel})` : ''} · ${plural(preview.row_count, t("Zeile"), t("Zeilen"))}`
                 : undefined
           }
         />
@@ -386,8 +388,8 @@ export function ImportWizard({ open, onOpenChange, defaultTable, onImported, ini
         </div>
         <DialogBody className="flex min-h-[22rem] flex-col gap-4 border-t border-line pt-4">
           {error && (
-            <Callout tone="danger" title="Das hat nicht geklappt" urgent actions={<Button size="sm" variant="ghost" iconOnly aria-label="Hinweis schließen" onClick={() => setError(null)}><X /></Button>}>
-              {error}
+            <Callout tone="danger" title={t("Das hat nicht geklappt")} urgent actions={<Button size="sm" variant="ghost" iconOnly aria-label={t("Hinweis schließen")} onClick={() => setError(null)}><X /></Button>}>
+              {localizeMessage(error)}
             </Callout>
           )}
           {step === 0 && (
@@ -457,19 +459,19 @@ export function ImportWizard({ open, onOpenChange, defaultTable, onImported, ini
           <div>
             {step > 0 && step < 3 && (
               <Button variant="ghost" leftIcon={<ArrowLeft />} onClick={() => setStep((s) => (s - 1) as Step)}>
-                Zurück
+                {t("Zurück")}
               </Button>
             )}
             {step === 3 && preview && (outcome === 'failed' || outcome === 'partial' || job?.status === 'failed') && (
               <Button variant="ghost" leftIcon={<ArrowLeft />} onClick={backToMapping}>
-                Zurück zur Zuordnung
+                {t("Zurück zur Zuordnung")}
               </Button>
             )}
           </div>
           <div className="flex items-center gap-2">
             {step < 3 && (
               <Button variant="ghost" onClick={() => close(false)}>
-                Abbrechen
+                {t("Abbrechen")}
               </Button>
             )}
             {step === 0 && prepared && (
@@ -480,12 +482,12 @@ export function ImportWizard({ open, onOpenChange, defaultTable, onImported, ini
                 disabled={!table}
                 onClick={() => readPrepared.mutate(prepared)}
               >
-                Weiter zur Zuordnung
+                {t("Weiter zur Zuordnung")}
               </Button>
             )}
             {step === 1 && (
               <Button variant="primary" rightIcon={<ArrowRight />} disabled={!canNext} onClick={() => setStep(2)}>
-                Weiter zur Prüfung
+                {t("Weiter zur Prüfung")}
               </Button>
             )}
             {step === 2 && preview && (
@@ -501,16 +503,16 @@ export function ImportWizard({ open, onOpenChange, defaultTable, onImported, ini
             )}
             {step === 3 && draftable > 0 && (
               <Button variant="secondary" leftIcon={<FilePen />} loading={run.isPending} onClick={() => run.mutate({ retryDrafts: true })}>
-                {draftable === 1 ? 'Abgelehnte Zeile als Entwurf importieren' : `${formatNumber(draftable)} abgelehnte als Entwurf importieren`}
+                {draftable === 1 ? t("Abgelehnte Zeile als Entwurf importieren") : t("{1} abgelehnte als Entwurf importieren", { 1: formatNumber(draftable) })}
               </Button>
             )}
             {step === 3 && (
               <Button variant={outcome === 'success' ? 'primary' : 'secondary'} onClick={() => close(false)}>
                 {job && (job.status === 'queued' || job.status === 'running')
-                  ? 'Im Hintergrund weiterlaufen lassen'
+                  ? t("Im Hintergrund weiterlaufen lassen")
                   : outcome === 'success'
-                    ? 'Fertig'
-                    : 'Schließen'}
+                    ? t("Fertig")
+                    : t("Schließen")}
               </Button>
             )}
           </div>
@@ -522,7 +524,7 @@ export function ImportWizard({ open, onOpenChange, defaultTable, onImported, ini
 
 // --------------------------------------------------------------------------- Schritt 1: Datei
 
-function categoryGroups(list: CategoryDef[]): SelectGroupDef[] {
+function categoryGroups(list: CategoryDef[], translate = t): SelectGroupDef[] {
   const map = new Map<string, CategoryDef[]>()
   for (const c of list) {
     const g = CATEGORY_GROUPS[c.table] ?? 'Weitere'
@@ -531,8 +533,8 @@ function categoryGroups(list: CategoryDef[]): SelectGroupDef[] {
   return [...map.entries()]
     .sort(([a], [b]) => CATEGORY_GROUP_ORDER.indexOf(a) - CATEGORY_GROUP_ORDER.indexOf(b))
     .map(([label, items]) => ({
-      label,
-      options: items.map((c) => ({ value: c.table, label: c.label, icon: <CategoryIcon name={c.icon} color={c.color} /> })),
+      label: translate(label),
+      options: items.map((c) => ({ value: c.table, label: metadataLabel(c.label, translate), icon: <CategoryIcon name={c.icon} color={c.color} /> })),
     }))
 }
 
@@ -555,19 +557,20 @@ function StepFile({
   /** „Andere Datei wählen“: zurück zur Drop-Zone */
   onDropPrepared: () => void
 }) {
-  const groups = useMemo(() => categoryGroups(categories), [categories])
+  const { t } = useI18n()
+  const groups = useMemo(() => categoryGroups(categories, t), [categories, t])
   if (prepared) {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex max-w-sm flex-col gap-1.5">
           <label htmlFor="imp-category" className="text-ui font-medium text-fg">
-            Zielkategorie
+            {t("Zielkategorie")}
           </label>
-          <Select id="imp-category" value={table ?? undefined} onValueChange={onTable} groups={groups} placeholder="Kategorie wählen …" />
-          <p className="text-xs text-fg-muted">Alle Zeilen der Tabelle kommen in diese Kategorie.</p>
+          <Select id="imp-category" value={table ?? undefined} onValueChange={onTable} groups={groups} placeholder={t("Kategorie wählen …")} />
+          <p className="text-xs text-fg-muted">{t("Alle Zeilen der Tabelle kommen in diese Kategorie.")}</p>
         </div>
         <section
-          aria-label="Vorbereitete Tabelle"
+          aria-label={t("Vorbereitete Tabelle")}
           className="flex items-center gap-3 rounded-card border border-line bg-surface-2/50 px-4 py-3"
         >
           <span
@@ -580,25 +583,25 @@ function StepFile({
             <p className="text-ui font-medium text-fg [overflow-wrap:anywhere]">{prepared.label ?? prepared.fileName}</p>
             <p className="text-xs text-fg-muted">
               {prepared.label ? `${prepared.fileName} · ` : ''}
-              {plural(prepared.rows, 'Zeile', 'Zeilen')} · vorbereitet vom Bibliotheksimport
+              {plural(prepared.rows, t("Zeile"), t("Zeilen"))}  {t("· vorbereitet vom Bibliotheksimport")}
             </p>
           </div>
           <Button size="sm" variant="ghost" leftIcon={<Upload />} onClick={onDropPrepared}>
-            Andere Datei wählen
+            {t("Andere Datei wählen")}
           </Button>
         </section>
         <ul className="grid grid-cols-3 gap-3 text-xs text-fg-muted">
           <li className="flex items-start gap-2">
             <TableProperties aria-hidden className="mt-px size-3.5 shrink-0 text-fg-subtle" />
-            Je Zeile ein Symbol mit seinen Parametern – Teilenummer, Beschreibung, Kommentar.
+            {t("Je Zeile ein Symbol mit seinen Parametern – Teilenummer, Beschreibung, Kommentar.")}
           </li>
           <li className="flex items-start gap-2">
             <Sheet aria-hidden className="mt-px size-3.5 shrink-0 text-fg-subtle" />
-            Symbol und Footprint stehen schon als Verweise darin (Library Ref, Footprint Ref).
+            {t("Symbol und Footprint stehen schon als Verweise darin (Library Ref, Footprint Ref).")}
           </li>
           <li className="flex items-start gap-2">
             <CircleCheck aria-hidden className="mt-px size-3.5 shrink-0 text-fg-subtle" />
-            Im nächsten Schritt prüfen Sie die Zuordnung der Spalten.
+            {t("Im nächsten Schritt prüfen Sie die Zuordnung der Spalten.")}
           </li>
         </ul>
       </div>
@@ -608,36 +611,36 @@ function StepFile({
     <div className="flex flex-col gap-4">
       <div className="flex max-w-sm flex-col gap-1.5">
         <label htmlFor="imp-category" className="text-ui font-medium text-fg">
-          Zielkategorie
+          {t("Zielkategorie")}
         </label>
-        <Select id="imp-category" value={table ?? undefined} onValueChange={onTable} groups={groups} placeholder="Kategorie wählen …" />
+        <Select id="imp-category" value={table ?? undefined} onValueChange={onTable} groups={groups} placeholder={t("Kategorie wählen …")} />
       </div>
       <FileDropZone
         variant="table"
         size="md"
         multiple={false}
         accept={ACCEPT}
-        typesLabel="CSV, Excel oder OpenDocument"
-        hint="CSV, TSV, XLSX oder ODS · bis 50 MB · eine Datei"
+        typesLabel={t("CSV, Excel oder OpenDocument")}
+        hint={t("CSV, TSV, XLSX oder ODS · bis 50 MB · eine Datei")}
         maxSize={50 * 1024 * 1024}
         disabled={!table}
-        busy={busy ? 'Tabelle wird gelesen und zugeordnet …' : false}
-        title="Tabelle hierher ziehen"
-        description="Auch OpenDocument (.ods) und Tab-getrennte Dateien (.tsv) – Trennzeichen und Zeichensatz werden erkannt."
+        busy={busy ? t("Tabelle wird gelesen und zugeordnet …") : false}
+        title={t("Tabelle hierher ziehen")}
+        description={t("Auch OpenDocument (.ods) und Tab-getrennte Dateien (.tsv) – Trennzeichen und Zeichensatz werden erkannt.")}
         onFiles={([file]) => file && onFile(file)}
       />
       <ul className="grid grid-cols-3 gap-3 text-xs text-fg-muted">
         <li className="flex items-start gap-2">
           <TableProperties aria-hidden className="mt-px size-3.5 shrink-0 text-fg-subtle" />
-          Kopfzeile wird erkannt, auch wenn darüber Titelzeilen stehen.
+          {t("Kopfzeile wird erkannt, auch wenn darüber Titelzeilen stehen.")}
         </li>
         <li className="flex items-start gap-2">
           <Sheet aria-hidden className="mt-px size-3.5 shrink-0 text-fg-subtle" />
-          Einheiten im Spaltenkopf („Kapazität (pF)“) gelten für reine Zahlen.
+          {t("Einheiten im Spaltenkopf („Kapazität (pF)“) gelten für reine Zahlen.")}
         </li>
         <li className="flex items-start gap-2">
           <CircleCheck aria-hidden className="mt-px size-3.5 shrink-0 text-fg-subtle" />
-          Vorhandene Teilenummern: überspringen oder aktualisieren.
+          {t("Vorhandene Teilenummern: überspringen oder aktualisieren.")}
         </li>
       </ul>
     </div>
@@ -646,15 +649,15 @@ function StepFile({
 
 // --------------------------------------------------------------------------- Schritt 2: Zuordnung
 
-function fieldOptions(category: CategoryDef): ComboboxOption[] {
-  const label = new Map(FIELD_GROUPS.map((g) => [g.id, g.label]))
+function fieldOptions(category: CategoryDef, translate = t): ComboboxOption[] {
+  const label = new Map(FIELD_GROUPS.map((g) => [g.id, metadataLabel(g.label, t)]))
   return [
-    { value: NONE, label: 'Nicht importieren', group: 'Auswahl' },
+    { value: NONE, label: t("Nicht importieren"), group: t("Auswahl") },
     ...category.fields
       .filter((f) => !BOOKKEEPING.has(f.column))
       .map((f) => ({
         value: f.column,
-        label: f.label,
+        label: metadataLabel(f.label, translate),
         description: f.unit ? `${f.column} · ${f.unit}` : f.column !== f.label ? f.column : undefined,
         keywords: [f.column],
         group: label.get(groupOf(f)),
@@ -663,12 +666,13 @@ function fieldOptions(category: CategoryDef): ComboboxOption[] {
 }
 
 function ScoreBadge({ item }: { item: MappingItem }) {
+  const { t } = useI18n()
   if (!item.column) return <span className="text-2xs text-fg-subtle">–</span>
   const score = Math.round(item.score)
-  if (score <= 0) return <Badge variant="outline">manuell</Badge>
+  if (score <= 0) return <Badge variant="outline">{t("manuell")}</Badge>
   const variant = score >= 95 ? 'success' : score >= 85 ? 'accent' : 'warning'
   return (
-    <Tooltip content={score >= 95 ? 'Spaltenname passt genau' : 'Ähnlicher Spaltenname – bitte prüfen'}>
+    <Tooltip content={score >= 95 ? t("Spaltenname passt genau") : t("Ähnlicher Spaltenname – bitte prüfen")}>
       <Badge variant={variant} className="tabular-nums">
         {score} %
       </Badge>
@@ -709,9 +713,10 @@ function StepMapping({
   onHeaderRow: (hr: ImportHeaderRow) => void
   categories: CategoryDef[]
 }) {
-  const options = useMemo(() => fieldOptions(category), [category])
+  const { t } = useI18n()
+  const options = useMemo(() => fieldOptions(category, t), [category, t])
   const fields = new Map(category.fields.map((f) => [f.column, f]))
-  const groups = useMemo(() => categoryGroups(categories), [categories])
+  const groups = useMemo(() => categoryGroups(categories, t), [categories, t])
   const samples = (index: number) =>
     preview.rows
       .map((r) => r[index])
@@ -724,23 +729,23 @@ function StepMapping({
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex min-w-[14rem] flex-col gap-1.5">
-          <span className="text-xs font-medium text-fg-muted">Zielkategorie</span>
-          <Select value={category.table} onValueChange={onTable} groups={groups} size="sm" aria-label="Zielkategorie" />
+          <span className="text-xs font-medium text-fg-muted">{t("Zielkategorie")}</span>
+          <Select value={category.table} onValueChange={onTable} groups={groups} size="sm" aria-label={t("Zielkategorie")} />
         </div>
         {preview.sheets.length > 1 && (
           <div className="flex min-w-[12rem] flex-col gap-1.5">
-            <span className="text-xs font-medium text-fg-muted">Tabellenblatt</span>
+            <span className="text-xs font-medium text-fg-muted">{t("Tabellenblatt")}</span>
             <Select
               size="sm"
               value={preview.sheet ?? preview.sheets[0]}
               onValueChange={onSheet}
               options={preview.sheets.map((s) => ({ value: s, label: s }))}
-              aria-label="Tabellenblatt"
+              aria-label={t("Tabellenblatt")}
             />
           </div>
         )}
         <div className="flex min-w-[12rem] flex-col gap-1.5">
-          <span className="text-xs font-medium text-fg-muted">Kopfzeile</span>
+          <span className="text-xs font-medium text-fg-muted">{t("Kopfzeile")}</span>
           <Select
             size="sm"
             value={headerValue}
@@ -748,12 +753,12 @@ function StepMapping({
             options={[
               {
                 value: 'auto',
-                label: headerRow === 'auto' && preview.header_row ? `Automatisch (Zeile ${preview.header_row})` : 'Automatisch',
+                label: headerRow === 'auto' && preview.header_row ? t("Automatisch (Zeile {1})", { 1: preview.header_row }) : t("Automatisch"),
               },
-              ...Array.from({ length: 8 }, (_, i) => ({ value: String(i + 1), label: `Zeile ${i + 1}` })),
-              { value: 'none', label: 'Keine Kopfzeile' },
+              ...Array.from({ length: 8 }, (_, i) => ({ value: String(i + 1), label: t("Zeile {1}", { 1: i + 1 }) })),
+              { value: 'none', label: t("Keine Kopfzeile") },
             ]}
-            aria-label="Kopfzeile"
+            aria-label={t("Kopfzeile")}
           />
         </div>
         <div className="ml-auto flex items-center gap-2 pb-1 text-xs text-fg-muted">
@@ -761,8 +766,8 @@ function StepMapping({
           <FileSpreadsheet aria-hidden className="size-3.5 text-fg-subtle" />
           {[
             preview.encoding && preview.encoding.toUpperCase(),
-            preview.delimiter && `Trennzeichen „${preview.delimiter === '\t' ? 'Tab' : preview.delimiter}“`,
-            `${mappedCount} von ${mapping.length} Spalten zugeordnet`,
+            preview.delimiter && t("Trennzeichen „{1}“", { 1: preview.delimiter === '\t' ? 'Tab' : preview.delimiter }),
+            t("{1} von {2} Spalten zugeordnet", { 1: mappedCount, 2: mapping.length }),
           ]
             .filter(Boolean)
             .join(' · ')}
@@ -775,29 +780,29 @@ function StepMapping({
         </Callout>
       )}
       {mappedCount === 0 && !busy && (
-        <Callout tone="warning" title="Keine Spalte zugeordnet">
-          Stimmt die Kopfzeile? Wählen Sie oben die Zeile mit den Spaltennamen – oder ordnen Sie die Spalten unten von Hand zu.
+        <Callout tone="warning" title={t("Keine Spalte zugeordnet")}>
+          {t("Stimmt die Kopfzeile? Wählen Sie oben die Zeile mit den Spaltennamen – oder ordnen Sie die Spalten unten von Hand zu.")}
         </Callout>
       )}
       <div className={cn('overflow-hidden rounded-card border border-line', busy && 'opacity-60')}>
         <table className="w-full table-fixed text-left text-ui">
-          <caption className="sr-only">Zuordnung der Spalten zu Feldern</caption>
+          <caption className="sr-only">{t("Zuordnung der Spalten zu Feldern")}</caption>
           <thead className="bg-surface-2/70 text-xs text-fg-muted">
             <tr>
               <th scope="col" className="w-[34%] px-3 py-2 font-medium">
-                Spalte in der Datei
+                {t("Spalte in der Datei")}
               </th>
               <th scope="col" className="w-8">
-                <span className="sr-only">wird zu</span>
+                <span className="sr-only">{t("wird zu")}</span>
               </th>
               <th scope="col" className="px-3 py-2 font-medium">
-                Feld in PartForge
+                {t("Feld in PartForge")}
               </th>
               <th scope="col" className="w-24 px-3 py-2 font-medium">
-                Treffer
+                {t("Treffer")}
               </th>
               <th scope="col" className="w-36 px-3 py-2 font-medium">
-                Einheit
+                {t("Einheit")}
               </th>
             </tr>
           </thead>
@@ -810,10 +815,10 @@ function StepMapping({
                 <tr key={m.index} className={cn('align-top', !m.column && 'bg-surface-2/20')}>
                   <td className="px-3 py-2">
                     <div className={cn('truncate font-medium', m.column ? 'text-fg' : 'text-fg-muted')} title={m.header}>
-                      {m.header || `Spalte ${m.index + 1}`}
+                      {m.header || t("Spalte {1}", { 1: m.index + 1 })}
                     </div>
                     <div className="mono mt-0.5 truncate text-2xs text-fg-subtle" title={vals.join(' · ')}>
-                      {vals.length ? vals.join(' · ') : 'leer'}
+                      {vals.length ? vals.join(' · ') : t('leer')}
                     </div>
                   </td>
                   <td className="py-2.5 text-fg-subtle">
@@ -825,8 +830,8 @@ function StepMapping({
                       value={m.column ?? NONE}
                       onValueChange={(v) => onColumn(m.index, !v || v === NONE ? null : v)}
                       size="sm"
-                      searchPlaceholder="Feld suchen …"
-                      aria-label={`Feld für Spalte „${m.header}“`}
+                      searchPlaceholder={t("Feld suchen …")}
+                      aria-label={t("Feld für Spalte „{1}“", { 1: m.header })}
                     />
                   </td>
                   <td className="px-3 py-2">
@@ -834,7 +839,7 @@ function StepMapping({
                   </td>
                   <td className="px-3 py-1.5">
                     {unitField ? (
-                      <Tooltip content={m.unit_note ?? `Reine Zahlen in dieser Spalte werden als … ${field.unit} gelesen (z. B. „k${field.unit}“).`}>
+                      <Tooltip content={m.unit_note ? localizeMessage(m.unit_note) : t("Reine Zahlen in dieser Spalte werden als … {1} gelesen (z. B. „k{2}“).", { 1: field.unit ?? '', 2: field.unit ?? '' })}>
                         <span className="block">
                           <Input
                             size="sm"
@@ -842,7 +847,7 @@ function StepMapping({
                             value={m.unit_hint ?? ''}
                             onChange={(e) => onUnitHint(m.index, e.target.value)}
                             placeholder={field.unit ?? ''}
-                            aria-label={`Einheit für Spalte „${m.header}“`}
+                            aria-label={t("Einheit für Spalte „{1}“", { 1: m.header })}
                           />
                         </span>
                       </Tooltip>
@@ -860,9 +865,8 @@ function StepMapping({
       <DefaultsEditor category={category} defaults={defaults} onChange={onDefaults} mapped={new Set(mapping.map((m) => m.column ?? ''))} />
 
       {requiredMissing.length > 0 && (
-        <Callout tone="warning" title={`${plural(requiredMissing.length, 'Pflichtfeld ohne', 'Pflichtfelder ohne')} Zuordnung`}>
-          {requiredMissing.map((f) => f.label).join(', ')} – Spalte zuordnen, oben als festen Wert setzen oder beim Import „Unvollständige als Entwurf“
-          wählen.
+        <Callout tone="warning" title={t("{1} Zuordnung", { 1: plural(requiredMissing.length, t("Pflichtfeld ohne"), t("Pflichtfelder ohne")) })}>
+          {requiredMissing.map((f) => metadataLabel(f.label, t)).join(', ')}  {t("– Spalte zuordnen, oben als festen Wert setzen oder beim Import „Unvollständige als Entwurf“ wählen.")}
         </Callout>
       )}
     </div>
@@ -880,16 +884,17 @@ function DefaultsEditor({
   onChange: (d: DefaultRow[]) => void
   mapped: Set<string>
 }) {
-  const options = useMemo(() => fieldOptions(category).filter((o) => o.value !== NONE), [category])
+  const { t } = useI18n()
+  const options = useMemo(() => fieldOptions(category, t).filter((o) => o.value !== NONE), [category, t])
   const fields = new Map(category.fields.map((f) => [f.column, f]))
   return (
     <section className="flex flex-col gap-2" aria-labelledby="imp-defaults">
       <div className="flex items-center justify-between gap-2">
         <div>
           <h3 id="imp-defaults" className="text-ui font-medium text-fg">
-            Feste Werte für alle Zeilen
+            {t("Feste Werte für alle Zeilen")}
           </h3>
-          <p className="text-xs text-fg-muted">Füllt leere Zellen – z. B. Hersteller, Symbol oder Footprint, wenn sie in der Datei fehlen.</p>
+          <p className="text-xs text-fg-muted">{t("Füllt leere Zellen – z. B. Hersteller, Symbol oder Footprint, wenn sie in der Datei fehlen.")}</p>
         </div>
         <Button
           size="sm"
@@ -897,7 +902,7 @@ function DefaultsEditor({
           leftIcon={<Plus />}
           onClick={() => onChange([...defaults, { id: ++defaultCounter, column: null, value: '' }])}
         >
-          Fester Wert
+          {t("Fester Wert")}
         </Button>
       </div>
       {defaults.length > 0 && (
@@ -907,13 +912,13 @@ function DefaultsEditor({
             return (
               <li key={d.id} className="grid grid-cols-[minmax(0,14rem)_minmax(0,1fr)_auto] items-start gap-2">
                 <Combobox
-                  options={options.map((o) => ({ ...o, description: mapped.has(o.value) ? 'auch aus der Datei' : o.description }))}
+                  options={options.map((o) => ({ ...o, description: mapped.has(o.value) ? t("auch aus der Datei") : o.description }))}
                   value={d.column}
                   onValueChange={(column) => onChange(defaults.map((x) => (x.id === d.id ? { ...x, column, value: '' } : x)))}
                   size="sm"
-                  placeholder="Feld wählen …"
-                  searchPlaceholder="Feld suchen …"
-                  aria-label="Feld"
+                  placeholder={t("Feld wählen …")}
+                  searchPlaceholder={t("Feld suchen …")}
+                  aria-label={t("Feld")}
                 />
                 {field ? (
                   <FieldInput
@@ -922,12 +927,12 @@ function DefaultsEditor({
                     value={d.value}
                     size="sm"
                     onChange={(value) => onChange(defaults.map((x) => (x.id === d.id ? { ...x, value } : x)))}
-                    aria-label={`Fester Wert für ${field.label}`}
+                    aria-label={t("Fester Wert für {1}", { 1: metadataLabel(field.label, t) })}
                   />
                 ) : (
-                  <span className="flex h-7 items-center text-xs text-fg-subtle">← Feld wählen</span>
+                  <span className="flex h-7 items-center text-xs text-fg-subtle">{t("← Feld wählen")}</span>
                 )}
-                <Button size="sm" variant="ghost" iconOnly aria-label="Festen Wert entfernen" onClick={() => onChange(defaults.filter((x) => x.id !== d.id))}>
+                <Button size="sm" variant="ghost" iconOnly aria-label={t("Festen Wert entfernen")} onClick={() => onChange(defaults.filter((x) => x.id !== d.id))}>
                   <X />
                 </Button>
               </li>
@@ -942,32 +947,32 @@ function DefaultsEditor({
 // --------------------------------------------------------------------------- Schritt 3: Prüfen
 
 const MODES: { value: ImportMode; label: string; description: string }[] = [
-  { value: 'skip', label: 'Überspringen', description: 'Vorhandene Teilenummern bleiben unverändert.' },
-  { value: 'update', label: 'Aktualisieren', description: 'Gefüllte Zellen überschreiben vorhandene Werte; leere Zellen löschen nichts.' },
-  { value: 'error', label: 'Als Fehler melden', description: 'Vorhandene Teilenummern werden nicht importiert und im Ergebnis aufgeführt.' },
+  { value: 'skip', get label() { return t("Überspringen") }, get description() { return t("Vorhandene Teilenummern bleiben unverändert.") } },
+  { value: 'update', get label() { return t("Aktualisieren") }, get description() { return t("Gefüllte Zellen überschreiben vorhandene Werte; leere Zellen löschen nichts.") } },
+  { value: 'error', get label() { return t("Als Fehler melden") }, get description() { return t("Vorhandene Teilenummern werden nicht importiert und im Ergebnis aufgeführt.") } },
 ]
 
 /** Ergebnis des Probelaufs je Zeile */
 const STATUS_META: Record<ImportRowStatusName, { label: string; variant: 'success' | 'neutral' | 'info' | 'danger' | 'outline' }> = {
-  create: { label: 'neu', variant: 'success' },
+  create: { get label() { return t("neu") }, variant: 'success' },
   update: { label: 'aktualisieren', variant: 'info' },
-  unchanged: { label: 'unverändert', variant: 'outline' },
-  skip: { label: 'übersprungen', variant: 'neutral' },
-  reject: { label: 'abgelehnt', variant: 'danger' },
+  unchanged: { get label() { return t("unverändert") }, variant: 'outline' },
+  skip: { get label() { return t("übersprungen") }, variant: 'neutral' },
+  reject: { get label() { return t("abgelehnt") }, variant: 'danger' },
 }
 const STATUS_ORDER: ImportRowStatusName[] = ['create', 'update', 'unchanged', 'skip', 'reject']
 
 /** Gründe einer Zeile als Liste (Ablehnung, Feldfehler, fehlende Pflichtfelder, geänderte Felder) */
 function rowReasons(st: ImportRowStatus, fields: Map<string, FieldDef>): string[] {
-  const label = (col: string) => fields.get(col)?.label ?? col
+  const label = (col: string) => metadataLabel(fields.get(col)?.label ?? col, t)
   const out = [...st.reasons]
   for (const [col, msg] of Object.entries(st.errors)) {
     if (!out.some((r) => r.includes(msg))) out.push(`${label(col)}: ${msg}`)
   }
   if (st.missing.length && !out.some((r) => /pflicht/i.test(r))) {
-    out.push(`${st.status === 'reject' ? 'Pflichtfelder leer' : 'Als Entwurf – leer'}: ${joinGerman(st.missing.map(label))}`)
+    out.push(`${st.status === 'reject' ? t("Pflichtfelder leer") : t("Als Entwurf – leer")}: ${joinGerman(st.missing.map(label))}`)
   }
-  if (st.status === 'update' && st.changed.length) out.push(`Ändert ${joinGerman(st.changed.map(label))}`)
+  if (st.status === 'update' && st.changed.length) out.push(t("Ändert {1}", { 1: joinGerman(st.changed.map(label)) }))
   return out
 }
 
@@ -1007,6 +1012,7 @@ function StepReview({
   nothing: NothingToImport | null
   onBack: () => void
 }) {
+  const { t } = useI18n()
   const fields = new Map(category.fields.map((f) => [f.column, f]))
   const columns = mapping.slice(0, 7)
   const fixedRows = defaults.filter((d) => d.column && d.value.trim())
@@ -1014,12 +1020,12 @@ function StepReview({
   const statusByRow = new Map(preview.row_status.map((st) => [st.row, st]))
   const check: ImportCheck | null = preview.check
   const rejected = preview.row_status.filter((st) => st.status === 'reject')
-  const missingLabels = requiredMissing.map((f) => f.label)
+  const missingLabels = requiredMissing.map((f) => metadataLabel(f.label, t))
   const nothingParts = nothing
     ? [
-        nothing.reject ? `${formatNumber(nothing.reject)} abgelehnt` : null,
-        nothing.skip ? `${formatNumber(nothing.skip)} übersprungen` : null,
-        nothing.unchanged ? `${formatNumber(nothing.unchanged)} unverändert` : null,
+        nothing.reject ? t("{1} abgelehnt", { 1: formatNumber(nothing.reject) }) : null,
+        nothing.skip ? t("{1} übersprungen", { 1: formatNumber(nothing.skip) }) : null,
+        nothing.unchanged ? t("{1} unverändert", { 1: formatNumber(nothing.unchanged) }) : null,
       ].filter((p): p is string => p !== null)
     : []
   return (
@@ -1027,76 +1033,76 @@ function StepReview({
       {nothing && !allRejected && (
         <Callout
           tone={nothing.partial ? 'info' : 'warning'}
-          title={nothing.partial ? `Die ersten ${formatNumber(nothing.checked)} Zeilen ändern nichts` : 'Nichts zu importieren'}
+          title={nothing.partial ? t("Die ersten {1} Zeilen ändern nichts", { 1: formatNumber(nothing.checked) }) : t("Nichts zu importieren")}
           actions={
             nothing.skip > 0 && mode !== 'update' ? (
               <Button size="sm" variant="secondary" leftIcon={<RefreshCw />} onClick={() => onMode('update')}>
-                Vorhandene aktualisieren
+                {t("Vorhandene aktualisieren")}
               </Button>
             ) : nothing.reject > 0 ? (
               <Button size="sm" variant="secondary" leftIcon={<ArrowLeft />} onClick={onBack}>
-                Zur Zuordnung
+                {t("Zur Zuordnung")}
               </Button>
             ) : undefined
           }
         >
           {nothing.partial
-            ? `Von den ersten ${formatNumber(nothing.checked)} der ${formatNumber(nothing.total)} Zeilen würde keine ein Bauteil anlegen oder ändern (${joinGerman(nothingParts)}); die übrigen prüft der Import selbst.`
-            : `Laut Probelauf würde kein Bauteil angelegt oder geändert (${joinGerman(nothingParts)}).`}{' '}
+            ? t("Von den ersten {1} der {2} Zeilen würde keine ein Bauteil anlegen oder ändern ({3}); die übrigen prüft der Import selbst.", { 1: formatNumber(nothing.checked), 2: formatNumber(nothing.total), 3: joinGerman(nothingParts) })
+            : t("Laut Probelauf würde kein Bauteil angelegt oder geändert ({1}).", { 1: joinGerman(nothingParts) })}{' '}
           {nothing.skip > 0 && mode !== 'update'
-            ? 'Die Teilenummern gibt es schon – „Vorhandene aktualisieren“ übernimmt die Werte der Datei.'
+            ? t("Die Teilenummern gibt es schon – „Vorhandene aktualisieren“ übernimmt die Werte der Datei.")
             : nothing.unchanged > 0 && !nothing.reject
-              ? 'Die Bibliothek enthält diese Werte bereits.'
-              : 'Die Gründe stehen unten bei den Zeilen.'}
+              ? t("Die Bibliothek enthält diese Werte bereits.")
+              : t("Die Gründe stehen unten bei den Zeilen.")}
         </Callout>
       )}
       {allRejected && (
         <Callout
           tone="danger"
-          title="So würde keine Zeile importiert"
+          title={t("So würde keine Zeile importiert")}
           actions={
             <>
               <Button size="sm" variant="secondary" leftIcon={<ArrowLeft />} onClick={onBack}>
-                Zur Zuordnung
+                {t("Zur Zuordnung")}
               </Button>
               {!allowIncomplete && requiredMissing.length > 0 && (
                 <Button size="sm" variant="ghost" leftIcon={<FilePen />} onClick={() => onAllowIncomplete(true)}>
-                  Als Entwurf importieren
+                  {t("Als Entwurf importieren")}
                 </Button>
               )}
             </>
           }
         >
           {requiredMissing.length > 0 && !allowIncomplete
-            ? `${joinGerman(missingLabels)} ${requiredMissing.length === 1 ? 'fehlt' : 'fehlen'} in jeder Zeile (Pflicht). Spalte zuordnen, einen festen Wert setzen – oder die Zeilen als Entwurf übernehmen und später ergänzen.`
-            : 'Der Probelauf lehnt jede geprüfte Zeile ab – die Gründe stehen unten. Zuordnung oder feste Werte anpassen.'}
+            ? t("{1} {2} in jeder Zeile (Pflicht). Spalte zuordnen, einen festen Wert setzen – oder die Zeilen als Entwurf übernehmen und später ergänzen.", { 1: joinGerman(missingLabels), 2: requiredMissing.length === 1 ? t("fehlt") : t("fehlen") })
+            : t("Der Probelauf lehnt jede geprüfte Zeile ab – die Gründe stehen unten. Zuordnung oder feste Werte anpassen.")}
         </Callout>
       )}
       {checkError && (
-        <Callout tone="warning" title="Probelauf nicht möglich">
-          {checkError} Der Import prüft die Zeilen trotzdem selbst.
+        <Callout tone="warning" title={t("Probelauf nicht möglich")}>
+          {localizeMessage(checkError)}  {t("Der Import prüft die Zeilen trotzdem selbst.")}
         </Callout>
       )}
       <div className="overflow-hidden rounded-card border border-line">
         <div className={cn('max-h-64 overflow-auto transition-opacity', checking && 'opacity-70')}>
           <table className="w-full min-w-max text-left text-xs">
-            <caption className="sr-only">Vorschau der ersten Zeilen mit dem Ergebnis des Probelaufs</caption>
+            <caption className="sr-only">{t("Vorschau der ersten Zeilen mit dem Ergebnis des Probelaufs")}</caption>
             <thead className="sticky top-0 z-sticky bg-surface-2 text-fg-muted">
               <tr>
                 <th scope="col" className="w-12 px-3 py-2 text-right font-medium">
-                  Zeile
+                  {t("Zeile")}
                 </th>
                 <th scope="col" className="px-3 py-2 font-medium">
-                  Ergebnis
+                  {t("Ergebnis")}
                 </th>
                 {columns.map((m) => (
                   <th key={m.index} scope="col" className="px-3 py-2 font-medium">
-                    {fields.get(m.column as string)?.label ?? m.column}
+                    {metadataLabel(fields.get(m.column as string)?.label ?? m.column ?? '', t)}
                   </th>
                 ))}
                 {mapping.length > columns.length && (
                   <th scope="col" className="px-3 py-2 font-normal text-fg-subtle">
-                    + {mapping.length - columns.length} weitere
+                    + {mapping.length - columns.length}  {t("weitere")}
                   </th>
                 )}
               </tr>
@@ -1140,23 +1146,23 @@ function StepReview({
             <>
               <span className="flex items-center gap-1.5">
                 {checking ? <Spinner size={10} tone="accent" /> : <ListChecks aria-hidden className="size-3.5" />}
-                Probelauf{' '}
-                {check.truncated ? `der ersten ${formatNumber(check.checked)} von ${formatNumber(check.total)}` : `aller ${formatNumber(check.checked)}`}{' '}
-                Zeilen:
+                {t("Probelauf")}{' '}
+                {check.truncated ? t("der ersten {1} von {2}", { 1: formatNumber(check.checked), 2: formatNumber(check.total) }) : t("aller {1}", { 1: formatNumber(check.checked) })}{' '}
+                {t("Zeilen:")}
               </span>
               {STATUS_ORDER.filter((k) => check.counts[k]).map((k) => (
                 <span key={k} className={cn(k === 'reject' ? 'font-medium text-danger-text' : k === 'create' ? 'text-success-text' : 'text-fg-muted')}>
-                  {formatNumber(check.counts[k] ?? 0)} {STATUS_META[k].label}
+                  {formatNumber(check.counts[k] ?? 0)} {metadataLabel(STATUS_META[k].label, t)}
                 </span>
               ))}
             </>
           ) : (
             <span className="flex items-center gap-1.5">
-              <Spinner size={10} tone="accent" /> Probelauf läuft …
+              <Spinner size={10} tone="accent" />  {t("Probelauf läuft …")}
             </span>
           )}
           {fixedRows.length > 0 && (
-            <span>· feste Werte: {fixedRows.map((d) => `${fields.get(d.column as string)?.label ?? d.column} = ${d.value}`).join(', ')}</span>
+            <span>{t("· feste Werte:")} {fixedRows.map((d) => `${metadataLabel(fields.get(d.column as string)?.label ?? d.column ?? '', t)} = ${d.value}`).join(', ')}</span>
           )}
         </div>
       </div>
@@ -1165,12 +1171,12 @@ function StepReview({
 
       <div className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="flex flex-col gap-2">
-          <span className="text-ui font-medium text-fg">Vorhandene Teilenummern</span>
+          <span className="text-ui font-medium text-fg">{t("Vorhandene Teilenummern")}</span>
           <SegmentedControl<ImportMode>
             value={mode}
             onValueChange={onMode}
-            options={MODES.map((m) => ({ value: m.value, label: m.label }))}
-            aria-label="Vorhandene Teilenummern"
+            options={MODES.map((m) => ({ value: m.value, label: metadataLabel(m.label, t) }))}
+            aria-label={t("Vorhandene Teilenummern")}
           />
           <p className="text-xs text-fg-muted">{MODES.find((m) => m.value === mode)?.description}</p>
         </div>
@@ -1178,31 +1184,32 @@ function StepReview({
           <Switch
             checked={allowIncomplete}
             onCheckedChange={onAllowIncomplete}
-            label="Unvollständige Zeilen als Entwurf importieren"
-            description="Leere Pflichtfelder werden dann nur als Hinweis gemeldet – die Bauteile starten als „Entwurf“."
+            label={t("Unvollständige Zeilen als Entwurf importieren")}
+            description={t("Leere Pflichtfelder werden dann nur als Hinweis gemeldet – die Bauteile starten als „Entwurf“.")}
           />
           <Switch
             checked={strict}
             onCheckedChange={onStrict}
-            label="Streng prüfen"
-            description="Nicht lesbare Werte (keine Zahl, falsche Einheit, kein Datum) lehnen die Zeile ab, statt nur zu warnen."
+            label={t("Streng prüfen")}
+            description={t("Nicht lesbare Werte (keine Zahl, falsche Einheit, kein Datum) lehnen die Zeile ab, statt nur zu warnen.")}
           />
         </div>
       </div>
-      <Callout tone="info" title="Sicherung inklusive">
-        Vor dem Import legt PartForge automatisch eine Sicherung der Datenbank an. Der Import läuft im Hintergrund – Sie können weiterarbeiten.
+      <Callout tone="info" title={t("Sicherung inklusive")}>
+        {t("Vor dem Import legt PartForge automatisch eine Sicherung der Datenbank an. Der Import läuft im Hintergrund – Sie können weiterarbeiten.")}
       </Callout>
     </div>
   )
 }
 
 function StatusBadge({ status, fields }: { status: ImportRowStatus; fields: Map<string, FieldDef> }) {
+  const { t } = useI18n()
   const meta = STATUS_META[status.status]
   const reasons = rowReasons(status, fields)
   const warned = status.status !== 'reject' && status.warnings.length > 0
   const badge = (
     <Badge variant={warned ? 'warning' : meta.variant} dot={warned}>
-      {meta.label}
+      {metadataLabel(meta.label, t)}
     </Badge>
   )
   const lines = [...reasons, ...status.warnings]
@@ -1212,13 +1219,13 @@ function StatusBadge({ status, fields }: { status: ImportRowStatus; fields: Map<
       content={
         <ul className="flex max-w-80 flex-col gap-0.5">
           {lines.slice(0, 6).map((r) => (
-            <li key={r}>{r}</li>
+            <li key={r}>{localizeMessage(r)}</li>
           ))}
-          {lines.length > 6 && <li>… und {formatNumber(lines.length - 6)} weitere</li>}
+          {lines.length > 6 && <li>{t("… und")} {formatNumber(lines.length - 6)}  {t("weitere")}</li>}
         </ul>
       }
     >
-      <button type="button" className="inline-flex rounded-full outline-none focus-ring" aria-label={`${meta.label} – ${lines.join('; ')}`}>
+      <button type="button" className="inline-flex rounded-full outline-none focus-ring" aria-label={`${meta.label} – ${lines.map(localizeMessage).join('; ')}`}>
         {badge}
       </button>
     </Tooltip>
@@ -1227,6 +1234,7 @@ function StatusBadge({ status, fields }: { status: ImportRowStatus; fields: Map<
 
 /** Abgelehnte Zeilen des Probelaufs mit Gründen (gleiche Gründe zusammengefasst) */
 function RejectedRows({ rows, fields, truncated }: { rows: ImportRowStatus[]; fields: Map<string, FieldDef>; truncated: boolean }) {
+  const { t } = useI18n()
   const [open, setOpen] = useState(rows.length <= 4)
   const groups = new Map<string, { reasons: string[]; lines: string[] }>()
   for (const st of rows) {
@@ -1246,9 +1254,9 @@ function RejectedRows({ rows, fields, truncated }: { rows: ImportRowStatus[]; fi
           className="flex w-full items-center gap-2 px-3 py-2 text-left text-ui font-medium text-fg outline-none focus-ring-inset"
         >
           <CircleX aria-hidden className="size-4 text-danger-text" />
-          {plural(rows.length, 'Zeile würde', 'Zeilen würden')} abgelehnt
-          {truncated && <span className="font-normal text-fg-subtle">(im Probelauf)</span>}
-          <span className="ml-auto text-xs font-normal text-fg-muted">{open ? 'Ausblenden' : 'Gründe zeigen'}</span>
+          {plural(rows.length, t("Zeile würde"), t("Zeilen würden"))}  {t("abgelehnt")}
+          {truncated && <span className="font-normal text-fg-subtle">{t("(im Probelauf)")}</span>}
+          <span className="ml-auto text-xs font-normal text-fg-muted">{open ? t("Ausblenden") : t("Gründe zeigen")}</span>
         </button>
       </h3>
       {open && (
@@ -1264,10 +1272,10 @@ function RejectedRows({ rows, fields, truncated }: { rows: ImportRowStatus[]; fi
                 ))}
               </ul>
               <p className="pl-5 text-2xs text-fg-subtle">
-                {g.lines.length === 1 ? 'Zeile' : `${formatNumber(g.lines.length)} Zeilen`}:{' '}
+                {g.lines.length === 1 ? t("Zeile") : t("{1} Zeilen", { 1: formatNumber(g.lines.length) })}:{' '}
                 <span className="mono text-fg-muted">
-                  {g.lines.slice(0, 8).join(' · ')}
-                  {g.lines.length > 8 && ` … und ${formatNumber(g.lines.length - 8)} weitere`}
+                  {g.lines.slice(0, 8).map(localizeMessage).join(' · ')}
+                  {g.lines.length > 8 && t(" … und {1} weitere", { 1: formatNumber(g.lines.length - 8) })}
                 </span>
               </p>
             </li>
@@ -1281,7 +1289,7 @@ function RejectedRows({ rows, fields, truncated }: { rows: ImportRowStatus[]; fi
 /** „A“, „A und B“, „A, B und C“ */
 function joinGerman(items: string[]): string {
   if (items.length <= 1) return items[0] ?? ''
-  return `${items.slice(0, -1).join(', ')} und ${items[items.length - 1]}`
+  return t("{1} und {2}", { 1: items.slice(0, -1).join(', '), 2: items[items.length - 1] })
 }
 
 // --------------------------------------------------------------------------- Schritt 4: Import
@@ -1296,9 +1304,9 @@ function importOutcome(result: ImportResult): Outcome {
 
 /** Beschriftung des Import-Knopfs: laut Probelauf „2 Bauteile importieren“, sonst die Zeilenzahl der Datei */
 function importLabel(rows: number, check: ImportCheck | null): string {
-  if (!check || check.truncated) return `${plural(rows, 'Zeile', 'Zeilen')} importieren`
+  if (!check || check.truncated) return t("{1} importieren", { 1: plural(rows, t("Zeile"), t("Zeilen")) })
   const written = (check.counts.create ?? 0) + (check.counts.update ?? 0)
-  return written > 0 ? `${plural(written, 'Bauteil', 'Bauteile')} importieren` : 'Nichts zu importieren'
+  return written > 0 ? t("{1} importieren", { 1: plural(written, t("Bauteil"), t("Bauteile")) }) : t("Nichts zu importieren")
 }
 
 /** Laut Probelauf schreibt keine geprüfte Zeile etwas (mit den Gründen) */
@@ -1341,10 +1349,10 @@ function importProblem(result: ImportResult | null | undefined): string | null {
   const first = Object.entries(result.errors)[0]
   const reason = first ? ` – ${first[0]}: ${first[1]}` : ''
   const message =
-    result.message?.trim() ||
+    (result.message ? localizeMessage(result.message.trim()) : '') ||
     (importOutcome(result) === 'failed'
-      ? `Keine Zeile übernommen, ${plural(result.error_count, 'Zeile', 'Zeilen')} abgelehnt`
-      : `${formatNumber(result.created + result.updated)} von ${plural(result.rows, 'Zeile', 'Zeilen')} übernommen, ${formatNumber(result.error_count)} abgelehnt`)
+      ? t("Keine Zeile übernommen, {1} abgelehnt", { 1: plural(result.error_count, t("Zeile"), t("Zeilen")) })
+      : t("{1} von {2} übernommen, {3} abgelehnt", { 1: formatNumber(result.created + result.updated), 2: plural(result.rows, t("Zeile"), t("Zeilen")), 3: formatNumber(result.error_count) }))
   return `${message}${reason}`
 }
 
@@ -1384,11 +1392,12 @@ function StepRun({
   fields: Map<string, FieldDef>
   categories: CategoryDef[]
 }) {
+  const { t } = useI18n()
   const labels = new Map(categories.map((c) => [c.table.toLowerCase(), c.label]))
   if (!job) {
     return (
       <div className="flex flex-1 items-center justify-center gap-2 text-ui text-fg-muted">
-        <Spinner size={16} tone="accent" /> Import wird gestartet …
+        <Spinner size={16} tone="accent" />  {t("Import wird gestartet …")}
       </div>
     )
   }
@@ -1396,19 +1405,19 @@ function StepRun({
   if (job.status === 'failed' || job.status === 'cancelled') {
     // Abbruch: Grund aus `cancel_reason` (Bibliothekswechsel) bzw. der Schlussmeldung – importiert wurde dann nichts
     return (
-      <Callout tone={job.status === 'failed' ? 'danger' : 'warning'} title={job.status === 'failed' ? 'Import fehlgeschlagen' : 'Import abgebrochen'} urgent>
-        {job.status === 'failed' ? cleanErrorText(job.error ?? job.message) : `${jobCancelText(job).replace(/\s*\.?$/, '.')} Es wurde nichts übernommen.`}
+      <Callout tone={job.status === 'failed' ? 'danger' : 'warning'} title={job.status === 'failed' ? t("Import fehlgeschlagen") : t("Import abgebrochen")} urgent>
+        {job.status === 'failed' ? cleanErrorText(job.error ?? job.message) : t("{1} Es wurde nichts übernommen.", { 1: jobCancelText(job).replace(/\s*\.?$/, '.') })}
       </Callout>
     )
   }
   if (job.status !== 'done' || !result) {
     return (
       <div className="flex flex-1 flex-col justify-center gap-4 py-6">
-        <ProgressBar value={job.progress} live label={job.message || 'Import läuft …'} showValue size="md" />
-        <ol className="mono flex max-h-40 flex-col gap-0.5 overflow-y-auto text-2xs text-fg-subtle" aria-label="Protokoll">
+        <ProgressBar value={job.progress} live label={job.message ? localizeMessage(job.message) : t("Import läuft …")} showValue size="md" />
+        <ol className="mono flex max-h-40 flex-col gap-0.5 overflow-y-auto text-2xs text-fg-subtle" aria-label={t("Protokoll")}>
           {job.log.slice(-8).map((l, i) => (
             <li key={`${l.ts}-${i}`} className={cn(l.level === 'warn' && 'text-warning-text', l.level === 'error' && 'text-danger-text')}>
-              {l.text}
+              {localizeMessage(l.text)}
             </li>
           ))}
         </ol>
@@ -1417,11 +1426,11 @@ function StepRun({
   }
   const outcome = importOutcome(result)
   const stats: { label: string; value: number; tone?: string }[] = [
-    { label: 'neu angelegt', value: result.created, tone: result.created ? 'text-success-text' : undefined },
-    { label: 'aktualisiert', value: result.updated, tone: result.updated ? 'text-info-text' : undefined },
-    { label: 'unverändert', value: result.unchanged },
-    { label: 'übersprungen', value: result.skipped },
-    { label: 'abgelehnt', value: result.error_count, tone: result.error_count ? 'text-danger-text' : undefined },
+    { label: t("neu angelegt"), value: result.created, tone: result.created ? 'text-success-text' : undefined },
+    { label: t("aktualisiert"), value: result.updated, tone: result.updated ? 'text-info-text' : undefined },
+    { label: t("unverändert"), value: result.unchanged },
+    { label: t("übersprungen"), value: result.skipped },
+    { label: t("abgelehnt"), value: result.error_count, tone: result.error_count ? 'text-danger-text' : undefined },
   ]
   const created = result.created_part_numbers
   // Gleiche Gründe zusammenfassen: „Symbol und Footprint leer“ bei 4 Zeilen = ein Eintrag
@@ -1437,17 +1446,17 @@ function StepRun({
     success: {
       icon: <CircleCheck aria-hidden className="size-5" />,
       ring: 'bg-success/12 text-success-text',
-      title: `${plural(result.rows, 'Zeile', 'Zeilen')} verarbeitet`,
+      title: t("{1} verarbeitet", { 1: plural(result.rows, t("Zeile"), t("Zeilen")) }),
     },
     partial: {
       icon: <TriangleAlert aria-hidden className="size-5" />,
       ring: 'bg-warning/14 text-warning-text',
-      title: `${formatNumber(result.created + result.updated)} von ${plural(result.rows, 'Zeile', 'Zeilen')} übernommen – ${formatNumber(result.error_count)} abgelehnt`,
+      title: t("{1} von {2} übernommen – {3} abgelehnt", { 1: formatNumber(result.created + result.updated), 2: plural(result.rows, t("Zeile"), t("Zeilen")), 3: formatNumber(result.error_count) }),
     },
     failed: {
       icon: <CircleX aria-hidden className="size-5" />,
       ring: 'bg-danger/12 text-danger-text',
-      title: `Keine Zeile importiert – ${plural(result.error_count, 'Zeile', 'Zeilen')} abgelehnt`,
+      title: t("Keine Zeile importiert – {1} abgelehnt", { 1: plural(result.error_count, t("Zeile"), t("Zeilen")) }),
     },
   }[outcome]
   return (
@@ -1458,22 +1467,22 @@ function StepRun({
           <p className="text-md font-semibold text-fg">{head.title}</p>
           <p className="truncate text-xs text-fg-muted">
             {result.file}
-            {result.backup && ` · Sicherung: ${result.backup}`}
+            {result.backup && t(" · Sicherung: {1}", { 1: result.backup })}
           </p>
         </div>
       </div>
       <dl className="grid grid-cols-5 divide-x divide-line overflow-hidden rounded-card border border-line">
         {stats.map((st) => (
           <div key={st.label} className="flex flex-col gap-0.5 px-4 py-3">
-            <dt className="text-2xs text-fg-subtle">{st.label}</dt>
+            <dt className="text-2xs text-fg-subtle">{metadataLabel(st.label, t)}</dt>
             <dd className={cn('mono text-h3 font-semibold tabular-nums', st.tone ?? 'text-fg')}>{formatNumber(st.value)}</dd>
           </div>
         ))}
       </dl>
       {created.length > 0 && (
         <div className="flex flex-col gap-2">
-          <h3 className="text-ui font-medium text-fg">Neu in der Bibliothek</h3>
-          <ul className="flex flex-wrap gap-1.5" aria-label="Neu angelegte Teilenummern">
+          <h3 className="text-ui font-medium text-fg">{t("Neu in der Bibliothek")}</h3>
+          <ul className="flex flex-wrap gap-1.5" aria-label={t("Neu angelegte Teilenummern")}>
             {created.slice(0, 18).map((pn) => (
               <li key={pn}>
                 <Badge variant="success" className="mono">
@@ -1481,18 +1490,18 @@ function StepRun({
                 </Badge>
               </li>
             ))}
-            {created.length > 18 && <li className="self-center text-xs text-fg-subtle">… und {formatNumber(created.length - 18)} weitere</li>}
+            {created.length > 18 && <li className="self-center text-xs text-fg-subtle">{t("… und")} {formatNumber(created.length - 18)}  {t("weitere")}</li>}
           </ul>
-          <p className="text-xs text-fg-muted">In der Tabelle sind sie mit „neu“ markiert.</p>
+          <p className="text-xs text-fg-muted">{t("In der Tabelle sind sie mit „neu“ markiert.")}</p>
         </div>
       )}
       {groups.size > 0 && (
         <section aria-labelledby="imp-errors" className="flex flex-col gap-2">
           <h3 id="imp-errors" className="text-ui font-medium text-fg">
-            Abgelehnt{' '}
+            {t("Abgelehnt")}{' '}
             <span className="font-normal text-fg-muted">
               ({formatNumber(result.error_count)}
-              {result.error_count > Object.keys(result.errors).length ? `, die ersten ${formatNumber(Object.keys(result.errors).length)}` : ''})
+              {result.error_count > Object.keys(result.errors).length ? t(", die ersten {1}", { 1: formatNumber(Object.keys(result.errors).length) }) : ''})
             </span>
           </h3>
           <ul className="flex max-h-56 flex-col divide-y divide-line overflow-y-auto rounded-card border border-line">
@@ -1500,22 +1509,22 @@ function StepRun({
               <li key={g.rows[0]} className="flex flex-col gap-1.5 px-3 py-2.5">
                 <ul className="flex flex-col gap-0.5 text-xs">
                   {g.items.map((it) => (
-                    <li key={`${it.field}:${it.text}`} className="flex items-start gap-1.5">
+                    <li key={`${it.field}:${localizeMessage(it.text)}`} className="flex items-start gap-1.5">
                       <CircleAlert aria-hidden className="mt-px size-3.5 shrink-0 text-danger-text" />
                       <span>
                         {it.field && <span className="font-medium text-fg">{it.field}</span>}
                         {it.field && <span className="text-fg-subtle"> – </span>}
-                        <span className="text-fg-muted">{it.text}</span>
+                        <span className="text-fg-muted">{localizeMessage(it.text)}</span>
                       </span>
                     </li>
                   ))}
                 </ul>
                 <p className="pl-5 text-2xs text-fg-subtle">
                   {/* Schlüssel = Teilenummer der Zeile, ohne Teilenummer „Zeile n“ */}
-                  {g.rows.length === 1 ? 'Betrifft' : `Betrifft ${formatNumber(g.rows.length)} Zeilen`}:{' '}
+                  {g.rows.length === 1 ? t("Betrifft") : t("Betrifft {1} Zeilen", { 1: formatNumber(g.rows.length) })}:{' '}
                   <span className="mono text-fg-muted">
                     {g.rows.slice(0, 8).join(' · ')}
-                    {g.rows.length > 8 && ` … und ${formatNumber(g.rows.length - 8)} weitere`}
+                    {g.rows.length > 8 && t(" … und {1} weitere", { 1: formatNumber(g.rows.length - 8) })}
                   </span>
                 </p>
               </li>
@@ -1523,8 +1532,7 @@ function StepRun({
           </ul>
           {isRequiredOnlyAny(result) && (
             <p className="text-xs text-fg-muted">
-              Zeilen, denen nur Pflichtwerte fehlen, lassen sich unten als „Entwurf“ nachholen – oder zurück zur Zuordnung und die
-              Spalten bzw. festen Werte ergänzen.
+              {t("Zeilen, denen nur Pflichtwerte fehlen, lassen sich unten als „Entwurf“ nachholen – oder zurück zur Zuordnung und die Spalten bzw. festen Werte ergänzen.")}
             </p>
           )}
         </section>

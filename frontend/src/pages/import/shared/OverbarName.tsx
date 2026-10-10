@@ -1,8 +1,10 @@
+import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/cn'
 import { overbarSegments, spokenPinName } from '@/lib/geometry'
 
 /** Pinname in Altium-Überstrich-Syntax (`R\E\S\E\T\`) mit echtem Überstrich; Screenreader hören „(invertiert)“. */
 export function OverbarName({ name, className }: { name: string; className?: string }) {
+  useI18n()
   const segments = overbarSegments(name)
   if (!segments.length) return <span className={cn('text-fg-subtle', className)}>–</span>
   return (

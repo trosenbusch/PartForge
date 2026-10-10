@@ -1,7 +1,5 @@
-/**
- * Übersicht eines eingelesenen Scans: Quelle, Zeitpunkt, Zähler (Dateien, Symbole, Footprints und die Zustände der
- * Namen) und die Hinweise des Backends (Datenbankbibliotheken, nicht lesbare integrierte Bibliotheken …).
- */
+import { localizeMessage } from '@/lib/i18n'
+import { t, useI18n } from '@/lib/i18n'
 import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
 import type { ImportScan } from '@/api/libimport'
@@ -22,14 +20,15 @@ const TONE_TEXT: Record<Tone, string> = {
 }
 
 export function ScanOverview({ scan, unreadable }: { scan: ImportScan; unreadable: number }) {
+  useI18n()
   const counters: { label: string; value: number; tone?: Tone }[] = [
-    { label: 'Dateien', value: scan.files.length },
-    { label: 'Symbole', value: scan.symbols },
+    { label: t("Dateien"), value: scan.files.length },
+    { label: t("Symbole"), value: scan.symbols },
     { label: 'Footprints', value: scan.footprints },
-    { label: 'neu', value: scan.new, tone: 'success' },
-    { label: 'schon importiert', value: scan.imported, tone: 'info' },
-    { label: 'Name vergeben', value: scan.taken, tone: 'warning' },
-    { label: 'doppelt', value: scan.duplicates, tone: 'warning' },
+    { label: t("neu"), value: scan.new, tone: 'success' },
+    { label: t("schon importiert"), value: scan.imported, tone: 'info' },
+    { label: t("Name vergeben"), value: scan.taken, tone: 'warning' },
+    { label: t("doppelt"), value: scan.duplicates, tone: 'warning' },
   ]
   return (
     <Card className="overflow-hidden">
@@ -41,11 +40,11 @@ export function ScanOverview({ scan, unreadable }: { scan: ImportScan; unreadabl
         <div className="flex shrink-0 items-center gap-3 pt-0.5">
           {unreadable > 0 && (
             <Badge variant="danger" dot>
-              {plural(unreadable, 'Datei nicht lesbar', 'Dateien nicht lesbar')}
+              {plural(unreadable, t("Datei nicht lesbar"), t("Dateien nicht lesbar"))}
             </Badge>
           )}
           <p className="text-xs text-fg-subtle">
-            eingelesen{' '}
+            {t("eingelesen")}{' '}
             <time dateTime={scan.created} title={formatDateTime(scan.created)}>
               {formatRelativeTime(scan.created)}
             </time>
@@ -68,6 +67,7 @@ export function ScanOverview({ scan, unreadable }: { scan: ImportScan; unreadabl
 
 /** Hinweise des Scans – die ersten {@link NOTES_SHOWN} sofort, weitere auf Wunsch */
 export function ScanNotes({ notes }: { notes: string[] }) {
+  useI18n()
   const [all, setAll] = useState(false)
   if (!notes.length) return null
   const shown = all ? notes : notes.slice(0, NOTES_SHOWN)
@@ -76,7 +76,7 @@ export function ScanNotes({ notes }: { notes: string[] }) {
     <div className="flex flex-col gap-2">
       {shown.map((note, i) => (
         <Callout key={`${i}:${note}`} tone={/datenbankbibliothek/i.test(note) ? 'info' : 'warning'}>
-          {note}
+          {localizeMessage(note)}
         </Callout>
       ))}
       {rest > 0 && (
@@ -88,7 +88,7 @@ export function ScanNotes({ notes }: { notes: string[] }) {
             aria-expanded={all}
             onClick={() => setAll((v) => !v)}
           >
-            {all ? 'Weniger Hinweise zeigen' : plural(rest, 'weiterer Hinweis', 'weitere Hinweise')}
+            {all ? t("Weniger Hinweise zeigen") : plural(rest, t("weiterer Hinweis"), t("weitere Hinweise"))}
           </Button>
         </div>
       )}

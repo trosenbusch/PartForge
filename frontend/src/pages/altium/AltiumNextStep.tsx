@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { ArrowRight } from 'lucide-react'
 import { useNavigate } from 'react-router'
 import { Spinner } from '@/components/ui'
@@ -11,6 +12,7 @@ import { useAltiumActions } from './useAltiumActions'
  * „In Altium aktualisieren“ (Job-Dock, Abschluss-Toast) – bzw. „Zur Altium-Seite“. Ein Textknopf im Fließtext.
  */
 export function AltiumNextStep({ next, className }: { next: NonNullable<AfterWriteNotice['next']>; className?: string }) {
+  useI18n()
   const actions = useAltiumActions()
   const navigate = useNavigate()
   const pending =

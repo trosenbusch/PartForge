@@ -1,3 +1,4 @@
+import { t, useI18n } from '@/lib/i18n'
 import { FileScan, Globe } from 'lucide-react'
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { Button, Input } from '@/components/ui'
@@ -15,6 +16,7 @@ export function UrlImport({
   /** Neuer Wert → Eingabefeld fokussieren (Befehl „Datenblatt aus URL laden“) */
   focusKey?: string | null
 }) {
+  useI18n()
   const id = useId()
   const [url, setUrl] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -27,7 +29,7 @@ export function UrlImport({
     e.preventDefault()
     const value = url.trim()
     if (!/^https?:\/\/\S+\.\S+/i.test(value)) {
-      setError('Bitte eine vollständige Web-Adresse angeben (beginnt mit http:// oder https://).')
+      setError(t("Bitte eine vollständige Web-Adresse angeben (beginnt mit http:// oder https://)."))
       return
     }
     setError(null)
@@ -37,8 +39,7 @@ export function UrlImport({
   return (
     <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-1.5" noValidate>
       <label htmlFor={`${id}-url`} className="text-xs font-medium text-fg-muted">
-        Aus URL laden
-      </label>
+        {t("Aus URL laden")}</label>
       <div className="flex items-center gap-2">
         <Input
           ref={inputRef}
@@ -66,11 +67,11 @@ export function UrlImport({
           loading={busy}
           disabled={!url.trim()}
         >
-          {aiReady ? 'Laden und analysieren' : 'Laden'}
+          {aiReady ? t("Laden und analysieren") : t("Laden")}
         </Button>
       </div>
       <p id={`${id}-hint`} className={error ? 'text-xs text-danger-text' : 'text-xs text-fg-subtle'} aria-live="polite">
-        {error ?? 'Die Hersteller-Adresse wird als Datenblatt-Link der neuen Bauteile übernommen.'}
+        {error ?? t("Die Hersteller-Adresse wird als Datenblatt-Link der neuen Bauteile übernommen.")}
       </p>
     </form>
   )

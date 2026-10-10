@@ -250,6 +250,7 @@ class AltiumSettings(BaseModel):
 class AppSettings(BaseModel):
     workspace: str | None = None
     recent_workspaces: list[str] = Field(default_factory=list)
+    language: Literal["en", "de"] = "en"
     theme: Literal["dark", "light", "system"] = "dark"
     author: str = Field(default_factory=lambda: os.environ.get("USERNAME", "PartForge"))
     ai: AISettings = Field(default_factory=AISettings)

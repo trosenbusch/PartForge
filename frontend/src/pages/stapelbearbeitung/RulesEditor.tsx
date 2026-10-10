@@ -1,8 +1,4 @@
-/**
- * Regeln der Stapelbearbeitung: je Regel ein Schalter mit kurzer Hilfe – mit den Werten des Hausstils, sobald er
- * geladen ist –, darunter die Tabelle der Bezeichner-Präfixe („alt → neu“, nur Buchstaben, groß geschrieben).
- * Regeln einer Art, die nicht ausgewählt ist, bleiben bedienbar, sind aber als „nicht in der Auswahl“ gekennzeichnet.
- */
+import { useI18n } from '@/lib/i18n'
 import { ArrowRight, Plus, X } from 'lucide-react'
 import { Fragment, useId, useRef, useState, type ReactNode } from 'react'
 import type { ConformRules } from '@/api/housestyle'
@@ -29,13 +25,14 @@ export interface RulesEditorProps {
 }
 
 export function RulesEditor({ rules, onChange, style, kinds }: RulesEditorProps) {
+  const { t: tr } = useI18n()
   const setSymbol = (key: SymbolFlag, on: boolean) => onChange({ ...rules, symbols: { ...rules.symbols, [key]: on } })
   const setFootprint = (key: FootprintFlag, on: boolean) =>
     onChange({ ...rules, footprints: { ...rules.footprints, [key]: on } })
 
   return (
     <>
-      <RuleGroup title="Symbole" inactive={!kinds.includes('symbol')}>
+      <RuleGroup title={tr("Symbole")} inactive={!kinds.includes('symbol')}>
         {SYMBOL_RULES.map((def) => (
           <Fragment key={def.key}>
             <Switch
@@ -85,13 +82,14 @@ export function RulesEditor({ rules, onChange, style, kinds }: RulesEditorProps)
 }
 
 function RuleGroup({ title, inactive, children }: { title: string; inactive: boolean; children: ReactNode }) {
+  const { t: tr } = useI18n()
   const id = useId()
   return (
     <section aria-labelledby={id} className="flex flex-col gap-3">
       <h3 id={id} className="micro-label flex items-center gap-2">
         {title}
         {inactive && (
-          <span className="font-normal normal-case tracking-normal text-fg-subtle">· nicht in der Auswahl</span>
+          <span className="font-normal normal-case tracking-normal text-fg-subtle">{tr("· nicht in der Auswahl")}</span>
         )}
       </h3>
       <div className={cn('flex flex-col gap-3 transition-opacity', inactive && 'opacity-60')}>{children}</div>
@@ -127,6 +125,7 @@ function PrefixMapEditor({
   onChange: (map: Record<string, string>) => void
   disabled: boolean
 }) {
+  const { t: tr } = useI18n()
   const uid = useId().replace(/:/g, '')
   const addRef = useRef<HTMLButtonElement>(null)
   const [rows, setRows] = useState<Row[]>(() => rowsFrom(value))
@@ -158,11 +157,11 @@ function PrefixMapEditor({
     const duplicate = Boolean(r.from) && lastIndex.get(r.from) !== i
     const same = Boolean(r.from) && r.from === r.to
     const note = duplicate
-      ? `„${r.from}“ steht mehrfach – es gilt die letzte Zeile.`
+      ? tr("„{0}“ steht mehrfach – es gilt die letzte Zeile.", { "0": String(r.from) })
       : same
-        ? `„${r.from} → ${r.to}“ ändert nichts.`
+        ? tr("„{0} → {1}“ ändert nichts.", { "0": String(r.from), "1": String(r.to) })
         : Boolean(r.from) !== Boolean(r.to)
-          ? 'Unvollständige Zeile – wird nicht angewendet.'
+          ? tr("Unvollständige Zeile – wird nicht angewendet.")
           : null
     return { invalid: duplicate || same, note }
   })
@@ -175,13 +174,12 @@ function PrefixMapEditor({
       className={cn('ml-1 flex flex-col gap-1.5 border-l border-line pl-3', disabled && 'opacity-60')}
     >
       <span id={`${uid}-title`} className="text-xs font-medium text-fg">
-        Präfixe ersetzen
-      </span>
+        {tr("Präfixe ersetzen")}</span>
       {rows.length > 0 && (
         <span aria-hidden className={cn(PREFIX_GRID, '-mb-0.5 text-2xs text-fg-subtle')}>
-          <span>alt</span>
+          <span>{tr("alt")}</span>
           <span />
-          <span>neu</span>
+          <span>{tr("neu")}</span>
         </span>
       )}
       {rows.length > 0 ? (
@@ -198,7 +196,7 @@ function PrefixMapEditor({
                 autoComplete="off"
                 disabled={disabled}
                 invalid={checks[i].invalid}
-                aria-label={`Altes Präfix, Zeile ${i + 1}`}
+                aria-label={tr("Altes Präfix, Zeile {0}", { "0": String(i + 1) })}
                 placeholder="IC"
                 onChange={(e) =>
                   commit(rows.map((x) => (x.id === r.id ? { ...x, from: cleanPrefix(e.target.value) } : x)))
@@ -213,7 +211,7 @@ function PrefixMapEditor({
                 spellCheck={false}
                 autoComplete="off"
                 disabled={disabled}
-                aria-label={`Neues Präfix, Zeile ${i + 1}`}
+                aria-label={tr("Neues Präfix, Zeile {0}", { "0": String(i + 1) })}
                 placeholder="U"
                 onChange={(e) =>
                   commit(rows.map((x) => (x.id === r.id ? { ...x, to: cleanPrefix(e.target.value) } : x)))
@@ -221,7 +219,7 @@ function PrefixMapEditor({
               />
               <IconButton
                 size="xs"
-                label={r.from ? `Präfix ${r.from} entfernen` : `Zeile ${i + 1} entfernen`}
+                label={r.from ? tr("Präfix {0} entfernen", { "0": String(r.from) }) : tr("Zeile {0} entfernen", { "0": String(i + 1) })}
                 icon={<X />}
                 disabled={disabled}
                 onClick={() => remove(r.id)}
@@ -230,7 +228,7 @@ function PrefixMapEditor({
           ))}
         </ul>
       ) : (
-        <p className="text-2xs text-fg-subtle">Keine Präfixe – Bezeichner bleiben unverändert.</p>
+        <p className="text-2xs text-fg-subtle">{tr("Keine Präfixe – Bezeichner bleiben unverändert.")}</p>
       )}
       {shown.length > 0 && (
         <ul className="flex flex-col gap-0.5 text-2xs leading-snug text-warning-text" aria-live="polite">
@@ -248,8 +246,7 @@ function PrefixMapEditor({
         disabled={disabled}
         onClick={add}
       >
-        Präfix hinzufügen
-      </Button>
+        {tr("Präfix hinzufügen")}</Button>
     </div>
   )
 }

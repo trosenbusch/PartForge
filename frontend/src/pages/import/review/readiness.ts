@@ -1,8 +1,4 @@
-/**
- * Bereitschaft für „Bauteile anlegen“ – dieselben Regeln wie `proposal._ready` im Backend, aber mit Gründen
- * (für die Übernahmeleiste) und ohne erneute Anfrage beim Bestätigen von Problemen. Dazu je Umfang die Bereitschaft
- * für „Nur Symbol speichern“ / „Nur Footprint speichern“ (wie `proposal._scope_ready`).
- */
+import { t } from '@/lib/i18n'
 import type { CommitScope, FootprintProposal, PartProposal, SymbolProposal } from '@/api/datasheets'
 import { plural } from '@/lib/format'
 import { pendingPicks, sameBlocker, type ChoiceDraft, type DataSection } from '../store'
@@ -96,19 +92,19 @@ function scopeReadiness(
   out.writes = items.filter((i) => i.valid && willWrite(i, choices.overwriteExisting)).flatMap((i) => (i.name ? [i.name] : []))
   const picks = pendingPicks(choices)
   const invalid = items.find((i) => !i.valid)
-  if (!items.length) out.reason = `Kein ${noun} im Vorschlag`
-  else if (scope === 'symbols' && picks.symbols.length) out.reason = 'Vorhandenes Symbol wählen'
-  else if (scope === 'footprints' && picks.footprints.length) out.reason = 'Vorhandenen Footprint wählen'
+  if (!items.length) out.reason = t("Kein {0} im Vorschlag", { "0": String(noun) })
+  else if (scope === 'symbols' && picks.symbols.length) out.reason = t("Vorhandenes Symbol wählen")
+  else if (scope === 'footprints' && picks.footprints.length) out.reason = t("Vorhandenen Footprint wählen")
   else if (invalid) {
     out.reason =
       'package_label' in invalid
         ? footprintReason(invalid)
-        : `Symbol${invalid.name ? ` „${invalid.name}“` : ''}: ${invalid.warnings[0] ?? 'ungültig'}`
+        : `Symbol${invalid.name ? ` „${invalid.name}“` : ''}: ${invalid.warnings[0] ?? t("ungültig")}`
   } else if (!out.writes.length) {
     out.saved = true
-    out.reason = items.length > 1 ? `Alle ${noun}s sind schon in der Bibliothek` : `${noun} ist schon in der Bibliothek`
+    out.reason = items.length > 1 ? t("Alle {0}s sind schon in der Bibliothek", { "0": String(noun) }) : t("{0} ist schon in der Bibliothek", { "0": String(noun) })
   } else if (out.openBlockers.length) {
-    out.reason = `${plural(out.openBlockers.length, 'Problem', 'Probleme')} bestätigen`
+    out.reason = t("{0} bestätigen", { "0": String(plural(out.openBlockers.length, 'Problem', t("Probleme"))) })
     out.section = 'pruefen'
   }
   out.ready = out.reason === null
@@ -128,8 +124,8 @@ export function conflictName(s: SymbolProposal): string | null {
 /** „Footprint für SOIC-8 (D): …“ – ohne den Gehäusenamen doppelt (Meldungen des Generators beginnen oft schon damit) */
 export function footprintReason(f: FootprintProposal): string {
   const label = f.package_label || f.package
-  const warning = f.warnings[0] ?? 'ungültig'
-  return `Footprint für ${label}: ${warning.startsWith(`${label}: `) ? warning.slice(label.length + 2) : warning}`
+  const warning = f.warnings[0] ?? t("ungültig")
+  return t("Footprint für {0}: {1}", { "0": String(label), "1": String(warning.startsWith(`${label}: `) ? warning.slice(label.length + 2) : warning) })
 }
 
 /** Schreibt die Übernahme dieses Symbol/diesen Footprint? (wie `proposal._will_write`) */
@@ -185,12 +181,12 @@ export function readiness(p: PartProposal | undefined, choices: ChoiceDraft, ack
     }
     return out
   }
-  if (!p.category) out.reasons.push({ text: 'Kategorie wählen', section: 'identitaet' })
-  if (!p.variants.length) out.reasons.push({ text: 'Mindestens eine Bestellnummer auswählen', section: 'varianten' })
+  if (!p.category) out.reasons.push({ text: t("Kategorie wählen"), section: 'identitaet' })
+  if (!p.variants.length) out.reasons.push({ text: t("Mindestens eine Bestellnummer auswählen"), section: 'varianten' })
   for (const s of p.symbols) {
     if (!s.valid) {
       out.reasons.push({
-        text: `Symbol ${s.name ? `„${s.name}“` : `für ${s.packages.join(', ') || 'das Bauteil'}`}: ${s.warnings[0] ?? 'ungültig'}`,
+        text: `Symbol ${s.name ? `„${s.name}“` : t("für {0}", { "0": String(s.packages.join(', ') || t("das Bauteil")) })}: ${s.warnings[0] ?? t("ungültig")}`,
         section: 'pruefen',
       })
     } else {
@@ -215,11 +211,11 @@ export function readiness(p: PartProposal | undefined, choices: ChoiceDraft, ack
       out.existsCount += 1
       if (!out.existingPart && v.existing_table) out.existingPart = { table: v.existing_table, partNumber: v.part_number ?? v.mpn }
     } else out.conflictCount += 1
-    if (!v.symbol) out.reasons.push({ text: `${v.mpn}: kein Symbol`, section: 'pins' })
-    if (!v.footprint) out.reasons.push({ text: `${v.mpn}: kein Footprint`, section: 'gehaeuse' })
+    if (!v.symbol) out.reasons.push({ text: t("{0}: kein Symbol", { "0": String(v.mpn) }), section: 'pins' })
+    if (!v.footprint) out.reasons.push({ text: t("{0}: kein Footprint", { "0": String(v.mpn) }), section: 'gehaeuse' })
     if (v.status === 'conflict') {
       out.reasons.push({
-        text: `${v.mpn}: Teilenummer schon in „${v.existing_table ?? 'anderer Kategorie'}“ vergeben`,
+        text: t("{0}: Teilenummer schon in „{1}“ vergeben", { "0": String(v.mpn), "1": String(v.existing_table ?? t("anderer Kategorie")) }),
         section: 'varianten',
       })
       continue
@@ -235,9 +231,9 @@ export function readiness(p: PartProposal | undefined, choices: ChoiceDraft, ack
   const picks = pendingPicks(choices)
   const label = (code: string) => p.footprints.find((f) => f.package === code)?.package_label || code
   if (picks.symbols.length) {
-    out.reasons.unshift({ text: `Vorhandenes Symbol wählen (${picks.symbols.map(label).join(', ')})`, section: 'pins' })
+    out.reasons.unshift({ text: t("Vorhandenes Symbol wählen ({0})", { "0": String(picks.symbols.map(label).join(', ')) }), section: 'pins' })
   }
-  for (const code of picks.footprints) out.reasons.unshift({ text: `Vorhandenen Footprint für ${label(code)} wählen`, section: 'gehaeuse' })
+  for (const code of picks.footprints) out.reasons.unshift({ text: t("Vorhandenen Footprint für {0} wählen", { "0": String(label(code)) }), section: 'gehaeuse' })
   out.allExist = !out.reasons.length && out.writeCount === 0 && out.existsCount > 0 && out.conflictCount === 0
   out.ready = out.reasons.length === 0 && out.openBlockers.length === 0 && out.writeCount > 0
   return out

@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 /**
  * Starke Bestätigung für unumkehrbare Aktionen (Kategorie löschen, Sicherung wiederherstellen): Der Nutzer tippt
  * ein Bestätigungswort ab. Fehler der Aktion erscheinen im Dialog, der dann offen bleibt.
@@ -35,6 +36,7 @@ export function TypedConfirm({
   onConfirm,
   destructive = true,
 }: TypedConfirmProps) {
+  const { t } = useI18n()
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -76,8 +78,7 @@ export function TypedConfirm({
             <Field
               label={
                 <>
-                  Zur Bestätigung <span className="mono rounded-sm bg-surface-3 px-1 py-px text-fg">{phrase}</span> eingeben
-                </>
+                  {t("Zur Bestätigung")} <span className="mono rounded-sm bg-surface-3 px-1 py-px text-fg">{phrase}</span>  {t("eingeben")}</>
               }
             >
               <Input
@@ -86,20 +87,19 @@ export function TypedConfirm({
                 spellCheck={false}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                aria-label={`Zur Bestätigung „${phrase}“ eingeben`}
+                aria-label={t("Zur Bestätigung „{0}“ eingeben", { "0": phrase })}
                 suffix={matches ? <Check aria-hidden className="text-success-text" /> : undefined}
               />
             </Field>
             {error && (
-              <Callout tone="danger" title="Das hat nicht geklappt" urgent>
+              <Callout tone="danger" title={t("Das hat nicht geklappt")} urgent>
                 {error}
               </Callout>
             )}
           </DialogBody>
           <DialogFooter>
             <Button variant="ghost" onClick={() => close(false)} disabled={busy}>
-              Abbrechen
-            </Button>
+              {t("Abbrechen")}</Button>
             <Button type="submit" variant={destructive ? 'danger' : 'primary'} loading={busy} disabled={!matches}>
               {confirmLabel}
             </Button>

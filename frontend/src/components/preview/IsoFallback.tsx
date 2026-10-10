@@ -1,8 +1,10 @@
+import { useLocalizedMemo } from '@/components/preview/useLocalizedMemo'
+import { t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Rückfall ohne WebGL: isometrische SVG-Zeichnung der 3D-Körper (Maleralgorithmus, ohne three.js).
  * Zeigt Leiterplatte, Pads und die extrudierten Körper schattiert – keine Drehung, aber ein ehrliches Bild des Gehäuses.
  */
-import { useMemo } from 'react'
+import {} from 'react'
 import { cn } from '@/lib/cn'
 import { boxHeight, boxWidth, footprintBBox, formatMm, isEmptyBox, padOutline, type FootprintSpec, type Point } from '@/lib/geometry'
 import { CanvasBadge } from './CanvasChrome'
@@ -84,7 +86,8 @@ function prismFaces(outline: Point[], z0: number, z1: number, color: string, ord
 }
 
 export function IsoFallback({ spec, className }: { spec: FootprintSpec; className?: string }) {
-  const { faces, viewBox, size, height } = useMemo(() => {
+  useI18n()
+  const { faces, viewBox, size, height } = useLocalizedMemo(() => {
     const content = footprintBBox(spec, { bodies: true })
     const box = isEmptyBox(content) ? { x1: -1, y1: -1, x2: 1, y2: 1 } : content
     const margin = Math.max(0.8, Math.max(boxWidth(box), boxHeight(box)) * 0.12)
@@ -141,7 +144,7 @@ export function IsoFallback({ spec, className }: { spec: FootprintSpec; classNam
 
   return (
     <div className={cn('relative isolate min-h-0 overflow-hidden bg-[radial-gradient(120%_90%_at_50%_35%,#121a26_0%,#080b10_55%,#05070a_100%)]', className)}>
-      <svg viewBox={viewBox} className="absolute inset-0 size-full p-6" role="img" aria-label={`Isometrische Ansicht ${spec.name}`}>
+      <svg viewBox={viewBox} className="absolute inset-0 size-full p-6" role="img" aria-label={tr("Isometrische Ansicht {value0}", { value0: String(spec.name) })}>
         {faces.map((f, i) => (
           <polygon
             key={i}

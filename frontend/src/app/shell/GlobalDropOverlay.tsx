@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Sparkles } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
@@ -32,6 +33,7 @@ function isTextTarget(target: EventTarget | null): boolean {
  * zeigen kein Overlay. Seiten mit eigener Drop-Zone unterdrücken das Overlay mit `useSuppressGlobalDrop()`.
  */
 export function GlobalDropOverlay() {
+  const { t: tr } = useI18n()
   const [dragging, setDragging] = useState(false)
   const [count, setCount] = useState(0)
   const depth = useRef(0)
@@ -94,24 +96,24 @@ export function GlobalDropOverlay() {
       const files = Array.from(e.dataTransfer?.files ?? [])
       const pdfs = files.filter(isPdf)
       if (pdfs.length === 0) {
-        toast.error('Keine PDF-Datei erkannt', {
-          description: 'Bitte ein Datenblatt im PDF-Format ablegen.',
+        toast.error(tr("Keine PDF-Datei erkannt"), {
+          description: tr("Bitte ein Datenblatt im PDF-Format ablegen."),
         })
         return
       }
       const added = useDroppedFiles.getState().add(pdfs)
       const skipped = files.length - pdfs.length
       const title =
-        pdfs.length === 1 ? `„${pdfs[0].name}“ übernommen` : `${pdfs.length} Datenblätter übernommen`
+        pdfs.length === 1 ? tr("„{0}“ übernommen", { "0": String(pdfs[0].name) }) : tr("{0} Datenblätter übernommen", { "0": String(pdfs.length) })
       if (!hasWorkspace) {
-        toast.warning(title, { description: 'Bitte zuerst eine Bibliothek öffnen oder anlegen – dann geht es weiter.' })
+        toast.warning(title, { description: tr("Bitte zuerst eine Bibliothek öffnen oder anlegen – dann geht es weiter.") })
         return
       }
       toast.success(title, {
         description:
-          (added.length < pdfs.length ? 'Bereits vorhandene Dateien wurden übersprungen. ' : '') +
-          (skipped > 0 ? `${skipped} Nicht-PDF-Datei(en) ignoriert. ` : '') +
-          'Die Analyse startet auf der Import-Seite.',
+          (added.length < pdfs.length ? tr("Bereits vorhandene Dateien wurden übersprungen. ") : '') +
+          (skipped > 0 ? tr("{0} Nicht-PDF-Datei(en) ignoriert. ", { "0": String(skipped) }) : '') +
+          tr("Die Analyse startet auf der Import-Seite."),
       })
       navigate('/import')
     }
@@ -129,7 +131,7 @@ export function GlobalDropOverlay() {
       window.removeEventListener('dragleave', onLeave)
       window.removeEventListener('drop', onDrop)
     }
-  }, [suppressed, hasWorkspace, navigate])
+  }, [suppressed, hasWorkspace, navigate, tr])
 
   return (
     <AnimatePresence>
@@ -180,26 +182,22 @@ export function GlobalDropOverlay() {
           >
             <ScanningDocument />
             <h2 className="mt-9 text-h1 font-semibold tracking-[-0.025em] text-fg">
-              Datenblatt loslassen <span className="text-gradient-spark">zum Analysieren</span>
+              {tr("Datenblatt loslassen ")}<span className="text-gradient-spark">{tr("zum Analysieren")}</span>
             </h2>
             <p className="mt-2 max-w-lg text-sm leading-relaxed text-fg-muted">
-              {count > 1 ? `${count} Dateien` : 'PDF-Datei'} ablegen – Parameter, Pinbelegung und Gehäusemaße werden
-              erkannt und als Vorschlag für ein vollständiges Bauteil aufbereitet.
-            </p>
+              {count > 1 ? tr("{0} Dateien", { "0": String(count) }) : tr("PDF-Datei")} {tr(" ablegen – Parameter, Pinbelegung und Gehäusemaße werden erkannt und als Vorschlag für ein vollständiges Bauteil aufbereitet.")}</p>
             <div className="mt-5 flex items-center gap-2">
               <Badge variant="spark" size="md">
                 <Sparkles />
-                KI-Extraktion
-              </Badge>
+                {tr("KI-Extraktion")}</Badge>
               <Badge size="md">Parameter</Badge>
               <Badge size="md">Symbol</Badge>
               <Badge size="md">Footprint</Badge>
-              <Badge size="md">3D-Modell</Badge>
+              <Badge size="md">{tr("3D-Modell")}</Badge>
             </div>
             {!aiEnabled && (
               <p className="mt-4 text-xs text-fg-subtle">
-                KI ist ausgeschaltet – das Datenblatt wird abgelegt und kann von Hand ausgewertet werden.
-              </p>
+                {tr("KI ist ausgeschaltet – das Datenblatt wird abgelegt und kann von Hand ausgewertet werden.")}</p>
             )}
           </motion.div>
         </motion.div>
@@ -210,6 +208,7 @@ export function GlobalDropOverlay() {
 
 /** Animiertes Datenblatt mit Scan-Strahl und Funken. */
 function ScanningDocument() {
+  useI18n()
   const reduce = useReducedMotion()
   return (
     <motion.div

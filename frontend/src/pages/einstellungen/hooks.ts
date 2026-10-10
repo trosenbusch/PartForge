@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 /** Kleine Hooks der Einstellungsseite */
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -5,15 +6,16 @@ import { readPref, writePref } from '@/lib/prefs'
 
 /** Text in die Zwischenablage kopieren (mit Bestätigung) */
 export function useCopyText() {
+  const { t } = useI18n()
   const [copied, setCopied] = useState<string | null>(null)
-  const copy = async (text: string, what = 'Pfad') => {
+  const copy = async (text: string, what = t("Pfad")) => {
     try {
       await navigator.clipboard.writeText(text)
       setCopied(text)
       window.setTimeout(() => setCopied((c) => (c === text ? null : c)), 1600)
-      toast.success(`${what} kopiert`, { id: 'settings-copy', description: text })
+      toast.success(t("{0} kopiert", { "0": what }), { id: 'settings-copy', description: text })
     } catch {
-      toast.error(`${what} konnte nicht kopiert werden`, { id: 'settings-copy' })
+      toast.error(t("{0} konnte nicht kopiert werden", { "0": what }), { id: 'settings-copy' })
     }
   }
   return { copied, copy }

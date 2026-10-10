@@ -1,3 +1,4 @@
+import { t } from '@/lib/i18n'
 /**
  * Beschreibungs-/Kommentarvorlagen im Browser rendern – Port von `partforge/db/values.py::render_template`
  * und den Formaten aus `partforge/domain/units.py` (si, rkm, nounit, upper, lower). Damit zeigt der
@@ -230,7 +231,7 @@ function lookup(values: Record<string, unknown>, column: string): unknown {
 
 function toText(raw: unknown): string | null {
   if (raw === null || raw === undefined) return null
-  if (typeof raw === 'boolean') return raw ? 'Ja' : 'Nein'
+  if (typeof raw === 'boolean') return raw ? t("Ja") : t("Nein")
   const text = String(raw).trim()
   return text ? text : null
 }

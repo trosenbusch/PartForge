@@ -1,3 +1,4 @@
+import { t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Eigene Pinnamen eines Steckverbinders (optional): je Pin ein Feld, angeordnet wie im Symbol (zweireihig links
  * und rechts). Mehrzeiliger Text aus der Zwischenablage (Spalte aus Excel, „1⇥VCC“-Tabellen) verteilt sich auf
@@ -28,6 +29,7 @@ function nameFromLine(line: string): string {
 }
 
 export function ConnectorPins({ layout, pins, onChange, onHoverPin }: ConnectorPinsProps) {
+  useI18n()
   const uid = useId().replace(/:/g, '')
   const names = new Map((pins ?? []).map((p) => [p.designator, p.name]))
   const order = layout.pairs
@@ -79,7 +81,7 @@ export function ConnectorPins({ layout, pins, onChange, onHoverPin }: ConnectorP
         maxLength={40}
         spellCheck={false}
         autoComplete="off"
-        aria-label={`Name von Pin ${designator}`}
+        aria-label={tr("Name von Pin {value0}", { value0: String(designator) })}
         onChange={(e) => setName(designator, e.target.value)}
         onPaste={onPaste(designator)}
         onFocus={() => onHoverPin(designator)}
@@ -96,18 +98,18 @@ export function ConnectorPins({ layout, pins, onChange, onHoverPin }: ConnectorP
     <div className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-3">
         <p className="text-xs leading-relaxed text-fg-muted">
-          Optional – leer lassen für reine Nummern. Mehrzeiliger Text (z. B. eine Spalte aus Excel) füllt die folgenden Pins.
-          {named > 0 && ' Mit eigenen Namen bekommt das Symbol einen eigenen Namen (Kennung in Klammern) – oder unter „Erweitert“ selbst benennen.'}
+          {tr("Optional – leer lassen für reine Nummern. Mehrzeiliger Text (z. B. eine Spalte aus Excel) füllt die folgenden Pins.")}
+          {named > 0 && tr(' Mit eigenen Namen bekommt das Symbol einen eigenen Namen (Kennung in Klammern) – oder unter „Erweitert“ selbst benennen.')}
         </p>
         {named > 0 && (
           <Button size="xs" variant="ghost" leftIcon={<Eraser />} onClick={() => onChange(undefined)} className="shrink-0">
-            Leeren
+            {tr("Leeren")}
           </Button>
         )}
       </div>
       <div
         role="group"
-        aria-label="Pinnamen"
+        aria-label={tr("Pinnamen")}
         className={cn('grid gap-x-3 gap-y-1.5', layout.rows === 2 ? 'grid-cols-2' : 'grid-cols-1 @[26rem]:max-w-72')}
       >
         {layout.pairs.flatMap(([left, right]) => (layout.rows === 2 ? [field(left, 'left'), field(right, 'right')] : [field(left, 'left')]))}

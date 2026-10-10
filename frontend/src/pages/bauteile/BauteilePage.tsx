@@ -1,3 +1,4 @@
+import { metadataLabel, localizeMessage, useI18n } from '@/lib/i18n'
 /**
  * Bauteile (`/bauteile`, `/bauteile/:table`): links der Kategoriebaum, rechts die Tabelle der Kategorie mit
  * Werkzeugleiste und Detailbereich – oder „Alle Kategorien“ (Übersicht + Suche über die ganze Bibliothek).
@@ -47,6 +48,7 @@ function partsUploadFromState(state: unknown): ImportWizardUpload | null {
 }
 
 export default function BauteilePage() {
+  const { t } = useI18n()
   const { table: tableParam } = useParams()
   const navigate = useNavigate()
   const qc = useQueryClient()
@@ -144,11 +146,11 @@ export default function BauteilePage() {
     const pn = String(result.part[PART_NUMBER] ?? '')
     invalidateParts(qc, table)
     setNewPns((s) => new Set(s).add(pn))
-    toast.success(`„${pn}“ angelegt`, {
+    toast.success(t("„{1}“ angelegt", { 1: pn }), {
       description: result.part.Description ?? undefined,
-      action: { label: 'Weiteres anlegen', onClick: () => setNewOpen(true) },
+      action: { label: t("Weiteres anlegen"), onClick: () => setNewOpen(true) },
     })
-    if (result.warnings.length) toast.warning('Bitte prüfen', { description: result.warnings.join(' · ') })
+    if (result.warnings.length) toast.warning(t("Bitte prüfen"), { description: result.warnings.map(localizeMessage).join(' · ') })
     openPart(table, pn)
   }
 
@@ -161,9 +163,9 @@ export default function BauteilePage() {
   // Strg+S: Bauteile speichert PartForge sofort – hier nur der Hinweis. Offene Eingaben (Zelleneditor, Detailbereich,
   // Dialog „Neues Bauteil“) registrieren eigene Handler und haben Vorrang (später eingehängt bzw. modal).
   useSaveHandler(() => {
-    toast.info('Nichts zu speichern', {
+    toast.info(t("Nichts zu speichern"), {
       id: 'parts-save-hint',
-      description: 'Änderungen in der Tabelle und im Detailbereich speichert PartForge sofort beim Verlassen des Felds.',
+      description: t("Änderungen in der Tabelle und im Detailbereich speichert PartForge sofort beim Verlassen des Felds."),
     })
   })
 
@@ -171,13 +173,13 @@ export default function BauteilePage() {
   useRegisterCommands([
     {
       id: 'parts.new',
-      title: 'Neues Bauteil',
-      subtitle: category ? `In „${category.label}“ – mit Smart-Eingabe` : 'Geführte Anlage mit Smart-Eingabe',
+      title: t("Neues Bauteil"),
+      subtitle: category ? t("In „{1}“ – mit Smart-Eingabe", { 1: metadataLabel(category.label, t) }) : t("Geführte Anlage mit Smart-Eingabe"),
       group: 'Aktionen',
       icon: Plus,
       hotkey: 'mod+n',
       priority: 100,
-      keywords: ['anlegen', 'erstellen', 'part', 'neu'],
+      keywords: ['anlegen', 'erstellen', 'part', t("neu")],
       run: ({ close }) => {
         close()
         setNewOpen(true)
@@ -185,8 +187,8 @@ export default function BauteilePage() {
     },
     {
       id: 'parts.import',
-      title: 'Tabelle importieren',
-      subtitle: 'CSV, Excel oder ODS – Spalten werden automatisch zugeordnet',
+      title: t("Tabelle importieren"),
+      subtitle: t("CSV, Excel oder ODS – Spalten werden automatisch zugeordnet"),
       group: 'Aktionen',
       icon: Upload,
       priority: 75,
@@ -208,7 +210,7 @@ export default function BauteilePage() {
         id: `${h.table}:${h.part_number}`,
         title: h.part_number,
         subtitle: [h.value ? formatQuantityText(h.value) : null, h.description].filter(Boolean).join(' · ') || undefined,
-        meta: h.label,
+        meta: metadataLabel(h.label, t),
         color: h.color,
         icon: Microchip,
         run: ({ navigate: go, close }) => {
@@ -225,13 +227,13 @@ export default function BauteilePage() {
     search: async (q) => {
       const needle = q.trim().toLowerCase()
       return (categories.data ?? [])
-        .filter((c) => `${c.label} ${c.table}`.toLowerCase().includes(needle))
+        .filter((c) => `${metadataLabel(c.label, t)} ${c.label} ${c.table}`.toLowerCase().includes(needle))
         .slice(0, 5)
         .map((c) => ({
           id: `kategorie:${c.table}`,
-          title: c.label,
+          title: metadataLabel(c.label, t),
           mono: false,
-          subtitle: plural(c.part_count ?? 0, 'Bauteil', 'Bauteile'),
+          subtitle: plural(c.part_count ?? 0, t("Bauteil"), t("Bauteile")),
           meta: c.table,
           color: c.color,
           icon: FolderTree,
@@ -247,22 +249,22 @@ export default function BauteilePage() {
   const sum = (categories.data ?? []).reduce((s, c) => s + (c.part_count ?? 0), 0)
   // Die Trefferzahl steht in der Werkzeugleiste – der Untertitel ordnet die Kategorie ein
   const subtitle = category
-    ? [CATEGORY_GROUPS[category.table], category.prefix ? `Bezeichner ${category.prefix}` : null].filter(Boolean).join(' · ') ||
-      plural(category.part_count ?? 0, 'Bauteil', 'Bauteile')
+    ? [CATEGORY_GROUPS[category.table], category.prefix ? t("Bezeichner {1}", { 1: category.prefix }) : null].filter(Boolean).join(' · ') ||
+      plural(category.part_count ?? 0, t("Bauteil"), t("Bauteile"))
     : categories.data
-      ? `${plural(sum, 'Bauteil', 'Bauteile')} in ${plural(categories.data.length, 'Kategorie', 'Kategorien')}`
+      ? t("{1} in {2}", { 1: plural(sum, t("Bauteil"), t("Bauteile")), 2: plural(categories.data.length, t("Kategorie"), t("Kategorien")) })
       : undefined
   const unknown = Boolean(tableParam && categories.isSuccess && !category)
 
   return (
     <PageBody width="full" flush className="flex h-[calc(100dvh-3.5rem)] min-h-[600px] flex-col">
-      <PageTitle title={category?.label ?? (tableParam ? tableParam : 'Bauteile')} subtitle={subtitle} />
+      <PageTitle title={category ? metadataLabel(category.label, t) : (tableParam ? tableParam : t("Bauteile"))} subtitle={subtitle} />
       <PageActions>
         <Button variant="spark" leftIcon={<FileScan />} onClick={() => navigate('/import')}>
-          Aus Datenblatt
+          {t("Aus Datenblatt")}
         </Button>
         <Button variant="primary" leftIcon={<Plus />} onClick={() => setNewOpen(true)} aria-keyshortcuts="Control+N">
-          Neues Bauteil
+          {t("Neues Bauteil")}
         </Button>
       </PageActions>
 
@@ -277,15 +279,15 @@ export default function BauteilePage() {
           collapsible
           collapsed={treeVisibility.collapsed}
           onCollapsedChange={treeVisibility.setCollapsed}
-          label="Breite des Kategoriebaums"
+          label={t("Breite des Kategoriebaums")}
           className="min-h-0 flex-1"
           start={
-            <nav aria-label="Kategorien" className="flex h-full min-h-0 flex-col pr-3">
+            <nav aria-label={t("Kategorien")} className="flex h-full min-h-0 flex-col pr-3">
               <div className="flex h-9 shrink-0 items-center justify-between pl-1">
-                <span className="micro-label">Kategorien</span>
+                <span className="micro-label">{t("Kategorien")}</span>
                 <IconButton
                   size="sm"
-                  label="Kategorien und Felder verwalten"
+                  label={t("Kategorien und Felder verwalten")}
                   icon={<Settings2 />}
                   onClick={() => navigate('/einstellungen/kategorien')}
                 />
@@ -294,14 +296,14 @@ export default function BauteilePage() {
                 items={tree.items}
                 value={category?.table ?? (tableParam ? null : '')}
                 onValueChange={(id) => navigate(id ? `/bauteile/${encodeURIComponent(id)}` : '/bauteile')}
-                allItem={{ label: 'Alle Kategorien', count: tree.total }}
+                allItem={{ label: t("Alle Kategorien"), count: tree.total }}
                 groupOrder={CATEGORY_GROUP_ORDER}
                 loading={tree.isLoading}
                 persistKey="bauteile"
                 searchable={tree.items.length > 12}
-                searchPlaceholder="Kategorie filtern …"
+                searchPlaceholder={t("Kategorie filtern …")}
                 className="mt-1 min-h-0 flex-1"
-                aria-label="Kategorien"
+                aria-label={t("Kategorien")}
               />
             </nav>
           }
@@ -320,11 +322,11 @@ export default function BauteilePage() {
                 <EmptyState
                   titleAs="h2"
                   illustration="search-empty"
-                  title={`Kategorie „${tableParam}“ gibt es nicht`}
-                  description="Vielleicht wurde sie umbenannt oder gelöscht. Wählen Sie links eine Kategorie."
+                  title={t("Kategorie „{1}“ gibt es nicht", { 1: tableParam ?? '' })}
+                  description={t("Vielleicht wurde sie umbenannt oder gelöscht. Wählen Sie links eine Kategorie.")}
                   actions={
                     <Button variant="secondary" onClick={() => navigate('/bauteile')}>
-                      Alle Kategorien
+                      {t("Alle Kategorien")}
                     </Button>
                   }
                 />

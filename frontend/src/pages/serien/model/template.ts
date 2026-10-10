@@ -1,3 +1,4 @@
+import { t as tr } from '@/lib/i18n'
 /**
  * Auswertung einer Serienvorlage für die Oberfläche: Art (Regeln, Matrix, Katalog), Varianten (Toleranz, TK,
  * Spannung, Verpackung), Baugrößen mit Kennwerten, Muster-Segmente. Spiegelt die Regeln von
@@ -40,8 +41,8 @@ export const optionApplies = (o: TemplateOption, size: string | null): boolean =
   !o.sizes.length || size === null || o.sizes.includes(size)
 
 /** Text einer Option für die Oberfläche: Beschriftung, sonst Bedeutung, sonst Code */
-export function optionText(o: TemplateOption): string {
-  return o.label || (o.value ? formatQuantityText(o.value) : '') || o.code || 'ohne'
+export function optionText(o: TemplateOption, builtin = false): string {
+  return (o.label ? (builtin ? tr(o.label) : o.label) : '') || (o.value ? formatQuantityText(o.value) : '') || o.code || tr("ohne")
 }
 
 /** Vorauswahl einer Variable (je Baugröße, `default`, sonst die erste gültige) – ohne `requires` */
@@ -131,7 +132,7 @@ export function toleranceChoices(t: SeriesTemplate): ChoiceOption[] {
       .map((text) => ({ value: text, label: formatQuantityText(text) }))
   }
   if (!v) return []
-  return v.options.filter((o) => !isJumperOnly(o)).map((o) => ({ value: o.code, label: optionText(o) }))
+  return v.options.filter((o) => !isJumperOnly(o)).map((o) => ({ value: o.code, label: optionText(o, t.builtin) }))
 }
 
 export const normTolerance = (text: string): string => text.replace(/[±\s%]/g, '').trim()
@@ -185,7 +186,7 @@ export function tcrMagnitude(text: string): number | null {
 export function tcrChoices(t: SeriesTemplate): { kind: 'code' | 'filter'; options: ChoiceOption[] } | null {
   const v = variable(t, 'tcr')
   if (v) {
-    const options = v.options.filter((o) => !isJumperOnly(o)).map((o) => ({ value: o.code, label: optionText(o) }))
+    const options = v.options.filter((o) => !isJumperOnly(o)).map((o) => ({ value: o.code, label: optionText(o, t.builtin) }))
     return options.length > 1 ? { kind: 'code', options } : null
   }
   if (t.kind === 'catalog' || !t.rules.length) return null
@@ -224,7 +225,7 @@ export function packagingChoices(t: SeriesTemplate, sizes: string[]): PackagingC
     const fits = sizes.filter((s) => optionApplies(o, s))
     if (!fits.length) continue
     const key = o.code.toUpperCase()
-    const entry = byCode.get(key) ?? { value: o.code, label: optionText(o), fits: new Set<string>() }
+    const entry = byCode.get(key) ?? { value: o.code, label: optionText(o, t.builtin), fits: new Set<string>() }
     for (const s of fits) entry.fits.add(s)
     byCode.set(key, entry)
   }
@@ -257,7 +258,7 @@ export function voltageChoices(t: SeriesTemplate): VoltageChoice[] {
   const used = new Set(t.availability.map((c) => (c.codes.voltage ?? '').toUpperCase()))
   return v.options
     .filter((o) => !t.availability.length || used.has(o.code.toUpperCase()))
-    .map((o) => ({ value: o.code, label: optionText(o), volts: parseAmount(o.value ?? '') ?? 0 }))
+    .map((o) => ({ value: o.code, label: optionText(o, t.builtin), volts: parseAmount(o.value ?? '') ?? 0 }))
     .sort((a, b) => a.volts - b.volts)
 }
 
@@ -302,20 +303,23 @@ export function catalogValue(e: CatalogEntry): number | null {
 
 /** Bezeichnung des Werts einer Vorlage (Ferrite: Impedanz) */
 export function valueLabelFor(t: Pick<SeriesTemplate, 'category' | 'value_unit'>): string {
-  return t.category === 'Ferrite Beads' ? 'Impedanz' : valueLabel(t.value_unit)
+  return t.category === 'Ferrite Beads' ? tr("Impedanz") : valueLabel(t.value_unit)
 }
 
 /** Überschrift des Werte-Abschnitts: „Widerstandswerte“, „Kapazitätswerte“ … */
 export function valuesTitle(t: Pick<SeriesTemplate, 'category' | 'value_unit'>): string {
-  const label = valueLabelFor(t)
-  return label === 'Wert' ? 'Werte' : `${label}swerte`
+  if (t.category === 'Ferrite Beads') return tr('Impedanzwerte')
+  if (t.value_unit === 'F') return tr('Kapazitätswerte')
+  if (t.value_unit === 'H') return tr('Induktivitätswerte')
+  if (t.value_unit === 'Ω') return tr('Widerstandswerte')
+  return tr('Werte')
 }
 
 export function valueLabel(unit: string): string {
-  if (unit === 'F') return 'Kapazität'
-  if (unit === 'H') return 'Induktivität'
-  if (unit === 'Ω') return 'Widerstand'
-  return 'Wert'
+  if (unit === 'F') return tr("Kapazität")
+  if (unit === 'H') return tr("Induktivität")
+  if (unit === 'Ω') return tr("Widerstand")
+  return tr("Wert")
 }
 
 /** Beispielwert für Vorlagenkarten */

@@ -1,24 +1,5 @@
-/**
- * Bibliotheken: SchLib-/PcbLib-Dateien (Abgleich, Synchronisieren, Prüfen, Footprint-Höhen nachtragen), externe
- * Bibliotheken (schreibgeschützt eingebunden) und der **Prüfbericht** – zusammengeführt aus drei Quellen:
- *
- *   GET /api/health-check      Datenebene: Pflichtfelder, Dubletten, Werte, Verweise, Datenblätter (routes_parts)
- *   GET /api/libraries/health  Dateiebene: Bauteile in ihren Dateien, Pfade, Pins ↔ Pads, Footprint-Höhen,
- *                              außerhalb geändert – je Befund die betroffenen Bauteile (`affected_parts`)
- *   GET /api/altium/status     DbLib-Befunde (veraltet, fehlt, falsche Datenbank, gleichnamige Installation …)
- *
- *   const health = useHealthReport()           // { report: MergedHealth | undefined, isLoading, refetch, … }
- *   const files = useLibraryFiles()            // GET /api/libraries/files (inkl. Lagenprüfung)
- *   const { job } = await librariesApi.sync()  // Job „Bibliotheken synchronisieren“ → trackJob(job)
- *
- * Kennungen der Prüfungen: ARCHITEKTUR.md §8.4. Beide Ebenen verwenden für denselben Registry-Zustand dieselbe Kennung
- * (`registry_error`, `registry_missing`); `symbol_missing` / `footprint_missing` heißt nur noch „nicht registriert“
- * (Datenebene). Die Dateiebene nennt je Befund alle betroffenen Bauteile – daraus entsteht die exakte Quote.
- *
- * Query-Keys beginnen mit „libraries“ (Datenprüfung: `['libraries', 'health-check']`). Nach jedem erfolgreichen
- * Job lädt das Job-Dock alle modulbezogenen Abfragen neu – die Dateiliste aktualisiert sich so selbst. Der Prüfbericht
- * ist `meta.static` und lädt nur nach Jobs/Schreibzugriffen neu, die ihn ändern können (`HEALTH_JOB_KINDS`).
- */
+import { useI18n } from '@/lib/i18n'
+import { t as tr, localizeMessage } from '@/lib/i18n'
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { baseName } from '@/lib/format'
@@ -189,19 +170,21 @@ export function useAddExternalLibrary() {
 }
 
 export function useRemoveExternalLibrary() {
+  const { t: tr } = useI18n()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: librariesApi.removeExternal,
-    meta: { errorTitle: 'Externe Bibliothek konnte nicht entfernt werden' },
+    meta: { errorTitle: tr("Externe Bibliothek konnte nicht entfernt werden") },
     onSuccess: () => qc.invalidateQueries({ queryKey: librariesKeys.all }),
   })
 }
 
 export function useUseExternalComponent() {
+  const { t: tr } = useI18n()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, name }: { id: string; name: string }) => librariesApi.useExternal(id, name),
-    meta: { errorTitle: 'Bauteil konnte nicht übernommen werden' },
+    meta: { errorTitle: tr("Bauteil konnte nicht übernommen werden") },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: librariesKeys.external })
       void qc.invalidateQueries({ queryKey: ['symbols'] })
@@ -245,12 +228,12 @@ export interface CheckInfo {
   bySeverity?: Partial<Record<IssueSeverity, Omit<CheckInfo, 'bySeverity'>>>
 }
 
-export const AREA_LABEL: Record<HealthArea, string> = { data: 'Daten', files: 'Dateien', dblib: 'DbLib' }
+export const AREA_LABEL: Record<HealthArea, string> = { get data() { return tr("Daten") }, get files() { return tr("Dateien") }, dblib: 'DbLib' }
 
 export const SEVERITY_LABEL: Record<IssueSeverity, { one: string; many: string; section: string }> = {
-  error: { one: 'Fehler', many: 'Fehler', section: 'Fehler' },
-  warning: { one: 'Warnung', many: 'Warnungen', section: 'Warnungen' },
-  info: { one: 'Hinweis', many: 'Hinweise', section: 'Hinweise' },
+  error: { get one() { return tr("Fehler") }, get many() { return tr("Fehler") }, get section() { return tr("Fehler") } },
+  warning: { get one() { return tr("Warnung") }, get many() { return tr("Warnungen") }, get section() { return tr("Warnungen") } },
+  info: { get one() { return tr("Hinweis") }, get many() { return tr("Hinweise") }, get section() { return tr("Hinweise") } },
 }
 
 export const SEVERITY_ORDER: Record<IssueSeverity, number> = { error: 0, warning: 1, info: 2 }
@@ -258,81 +241,81 @@ export const SEVERITY_ORDER: Record<IssueSeverity, number> = { error: 0, warning
 /** Deutsche Namen der Prüfungen (Daten-, Datei- und DbLib-Ebene; Kennungen: ARCHITEKTUR.md §8.4) */
 export const CHECKS: Record<string, CheckInfo> = {
   // Datenebene (/api/health-check)
-  required: { label: 'Pflichtfeld leer' },
-  duplicate_pn: { label: 'Teilenummer mehrfach vergeben' },
-  duplicate_mpn: { label: 'Hersteller-Teilenummer mehrfach' },
-  value: { label: 'Ungültiger Wert' },
-  format: { label: 'Wert nicht im Standardformat', fix: 'normalize' },
-  enum: { label: 'Wert nicht in der Auswahlliste' },
+  required: { get label() { return tr("Pflichtfeld leer") } },
+  duplicate_pn: { get label() { return tr("Teilenummer mehrfach vergeben") } },
+  duplicate_mpn: { get label() { return tr("Hersteller-Teilenummer mehrfach") } },
+  value: { get label() { return tr("Ungültiger Wert") } },
+  format: { get label() { return tr("Wert nicht im Standardformat") }, fix: 'normalize' },
+  enum: { get label() { return tr("Wert nicht in der Auswahlliste") } },
   // Warnung: nicht registriert, steht aber evtl. in der Datei → „Aus Dateien übernehmen“ registriert es.
   // Fehler (mit „nicht in der eingetragenen Datei“ zusammengeführt): weder registriert noch in der Datei.
   symbol_missing: {
-    label: 'Symbol nicht registriert',
+    get label() { return tr("Symbol nicht registriert") },
     fix: 'scan-register',
     bySeverity: {
       error: {
-        label: 'Symbol fehlt',
-        hint: '„Library Ref“ des Bauteils korrigieren oder das Symbol erzeugen bzw. importieren.',
+        get label() { return tr("Symbol fehlt") },
+        get hint() { return tr("„Library Ref“ des Bauteils korrigieren oder das Symbol erzeugen bzw. importieren.") },
         fix: 'open-part',
-        fixLabel: 'Library Ref korrigieren',
+        get fixLabel() { return tr("Library Ref korrigieren") },
       },
     },
   },
   footprint_missing: {
-    label: 'Footprint nicht registriert',
+    get label() { return tr("Footprint nicht registriert") },
     fix: 'scan-register',
     bySeverity: {
       error: {
-        label: 'Footprint fehlt',
-        hint: '„Footprint Ref“ des Bauteils korrigieren oder den Footprint mit dem Generator erzeugen.',
+        get label() { return tr("Footprint fehlt") },
+        get hint() { return tr("„Footprint Ref“ des Bauteils korrigieren oder den Footprint mit dem Generator erzeugen.") },
         fix: 'open-part',
-        fixLabel: 'Footprint Ref korrigieren',
+        get fixLabel() { return tr("Footprint Ref korrigieren") },
       },
     },
   },
-  library_file_missing: { label: 'Bibliotheksdatei fehlt', fix: 'scan-sync' },
-  datasheet_missing: { label: 'Kein Datenblatt verknüpft', fix: 'import', fixLabel: 'Datenblatt-Import öffnen' },
+  library_file_missing: { get label() { return tr("Bibliotheksdatei fehlt") }, fix: 'scan-sync' },
+  datasheet_missing: { get label() { return tr("Kein Datenblatt verknüpft") }, fix: 'import', get fixLabel() { return tr("Datenblatt-Import öffnen") } },
   // Registry-Zustand (beide Ebenen, dieselbe Bedeutung)
-  registry_error: { label: 'Nicht in die Bibliothek geschrieben', fix: 'sync' },
+  registry_error: { get label() { return tr("Nicht in die Bibliothek geschrieben") }, fix: 'sync' },
   registry_missing: {
-    label: 'Fehlt und ist nicht erzeugbar',
-    hint: 'Registriert, aber ohne Geometrie und nicht aus den gespeicherten Angaben erzeugbar (oder aus der externen Bibliothek verschwunden) – im Symbol- bzw. Footprint-Generator anlegen oder aus einer Bibliothek übernehmen.',
+    get label() { return tr("Fehlt und ist nicht erzeugbar") },
+    get hint() { return tr("Registriert, aber ohne Geometrie und nicht aus den gespeicherten Angaben erzeugbar (oder aus der externen Bibliothek verschwunden) – im Symbol- bzw. Footprint-Generator anlegen oder aus einer Bibliothek übernehmen.") },
   },
   // Dateiebene (/api/libraries/health)
   component_missing: {
-    label: 'Fehlt in der Bibliotheksdatei',
-    hint: '„Bibliotheken prüfen“ merkt es vor, „Synchronisieren“ schreibt es neu.',
+    get label() { return tr("Fehlt in der Bibliotheksdatei") },
+    get hint() { return tr("„Bibliotheken prüfen“ merkt es vor, „Synchronisieren“ schreibt es neu.") },
     fix: 'scan-sync',
   },
-  component_not_in_file: { label: 'Nicht in der eingetragenen Datei', fix: 'sync' },
-  library_unassigned: { label: 'Keiner Bibliotheksdatei zugeordnet', fix: 'sync' },
-  path_empty: { label: 'Bibliothekspfad leer', fix: 'sync' },
-  footprint_height_missing: { label: 'Footprint-Höhe fehlt in der PcbLib', fix: 'repair-heights' },
-  pin_pad_mismatch: { label: 'Pins und Pads passen nicht zusammen' },
-  library_changed_outside: { label: 'Außerhalb von PartForge geändert', fix: 'scan' },
-  library_unreadable: { label: 'Bibliotheksdatei nicht lesbar (beschädigt?)', fix: 'restore-backup' },
+  component_not_in_file: { get label() { return tr("Nicht in der eingetragenen Datei") }, fix: 'sync' },
+  library_unassigned: { get label() { return tr("Keiner Bibliotheksdatei zugeordnet") }, fix: 'sync' },
+  path_empty: { get label() { return tr("Bibliothekspfad leer") }, fix: 'sync' },
+  footprint_height_missing: { get label() { return tr("Footprint-Höhe fehlt in der PcbLib") }, fix: 'repair-heights' },
+  pin_pad_mismatch: { get label() { return tr("Pins und Pads passen nicht zusammen") } },
+  library_changed_outside: { get label() { return tr("Außerhalb von PartForge geändert") }, fix: 'scan' },
+  library_unreadable: { get label() { return tr("Bibliotheksdatei nicht lesbar (beschädigt?)") }, fix: 'restore-backup' },
   // DbLib (/api/altium/status → dblib.issues)
-  'dblib.missing': { label: 'DbLib fehlt', fix: 'regenerate' },
-  'dblib.outdated': { label: 'DbLib veraltet', fix: 'regenerate' },
-  'dblib.format': { label: 'DbLib nicht im Altium-Format', fix: 'regenerate' },
-  'dblib.db_path': { label: 'DbLib verweist auf eine andere Datenbank', fix: 'regenerate' },
-  'dblib.unreadable': { label: 'DbLib nicht lesbar', fix: 'regenerate' },
-  'dblib.db_path_chars': { label: 'Datenbankpfad für Altium ungeeignet' },
-  'dblib.file_name': { label: 'Ungültiger DbLib-Dateiname', fix: 'settings' },
-  'dblib.build': { label: 'Soll-Stand der DbLib unbekannt' },
-  'dblib.parse': { label: 'Auffälligkeit in der DbLib', fix: 'regenerate' },
-  'dblib.no_enabled_tables': { label: 'Keine Kategorie für Altium aktiviert', fix: 'categories' },
-  'dblib.library_ref': { label: 'Kategorie ohne Spalte „Library Ref“', fix: 'categories' },
-  'dblib.unsafe_name': { label: 'Name für die DbLib ungeeignet', fix: 'categories' },
-  'dblib.no_key': { label: 'Kategorie ohne Schlüsselspalte', fix: 'categories' },
-  'dblib.encoding': { label: 'Zeichen außerhalb von Windows-1252' },
-  'dblib.network': { label: 'Datenbank auf einem Netzlaufwerk' },
-  'dblib.db_missing': { label: 'Datenbankdatei fehlt' },
-  'dblib.wal': { label: 'Datenbank nicht im WAL-Modus' },
-  'dblib.other_dblibs': { label: 'Weitere DbLib-Dateien im Bibliotheksordner' },
-  'dblib.duplicates': { label: 'Gleichnamige DbLib in Altium installiert', fix: 'install-replace' },
-  'dblib.moved_install': { label: 'Alte Installation aus einem anderen Ordner', fix: 'install-replace' },
-  'dblib.open_in_editor': { label: 'DbLib in Altium in einem Editor geöffnet' },
+  'dblib.missing': { get label() { return tr("DbLib fehlt") }, fix: 'regenerate' },
+  'dblib.outdated': { get label() { return tr("DbLib veraltet") }, fix: 'regenerate' },
+  'dblib.format': { get label() { return tr("DbLib nicht im Altium-Format") }, fix: 'regenerate' },
+  'dblib.db_path': { get label() { return tr("DbLib verweist auf eine andere Datenbank") }, fix: 'regenerate' },
+  'dblib.unreadable': { get label() { return tr("DbLib nicht lesbar") }, fix: 'regenerate' },
+  'dblib.db_path_chars': { get label() { return tr("Datenbankpfad für Altium ungeeignet") } },
+  'dblib.file_name': { get label() { return tr("Ungültiger DbLib-Dateiname") }, fix: 'settings' },
+  'dblib.build': { get label() { return tr("Soll-Stand der DbLib unbekannt") } },
+  'dblib.parse': { get label() { return tr("Auffälligkeit in der DbLib") }, fix: 'regenerate' },
+  'dblib.no_enabled_tables': { get label() { return tr("Keine Kategorie für Altium aktiviert") }, fix: 'categories' },
+  'dblib.library_ref': { get label() { return tr("Kategorie ohne Spalte „Library Ref“") }, fix: 'categories' },
+  'dblib.unsafe_name': { get label() { return tr("Name für die DbLib ungeeignet") }, fix: 'categories' },
+  'dblib.no_key': { get label() { return tr("Kategorie ohne Schlüsselspalte") }, fix: 'categories' },
+  'dblib.encoding': { get label() { return tr("Zeichen außerhalb von Windows-1252") } },
+  'dblib.network': { get label() { return tr("Datenbank auf einem Netzlaufwerk") } },
+  'dblib.db_missing': { get label() { return tr("Datenbankdatei fehlt") } },
+  'dblib.wal': { get label() { return tr("Datenbank nicht im WAL-Modus") } },
+  'dblib.other_dblibs': { get label() { return tr("Weitere DbLib-Dateien im Bibliotheksordner") } },
+  'dblib.duplicates': { get label() { return tr("Gleichnamige DbLib in Altium installiert") }, fix: 'install-replace' },
+  'dblib.moved_install': { get label() { return tr("Alte Installation aus einem anderen Ordner") }, fix: 'install-replace' },
+  'dblib.open_in_editor': { get label() { return tr("DbLib in Altium in einem Editor geöffnet") } },
 }
 
 /** Name einer Prüfung je Schwere (unbekannte Schlüssel lesbar machen) */
@@ -343,7 +326,7 @@ export function checkInfo(check: string, severity?: IssueSeverity): CheckInfo {
     const override = severity ? bySeverity?.[severity] : undefined
     return override ? { ...base, ...override } : base
   }
-  if (check.startsWith('dblib.')) return { label: 'Hinweis zur DbLib' }
+  if (check.startsWith('dblib.')) return { label: tr("Hinweis zur DbLib") }
   const text = check.replace(/_/g, ' ')
   return { label: text.charAt(0).toUpperCase() + text.slice(1) }
 }
@@ -470,7 +453,7 @@ function twinMessage(issue: HealthIssue, twin: FileHealthIssue): string {
   const file = twin.library ?? /ist nicht in (.+?) enthalten\.?$/.exec(twin.message)?.[1]
   if (!name || !file) return `${issue.message} ${twin.message}`
   const kind = issue.check === 'symbol_missing' ? 'Symbol' : 'Footprint'
-  return `${kind} „${name}“ ist weder registriert noch in ${file} enthalten.`
+  return tr("{0} „{1}“ ist weder registriert noch in {2} enthalten.", { "0": String(kind), "1": String(name), "2": String(file) })
 }
 
 type ItemInput = Omit<HealthItem, 'id' | 'area' | 'subject' | 'kind' | 'component' | 'library' | 'affectedParts' | 'partNumbers' | 'fixAction'> &
@@ -628,7 +611,7 @@ export function mergeHealth(
     duplicates.info = {
       ...duplicates.info,
       fix: undefined,
-      hint: 'Der anderen Bibliothek einen eigenen DbLib-Dateinamen geben oder sie in Altium deinstallieren – PartForge ersetzt nur Installationen dieser Bibliothek.',
+      hint: tr("Der anderen Bibliothek einen eigenen DbLib-Dateinamen geben oder sie in Altium deinstallieren – PartForge ersetzt nur Installationen dieser Bibliothek."),
     }
   }
   // Footprint-Höhen bzw. beschädigte Dateien: die Ein-Klick-Korrektur gibt es nur, wenn mindestens ein Eintrag sie
@@ -726,9 +709,12 @@ export function mergeHealth(
  * („Footprint-Höhe fehlt in der PcbLib: „X“ hat …“ → „„X“ hat …“).
  */
 export function findingMessage(item: Pick<HealthItem, 'message'>, group: { info: Pick<CheckInfo, 'label'> }): string {
-  const prefix = `${group.info.label}: `
   const { message } = item
-  return message.length > prefix.length && message.toLowerCase().startsWith(prefix.toLowerCase()) ? message.slice(prefix.length) : message
+  const colon = message.indexOf(': ')
+  if (colon > 0 && tr(message.slice(0, colon)).toLowerCase() === group.info.label.toLowerCase()) {
+    return localizeMessage(message.slice(colon + 2))
+  }
+  return localizeMessage(message)
 }
 
 /** Bauteile ohne Fehler und Warnungen – für den Gesundheitsring der Übersicht */

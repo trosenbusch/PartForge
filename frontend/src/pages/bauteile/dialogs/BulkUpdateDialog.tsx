@@ -1,3 +1,4 @@
+import { metadataLabel, localizeMessage, t, useI18n } from '@/lib/i18n'
 /**
  * Massenbearbeitung: ein oder mehrere Felder auf denselben Wert setzen (oder leeren) – mit passender Eingabe je
  * Feldart, für ausgewählte Bauteile oder **alle Treffer** von Suche und Filtern (Anzahl wird beim Öffnen bestätigt;
@@ -65,12 +66,13 @@ export interface BulkUpdateDialogProps {
   onDone?: () => void
 }
 
-const TEXT_LABEL: Record<string, string> = { Value: 'Wert', Comment: 'Kommentar', Description: 'Beschreibung' }
+const TEXT_LABEL: Record<string, string> = { get Value() { return t("Wert") }, get Comment() { return t("Kommentar") }, get Description() { return t("Beschreibung") } }
 
 let rowCounter = 0
 const newRow = (): Row => ({ id: ++rowCounter, column: null, value: '', clear: false })
 
 export function BulkUpdateDialog({ open, onOpenChange, category, target, sample, onDone }: BulkUpdateDialogProps) {
+  const { t } = useI18n()
   const table = category.table
   const [rows, setRows] = useState<Row[]>(() => [newRow()])
   const [problems, setProblems] = useState<string[]>([])
@@ -82,19 +84,19 @@ export function BulkUpdateDialog({ open, onOpenChange, category, target, sample,
   const qc = useQueryClient()
   const invalidate = usePartsInvalidation()
   const fields = useMemo(() => new Map(category.fields.map((f) => [f.column, f])), [category])
-  const groupLabel = useMemo(() => new Map(FIELD_GROUPS.map((g) => [g.id, g.label])), [])
+  const groupLabel = useMemo(() => new Map(FIELD_GROUPS.map((g) => [g.id, metadataLabel(g.label, t)])), [t])
   const fieldOptions = useMemo<ComboboxOption[]>(
     () =>
       category.fields
         .filter((f) => isEditable(f) && f.column !== PN)
         .map((f) => ({
           value: f.column,
-          label: f.label,
+          label: metadataLabel(f.label, t),
           description: f.unit ? `${f.column} · ${f.unit}` : f.column !== f.label ? f.column : undefined,
           keywords: [f.column],
           group: groupLabel.get(groupOf(f)),
         })),
-    [category, groupLabel],
+    [category, groupLabel, t],
   )
 
   /** Je Öffnen eine eigene Zählung (Schlüssel) – nie die Zahl eines früheren Öffnens aus dem Cache */
@@ -168,10 +170,10 @@ export function BulkUpdateDialog({ open, onOpenChange, category, target, sample,
     meta: { silentError: true },
     onSuccess: (res) => {
       invalidate(table, { counts: false })
-      if (res.updated === 0) toast.success('Keine Änderung nötig', { description: 'Alle Bauteile hatten die Werte bereits.' })
-      else showChangeToast(qc, table, res, `${plural(res.updated, 'Bauteil', 'Bauteile')} geändert`)
+      if (res.updated === 0) toast.success(t("Keine Änderung nötig"), { description: t("Alle Bauteile hatten die Werte bereits.") })
+      else showChangeToast(qc, table, res, t("{1} geändert", { 1: plural(res.updated, t("Bauteil"), t("Bauteile")) }))
       if (res.warnings.length) {
-        toast.warning('Bitte prüfen', { description: res.warnings.slice(0, 4).join(' · ') + (res.warnings.length > 4 ? ' …' : '') })
+        toast.warning(t("Bitte prüfen"), { description: res.warnings.slice(0, 4).map(localizeMessage).join(' · ') + (res.warnings.length > 4 ? ' …' : '') })
       }
       onOpenChange(false)
       onDone?.()
@@ -184,9 +186,9 @@ export function BulkUpdateDialog({ open, onOpenChange, category, target, sample,
         return
       }
       const errs = fieldErrors(err)
-      const list = Object.entries(errs).map(([k, v]) => `${fields.get(k)?.label ?? k}: ${v}`)
+      const list = Object.entries(errs).map(([k, v]) => `${metadataLabel(fields.get(k)?.label ?? k, t)}: ${v}`)
       setProblems(list.length ? list : [errorMessage(err)])
-      if (!(err instanceof ApiError)) toast.error('Massenbearbeitung fehlgeschlagen', { description: errorMessage(err) })
+      if (!(err instanceof ApiError)) toast.error(t("Massenbearbeitung fehlgeschlagen"), { description: errorMessage(err) })
     },
   })
 
@@ -231,14 +233,14 @@ export function BulkUpdateDialog({ open, onOpenChange, category, target, sample,
     save.mutate(selection)
   }
 
-  const countText = plural(confirmedCount, 'Bauteil', 'Bauteile')
+  const countText = plural(confirmedCount, t("Bauteil"), t("Bauteile"))
   /** „bei allen 240 Treffern“ / „bei 3 Bauteilen“ / „bei dem Bauteil“ */
   const scopeDative =
     confirmedCount === 1
-      ? 'bei dem Bauteil'
+      ? t("bei dem Bauteil")
       : byQuery
-        ? `bei allen ${formatNumber(confirmedCount)} Treffern`
-        : `bei ${plural(confirmedCount, 'Bauteil', 'Bauteilen')}`
+        ? t("bei allen {1} Treffern", { 1: formatNumber(confirmedCount) })
+        : t("bei {1}", { 1: plural(confirmedCount, t("Bauteil"), t("Bauteilen")) })
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -246,16 +248,16 @@ export function BulkUpdateDialog({ open, onOpenChange, category, target, sample,
         <form onSubmit={(e) => void submit(e)} className="flex min-h-0 flex-1 flex-col">
           <DialogHeader
             icon={<PencilLine />}
-            title={byQuery ? `Alle ${formatNumber(confirmedCount)} Treffer bearbeiten` : `${countText} bearbeiten`}
-            description={`Gewählte Felder werden ${scopeDative} in „${category.label}“ auf denselben Wert gesetzt. Wert, Kommentar und Beschreibung passen sich automatisch an.`}
+            title={byQuery ? t("Alle {1} Treffer bearbeiten", { 1: formatNumber(confirmedCount) }) : t("{1} bearbeiten", { 1: countText })}
+            description={t("Gewählte Felder werden {1} in „{2}“ auf denselben Wert gesetzt. Wert, Kommentar und Beschreibung passen sich automatisch an.", { 1: scopeDative, 2: metadataLabel(category.label, t) })}
           />
           <DialogBody className="flex flex-col gap-3">
             {byQuery && (
               <p className="flex items-center gap-2 text-xs text-fg-muted" aria-live="polite">
                 {counting ? <Spinner size={12} tone="accent" /> : <RefreshCw aria-hidden className="size-3.5 text-fg-subtle" />}
                 {counting
-                  ? 'Treffer werden gezählt …'
-                  : `Gilt für alle ${formatNumber(confirmedCount)} Treffer von Suche und Filtern – auch für Zeilen, die die Tabelle noch nicht geladen hat.`}
+                  ? t("Treffer werden gezählt …")
+                  : t("Gilt für alle {1} Treffer von Suche und Filtern – auch für Zeilen, die die Tabelle noch nicht geladen hat.", { 1: formatNumber(confirmedCount) })}
               </p>
             )}
             <ul className="flex flex-col gap-2">
@@ -267,14 +269,14 @@ export function BulkUpdateDialog({ open, onOpenChange, category, target, sample,
                       options={fieldOptions.map((o) => ({ ...o, disabled: o.value !== r.column && used.has(o.value) }))}
                       value={r.column}
                       onValueChange={(column) => update(r.id, { column, value: '', clear: false })}
-                      placeholder="Feld wählen …"
-                      searchPlaceholder="Feld suchen …"
-                      aria-label="Feld"
+                      placeholder={t("Feld wählen …")}
+                      searchPlaceholder={t("Feld suchen …")}
+                      aria-label={t("Feld")}
                     />
                     {field ? (
                       r.clear ? (
                         <div className="flex h-8.5 items-center rounded-button border border-dashed border-line-strong px-3 text-ui text-fg-muted">
-                          Feld wird geleert
+                          {t("Feld wird geleert")}
                         </div>
                       ) : (
                         <FieldInput
@@ -282,18 +284,18 @@ export function BulkUpdateDialog({ open, onOpenChange, category, target, sample,
                           table={table}
                           value={r.value}
                           onChange={(value) => update(r.id, { value })}
-                          aria-label={`Neuer Wert für ${field.label}`}
+                          aria-label={t("Neuer Wert für {1}", { 1: metadataLabel(field.label, t) })}
                         />
                       )
                     ) : (
-                      <div className="flex h-8.5 items-center px-1 text-ui text-fg-subtle">← zuerst ein Feld wählen</div>
+                      <div className="flex h-8.5 items-center px-1 text-ui text-fg-subtle">{t("← zuerst ein Feld wählen")}</div>
                     )}
-                    <Tooltip content={r.clear ? 'Doch einen Wert setzen' : 'Feld leeren'}>
+                    <Tooltip content={r.clear ? t("Doch einen Wert setzen") : t("Feld leeren")}>
                       <Button
                         variant="ghost"
                         iconOnly
                         aria-pressed={r.clear}
-                        aria-label={`${field?.label ?? 'Feld'} leeren`}
+                        aria-label={t("{1} leeren", { 1: field ? metadataLabel(field.label, t) : t("Feld") })}
                         disabled={!field || field.required}
                         onClick={() => update(r.id, { clear: !r.clear })}
                         className={cn(r.clear && 'bg-accent-soft text-accent-text')}
@@ -304,7 +306,7 @@ export function BulkUpdateDialog({ open, onOpenChange, category, target, sample,
                     <Button
                       variant="ghost"
                       iconOnly
-                      aria-label="Zeile entfernen"
+                      aria-label={t("Zeile entfernen")}
                       disabled={rows.length === 1}
                       onClick={() => setRows((rs) => rs.filter((x) => x.id !== r.id))}
                     >
@@ -324,8 +326,8 @@ export function BulkUpdateDialog({ open, onOpenChange, category, target, sample,
                           <TriangleAlert aria-hidden className="mt-px size-3.5 shrink-0" />
                         )}
                         <span>
-                          {checks.errors[r.column] ?? checks.hints[r.column]?.join(' ')}
-                          {!checks.errors[r.column] && <span className="text-fg-muted"> – erneut „Ändern“ übernimmt den Wert trotzdem.</span>}
+                          {localizeMessage(checks.errors[r.column] ?? checks.hints[r.column]?.join(' ') ?? '')}
+                          {!checks.errors[r.column] && <span className="text-fg-muted">  {t("– erneut „Ändern“ übernimmt den Wert trotzdem.")}</span>}
                         </span>
                       </p>
                     )}
@@ -335,19 +337,19 @@ export function BulkUpdateDialog({ open, onOpenChange, category, target, sample,
             </ul>
             <div>
               <Button variant="ghost" size="sm" leftIcon={<Plus />} onClick={() => setRows((rs) => [...rs, newRow()])}>
-                Weiteres Feld
+                {t("Weiteres Feld")}
               </Button>
             </div>
             {changeCount > 0 && (
               <div className="overflow-hidden rounded-button border border-line bg-surface-2/50 text-xs text-fg-muted" aria-live="polite">
                 <p className="px-3 py-2">
-                  Setzt{' '}
+                  {t("Setzt")}{' '}
                   {Object.entries(values).map(([col, v], i) => (
                     <span key={col}>
                       {i > 0 && ', '}
-                      <span className="font-medium text-fg">{fields.get(col)?.label ?? col}</span>{' '}
+                      <span className="font-medium text-fg">{metadataLabel(fields.get(col)?.label ?? col, t)}</span>{' '}
                       {v === null ? (
-                        'auf leer'
+                        t("auf leer")
                       ) : (
                         <>
                           = <span className="mono text-fg">{displayValue(fields.get(col), v)}</span>
@@ -360,7 +362,7 @@ export function BulkUpdateDialog({ open, onOpenChange, category, target, sample,
                 {samplePn && (textChanges.length > 0 || preview.isFetching) && (
                   <div className="border-t border-line px-3 py-2">
                     <div className="mb-1 flex items-center gap-2">
-                      <span className="micro-label">Vorschau</span>
+                      <span className="micro-label">{t("Vorschau")}</span>
                       <span className="mono text-2xs text-fg-subtle">{samplePn}</span>
                       {preview.isFetching && <Spinner size={11} />}
                     </div>
@@ -370,7 +372,7 @@ export function BulkUpdateDialog({ open, onOpenChange, category, target, sample,
                           <dt className="text-fg-subtle">{TEXT_LABEL[c.col] ?? c.col}</dt>
                           <dd className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
                             {c.before && <span className="mono break-words text-fg-subtle line-through decoration-fg-subtle/50">{c.before}</span>}
-                            <ArrowRight aria-label="wird zu" className="size-3 shrink-0 self-center text-accent" />
+                            <ArrowRight aria-label={t("wird zu")} className="size-3 shrink-0 self-center text-accent" />
                             <span className="mono break-words text-fg">{c.after || '–'}</span>
                           </dd>
                         </div>
@@ -381,26 +383,25 @@ export function BulkUpdateDialog({ open, onOpenChange, category, target, sample,
               </div>
             )}
             {changed && (
-              <Callout tone="warning" title="Die Treffer haben sich geändert" urgent>
-                Inzwischen passen {plural(changed.count, 'Bauteil', 'Bauteile')} statt {formatNumber(changed.expected)} zu Suche und Filtern
-                (jemand hat Bauteile angelegt, geändert oder gelöscht). Erneut „Ändern“ übernimmt die Werte für alle{' '}
+              <Callout tone="warning" title={t("Die Treffer haben sich geändert")} urgent>
+                {t("Inzwischen passen")} {plural(changed.count, t("Bauteil"), t("Bauteile"))}  {t("statt")} {formatNumber(changed.expected)}  {t("zu Suche und Filtern (jemand hat Bauteile angelegt, geändert oder gelöscht). Erneut „Ändern“ übernimmt die Werte für alle")}{' '}
                 {formatNumber(changed.count)}.
               </Callout>
             )}
             {problems.length > 0 && (
-              <Callout tone="danger" title="Nicht gespeichert – kein Bauteil wurde geändert" urgent>
+              <Callout tone="danger" title={t("Nicht gespeichert – kein Bauteil wurde geändert")} urgent>
                 <ul className="mt-1 flex flex-col gap-0.5">
                   {problems.slice(0, 8).map((p) => (
-                    <li key={p}>{p}</li>
+                    <li key={p}>{localizeMessage(p)}</li>
                   ))}
-                  {problems.length > 8 && <li>… und {formatNumber(problems.length - 8)} weitere</li>}
+                  {problems.length > 8 && <li>{t("… und")} {formatNumber(problems.length - 8)}  {t("weitere")}</li>}
                 </ul>
               </Callout>
             )}
           </DialogBody>
           <DialogFooter>
             <Button variant="ghost" onClick={() => onOpenChange(false)}>
-              Abbrechen
+              {t("Abbrechen")}
             </Button>
             <Button
               type="submit"
@@ -409,12 +410,12 @@ export function BulkUpdateDialog({ open, onOpenChange, category, target, sample,
               disabled={!changeCount || confirmedCount === 0 || counting}
             >
               {!changeCount
-                ? 'Ändern'
+                ? t("Ändern")
                 : changed
-                  ? `${formatNumber(changed.count)} ändern`
+                  ? t("{1} ändern", { 1: formatNumber(changed.count) })
                   : confirmed
-                    ? 'Trotzdem ändern'
-                    : `${countText} ändern`}
+                    ? t("Trotzdem ändern")
+                    : t("{1} ändern", { 1: countText })}
             </Button>
           </DialogFooter>
         </form>

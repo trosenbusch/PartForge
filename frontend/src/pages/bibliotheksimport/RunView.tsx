@@ -1,8 +1,5 @@
-/**
- * Import-Job (`libraries.import`) inline: Fortschritt mit Protokoll und „Abbrechen“, danach das Ergebnis – ehrlich: grün
- * nur ohne Fehler, Konflikte und übersprungene Dateien, sonst als Warnung – mit den Listen (nicht übernommene Namen,
- * übersprungene Dateien, Fehler, Angleichen an den Hausstil) und den nächsten Schritten.
- */
+import { localizeMessage } from '@/lib/i18n'
+import { t, useI18n } from '@/lib/i18n'
 import { motion } from 'motion/react'
 import { ChevronDown, CircleAlert, CircleCheck, CircleStop, CircleX, Info, PaintbrushVertical, TriangleAlert, Upload } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
@@ -38,26 +35,25 @@ export interface RunViewProps {
 }
 
 export function RunView({ run, job, error, onRetry, onBack, onRescan, onReset }: RunViewProps) {
+  useI18n()
   if (!job && error) {
     return (
       <Callout
         tone="warning"
-        title="Stand des Imports nicht abrufbar"
+        title={t("Stand des Imports nicht abrufbar")}
         actions={
           <Button size="sm" variant="secondary" onClick={onRetry}>
-            Erneut versuchen
-          </Button>
+            {t("Erneut versuchen")}</Button>
         }
       >
-        {cleanErrorText(error.message)} Der Import läuft im Backend weiter – das Job-Dock zeigt ihn ebenfalls.
-      </Callout>
+        {cleanErrorText(error.message)} {t(" Der Import läuft im Backend weiter – das Job-Dock zeigt ihn ebenfalls.")}</Callout>
     )
   }
   if (!job) {
     return (
       <Card className="flex items-center gap-3 px-5 py-5">
         <Spinner size={16} tone="accent" />
-        <span className="text-ui text-fg-muted">Import wird gestartet …</span>
+        <span className="text-ui text-fg-muted">{t("Import wird gestartet …")}</span>
         <Skeleton className="ml-auto h-7 w-24" />
       </Card>
     )
@@ -71,6 +67,7 @@ export function RunView({ run, job, error, onRetry, onBack, onRescan, onReset }:
 // --------------------------------------------------------------------------- Fortschritt
 
 function RunProgress({ job, convert }: { job: Job<ImportRunResult>; convert: boolean }) {
+  useI18n()
   const cancel = useCancelJob()
   const headingRef = useRef<HTMLHeadingElement>(null)
   const queued = job.status === 'queued'
@@ -95,11 +92,11 @@ function RunProgress({ job, convert }: { job: Job<ImportRunResult>; convert: boo
         </span>
         <div className="min-w-0 flex-1">
           <h2 id="bibliotheksimport-lauf" ref={headingRef} tabIndex={-1} className="text-md font-semibold text-fg outline-none">
-            {stopping ? 'Wird abgebrochen …' : queued ? 'Wartet auf den Start …' : 'Bibliotheksimport läuft'}
+            {stopping ? t("Wird abgebrochen …") : queued ? t("Wartet auf den Start …") : t("Bibliotheksimport läuft")}
           </h2>
           <p className="mt-0.5 text-xs text-fg-muted [overflow-wrap:anywhere]">
-            {formatNumbersInText(job.message) || 'Wird vorbereitet …'}
-            {convert && ' Danach wird an den Hausstil angeglichen.'}
+            {formatNumbersInText(localizeMessage(job.message)) || t("Wird vorbereitet …")}
+            {convert && t(" Danach wird an den Hausstil angeglichen.")}
           </p>
           <ProgressBar
             className="mt-3"
@@ -118,25 +115,23 @@ function RunProgress({ job, convert }: { job: Job<ImportRunResult>; convert: boo
           disabled={stopping}
           onClick={() => cancel.mutate(job.id)}
         >
-          {stopping ? 'Wird abgebrochen' : 'Abbrechen'}
+          {stopping ? t("Wird abgebrochen") : t("Abbrechen")}
         </Button>
       </div>
       {log.length > 0 && (
         <div className="border-t border-line px-5 py-3">
-          <h3 className="micro-label mb-1.5">Protokoll</h3>
-          <ol className="mono flex flex-col gap-0.5 text-2xs text-fg-subtle" aria-label="Letzte Einträge des Protokolls">
+          <h3 className="micro-label mb-1.5">{t("Protokoll")}</h3>
+          <ol className="mono flex flex-col gap-0.5 text-2xs text-fg-subtle" aria-label={t("Letzte Einträge des Protokolls")}>
             {log.map((l, i) => (
               <li key={`${l.ts}-${i}`} className={cn('[overflow-wrap:anywhere]', l.level === 'warn' && 'text-warning-text', l.level === 'error' && 'text-danger-text')}>
-                {formatNumbersInText(l.text)}
+                {formatNumbersInText(localizeMessage(l.text))}
               </li>
             ))}
           </ol>
         </div>
       )}
       <p className="border-t border-line bg-surface-2/40 px-5 py-2.5 text-xs text-fg-muted">
-        Der Import schreibt in die Bibliothek – Quelle und Auswahl sind so lange gesperrt. Sie können die Seite verlassen; das Job-Dock meldet
-        den Abschluss.
-      </p>
+        {t("Der Import schreibt in die Bibliothek – Quelle und Auswahl sind so lange gesperrt. Sie können die Seite verlassen; das Job-Dock meldet den Abschluss.")}</p>
     </motion.section>
   )
 }
@@ -144,36 +139,34 @@ function RunProgress({ job, convert }: { job: Job<ImportRunResult>; convert: boo
 // --------------------------------------------------------------------------- abgebrochen / fehlgeschlagen
 
 function RunStopped({ job, onBack, onRescan }: { job: Job<ImportRunResult>; onBack: () => void; onRescan: (() => void) | null }) {
+  useI18n()
   const navigate = useNavigate()
   const failed = job.status !== 'cancelled'
-  const error = failed ? cleanErrorText(job.error ?? job.message ?? '') || 'Der Import ist fehlgeschlagen.' : null
+  const error = failed ? cleanErrorText(job.error ?? job.message ?? '') || t("Der Import ist fehlgeschlagen.") : null
   const cancelText = jobCancelText(job)
   return (
     <Callout
       tone={failed ? 'danger' : 'info'}
       urgent={failed}
-      title={failed ? 'Import fehlgeschlagen' : 'Import abgebrochen'}
+      title={failed ? t("Import fehlgeschlagen") : t("Import abgebrochen")}
       actions={
         <>
           {error && /bibliotheks-writer/i.test(error) && (
             <Button size="sm" onClick={() => navigate(SETTINGS_PLACE.altium.to)}>
-              Writer einrichten
-            </Button>
+              {t("Writer einrichten")}</Button>
           )}
           <Button size="sm" variant="secondary" onClick={onBack}>
-            Zur Auswahl
-          </Button>
+            {t("Zur Auswahl")}</Button>
           {onRescan && (
             <Button size="sm" variant="ghost" onClick={onRescan}>
-              Erneut einlesen
-            </Button>
+              {t("Erneut einlesen")}</Button>
           )}
         </>
       }
     >
       {error
         ? formatNumbersInText(error)
-        : `${cancelText === 'Abgebrochen' ? 'Der Import wurde abgebrochen.' : cancelText.replace(/\s*\.?$/, '.')} Bis dahin übernommene Dateien bleiben in der Bibliothek – für den aktuellen Stand die Quelle erneut einlesen.`}
+        : t("{0} Bis dahin übernommene Dateien bleiben in der Bibliothek – für den aktuellen Stand die Quelle erneut einlesen.", { "0": String(cancelText === 'Abgebrochen' ? t("Der Import wurde abgebrochen.") : cancelText.replace(/\s*\.?$/, '.')) })}
     </Callout>
   )
 }
@@ -211,6 +204,7 @@ function RunResult({
   onRescan: (() => void) | null
   onReset: () => void
 }) {
+  useI18n()
   const headingRef = useRef<HTMLHeadingElement>(null)
   // Ergebnis: Fokus auf die Überschrift (der Fortschritt ist weg)
   useEffect(() => headingRef.current?.focus({ preventScroll: true }), [])
@@ -218,20 +212,20 @@ function RunResult({
   const imported = result.symbols + result.footprints
   const title =
     tone === 'success'
-      ? 'Import abgeschlossen'
+      ? t("Import abgeschlossen")
       : tone === 'danger'
-        ? 'Import fehlgeschlagen'
+        ? t("Import fehlgeschlagen")
         : imported || result.copied || result.unchanged
-          ? 'Import mit Hinweisen'
-          : 'Nichts übernommen'
+          ? t("Import mit Hinweisen")
+          : t("Nichts übernommen")
   const stats: { label: string; value: number; tone?: string }[] = [
-    { label: 'kopiert', value: result.copied },
-    { label: 'unverändert', value: result.unchanged },
-    { label: 'Symbole', value: result.symbols, tone: result.symbols ? 'text-success-text' : undefined },
+    { label: t("kopiert"), value: result.copied },
+    { label: t("unverändert"), value: result.unchanged },
+    { label: t("Symbole"), value: result.symbols, tone: result.symbols ? 'text-success-text' : undefined },
     { label: 'Footprints', value: result.footprints, tone: result.footprints ? 'text-success-text' : undefined },
-    { label: 'Namen nicht übernommen', value: result.conflicts.length, tone: result.conflicts.length ? 'text-warning-text' : undefined },
-    { label: 'Dateien übersprungen', value: result.skipped.length, tone: result.skipped.length ? 'text-warning-text' : undefined },
-    { label: 'Fehler', value: result.errors.length, tone: result.errors.length ? 'text-danger-text' : undefined },
+    { label: t("Namen nicht übernommen"), value: result.conflicts.length, tone: result.conflicts.length ? 'text-warning-text' : undefined },
+    { label: t("Dateien übersprungen"), value: result.skipped.length, tone: result.skipped.length ? 'text-warning-text' : undefined },
+    { label: t("Fehler"), value: result.errors.length, tone: result.errors.length ? 'text-danger-text' : undefined },
   ]
   const conflictGroups = groupConflicts(result.conflicts)
   const removed = result.removed ?? []
@@ -253,14 +247,13 @@ function RunResult({
               {title}
             </h2>
             <p className="text-xs text-fg-muted">
-              {formatNumbersInText(result.message)} Zielordner „{run.target}“.
+              {formatNumbersInText(localizeMessage(result.message))} {t(" Zielordner „")}{run.target}“.
             </p>
           </div>
           {/* nichts geschrieben: die Auswahl stimmt noch – sonst „Quelle erneut einlesen“ (aktuelle Zustände) */}
           {!result.copied && !result.unchanged && (
             <Button size="sm" variant="ghost" onClick={onBack}>
-              Zur Auswahl
-            </Button>
+              {t("Zur Auswahl")}</Button>
           )}
         </div>
         <dl className="grid grid-cols-7 divide-x divide-line border-t border-line">
@@ -281,11 +274,11 @@ function RunResult({
               <IssueSection
                 key={g.reason}
                 tone="warning"
-                title={`${g.reason} – ${plural(g.items.length, 'Name', 'Namen')} nicht übernommen`}
+                title={t("{0} – {1} nicht übernommen", { "0": localizeMessage(g.reason), "1": String(plural(g.items.length, 'Name', t("Namen"))) })}
                 hint={
                   /doppelt/i.test(g.reason)
-                    ? 'Der Name kommt in der Quelle mehrfach vor – übernommen wurde nur das erste Vorkommen.'
-                    : 'Altium findet Symbole und Footprints nur über den Namen – ein schon registrierter Name wird nicht ein zweites Mal übernommen.'
+                    ? t("Der Name kommt in der Quelle mehrfach vor – übernommen wurde nur das erste Vorkommen.")
+                    : t("Altium findet Symbole und Footprints nur über den Namen – ein schon registrierter Name wird nicht ein zweites Mal übernommen.")
                 }
                 items={g.items}
                 render={(c) => (
@@ -294,7 +287,7 @@ function RunResult({
                     <span className="mono text-xs font-medium text-fg [overflow-wrap:anywhere]">{c.name}</span>
                     {c.registered_library && (
                       <span className="text-2xs text-fg-subtle">
-                        {/doppelt/i.test(c.reason) ? 'übernommen aus ' : 'registriert in '}
+                        {/doppelt/i.test(c.reason) ? t("übernommen aus ") : t("registriert in ")}
                         <RelPath rel={c.registered_library} className="text-2xs" />
                       </span>
                     )}
@@ -306,12 +299,12 @@ function RunResult({
             {result.skipped.length > 0 && (
               <IssueSection
                 tone="warning"
-                title={`${plural(result.skipped.length, 'Datei', 'Dateien')} übersprungen`}
+                title={t("{0} übersprungen", { "0": String(plural(result.skipped.length, t("Datei"), t("Dateien"))) })}
                 items={result.skipped}
                 render={(s) => (
                   <>
                     <RelPath rel={s.rel} className="text-xs" />
-                    <span className="text-2xs text-fg-muted">{s.reason}</span>
+                    <span className="text-2xs text-fg-muted">{localizeMessage(s.reason)}</span>
                   </>
                 )}
                 itemKey={(s) => s.rel}
@@ -320,15 +313,15 @@ function RunResult({
             {removed.length > 0 && (
               <IssueSection
                 tone="info"
-                title={`${plural(removed.length, 'Name', 'Namen')} abgemeldet – nicht mehr in der neuen Fassung`}
-                hint="Ersetzte Dateien bestimmen, was registriert ist: Schon importierte Symbole bzw. Footprints, die ihre neue Fassung nicht mehr enthält, wurden abgemeldet."
+                title={t("{0} abgemeldet – nicht mehr in der neuen Fassung", { "0": String(plural(removed.length, 'Name', t("Namen"))) })}
+                hint={t("Ersetzte Dateien bestimmen, was registriert ist: Schon importierte Symbole bzw. Footprints, die ihre neue Fassung nicht mehr enthält, wurden abgemeldet.")}
                 items={removed}
                 render={(r) => (
                   <>
                     <Badge variant="outline">{r.kind === 'symbol' ? 'Symbol' : 'Footprint'}</Badge>
                     <span className="mono text-xs font-medium text-fg [overflow-wrap:anywhere]">{r.name}</span>
                     <span className="text-2xs text-fg-subtle">
-                      aus <RelPath rel={r.library} className="text-2xs" />
+                      {t("aus ")}<RelPath rel={r.library} className="text-2xs" />
                     </span>
                   </>
                 )}
@@ -338,7 +331,7 @@ function RunResult({
             {result.errors.length > 0 && (
               <IssueSection
                 tone="danger"
-                title={plural(result.errors.length, 'Fehler', 'Fehler')}
+                title={plural(result.errors.length, t("Fehler"), t("Fehler"))}
                 items={result.errors}
                 render={(e) => (
                   <>
@@ -385,6 +378,7 @@ function IssueSection<T>({
   render: (item: T) => ReactNode
   itemKey: (item: T) => string
 }) {
+  useI18n()
   const [open, setOpen] = useState(items.length <= 5)
   const [limit, setLimit] = useState(ISSUE_PAGE)
   const shown = items.slice(0, limit)
@@ -402,7 +396,7 @@ function IssueSection<T>({
           <Icon aria-hidden className={cn('size-4 shrink-0', ISSUE_TONE[tone].icon)} />
           <span className="min-w-0 flex-1">{title}</span>
           <span className="flex shrink-0 items-center gap-1 text-xs font-normal text-fg-muted">
-            {open ? 'Ausblenden' : 'Anzeigen'}
+            {open ? t("Ausblenden") : t("Anzeigen")}
             <ChevronDown aria-hidden className={cn('size-3.5 transition-transform', open && 'rotate-180')} />
           </span>
         </button>
@@ -420,9 +414,8 @@ function IssueSection<T>({
           {rest > 0 && (
             <div className="flex items-center gap-3 border-t border-line px-3.5 py-2 text-2xs text-fg-subtle">
               <Button size="xs" variant="ghost" onClick={() => setLimit((l) => l + ISSUE_PAGE * 4)}>
-                {formatNumber(Math.min(rest, ISSUE_PAGE * 4))} weitere anzeigen
-              </Button>
-              {formatNumber(shown.length)} von {formatNumber(items.length)}
+                {formatNumber(Math.min(rest, ISSUE_PAGE * 4))} {t(" weitere anzeigen")}</Button>
+              {formatNumber(shown.length)} {t(" von ")}{formatNumber(items.length)}
             </div>
           )}
         </div>
@@ -433,6 +426,7 @@ function IssueSection<T>({
 
 /** Ergebnis des Angleichens an den Hausstil (Option „An den Hausstil angleichen“) */
 function ConversionCard({ conversion }: { conversion: NonNullable<ImportRunResult['conversion']> }) {
+  useI18n()
   const navigate = useNavigate()
   const problems = [
     ...conversion.errors.map((e) => ({ ...e, error: true })),
@@ -442,14 +436,13 @@ function ConversionCard({ conversion }: { conversion: NonNullable<ImportRunResul
     <Card>
       <CardHeader
         icon={<PaintbrushVertical />}
-        title="An den Hausstil angeglichen"
+        title={t("An den Hausstil angeglichen")}
         titleAs="h3"
-        description={formatNumbersInText(conversion.message) || `${plural(conversion.components, 'Bauteil', 'Bauteile')} angeglichen`}
+        description={formatNumbersInText(localizeMessage(conversion.message)) || t("{0} angeglichen", { "0": String(plural(conversion.components, t("Bauteil"), t("Bauteile"))) })}
         actions={
           conversion.undo ? (
             <Button size="sm" variant="ghost" onClick={() => navigate('/stapelbearbeitung')}>
-              Rückgängig …
-            </Button>
+              {t("Rückgängig …")}</Button>
           ) : undefined
         }
       />
@@ -462,7 +455,7 @@ function ConversionCard({ conversion }: { conversion: NonNullable<ImportRunResul
                 <span className={p.error ? 'text-danger-text' : 'text-fg-muted'}>{cleanErrorText(p.message)}</span>
               </li>
             ))}
-            {problems.length > 20 && <li className="text-fg-subtle">… und {formatNumber(problems.length - 20)} weitere</li>}
+            {problems.length > 20 && <li className="text-fg-subtle">{t("… und ")}{formatNumber(problems.length - 20)} {t(" weitere")}</li>}
           </ul>
         </CardContent>
       )}

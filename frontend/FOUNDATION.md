@@ -6,13 +6,13 @@ anzeigen“; im gebauten Programm per URL).
 
 ```text
 frontend/
-  index.html               lang="de", Theme-Bootstrap (kein Aufblitzen, liest localStorage → Cookie → <meta>), Favicon
+  index.html               lang="en" (gespeicherte Sprache vom Backend), Theme-Bootstrap (kein Aufblitzen, liest localStorage → Cookie → <meta>), Favicon
   public/favicon.svg       Bildmarke
   scripts/export_openapi.py  → openapi.json (npm run gen:api) bzw. Prüfung (npm run gen:api:check)
   src/
     main.tsx               Fonts (Inter Variable opsz, JetBrains Mono Variable) + CSS + <App/>
     styles/index.css       Tokens, @theme-Mapping, Basis, Utilities
-    lib/                   cn, format (de-DE), units (4k7, E-Reihen), hotkeys, native (pywebview), download (Dateien speichern),
+    lib/                   cn, i18n (en/de), format (aktive Locale), units (4k7, E-Reihen), hotkeys, native (pywebview), download (Dateien speichern),
                            prefs (Cookie), useCountUp, geometry, settingsPlaces (Orte in den Einstellungen, Begriffe)
     api/                   client, queryClient, types (ResponseOf/Filled), system, library, jobs, schema.d.ts (generiert)
     app/                   App, router, navigation (appNavigate), RootLayout, ThemeProvider/theme, stores, commands, page,
@@ -73,7 +73,7 @@ $env:PARTFORGE_HOME='C:/PartForge-Examples/Tools/PartForge/tests/_tmp/fe-home'
    divide-line`) und randlose Hover-Zeilen statt umrandeter Kacheln.
 7. **Fokus immer sichtbar**: `focus-ring` (Controls) bzw. `focus-ring-inset` (Zeilen, die bis an den Kartenrand gehen),
    `focus-ring-panel` (fokussierbare Inhaltsbereiche – Ring unter dem Inhalt). Nie nur über eine Hintergrundfarbe.
-8. **Deutsch, ohne Jargon**: „und“ statt „&“, Zahlen deutsch (`formatNumber` → „1.156“), „Claude-API“, kurze
+8. **Englisch als Standard, Deutsch wählbar, ohne Jargon**: Texte über `useI18n()` aus `@/lib/i18n`, Zahlen über die aktive Locale (`formatNumber`). In Deutsch „und“ statt „&“, „Claude-API“, kurze
    Komposita mit geschütztem Bindestrich (`U+2011`, z. B. „3D‑Modelle“), „Altium Designer“ nicht umbrechen.
    **Feste Begriffe:** IPC-Dichte immer „Klein (L) · Nominal (N) · Groß (M)“ in dieser Reihenfolge (`densityLabel()`,
    `DENSITY_ORDER` aus `@/pages/footprints/lib/calc` – nie „Most/Least“, „Kompakt/Robust“); der Schreiber der
@@ -82,6 +82,29 @@ $env:PARTFORGE_HOME='C:/PartForge-Examples/Tools/PartForge/tests/_tmp/fe-home'
    „4.7kΩ“) und als solche beschriftet; Bibliotheksaktionen „Neue Bibliothek anlegen …“ / „Bibliothek öffnen …“.
 9. **Endlos-Animationen sparsam** (WebView2-GPU im Leerlauf): nur während einer Aktion oder kurz nach dem Laden; keine
    `backdrop-blur` auf vielen/bewegten Elementen. `prefers-reduced-motion` wird global respektiert.
+
+## Mehrsprachigkeit
+
+Englisch ist die Vorgabe, Deutsch lässt sich unter Einstellungen → Allgemein → Sprache auswählen und speichern.
+`AppSettings.language` (`en`/`de`) ist die dauerhafte Quelle. Das Backend setzt die Sprache bereits im HTML;
+`LanguageProvider` übernimmt sie nach einem erfolgreichen Speichern ohne Neustart. Ein ungespeicherter Entwurf
+ändert die Sprache nicht. Bestehende Einstellungen ohne Sprachfeld verwenden Englisch.
+
+- `const { t, language, locale } = useI18n()` macht Komponenten reaktiv; `t` gehört in die Abhängigkeiten von
+  Memos/Effekten, die übersetzte Texte erzeugen. Reine Helfer verwenden `t()` und `getLocale()` zur Laufzeit.
+- Deutsche Quelltexte bilden die Schlüssel der englischen Kataloge unter `src/i18n/catalogs/`. Platzhalter werden
+  als Werte übergeben, z. B. `t('Datei {name} gespeichert', { name })`. Benutzerdaten niemals als Übersetzungsschlüssel
+  behandeln. Statische Metadaten bleiben Quelltexte bis zur Anzeige oder liefern ihre Texte über Getter.
+- Routen, Befehlsgruppen, Kategorien-/Feldkennungen, Filterwerte und CAD-/Datenbankwerte bleiben stabil.
+  `metadataLabel` liefert kontextbezogene eingebaute Feld-/Optionsbezeichnungen; freie Benutzereingaben bleiben unverändert.
+- `localizeMessage()` übersetzt bereits gerenderte Backend-Diagnosen ausschließlich an der Anzeigestelle.
+  Rohantworten und Jobprotokolle bleiben für Parser und Speicherung unverändert. Technische Dateiinhalte werden nicht übersetzt.
+- Mengen, Datumsangaben und Einheiten verwenden Helfer aus `lib/format`, `lib/units` und `lib/geometry`.
+  `pluralLabel` berücksichtigt auch unterschiedliche englische Pluralformen bei gleichlautenden deutschen Nomen.
+- Weitere Sprachen benötigen einen Sprachcode in Backend/Frontend, einen Katalog und einen Eintrag in der Sprachauswahl.
+  Die Anzeige darf für Sprachwechsel nicht neu geladen werden; Formular- und Bibliotheksdaten bleiben erhalten.
+
+Regressionen: `frontend/tests/*i18n.unit.test.mjs` sowie `tests/ui/i18n_regressions.py` gegen einen isolierten Server.
 
 ## Seiten bauen
 
@@ -227,7 +250,7 @@ Abweichungen vom Brief (WCAG AA): `--pf-fg-subtle` dunkel `#858DA1`, hell `#5F67
 | `Separator` (`fade`), `ScrollArea`, `Sparkline`, `CountUp`, `useCountUp`, `Illustration`, `useReturnFocus` | `ScrollArea`: `focusable` (`'auto'` Standard = Tab-Stopp nur, wenn der Bereich scrollt und nichts Fokussierbares enthält – Pfeiltasten scrollen; `true`/`false` erzwingen), `aria-label` für den Bereich |
 
 Toasts: `import { toast } from 'sonner'` → `toast.success('Serie angelegt', { description })`, `toast.error`,
-`toast.promise`, `toast(…, { action: { label, onClick } })`. Fehlertexte auf Deutsch mit Lösungsweg. Wiederholbare
+`toast.promise`, `toast(…, { action: { label, onClick } })`. Fehlertexte in der gewählten Sprache mit Lösungsweg. Wiederholbare
 Meldungen mit fester `id`, damit sie sich nicht stapeln. Toasts weichen dem Job-Dock automatisch aus.
 
 Logo: `ForgeLogo` (`variant="full|mark"`, `glow`, `animated`) und `ForgeMark` (`title=""` = dekorativ).

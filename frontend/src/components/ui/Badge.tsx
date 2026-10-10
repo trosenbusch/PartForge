@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import type { ComponentProps } from 'react'
 import { cn } from '@/lib/cn'
 import { badgeVariants, type BadgeVariantProps } from './variants'
@@ -10,6 +11,7 @@ export interface BadgeProps extends ComponentProps<'span'>, BadgeVariantProps {
 }
 
 export function Badge({ className, variant, size, dot, pulse, children, ...props }: BadgeProps) {
+  useI18n()
   return (
     <span className={cn(badgeVariants({ variant, size }), className)} {...props}>
       {dot && (

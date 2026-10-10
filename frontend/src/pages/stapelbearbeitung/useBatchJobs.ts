@@ -1,11 +1,4 @@
-/**
- * Jobs der Stapelbearbeitung: Prüfen (`housestyle.check`, liest nur), Anwenden und Rückgängig machen
- * (`libraries.conform`, halten die Bibliothek). Die Seite zeigt Fortschritt und Ergebnis selbst
- * (`trackJob(…, { dock: false, toast: false })` + `useInlineJob`); verlässt man sie, übernimmt das Job-Dock samt
- * Abschluss-Toast. Ergebnisse landen im Sitzungszustand (`store.ts`) und überstehen so einen Seitenwechsel.
- *
- * Anwenden und Rückgängig verbrauchen den Bericht (die Dateien ändern sich) – danach heißt es „Erneut prüfen“.
- */
+import { useI18n } from '@/lib/i18n'
 import { useMutation } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import {
@@ -39,6 +32,7 @@ export interface RunView<TResult> {
 }
 
 export function useBatchJobs(root: string) {
+  const { t: tr } = useI18n()
   const session = useBatchSession(root)
   const checkId = session.check?.jobId
   const applyId = session.apply?.jobId
@@ -113,7 +107,7 @@ export function useBatchJobs(root: string) {
 
   const startCheck = useMutation({
     mutationFn: ({ input }: { input: ConformInput; key: string }) => housestyleApi.check(input),
-    meta: { errorTitle: 'Prüfung konnte nicht gestartet werden' },
+    meta: { errorTitle: tr("Prüfung konnte nicht gestartet werden") },
     onSuccess: ({ job }, { input, key }) => {
       trackJob(job, { dock: false, toast: false, doneMessage: (j) => j.result?.message })
       // der alte Bericht bleibt stehen, bis der neue da ist; Ergebnisse von Anwenden/Rückgängig sind damit erledigt
@@ -131,7 +125,7 @@ export function useBatchJobs(root: string) {
   const startApply = useMutation({
     mutationFn: ({ input }: { input: ConformInput; components: number; libraries: number }) =>
       housestyleApi.apply(input),
-    meta: { errorTitle: 'Hausstil konnte nicht angewendet werden' },
+    meta: { errorTitle: tr("Hausstil konnte nicht angewendet werden") },
     onSuccess: ({ job }, { input, components, libraries }) => {
       trackJob(job, {
         dock: false,
@@ -153,7 +147,7 @@ export function useBatchJobs(root: string) {
 
   const startUndo = useMutation({
     mutationFn: () => housestyleApi.undo(),
-    meta: { errorTitle: 'Stapelbearbeitung konnte nicht rückgängig gemacht werden' },
+    meta: { errorTitle: tr("Stapelbearbeitung konnte nicht rückgängig gemacht werden") },
     onSuccess: ({ job }) => {
       trackJob(job, {
         dock: false,

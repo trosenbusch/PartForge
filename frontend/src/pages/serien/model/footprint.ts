@@ -1,3 +1,4 @@
+import { localizeMessage, t as tr } from '@/lib/i18n'
 /**
  * Footprint-Anfrage einer Baugröße – wie partforge/domain/series.py `_footprint_request` (Hinweis der Baugröße bzw.
  * der Vorlage, Chip-Bauteilart aus der Kategorie). Dient der Vorschau benötigter Footprints vor dem Erzeugen.
@@ -35,7 +36,7 @@ export function footprintRequestFor(t: SeriesTemplate, size: string, density: De
  * („Footprint-Höhe „Exakt““, „Land Pattern nach Herstellerempfehlung im Datenblatt …“) – der volle Text steht im Tooltip.
  */
 export function nameReasonTopic(reason: string): string {
-  const first = reason.split(/:|\s[–—-]\s/)[0]?.trim() ?? ''
-  if (!first) return 'eigenes Land Pattern'
+  const first = localizeMessage(reason).split(/:|\s[–—-]\s/)[0]?.trim() ?? ''
+  if (!first) return tr("eigenes Land Pattern")
   return first.length <= 90 ? first : `${first.slice(0, 80).trimEnd()} …`
 }

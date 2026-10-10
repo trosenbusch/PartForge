@@ -1,3 +1,4 @@
+import { getLocale, localizeMessage, useI18n } from '@/lib/i18n'
 /**
  * Seitenleiste der Vorschau: Symbol der Serie (große Vorschau mit Bezeichner und Kommentar eines Beispiels) und alle
  * Footprints – „neu“ = wird beim Erzeugen nach IPC-7351B generiert. Überfahren oder Fokus zeigt den Footprint auf der
@@ -35,8 +36,9 @@ const libName = (path: string | null) => (path ? baseName(path.replace(/\\/g, '/
 
 
 export function FootprintPanel({ template, symbol, footprints, usage, density, comment, className, style }: FootprintPanelProps) {
+  const { t: tr } = useI18n()
   const uid = useId().replace(/:/g, '')
-  const sorted = [...footprints].sort((a, b) => Number(a.exists) - Number(b.exists) || a.name.localeCompare(b.name, 'de'))
+  const sorted = [...footprints].sort((a, b) => Number(a.exists) - Number(b.exists) || a.name.localeCompare(b.name, getLocale()))
   const [pinned, setPinned] = useState<string | null>(null)
   const [hovered, setHovered] = useState<string | null>(null)
   const activeName = hovered ?? pinned ?? sorted[0]?.name ?? null
@@ -48,7 +50,7 @@ export function FootprintPanel({ template, symbol, footprints, usage, density, c
 
   return (
     <section
-      aria-label="Symbol und Footprints der Serie"
+      aria-label={tr("Symbol und Footprints der Serie")}
       style={style}
       className={cn('@container flex min-w-0 flex-col overflow-hidden rounded-card border border-line bg-surface shadow-card', className)}
     >
@@ -56,10 +58,10 @@ export function FootprintPanel({ template, symbol, footprints, usage, density, c
         <div className="flex min-w-0 shrink-0 flex-col @[40rem]:min-h-0 @[40rem]:border-r @[40rem]:border-line">
           <div className="px-4 pb-3 pt-3.5">
             <div className="flex items-baseline justify-between gap-2">
-              <span className="micro-label">Symbol</span>
+              <span className="micro-label">{tr("Symbol")}</span>
               {symbol && (
                 <span className="min-w-0 truncate text-2xs text-fg-subtle">
-                  {symbol.exists ? `vorhanden${symbol.library ? ` · ${libName(symbol.library)}` : ''}` : 'wird angelegt'}
+                  {symbol.exists ? tr("vorhanden{v0}", { v0: symbol.library ? ` · ${libName(symbol.library)}` : '' }) : tr("wird angelegt")}
                 </span>
               )}
             </div>
@@ -76,7 +78,7 @@ export function FootprintPanel({ template, symbol, footprints, usage, density, c
                       showPartTabs={false}
                       comment={comment ?? undefined}
                       className="size-full"
-                      aria-label={`Symbol ${symbol.name}`}
+                      aria-label={tr("Symbol {v0}", { v0: symbol.name })}
                     />
                   ) : sym.isFetching ? (
                     <Skeleton className="m-2 h-[calc(100%-1rem)]" />
@@ -89,17 +91,16 @@ export function FootprintPanel({ template, symbol, footprints, usage, density, c
                 <div className="mono mt-1.5 truncate text-ui font-medium text-fg">{symbol.name}</div>
               </>
             ) : (
-              <p className="mt-2 text-xs text-warning-text">Kein sicheres Symbol – die Zeilen sind ungültig.</p>
+              <p className="mt-2 text-xs text-warning-text">{tr("Kein sicheres Symbol – die Zeilen sind ungültig.")}</p>
             )}
           </div>
 
           <div className="flex flex-col border-t border-line @[40rem]:min-h-0 @[40rem]:flex-1">
             <div className="flex items-center justify-between gap-2 px-4 pt-3">
-              <span className="micro-label">Footprints</span>
+              <span className="micro-label">{tr("Footprints")}</span>
               <span className="text-2xs text-fg-subtle">
-                {created ? `${formatNumber(created)} neu · ` : ''}
-                {formatNumber(sorted.length - created)} vorhanden
-              </span>
+                {created ? tr("{v0} neu · ", { v0: formatNumber(created) }) : ''}
+                {formatNumber(sorted.length - created)} {tr("vorhanden")}</span>
             </div>
             <div className="relative mx-3 mb-3 mt-2.5 h-40 shrink-0 overflow-hidden rounded-control border border-line bg-canvas @[40rem]:h-auto @[40rem]:min-h-32 @[40rem]:flex-1">
               {fp.data?.footprint ? (
@@ -110,14 +111,14 @@ export function FootprintPanel({ template, symbol, footprints, usage, density, c
                   showLegend={false}
                   showInfo={false}
                   className="size-full"
-                  aria-label={`Footprint ${active?.name ?? ''}`}
+                  aria-label={tr("Footprint {v0}", { v0: active?.name ?? '' })}
                 />
               ) : fp.isFetching ? (
                 <Skeleton className="m-3 h-[calc(100%-1.5rem)] bg-surface-3/30" />
               ) : (
                 <div className={cn('flex size-full flex-col items-center justify-center gap-1.5 text-2xs', CHROME_MUTED.board)}>
                   <CircuitBoard aria-hidden className="size-5" />
-                  {active ? 'Keine Vorschau verfügbar' : 'Keine Footprints'}
+                  {active ? tr("Keine Vorschau verfügbar") : tr("Keine Footprints")}
                 </div>
               )}
               {active && (
@@ -127,7 +128,7 @@ export function FootprintPanel({ template, symbol, footprints, usage, density, c
               )}
               {active?.name_reason && (
                 // warum der Name eine Kennung trägt – kurz auf der Leinwand, der volle Grund im Tooltip
-                <Tooltip side="left" content={<span className="block max-w-xs leading-snug">{active.name_reason}</span>}>
+                <Tooltip side="left" content={<span className="block max-w-xs leading-snug">{localizeMessage(active.name_reason)}</span>}>
                   <button
                     type="button"
                     className={cn(
@@ -137,9 +138,9 @@ export function FootprintPanel({ template, symbol, footprints, usage, density, c
                   >
                     <Info aria-hidden className="size-3 shrink-0" />
                     <span className="min-w-0 truncate">
-                      Kennung <span className="mono">{suffix || '…'}</span>: {nameReasonTopic(active.name_reason)}
+                      {tr("Kennung")} <span className="mono">{suffix || '…'}</span>: {nameReasonTopic(active.name_reason)}
                     </span>
-                    <span className="sr-only"> – {active.name_reason}</span>
+                    <span className="sr-only"> – {localizeMessage(active.name_reason)}</span>
                   </button>
                 </Tooltip>
               )}
@@ -171,14 +172,14 @@ export function FootprintPanel({ template, symbol, footprints, usage, density, c
                       <FootprintName footprint={f} />
                     </span>
                     {f.size && <span className="mono shrink-0 text-2xs text-fg-subtle">{f.size}</span>}
-                    {f.exists ? <Badge variant="neutral">vorhanden</Badge> : <Badge variant="info">neu</Badge>}
+                    {f.exists ? <Badge variant="neutral">{tr("vorhanden")}</Badge> : <Badge variant="info">{tr("neu")}</Badge>}
                     <span className="w-10 shrink-0 text-right text-2xs tabular-nums text-fg-muted">
                       {formatNumber(usage[f.name] ?? 0)}
                     </span>
                   </button>
                   {reasonId && (
                     <span id={reasonId} hidden>
-                      {f.name_reason}
+                      {localizeMessage(f.name_reason ?? '')}
                     </span>
                   )}
                 </li>
@@ -187,8 +188,7 @@ export function FootprintPanel({ template, symbol, footprints, usage, density, c
           </ul>
           {sorted.length > 0 && (
             <p className="shrink-0 border-t border-line px-4 py-2 text-2xs text-fg-subtle">
-              Zahl rechts = Bauteile je Footprint. Neue Footprints entstehen nach IPC-7351B im Hausstil.
-            </p>
+              {tr("Zahl rechts = Bauteile je Footprint. Neue Footprints entstehen nach IPC-7351B im Hausstil.")}</p>
           )}
         </div>
       </div>

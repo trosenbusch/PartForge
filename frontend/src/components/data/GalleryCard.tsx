@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 /**
  * Karte für die <VirtualGallery>: Vorschaufläche oben, Name (Monospace, höchstens zwei Zeilen) und Zusatzzeile unten.
  * `board` = dunkle Leiterplatten-Fläche (Footprints), sonst App-Hintergrund (Symbole).
@@ -31,6 +32,7 @@ const plain = (node: ReactNode): string | undefined =>
   typeof node === 'string' ? node : typeof node === 'number' ? String(node) : undefined
 
 export function GalleryCard({ title, titleText, mono = true, meta, thumbnail, badge, selected, board, className }: GalleryCardProps) {
+  useI18n()
   const fullTitle = titleText ?? plain(title)
   const fullMeta = plain(meta)
   return (

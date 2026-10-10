@@ -1,11 +1,5 @@
-/**
- * Eingabe für Vorlagen wie „RES {Size} {Resistance:rkm}“: Platzhalter erscheinen als Chips (unbekannte Felder rot),
- * „{“ öffnet die Feldliste, „:“ im Platzhalter die Formate; ↑/↓, Enter/Tab übernehmen, Esc schließt,
- * Strg+Leertaste öffnet die Liste an der Schreibmarke. Live-Vorschau über `onPreviewRequest` (entprellt).
- *
- *   <TemplateTokenInput value={tpl} onValueChange={setTpl} fields={fields}
- *     preview={rendered} previewLoading={pending} onPreviewRequest={(t) => render(t)} />
- */
+import { useI18n } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { Braces } from 'lucide-react'
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { useFieldContext, Spinner } from '@/components/ui'
@@ -54,7 +48,7 @@ interface Suggestion {
   hint?: string
 }
 
-const fold = (s: string) => s.toLocaleLowerCase('de-DE')
+const fold = (s: string, locale: string) => s.toLocaleLowerCase(locale)
 
 let measureCtx: CanvasRenderingContext2D | null = null
 function textWidth(text: string, font: string): number {
@@ -73,7 +67,7 @@ export function TemplateTokenInput({
   previewLoading,
   onPreviewRequest,
   debounceMs = 300,
-  placeholder = 'z. B. RES {Size} {Resistance} {Tolerance}',
+  placeholder = tr("z. B. RES {Size} {Resistance} {Tolerance}"),
   invalid,
   disabled,
   size = 'md',
@@ -81,6 +75,7 @@ export function TemplateTokenInput({
   'aria-label': ariaLabel,
   className,
 }: TemplateTokenInputProps) {
+  const { t: tr, locale } = useI18n()
   const field = useFieldContext()
   const uid = useId().replace(/:/g, '')
   const inputId = id ?? field?.id ?? `${uid}-input`
@@ -92,10 +87,10 @@ export function TemplateTokenInput({
   const [scrollLeft, setScrollLeft] = useState(0)
 
   const segments = useMemo(() => parseTemplate(value), [value])
-  const known = useMemo(() => new Map(fields.map((f) => [fold(f.name), f])), [fields])
+  const known = useMemo(() => new Map(fields.map((f) => [fold(f.name, locale), f])), [fields, locale])
   const formatNames = useMemo(() => new Set(formats.map((f) => f.name)), [formats])
   // nur abgeschlossene Platzhalter prüfen (während des Tippens nicht rot werden)
-  const unknownCount = segments.filter((s) => s.kind === 'token' && s.closed && s.name && !known.has(fold(s.name))).length
+  const unknownCount = segments.filter((s) => s.kind === 'token' && s.closed && s.name && !known.has(fold(s.name, locale))).length
 
   // ------------------------------------------------------------------ Vorschläge
   const token = tokenAt(segments, caret)
@@ -107,16 +102,16 @@ export function TemplateTokenInput({
     : ''
   const suggestions: Suggestion[] = useMemo(() => {
     if (!mode) return []
-    const q = fold(query)
+    const q = fold(query, locale)
     if (mode === 'format') {
       return formats
-        .filter((f) => !q || fold(f.name).startsWith(q) || fold(f.label).includes(q))
+        .filter((f) => !q || fold(f.name, locale).startsWith(q) || fold(f.label, locale).includes(q))
         .map((f) => ({ key: `f:${f.name}`, value: f.name, label: f.name, detail: f.label, hint: f.example }))
     }
     const scored = fields
       .map((f) => {
-        const n = fold(f.name)
-        const l = fold(f.label ?? '')
+        const n = fold(f.name, locale)
+        const l = fold(f.label ?? '', locale)
         const score = !q ? 1 : n.startsWith(q) ? 3 : l.startsWith(q) ? 2 : n.includes(q) || l.includes(q) ? 1 : 0
         return { f, score }
       })
@@ -129,7 +124,7 @@ export function TemplateTokenInput({
       detail: f.label && f.label !== f.name ? f.label : undefined,
       hint: f.unit ?? undefined,
     }))
-  }, [mode, query, fields, formats])
+  }, [mode, query, fields, formats, locale])
   const listOpen = open && !disabled && suggestions.length > 0
   const activeIndex = Math.min(highlighted, Math.max(0, suggestions.length - 1))
 
@@ -206,7 +201,7 @@ export function TemplateTokenInput({
   const tokenKey = token ? `${token.start}:${mode}` : ''
   useEffect(() => {
     if (tokenKey && document.activeElement === inputRef.current) setOpen(true)
-  }, [tokenKey])
+  }, [tokenKey, tr])
 
   // entprellte Vorschau
   const requestRef = useRef(onPreviewRequest)
@@ -217,12 +212,12 @@ export function TemplateTokenInput({
     if (!requestRef.current) return
     const t = window.setTimeout(() => requestRef.current?.(value), debounceMs)
     return () => window.clearTimeout(t)
-  }, [value, debounceMs])
+  }, [value, debounceMs, tr])
 
   // Spiegel-Ebene mit dem Eingabefeld mitscrollen
   useLayoutEffect(() => {
     if (mirrorRef.current) mirrorRef.current.scrollLeft = scrollLeft
-  }, [scrollLeft, value])
+  }, [scrollLeft, value, tr])
 
   // Position der Liste unter dem Platzhalter
   const [listLeft, setListLeft] = useState(0)
@@ -234,7 +229,7 @@ export function TemplateTokenInput({
     const font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`
     const x = textWidth(value.slice(0, tokenStart), font) - el.scrollLeft
     setListLeft(Math.max(0, Math.min(x, el.clientWidth - 240)))
-  }, [tokenStart, value])
+  }, [tokenStart, value, tr])
 
   const listId = `${uid}-list`
   const optionId = (i: number) => `${uid}-opt-${i}`
@@ -243,7 +238,7 @@ export function TemplateTokenInput({
     segments.map((s, i) => {
       if (s.kind === 'text') return <span key={i}>{s.text}</span>
       const t = s as TemplateSegmentToken
-      const fieldKnown = t.name ? known.has(fold(t.name)) : false
+      const fieldKnown = t.name ? known.has(fold(t.name, locale)) : false
       const formatOk = !t.format || formatNames.has(t.format.toLowerCase())
       const tone = !t.name || !t.closed ? 'pending' : !fieldKnown ? 'unknown' : !formatOk ? 'format' : 'ok'
       const raw = value.slice(t.start, t.end)
@@ -327,8 +322,8 @@ export function TemplateTokenInput({
             onMouseDown={(e) => e.preventDefault()}
             onClick={openAtCaret}
             disabled={disabled}
-            title="Feld einfügen (Strg+Leertaste)"
-            aria-label="Feld einfügen"
+            title={tr("Feld einfügen (Strg+Leertaste)")}
+            aria-label={tr("Feld einfügen")}
             className="flex size-6 shrink-0 items-center justify-center rounded-[6px] text-fg-subtle outline-none transition-colors hover:bg-surface-3 hover:text-fg [&_svg]:size-3.5"
           >
             <Braces aria-hidden />
@@ -339,13 +334,13 @@ export function TemplateTokenInput({
           <div
             id={listId}
             role="listbox"
-            aria-label={mode === 'format' ? 'Formate' : 'Felder'}
+            aria-label={mode === 'format' ? tr("Formate") : tr("Felder")}
             className="glass pop-anim absolute top-full z-popover mt-1.5 max-h-64 w-60 overflow-y-auto rounded-card p-1"
             style={{ left: listLeft }}
             data-state="open"
             data-side="bottom"
           >
-            <div className="micro-label px-2 pb-1 pt-1.5">{mode === 'format' ? 'Format' : 'Feld einfügen'}</div>
+            <div className="micro-label px-2 pb-1 pt-1.5">{mode === 'format' ? 'Format' : tr("Feld einfügen")}</div>
             {suggestions.map((s, i) => (
               <div
                 key={s.key}
@@ -376,7 +371,7 @@ export function TemplateTokenInput({
       </div>
 
       <div id={`${uid}-preview`} className="flex min-h-6 items-center gap-2 text-xs" aria-live="polite">
-        <span className="micro-label shrink-0">Vorschau</span>
+        <span className="micro-label shrink-0">{tr("Vorschau")}</span>
         {previewLoading ? (
           <Spinner size={12} tone="accent" />
         ) : preview !== undefined && preview !== null && preview !== '' ? (
@@ -386,7 +381,7 @@ export function TemplateTokenInput({
         )}
         {unknownCount > 0 && (
           <span className="ml-auto shrink-0 text-danger-text">
-            {unknownCount === 1 ? '1 unbekanntes Feld' : `${unknownCount} unbekannte Felder`}
+            {unknownCount === 1 ? tr("1 unbekanntes Feld") : tr("{0} unbekannte Felder", { "0": String(unknownCount) })}
           </span>
         )}
       </div>

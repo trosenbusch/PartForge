@@ -1,7 +1,4 @@
-/**
- * Kleine Bausteine des Bibliotheksimports: Zustand eines Namens, Art einer Bibliothek, Auswahlkästchen im Dateibaum,
- * relativer Pfad mit hervorgehobenem Dateinamen.
- */
+import { t, useI18n } from '@/lib/i18n'
 import { CircuitBoard, Shapes } from 'lucide-react'
 import { Fragment } from 'react'
 import { STATE_LABELS, type ImportComponentState } from '@/api/libimport'
@@ -27,9 +24,10 @@ const COUNT_LABELS: Record<ImportComponentState, readonly [string, string]> = {
 
 /** Zustand eines Namens der Quelle (neu, schon importiert, Name vergeben, doppelt) – optional mit Anzahl */
 export function StateBadge({ state, count, className }: { state: ImportComponentState; count?: number; className?: string }) {
+  useI18n()
   return (
     <Badge variant={STATE_VARIANT[state]} className={cn('tabular-nums', className)}>
-      {count !== undefined ? `${formatNumber(count)} ${COUNT_LABELS[state][count === 1 ? 0 : 1]}` : STATE_LABELS[state]}
+      {count !== undefined ? `${formatNumber(count)} ${t(COUNT_LABELS[state][count === 1 ? 0 : 1])}` : t(STATE_LABELS[state])}
     </Badge>
   )
 }
@@ -39,6 +37,7 @@ export function StateBadge({ state, count, className }: { state: ImportComponent
  * `PathText`), sehr lange Namen notfalls an beliebiger Stelle.
  */
 export function RelPath({ rel, muted, className }: { rel: string; muted?: boolean; className?: string }) {
+  useI18n()
   const parts = rel.split(/(?<=[\\/])/)
   const last = parts.length - 1
   return (
@@ -55,6 +54,7 @@ export function RelPath({ rel, muted, className }: { rel: string; muted?: boolea
 
 /** Symbol (SchLib) bzw. Footprint (PcbLib) – dekorativ, die Art steht immer auch als Text daneben */
 export function KindIcon({ kind, className }: { kind: LibKind; className?: string }) {
+  useI18n()
   const Icon = kind === 'schlib' ? Shapes : CircuitBoard
   return <Icon aria-hidden className={cn('size-4 shrink-0 text-fg-muted', className)} />
 }
@@ -64,6 +64,7 @@ export function KindIcon({ kind, className }: { kind: LibKind; className?: strin
  * Liste, `aria-checked` an der Zeile, Leertaste schaltet), darin dürfen keine eigenen Bedienelemente liegen.
  */
 export function CheckMark({ checked, disabled }: { checked: CheckedState; disabled?: boolean }) {
+  useI18n()
   const on = checked === true
   const mixed = checked === 'indeterminate'
   return (

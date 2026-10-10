@@ -1,3 +1,4 @@
+import { localizeMessage, t as tr, useI18n } from '@/components/preview/i18n'
 /**
  * Pin-Tabelle des IC-Editors (Tabellenkalkulations-Gefühl): Nummer, Name (Überstrich-Hilfe), elektrischer Typ,
  * Seite (automatisch/links/rechts/oben/unten), Gruppe, Teil, verborgen, Beschreibung; Zeilen duplizieren, löschen,
@@ -138,6 +139,7 @@ function PartCell({
   onCommit: (part: number) => void
   onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void
 }) {
+  useI18n()
   const [draft, setDraft] = useState<{ text: string; part: number } | null>(null)
   // Änderung von außen (Rückgängig, Einfügen) verwirft den Entwurf
   const shown = draft && draft.part === pin.part ? draft.text : String(pin.part)
@@ -146,10 +148,10 @@ function PartCell({
       <input
         data-cell={`${pin.id}:part`}
         value={shown}
-        aria-label={`Teil von ${label} (0 = alle Teile)`}
+        aria-label={tr("Teil von {value0} (0 = alle Teile)", { value0: String(label) })}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
-        title={error}
+        title={error ? localizeMessage(error) : error}
         inputMode="numeric"
         maxLength={2}
         spellCheck={false}
@@ -169,7 +171,7 @@ function PartCell({
         onKeyDown={onKeyDown}
         className={cn(cellInput, 'mono text-center')}
       />
-      <ErrorText id={errorId} text={error} />
+      <ErrorText id={errorId} text={error ? localizeMessage(error) : error} />
     </>
   )
 }
@@ -231,7 +233,7 @@ const PinRowView = memo(function PinRowView({
 }: RowProps) {
   const [nameFocused, setNameFocused] = useState(false)
   const nameRef = useRef<HTMLInputElement>(null)
-  const label = `Pin ${pin.designator || index + 1}`
+  const label = tr("Pin {value0}", { value0: String(pin.designator || index + 1) })
   const errId = (field: string) => `${pin.id}-${field}-fehler`
 
   const textKeys = (field: CellField) => (e: KeyboardEvent<HTMLInputElement>) => {
@@ -337,7 +339,7 @@ const PinRowView = memo(function PinRowView({
         <span
           role="button"
           tabIndex={-1}
-          aria-label={`${label} verschieben (Alt+↑/↓)`}
+          aria-label={tr("{value0} verschieben (Alt+↑/↓)", { value0: String(label) })}
           draggable
           onDragStart={(e) => onDragStartRow(pin.id, e)}
           onDragEnd={onDragEnd}
@@ -347,7 +349,7 @@ const PinRowView = memo(function PinRowView({
         </span>
       </td>
       <td className={td}>
-        {text('designator', pin.designator, { mono: true, ariaLabel: `Pin-Nummer, Zeile ${index + 1}`, invalid: errors?.designator, maxLength: 12, className: 'font-semibold' })}
+        {text('designator', pin.designator, { mono: true, ariaLabel: tr("Pin-Nummer, Zeile {value0}", { value0: String(index + 1) }), invalid: errors?.designator, maxLength: 12, className: 'font-semibold' })}
       </td>
       <td className={td}>
         <div className="relative">
@@ -355,11 +357,11 @@ const PinRowView = memo(function PinRowView({
             ref={nameRef}
             data-cell={`${pin.id}:name`}
             value={pin.name}
-            aria-label={`Name von ${label}`}
+            aria-label={tr("Name von {value0}", { value0: String(label) })}
             aria-invalid={errors?.name ? true : undefined}
             aria-describedby={errors?.name ? errId('name') : undefined}
             aria-keyshortcuts="Control+Shift+O"
-            placeholder="Name"
+            placeholder={tr("Name")}
             spellCheck={false}
             autoComplete="off"
             onFocus={() => setNameFocused(true)}
@@ -374,11 +376,11 @@ const PinRowView = memo(function PinRowView({
               <OverbarName value={pin.name} />
             </span>
           )}
-          <Tooltip content="Überstrich (low-aktiv) für Markierung oder Namen" hotkey="mod+shift+o">
+          <Tooltip content={tr("Überstrich (low-aktiv) für Markierung oder Namen")} hotkey="mod+shift+o">
             <button
               type="button"
               tabIndex={-1}
-              aria-label={`Überstrich für ${label} umschalten`}
+              aria-label={tr("Überstrich für {value0} umschalten", { value0: String(label) })}
               onMouseDown={(e) => e.preventDefault()}
               onClick={applyOverbar}
               className={cn(
@@ -398,7 +400,7 @@ const PinRowView = memo(function PinRowView({
           {/* Liste mit ausführlichen Namen („Open Collector / Drain“), in der Zelle die Kurzform */}
           <select
             data-cell={`${pin.id}:electrical`}
-            aria-label={`Elektrischer Typ von ${label}`}
+            aria-label={tr("Elektrischer Typ von {value0}", { value0: String(label) })}
             value={pin.electrical}
             onChange={(e) => onChange(pin.id, { electrical: e.target.value as ElectricalType })}
             onKeyDown={selectKeys('electrical')}
@@ -406,7 +408,7 @@ const PinRowView = memo(function PinRowView({
           >
             {ELECTRICAL_OPTIONS.map((o) => (
               <option key={o.value} value={o.value} className="text-fg">
-                {o.label}
+                {tr(o.label)}
               </option>
             ))}
           </select>
@@ -420,18 +422,18 @@ const PinRowView = memo(function PinRowView({
         <div className="relative">
           <select
             data-cell={`${pin.id}:side`}
-            aria-label={`Seite von ${label}`}
+            aria-label={tr("Seite von {value0}", { value0: String(label) })}
             value={pin.side ?? ''}
             onChange={(e) => onChange(pin.id, { side: (e.target.value || null) as IcSide | null })}
             onKeyDown={selectKeys('side')}
             className={cn(cellSelect, !pin.side && 'text-fg-muted')}
           >
             <option value="" className="text-fg">
-              {effectiveSide ? `Auto · ${SIDE_LABEL[effectiveSide].toLowerCase()}` : 'Automatisch'}
+              {effectiveSide ? `Auto · ${tr(SIDE_LABEL[effectiveSide]).toLowerCase()}` : tr('Automatisch')}
             </option>
             {SIDE_ORDER.map((s) => (
               <option key={s} value={s} className="text-fg">
-                {SIDE_LABEL[s]}
+                {tr(SIDE_LABEL[s])}
               </option>
             ))}
           </select>
@@ -439,13 +441,13 @@ const PinRowView = memo(function PinRowView({
         </div>
       </td>
       {columns.group && (
-        <td className={td}>{text('group', pin.group, { placeholder: '–', ariaLabel: `Gruppe von ${label}`, list: datalistId })}</td>
+        <td className={td}>{text('group', pin.group, { placeholder: '–', ariaLabel: tr("Gruppe von {value0}", { value0: String(label) }), list: datalistId })}</td>
       )}
       {columns.part && (
         <td className={td}>
           {autoPart !== undefined ? (
             <span
-              title={autoPart ? `Vom Generator verteilt: Teil ${partLetter(autoPart)}` : 'Wird verteilt …'}
+              title={autoPart ? tr("Vom Generator verteilt: Teil {value0}", { value0: String(partLetter(autoPart)) }) : tr('Wird verteilt …')}
               className="mono flex h-7 items-center justify-center text-ui text-fg-subtle"
             >
               {autoPart ? partLetter(autoPart) : '·'}
@@ -468,13 +470,13 @@ const PinRowView = memo(function PinRowView({
             <Checkbox
               checked={pin.hidden}
               onCheckedChange={(v) => onChange(pin.id, { hidden: v === true })}
-              aria-label={`${label} verborgen`}
+              aria-label={tr("{value0} verborgen", { value0: String(label) })}
             />
           </div>
         </td>
       )}
       {columns.description && (
-        <td className={td}>{text('description', pin.description, { placeholder: '–', ariaLabel: `Beschreibung von ${label}` })}</td>
+        <td className={td}>{text('description', pin.description, { placeholder: '–', ariaLabel: tr("Beschreibung von {value0}", { value0: String(label) }) })}</td>
       )}
       <td className={cn(td, 'pr-1')}>
         <RowActions label={label} onDuplicate={() => onDuplicate(pin.id, null)} onRemove={() => onRemove(pin.id, index, null)} />
@@ -485,13 +487,14 @@ const PinRowView = memo(function PinRowView({
 
 /** Duplizieren/Löschen am Zeilenende (beim Überfahren bzw. Fokus in der Zeile sichtbar; Tastatur: Strg+D, Strg+Entf) */
 function RowActions({ label, onDuplicate, onRemove }: { label: string; onDuplicate: () => void; onRemove: () => void }) {
+  useI18n()
   return (
     <div className="flex items-center justify-end gap-0.5 opacity-0 transition-opacity group-hover/row:opacity-100 group-focus-within/row:opacity-100">
-      <Tooltip content="Duplizieren (nächste Nummer)" hotkey="mod+d">
+      <Tooltip content={tr("Duplizieren (nächste Nummer)")} hotkey="mod+d">
         <button
           type="button"
           tabIndex={-1}
-          aria-label={`${label} duplizieren`}
+          aria-label={tr("{value0} duplizieren", { value0: String(label) })}
           aria-keyshortcuts="Control+D"
           onClick={onDuplicate}
           className="flex size-6 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-surface-3 hover:text-fg focus-ring"
@@ -499,11 +502,11 @@ function RowActions({ label, onDuplicate, onRemove }: { label: string; onDuplica
           <CopyPlus className="size-3.5" />
         </button>
       </Tooltip>
-      <Tooltip content="Löschen" hotkey="mod+delete">
+      <Tooltip content={tr("Löschen")} hotkey="mod+delete">
         <button
           type="button"
           tabIndex={-1}
-          aria-label={`${label} löschen`}
+          aria-label={tr("{value0} löschen", { value0: String(label) })}
           aria-keyshortcuts="Control+Delete"
           onClick={onRemove}
           className="flex size-6 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-danger/12 hover:text-danger-text focus-ring"
@@ -548,6 +551,7 @@ export function PinTable({
   onMove,
   onReorder,
 }: PinTableProps) {
+  useI18n()
   const uid = useId().replace(/:/g, '')
   const datalistId = `${uid}-groups`
   const tableRef = useRef<HTMLTableElement>(null)
@@ -684,8 +688,7 @@ export function PinTable({
         style={{ minWidth: tableMinWidth(columns) }}
       >
         <caption className="sr-only">
-          Pinliste. ↑ und ↓ wechseln die Zeile, Enter legt in der letzten Zeile einen Pin an, Alt+↑/↓ verschiebt die
-          Zeile, Strg+D dupliziert, Strg+Entf löscht sie.
+          {tr("Pinliste. ↑ und ↓ wechseln die Zeile, Enter legt in der letzten Zeile einen Pin an, Alt+↑/↓ verschiebt die Zeile, Strg+D dupliziert, Strg+Entf löscht sie.")}
         </caption>
         <colgroup>
           <col style={{ width: COL_WIDTH.handle }} />
@@ -702,27 +705,27 @@ export function PinTable({
         <thead>
           <tr aria-rowindex={virtual ? 1 : undefined}>
             <Th className="px-0">
-              <span className="sr-only">Verschieben</span>
+              <span className="sr-only">{tr("Verschieben")}</span>
             </Th>
-            <Th className="pl-3">Nr.</Th>
-            <Th>Name</Th>
-            <Th className="pl-7">Typ</Th>
-            <Th>Seite</Th>
-            {columns.group && <Th>Gruppe</Th>}
+            <Th className="pl-3">{tr("Nr.")}</Th>
+            <Th>{tr("Name")}</Th>
+            <Th className="pl-7">{tr("Typ")}</Th>
+            <Th>{tr("Seite")}</Th>
+            {columns.group && <Th>{tr("Gruppe")}</Th>}
             {columns.part && (
-              <Th className="px-1 text-center" title="Teil (0 = in allen Teilen)">
-                Teil
+              <Th className="px-1 text-center" title={tr("Teil (0 = in allen Teilen)")}>
+                {tr("Teil")}
               </Th>
             )}
             {columns.hidden && (
-              <Th className="px-1 text-center" title="Verborgen (z. B. Masse eines mehrteiligen ICs)">
+              <Th className="px-1 text-center" title={tr("Verborgen (z. B. Masse eines mehrteiligen ICs)")}>
                 <EyeOff aria-hidden className="mx-auto size-3.5" />
-                <span className="sr-only">Verborgen</span>
+                <span className="sr-only">{tr("Verborgen")}</span>
               </Th>
             )}
-            {columns.description && <Th>Beschreibung</Th>}
+            {columns.description && <Th>{tr("Beschreibung")}</Th>}
             <Th>
-              <span className="sr-only">Aktionen</span>
+              <span className="sr-only">{tr("Aktionen")}</span>
             </Th>
           </tr>
         </thead>
@@ -730,7 +733,7 @@ export function PinTable({
           {padTop > 0 && (
             <tr aria-hidden style={{ height: padTop }}>
               <td colSpan={colCount} className="p-0">
-                <span className="sr-only">Weitere Pins oberhalb</span>
+                <span className="sr-only">{tr("Weitere Pins oberhalb")}</span>
               </td>
             </tr>
           )}
@@ -763,13 +766,13 @@ export function PinTable({
           {padBottom > 0 && (
             <tr aria-hidden style={{ height: padBottom }}>
               <td colSpan={colCount} className="p-0">
-                <span className="sr-only">Weitere Pins unterhalb</span>
+                <span className="sr-only">{tr("Weitere Pins unterhalb")}</span>
               </td>
             </tr>
           )}
         </tbody>
       </table>
-      <datalist id={datalistId} aria-label="Vorschläge für Gruppen">
+      <datalist id={datalistId} aria-label={tr("Vorschläge für Gruppen")}>
         {groupSuggestions.map((g) => (
           <option key={g} value={g}>
             {g}

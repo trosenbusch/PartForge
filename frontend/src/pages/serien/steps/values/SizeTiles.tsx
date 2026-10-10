@@ -1,3 +1,4 @@
+import { getLocale, useI18n } from '@/lib/i18n'
 /**
  * Bauformen als Mehrfachauswahl (ToggleGroup wie `ChipGroup`): je Kachel Baugröße, metrischer Code und die
  * Kennwerte laut Datenblatt (Leistung, Spannung bzw. Abmessungen „12,5 × 12,5 × 6,0 mm“), bei Auswahl die Zahl der
@@ -31,7 +32,7 @@ function formatDimensions(text: string): string {
   const unit = m?.[2] ?? ''
   const parts = body.split(/\s*[x×*]\s*/i).filter(Boolean)
   if (parts.length < 2 || !parts.every((x) => DIMENSION_NUMBER.test(x))) return formatQuantityText(text)
-  return `${parts.map((x) => x.replace('.', ',')).join(' × ')}${unit ? ` ${unit}` : ''}`
+  return `${parts.map((x) => getLocale() === 'de-DE' ? x.replace('.', ',') : x).join(' × ')}${unit ? ` ${unit}` : ''}`
 }
 
 function facts(info: SizeInfo): string {
@@ -44,6 +45,7 @@ function facts(info: SizeInfo): string {
 }
 
 export function SizeTiles({ sizes, value, onValueChange, counts, 'aria-label': ariaLabel }: SizeTilesProps) {
+  const { t: tr } = useI18n()
   // Reihenfolge der Vorlage beibehalten
   const order = sizes.map((s) => s.size)
   return (
@@ -91,7 +93,7 @@ export function SizeTiles({ sizes, value, onValueChange, counts, 'aria-label': a
             <span className="flex w-full flex-col gap-0.5">
               {detail && <span className="truncate text-2xs text-fg-muted">{detail}</span>}
               <span className="h-4 text-2xs tabular-nums text-fg-muted">
-                {on && count !== undefined ? `${formatNumber(count)} ${count === 1 ? 'Bauteil' : 'Bauteile'}` : ''}
+                {on && count !== undefined ? `${formatNumber(count)} ${count === 1 ? tr("Bauteil") : tr("Bauteile")}` : ''}
               </span>
             </span>
           </ToggleGroup.Item>

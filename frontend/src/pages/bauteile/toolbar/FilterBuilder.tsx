@@ -1,3 +1,4 @@
+import { metadataLabel, t, useI18n, getLocale } from '@/lib/i18n'
 /**
  * Filter-Baukasten: Bedingungen je Spalte mit Operatoren passend zur Feldart – Messwerte vergleichen Werte mit
  * Einheiten im Backend („> 1k“, „zwischen 10 n … 1 µ“), Datumsfelder deutsch („09.10.2026“, „heute“, Schnellwahl
@@ -54,11 +55,11 @@ export interface FilterBuilderProps {
   compact?: boolean
 }
 
-function fieldOptions(category: CategoryDef): ComboboxOption[] {
-  const label = new Map(FIELD_GROUPS.map((g) => [g.id, g.label]))
+function fieldOptions(category: CategoryDef, translate = t): ComboboxOption[] {
+  const label = new Map(FIELD_GROUPS.map((g) => [g.id, metadataLabel(g.label, t)]))
   return category.fields.map((f) => ({
     value: f.column,
-    label: f.label,
+    label: metadataLabel(f.label, translate),
     description: f.unit ? `${f.column} · ${f.unit}` : f.column !== f.label ? f.column : undefined,
     keywords: [f.column],
     group: label.get(groupOf(f)),
@@ -66,11 +67,12 @@ function fieldOptions(category: CategoryDef): ComboboxOption[] {
 }
 
 export function FilterBuilder({ category, filters, onChange, open, onOpenChange, focusId, compact }: FilterBuilderProps) {
+  const { t } = useI18n()
   const [draft, setDraft] = useState<FilterCondition[]>(filters)
   const [adding, setAdding] = useState<string | null>(null)
   const timer = useRef<number | undefined>(undefined)
   const fieldsByColumn = useMemo(() => new Map(category.fields.map((f) => [f.column, f])), [category])
-  const options = useMemo(() => fieldOptions(category), [category])
+  const options = useMemo(() => fieldOptions(category, t), [category, t])
   const active = filters.filter((c) => isComplete(c, fieldsByColumn.get(c.column))).length
 
   // beim Öffnen vom angewendeten Stand ausgehen (abgeleiteter Zustand, kein Effekt nötig)
@@ -113,7 +115,7 @@ export function FilterBuilder({ category, filters, onChange, open, onOpenChange,
           variant={active ? 'secondary' : 'ghost'}
           size="sm"
           leftIcon={<ListFilter />}
-          aria-label={active ? `Filter (${active} aktiv)` : 'Filter'}
+          aria-label={active ? t("Filter ({1} aktiv)", { 1: active }) : 'Filter'}
           className={cn(active > 0 && 'border-accent/40 text-accent-text')}
         >
           {!compact && 'Filter'}
@@ -130,18 +132,18 @@ export function FilterBuilder({ category, filters, onChange, open, onOpenChange,
             <h2 id="pf-filter-title" className="text-ui font-semibold text-fg">
               Filter
             </h2>
-            <p className="text-xs text-fg-muted">Werte mit Einheiten werden verglichen – „&gt; 1k“ findet auch „4,7 kΩ“.</p>
+            <p className="text-xs text-fg-muted">{t("Werte mit Einheiten werden verglichen – „> 1k“ findet auch „4,7 kΩ“.")}</p>
           </div>
           {draft.length > 0 && (
             <Button variant="ghost" size="xs" leftIcon={<Trash2 />} onClick={() => push([], true)}>
-              Alle entfernen
+              {t("Alle entfernen")}
             </Button>
           )}
         </div>
         <div className="flex max-h-[min(26rem,60vh)] flex-col gap-2 overflow-y-auto px-4 py-3">
           {draft.length === 0 && (
             <p className="rounded-control border border-dashed border-line-strong px-3 py-4 text-center text-xs text-fg-muted">
-              Noch keine Bedingung. Wählen Sie unten eine Spalte – z. B. „{category.fields.find((f) => !f.common)?.label ?? 'Hersteller'}“.
+              {t("Noch keine Bedingung. Wählen Sie unten eine Spalte – z. B. „{1}“.", {1: metadataLabel(category.fields.find((f) => !f.common)?.label ?? "Hersteller", t)})}
             </p>
           )}
           <RecentPresets
@@ -192,12 +194,12 @@ export function FilterBuilder({ category, filters, onChange, open, onOpenChange,
             value={adding}
             onValueChange={add}
             size="sm"
-            placeholder="Bedingung hinzufügen …"
-            searchPlaceholder="Spalte suchen …"
+            placeholder={t("Bedingung hinzufügen …")}
+            searchPlaceholder={t("Spalte suchen …")}
             className="w-60"
-            aria-label="Spalte für neue Bedingung"
+            aria-label={t("Spalte für neue Bedingung")}
           />
-          <span className="ml-auto text-2xs text-fg-subtle">Alle Bedingungen müssen zutreffen</span>
+          <span className="ml-auto text-2xs text-fg-subtle">{t("Alle Bedingungen müssen zutreffen")}</span>
         </div>
       </PopoverContent>
     </Popover>
@@ -221,6 +223,7 @@ function ConditionRow({
   onFieldChange: (column: string) => void
   onRemove: () => void
 }) {
+  const { t } = useI18n()
   const ops = opsFor(field)
   const multi = c.op === 'in' || c.op === 'notin'
   return (
@@ -231,9 +234,9 @@ function ConditionRow({
           value={c.column}
           onValueChange={(v) => v && onFieldChange(v)}
           size="sm"
-          searchPlaceholder="Spalte suchen …"
+          searchPlaceholder={t("Spalte suchen …")}
           className="min-w-0 flex-1"
-          aria-label="Spalte"
+          aria-label={t("Spalte")}
         />
         <Select<UiFilterOp>
           size="sm"
@@ -241,9 +244,9 @@ function ConditionRow({
           onValueChange={(op) => onChange({ op }, true)}
           options={ops.map((op) => ({ value: op, label: opLabel(op, field) }))}
           className="w-36"
-          aria-label="Vergleich"
+          aria-label={t("Vergleich")}
         />
-        <Button variant="ghost" size="sm" iconOnly aria-label="Bedingung entfernen" onClick={onRemove}>
+        <Button variant="ghost" size="sm" iconOnly aria-label={t("Bedingung entfernen")} onClick={onRemove}>
           <X />
         </Button>
       </div>
@@ -254,12 +257,12 @@ function ConditionRow({
           <DateValues condition={c} field={field} onChange={onChange} />
         ) : c.op === 'between' ? (
           <div className="flex items-center gap-2">
-            <ValueInput field={field} value={c.value ?? ''} onChange={(value) => onChange({ value })} label="von" className="flex-1" />
-            <span className="text-xs text-fg-subtle">bis</span>
-            <ValueInput field={field} value={c.to ?? ''} onChange={(to) => onChange({ to })} label="bis" className="flex-1" />
+            <ValueInput field={field} value={c.value ?? ''} onChange={(value) => onChange({ value })} label={t("von")} className="flex-1" />
+            <span className="text-xs text-fg-subtle">{t("bis")}</span>
+            <ValueInput field={field} value={c.to ?? ''} onChange={(to) => onChange({ to })} label={t("bis")} className="flex-1" />
           </div>
         ) : (
-          <ValueInput field={field} value={c.value ?? ''} onChange={(value) => onChange({ value })} label="Wert" />
+          <ValueInput field={field} value={c.value ?? ''} onChange={(value) => onChange({ value })} label={t("Wert")} />
         ))}
     </div>
   )
@@ -278,6 +281,7 @@ function ValueInput({
   label: string
   className?: string
 }) {
+  const { t } = useI18n()
   const numeric = isNumericKind(field.kind)
   return (
     <Input
@@ -285,9 +289,9 @@ function ValueInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       mono={numeric || isMono(field)}
-      placeholder={numeric ? placeholderFor(field) : 'Text …'}
+      placeholder={numeric ? placeholderFor(field) : t("Text …")}
       suffix={field.unit ? <span className="mono">{field.unit}</span> : undefined}
-      aria-label={`${field.label} ${label}`}
+      aria-label={`${metadataLabel(field.label, t)} ${label}`}
       containerClassName={cn('min-w-0', className)}
     />
   )
@@ -303,24 +307,25 @@ function DateValues({
   field: FieldDef
   onChange: (change: Partial<FilterCondition>, immediate?: boolean) => void
 }) {
+  const { t } = useI18n()
   const presets = [
-    { label: 'Heute', days: 0 },
-    { label: 'Letzte 7 Tage', days: 7 },
-    { label: 'Letzte 30 Tage', days: 30 },
+    { label: t("Heute"), days: 0 },
+    { label: t("Letzte 7 Tage"), days: 7 },
+    { label: t("Letzte 30 Tage"), days: 30 },
   ]
   return (
     <div className="flex flex-col gap-2">
       {c.op === 'between' ? (
         <div className="flex items-start gap-2">
-          <DateInput field={field} value={c.value ?? ''} onChange={(value) => onChange({ value })} label="von" className="flex-1" />
-          <span className="pt-1.5 text-xs text-fg-subtle">bis</span>
-          <DateInput field={field} value={c.to ?? ''} onChange={(to) => onChange({ to })} label="bis einschließlich" className="flex-1" />
+          <DateInput field={field} value={c.value ?? ''} onChange={(value) => onChange({ value })} label={t("von")} className="flex-1" />
+          <span className="pt-1.5 text-xs text-fg-subtle">{t("bis")}</span>
+          <DateInput field={field} value={c.to ?? ''} onChange={(to) => onChange({ to })} label={t("bis einschließlich")} className="flex-1" />
         </div>
       ) : (
         <DateInput field={field} value={c.value ?? ''} onChange={(value) => onChange({ value })} label={dateInputLabel(c.op)} />
       )}
       {c.op === 'ge' && (
-        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Schnellwahl">
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("Schnellwahl")}>
           {presets.map((p) => {
             const value = daysAgoInput(p.days)
             const on = parseDateInput(c.value) === parseDateInput(value)
@@ -335,7 +340,7 @@ function DateValues({
                   on ? 'border-accent/40 bg-accent-soft text-accent-text' : 'border-line text-fg-muted hover:border-line-strong hover:text-fg',
                 )}
               >
-                {p.label}
+                {metadataLabel(p.label, t)}
               </button>
             )
           })}
@@ -348,9 +353,9 @@ function DateValues({
 /** Datumsfelder für die Schnellwahl (Bezeichnung aus der Kategorie) */
 const RECENT_COLUMNS = ['PF Modified', 'PF Created'] as const
 const RECENT_PRESETS = [
-  { label: 'heute', days: 0 },
-  { label: '7 Tage', days: 7 },
-  { label: '30 Tage', days: 30 },
+  { get label() { return t("heute") }, days: 0 },
+  { get label() { return t("7 Tage") }, days: 7 },
+  { get label() { return t("30 Tage") }, days: 30 },
 ]
 
 /** Schnellwahl „Geändert/Angelegt: heute · 7 Tage · 30 Tage“ – setzt bzw. ersetzt die Datumsbedingung */
@@ -363,6 +368,7 @@ function RecentPresets({
   draft: FilterCondition[]
   onApply: (column: string, days: number) => void
 }) {
+  const { t } = useI18n()
   // nur Felder ohne eigene Bedingung – die bringt ihre Schnellwahl selbst mit
   const fields = RECENT_COLUMNS.map((col) => category.fields.find((f) => f.column === col)).filter(
     (f): f is FieldDef => Boolean(f) && !draft.some((c) => c.column === f?.column),
@@ -374,9 +380,9 @@ function RecentPresets({
         const current = draft.find((c) => c.column === f.column && (c.op === 'ge' || c.op === 'eq'))
         const iso = current ? parseDateInput(current.value) : null
         return (
-          <div key={f.column} className="flex flex-wrap items-center gap-1.5" role="group" aria-label={`${f.label}: Schnellwahl`}>
+          <div key={f.column} className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t("{1}: Schnellwahl", { 1: metadataLabel(f.label, t) })}>
             <CalendarDays aria-hidden className="size-3.5 text-fg-subtle" />
-            <span className="mr-1 text-xs text-fg-muted">{f.label}</span>
+            <span className="mr-1 text-xs text-fg-muted">{metadataLabel(f.label, t)}</span>
             {RECENT_PRESETS.map((p) => {
               const on = Boolean(current && iso === parseDateInput(daysAgoInput(p.days)) && (p.days === 0 ? current.op === 'eq' : current.op === 'ge'))
               return (
@@ -390,7 +396,7 @@ function RecentPresets({
                     on ? 'border-accent/40 bg-accent-soft text-accent-text' : 'border-line text-fg-muted hover:border-line-strong hover:text-fg',
                   )}
                 >
-                  {p.days === 0 ? p.label : `letzte ${p.label}`}
+                  {p.days === 0 ? p.label : t("letzte {1}", { 1: metadataLabel(p.label, t) })}
                 </button>
               )
             })}
@@ -401,7 +407,7 @@ function RecentPresets({
   )
 }
 
-const WEEKDAY = new Intl.DateTimeFormat('de-DE', { weekday: 'short' })
+const weekday = (date: Date) => new Intl.DateTimeFormat(getLocale(), { weekday: 'short' }).format(date)
 
 function DateInput({
   field,
@@ -416,10 +422,11 @@ function DateInput({
   label: string
   className?: string
 }) {
+  const { t } = useI18n()
   const iso = parseDateInput(value)
   const invalid = Boolean(value.trim()) && !iso
   const day = iso ? new Date(`${iso}T12:00:00`) : null
-  const echo = iso && value.trim() !== formatDateInput(iso) ? `${WEEKDAY.format(day as Date)}, ${formatDateInput(iso)}` : null
+  const echo = iso && value.trim() !== formatDateInput(iso) ? `${weekday(day as Date)}, ${formatDateInput(iso)}` : null
   return (
     <div className={cn('flex min-w-0 flex-col gap-1', className)}>
       <Input
@@ -428,9 +435,9 @@ function DateInput({
         onChange={(e) => onChange(e.target.value)}
         mono
         invalid={invalid}
-        placeholder="TT.MM.JJJJ"
+        placeholder={t("TT.MM.JJJJ")}
         prefix={<CalendarDays />}
-        aria-label={`${field.label} ${label}`}
+        aria-label={`${metadataLabel(field.label, t)} ${label}`}
         aria-describedby={invalid || echo ? `${field.column}-${label}-hint`.replace(/[^a-z0-9-]+/gi, '-') : undefined}
         containerClassName="min-w-0"
       />
@@ -439,7 +446,7 @@ function DateInput({
           id={`${field.column}-${label}-hint`.replace(/[^a-z0-9-]+/gi, '-')}
           className={cn('text-2xs', invalid ? 'text-danger-text' : 'text-fg-subtle')}
         >
-          {invalid ? 'Datum als TT.MM.JJJJ eingeben – z. B. 09.10.2026, „heute“' : `= ${echo}`}
+          {invalid ? t("Datum als TT.MM.JJJJ eingeben – z. B. 09.10.2026, „heute“") : `= ${echo}`}
         </p>
       )}
     </div>
@@ -457,6 +464,7 @@ function ValueChips({
   values: string[]
   onChange: (values: string[]) => void
 }) {
+  const { t } = useI18n()
   const distinct = useDistinctValues(table, field.column)
   const options = useMemo(() => {
     const counts = new Map((distinct.data ?? []).map((d) => [d.value, d.count]))
@@ -464,10 +472,10 @@ function ValueChips({
     const all = [...base]
     for (const d of distinct.data ?? []) if (!all.some((o) => o.toLowerCase() === d.value.toLowerCase())) all.push(d.value)
     for (const v of values) if (!all.includes(v)) all.push(v)
-    return all.map((v) => ({ value: v, label: v, meta: counts.has(v) ? formatNumber(counts.get(v) ?? 0) : undefined }))
-  }, [distinct.data, field, values])
+    return all.map((v) => ({ value: v, label: field.kind === 'bool' || field.options.includes(v) ? metadataLabel(v, t) : v, meta: counts.has(v) ? formatNumber(counts.get(v) ?? 0) : undefined }))
+  }, [distinct.data, field, values, t])
   if (!options.length) {
-    return <p className="text-xs text-fg-subtle">{distinct.isPending ? 'Werte werden geladen …' : 'Noch keine Werte vorhanden.'}</p>
+    return <p className="text-xs text-fg-subtle">{distinct.isPending ? t("Werte werden geladen …") : t("Noch keine Werte vorhanden.")}</p>
   }
   return (
     <ChipGroup
@@ -476,7 +484,7 @@ function ValueChips({
       value={values}
       onValueChange={onChange}
       options={options}
-      aria-label={`${field.label}: Werte`}
+      aria-label={t("{1}: Werte", { 1: metadataLabel(field.label, t) })}
       className="max-h-32 overflow-y-auto"
     />
   )
@@ -497,6 +505,7 @@ export function ActiveFilters({
   onClear: () => void
   onEdit: (id: string) => void
 }) {
+  const { t } = useI18n()
   const fields = new Map(category.fields.map((f) => [f.column, f]))
   const complete = filters.filter((c) => isComplete(c, fields.get(c.column)))
   return (
@@ -510,7 +519,7 @@ export function ActiveFilters({
           transition={{ duration: 0.18 }}
           className="overflow-hidden"
         >
-          <ul aria-label="Aktive Filter" className="flex flex-wrap items-center gap-1.5 pb-2.5">
+          <ul aria-label={t("Aktive Filter")} className="flex flex-wrap items-center gap-1.5 pb-2.5">
             {complete.map((c) => {
               const text = conditionLabel(c, fields.get(c.column))
               return (
@@ -519,7 +528,7 @@ export function ActiveFilters({
                     type="button"
                     onClick={() => onEdit(c.id)}
                     className="flex h-full items-center gap-1 pl-2.5 pr-1 outline-none focus-ring-inset"
-                    aria-label={`Filter bearbeiten: ${text.field}${text.rest}`}
+                    aria-label={t("Filter bearbeiten: {1}{2}", { 1: text.field, 2: text.rest })}
                   >
                     <span className="font-medium text-accent-text">{text.field}</span>
                     <span
@@ -534,7 +543,7 @@ export function ActiveFilters({
                   <button
                     type="button"
                     onClick={() => onRemove(c.id)}
-                    aria-label={`Filter „${text.field}“ entfernen`}
+                    aria-label={t("Filter „{1}“ entfernen", { 1: text.field })}
                     className="flex h-full w-6 items-center justify-center text-accent-text outline-none hover:bg-accent/15 focus-ring-inset"
                   >
                     <X aria-hidden className="size-3" />
@@ -544,7 +553,7 @@ export function ActiveFilters({
             })}
             <li>
               <Button variant="ghost" size="xs" onClick={onClear} leftIcon={<FilterX />}>
-                Alle entfernen
+                {t("Alle entfernen")}
               </Button>
             </li>
           </ul>

@@ -1,3 +1,5 @@
+import { useLocalizedMemo } from '@/components/preview/useLocalizedMemo'
+import { t as tr, getLocale, useI18n } from '@/components/preview/i18n'
 /**
  * Footprint-Bibliothek: virtualisierte Galerie der gespeicherten Footprints (Registrierung) mit Suche und Filtern
  * (Familie, Status). Die Liste kommt ohne Vorschaubilder; jede Karte lädt ihr Bild erst im Sichtbereich vom
@@ -5,7 +7,7 @@
  * Familien gegliedert – ein Klick öffnet sie im Generator.
  */
 import { BookOpen, Library, Plus, RefreshCw, Search, X } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { errorMessage } from '@/api/client'
 import { useLibraryFootprints, type FootprintFamily, type FootprintPreset, type LibraryFootprint } from '@/api/footprints'
 import { PageActions } from '@/app/page'
@@ -54,6 +56,7 @@ export function LibraryView({
   onOpenPreset,
   onNew,
 }: LibraryViewProps) {
+  useI18n()
   const [search, setSearch] = useState('')
   const [familyChoice, setFamily] = useState<string>(ALL)
   const [status, setStatus] = useState<string>(ALL)
@@ -61,20 +64,20 @@ export function LibraryView({
 
   const list = useLibraryFootprints({}, { enabled: source === 'bibliothek' })
   const effectiveSource: LibrarySource = source
-  const familyLabel = useMemo(() => new Map(families.map((f) => [f.key, familyShortLabel(f)])), [families])
+  const familyLabel = useLocalizedMemo(() => new Map(families.map((f) => [f.key, familyShortLabel(f)])), [families])
 
   // ------------------------------------------------------------------ Daten
-  const entries = useMemo(() => list.data ?? [], [list.data])
-  const ordered = useMemo(() => groupFamilies(families).flatMap((g) => g.families), [families])
+  const entries = useLocalizedMemo(() => list.data ?? [], [list.data])
+  const ordered = useLocalizedMemo(() => groupFamilies(families).flatMap((g) => g.families), [families])
 
   // Filter-Optionen mit Zählern
-  const familyOptions = useMemo(() => {
+  const familyOptions = useLocalizedMemo(() => {
     const counts = new Map<string, number>()
     if (effectiveSource === 'bibliothek') for (const e of entries) counts.set(e.family ?? '', (counts.get(e.family ?? '') ?? 0) + 1)
     else for (const f of families) counts.set(f.key, f.presets.length)
     const total = effectiveSource === 'bibliothek' ? entries.length : families.reduce((n, f) => n + f.presets.length, 0)
     return [
-      { value: ALL, label: `Alle Familien (${formatNumber(total)})` },
+      { value: ALL, label: tr("Alle Familien ({value0})", { value0: String(formatNumber(total)) }) },
       ...ordered
         .filter((f) => counts.has(f.key))
         .map((f) => ({
@@ -82,14 +85,14 @@ export function LibraryView({
           label: `${familyShortLabel(f)} (${formatNumber(counts.get(f.key) ?? 0)})`,
           icon: <PackageGlyph family={f.key} className="size-4" />,
         })),
-      ...(counts.has('') ? [{ value: NONE, label: `Ohne Familie (${counts.get('')})` }] : []),
+      ...(counts.has('') ? [{ value: NONE, label: tr("Ohne Familie ({value0})", { value0: String(counts.get('')) }) }] : []),
     ]
   }, [effectiveSource, entries, families, ordered])
 
   // Filter, die es in der aktuellen Quelle nicht gibt, gelten als „Alle“
   const family = familyOptions.some((o) => o.value === familyChoice) ? familyChoice : ALL
 
-  const filtered = useMemo(() => {
+  const filtered = useLocalizedMemo(() => {
     const q = search.trim().toLowerCase()
     return entries
       .filter((e) => familyFits(family, e.family))
@@ -99,10 +102,10 @@ export function LibraryView({
         const hay = [e.name, e.ipc_name ?? '', e.family ?? '', familyLabel.get(e.family ?? '') ?? '', e.library].join(' ').toLowerCase()
         return q.split(/\s+/).every((w) => hay.includes(w))
       })
-      .sort((a, b) => a.name.localeCompare(b.name, 'de', { numeric: true }))
+      .sort((a, b) => a.name.localeCompare(b.name, getLocale(), { numeric: true }))
   }, [entries, family, status, search, familyLabel])
 
-  const catalogGroups = useMemo<CatalogGroup[]>(() => {
+  const catalogGroups = useLocalizedMemo<CatalogGroup[]>(() => {
     const q = search.trim()
     return ordered
       .filter((f) => familyFits(family, f.key))
@@ -119,14 +122,14 @@ export function LibraryView({
   const catalogCount = catalogGroups.reduce((n, g) => n + g.items.length, 0)
   const catalogTotal = families.reduce((n, f) => n + f.presets.length, 0)
 
-  const statusOptions = useMemo(() => {
+  const statusOptions = useLocalizedMemo(() => {
     const counts = new Map<string, number>()
     for (const e of entries) counts.set(e.status, (counts.get(e.status) ?? 0) + 1)
     return [
-      { value: ALL, label: 'Alle Status' },
+      { value: ALL, label: tr('Alle Status') },
       ...Object.keys(STATUS_META)
         .filter((k) => counts.has(k))
-        .map((k) => ({ value: k, label: `${STATUS_META[k].label} (${counts.get(k)})` })),
+        .map((k) => ({ value: k, label: `${tr(STATUS_META[k].label)} (${counts.get(k)})` })),
     ]
   }, [entries])
 
@@ -142,7 +145,7 @@ export function LibraryView({
       ? [
           {
             id: 'footprints.library.search',
-            title: 'Footprints durchsuchen',
+            title: tr('Footprints durchsuchen'),
             group: 'Footprints',
             hotkey: 'mod+f',
             icon: Search,
@@ -150,7 +153,7 @@ export function LibraryView({
           },
           {
             id: 'footprints.library.catalog',
-            title: effectiveSource === 'katalog' ? 'Gespeicherte Footprints anzeigen' : 'Vorlagen-Katalog anzeigen',
+            title: effectiveSource === 'katalog' ? tr('Gespeicherte Footprints anzeigen') : tr('Vorlagen-Katalog anzeigen'),
             group: 'Footprints',
             icon: BookOpen,
             run: () => onSourceChange(effectiveSource === 'katalog' ? 'bibliothek' : 'katalog'),
@@ -167,7 +170,7 @@ export function LibraryView({
       {active && (
         <PageActions>
           <Button variant="primary" leftIcon={<Plus />} onClick={onNew}>
-            Neuer Footprint
+            {tr("Neuer Footprint")}
           </Button>
         </PageActions>
       )}
@@ -186,41 +189,41 @@ export function LibraryView({
               setSearch('')
             }
           }}
-          placeholder={effectiveSource === 'bibliothek' ? 'Name oder Familie …' : 'Vorlage, z. B. SOIC-8 …'}
-          aria-label={effectiveSource === 'bibliothek' ? 'Footprints durchsuchen' : 'Vorlagen durchsuchen'}
+          placeholder={effectiveSource === 'bibliothek' ? tr('Name oder Familie …') : tr('Vorlage, z. B. SOIC-8 …')}
+          aria-label={effectiveSource === 'bibliothek' ? tr('Footprints durchsuchen') : tr('Vorlagen durchsuchen')}
           aria-keyshortcuts="Control+F"
           prefix={<Search />}
           suffix={
             search ? (
-              <button type="button" aria-label="Suche leeren" onClick={() => setSearch('')} className="rounded-sm text-fg-subtle outline-none hover:text-fg focus-ring">
+              <button type="button" aria-label={tr("Suche leeren")} onClick={() => setSearch('')} className="rounded-sm text-fg-subtle outline-none hover:text-fg focus-ring">
                 <X className="size-3.5" />
               </button>
             ) : undefined
           }
           containerClassName="w-56 @[64rem]:w-72"
         />
-        <Select size="sm" aria-label="Familie" value={family} onValueChange={setFamily} options={familyOptions} className="w-48 @[64rem]:w-60" />
+        <Select size="sm" aria-label={tr("Familie")} value={family} onValueChange={setFamily} options={familyOptions} className="w-48 @[64rem]:w-60" />
         {effectiveSource === 'bibliothek' && (
-          <Select size="sm" aria-label="Status" value={status} onValueChange={setStatus} options={statusOptions} className="w-36 @[64rem]:w-44" />
+          <Select size="sm" aria-label={tr("Status")} value={status} onValueChange={setStatus} options={statusOptions} className="w-36 @[64rem]:w-44" />
         )}
         {filtersActive && (
           <Button variant="ghost" size="sm" leftIcon={<X />} onClick={resetFilters}>
-            Filter zurücksetzen
+            {tr("Filter zurücksetzen")}
           </Button>
         )}
         <div className="ml-auto flex items-center gap-3">
           <span className="sr-only text-xs tabular-nums text-fg-subtle @[64rem]:not-sr-only" aria-live="polite">
-            {count === total ? formatNumber(total) : `${formatNumber(count)} von ${formatNumber(total)}`}{' '}
-            {effectiveSource === 'bibliothek' ? 'Footprints' : 'Vorlagen'}
+            {count === total ? formatNumber(total) : tr("{value0} von {value1}", { value0: String(formatNumber(count)), value1: String(formatNumber(total)) })}{' '}
+            {effectiveSource === 'bibliothek' ? 'Footprints' : tr('Vorlagen')}
           </span>
           <SegmentedControl
             size="sm"
-            aria-label="Quelle"
+            aria-label={tr("Quelle")}
             value={effectiveSource}
             onValueChange={onSourceChange}
             options={[
-              { value: 'bibliothek', label: 'Gespeichert', icon: <Library /> },
-              { value: 'katalog', label: 'Katalog', icon: <BookOpen /> },
+              { value: 'bibliothek', label: tr('Gespeichert'), icon: <Library /> },
+              { value: 'katalog', label: tr('Katalog'), icon: <BookOpen /> },
             ]}
           />
         </div>
@@ -235,11 +238,11 @@ export function LibraryView({
               <EmptyState
                 illustration="offline"
                 titleAs="h2"
-                title="Bibliothek konnte nicht geladen werden"
+                title={tr("Bibliothek konnte nicht geladen werden")}
                 description={errorMessage(list.error)}
                 actions={
                   <Button variant="secondary" leftIcon={<RefreshCw />} onClick={() => void list.refetch()}>
-                    Erneut versuchen
+                    {tr("Erneut versuchen")}
                   </Button>
                 }
               />
@@ -250,15 +253,15 @@ export function LibraryView({
                 illustration="forge"
                 size="lg"
                 titleAs="h2"
-                title="Noch keine Footprints gespeichert"
-                description="Im Generator erzeugte Footprints landen hier – mit Vorschau, Status und 3D-Modell. Der Katalog zeigt alle Vorlagen zum Start."
+                title={tr("Noch keine Footprints gespeichert")}
+                description={tr("Im Generator erzeugte Footprints landen hier – mit Vorschau, Status und 3D-Modell. Der Katalog zeigt alle Vorlagen zum Start.")}
                 actions={
                   <>
                     <Button variant="secondary" leftIcon={<Plus />} onClick={onNew}>
-                      Im Generator erstellen
+                      {tr("Im Generator erstellen")}
                     </Button>
                     <Button variant="ghost" leftIcon={<BookOpen />} onClick={() => onSourceChange('katalog')}>
-                      Katalog ansehen
+                      {tr("Katalog ansehen")}
                     </Button>
                   </>
                 }
@@ -266,7 +269,7 @@ export function LibraryView({
             </div>
           ) : (
             <VirtualGallery<LibraryFootprint>
-              aria-label="Gespeicherte Footprints"
+              aria-label={tr("Gespeicherte Footprints")}
               items={filtered}
               getKey={(e) => e.name}
               minItemWidth={184}
@@ -280,11 +283,11 @@ export function LibraryView({
                 <EmptyState
                   illustration="search-empty"
                   titleAs="h2"
-                  title="Keine Treffer"
-                  description="Kein Footprint passt zu Suche und Filtern."
+                  title={tr("Keine Treffer")}
+                  description={tr("Kein Footprint passt zu Suche und Filtern.")}
                   actions={
                     <Button variant="secondary" onClick={resetFilters}>
-                      Filter zurücksetzen
+                      {tr("Filter zurücksetzen")}
                     </Button>
                   }
                 />
@@ -300,11 +303,11 @@ export function LibraryView({
               <EmptyState
                 illustration="search-empty"
                 titleAs="h2"
-                title="Keine Vorlage gefunden"
-                description="Andere Schreibweise versuchen – z. B. „SOIC-8“, „0805“ oder „QFN“."
+                title={tr("Keine Vorlage gefunden")}
+                description={tr("Andere Schreibweise versuchen – z. B. „SOIC-8“, „0805“ oder „QFN“.")}
                 actions={
                   <Button variant="secondary" onClick={resetFilters}>
-                    Filter zurücksetzen
+                    {tr("Filter zurücksetzen")}
                   </Button>
                 }
               />
@@ -330,6 +333,7 @@ function SavedCard({
   selected: boolean
   active: boolean
 }) {
+  useI18n()
   const meta = statusMeta(entry.status)
   return (
     <GalleryCard
@@ -339,7 +343,7 @@ function SavedCard({
       title={entry.name}
       meta={[
         familyLabel ?? entry.family ?? 'Footprint',
-        plural(entry.pad_count, 'Pad', 'Pads'),
+        plural(entry.pad_count, tr('Pad'), tr('Pads')),
         entry.height ? `H ${formatDim(entry.height)}` : null,
       ]
         .filter(Boolean)
@@ -347,11 +351,11 @@ function SavedCard({
       badge={
         entry.status !== 'ok' ? (
           <Badge variant={meta.variant} dot size="sm">
-            {meta.label}
+            {tr(meta.label)}
           </Badge>
         ) : (
           <Badge size="sm" variant="outline" className={cn(BOARD_BADGE, entry.usage > 0 ? 'text-[#D5DBE6]' : CHROME_MUTED.board)}>
-            {entry.usage === 0 ? 'unbenutzt' : plural(entry.usage, 'Bauteil', 'Bauteile')}
+            {entry.usage === 0 ? tr('unbenutzt') : plural(entry.usage, tr('Bauteil'), tr('Bauteile'))}
           </Badge>
         )
       }

@@ -1,18 +1,4 @@
-/**
- * Stapelbearbeitung: registrierte Symbole und Footprints der geöffneten Bibliothek in einem Arbeitsgang an den
- * Hausstil angleichen (nie externe Bibliotheken).
- *
- * Links „Auswahl und Regeln“ (klebt beim Scrollen), rechts der Bericht. „Prüfen“ (Job `housestyle.check`, liest nur)
- * zeigt je Bauteil, was sich ändern würde, je PcbLib die erkannten Lagenrollen (von Hand änderbar) und Abweichungen
- * des Lagen-Kopfs. „Anwenden“ (Job `libraries.conform`) schreibt verlustfrei auf Datensatzebene – was keine Regel
- * betrifft, bleibt Byte für Byte erhalten, Namen ändern sich nie –, sichert jede Datei vorher nach `Backups\lib` und
- * lässt sich rückgängig machen. Jede Änderung an Auswahl, Regeln, Rollen oder Hausstil nach einer Prüfung macht den
- * Bericht veraltet: „Anwenden“ erst nach erneutem Prüfen. Der Zustand gilt für die Sitzung (`store.ts`).
- *
- * Router-State (z. B. vom Bibliotheksimport): `{ libraries?: string[], names?: string[] }` → diese Bibliotheken bzw.
- * Bauteile mit Herkunft „Importiert“ auswählen und einmal prüfen. Der State wird danach gelöscht – Neuladen und Zurück
- * prüfen nicht erneut; die Adresse selbst löst nie etwas aus.
- */
+import { useI18n, localizeMessage } from '@/lib/i18n'
 import { useQueryClient } from '@tanstack/react-query'
 import { PaintbrushVertical, RefreshCw, ScanSearch, Undo2 } from 'lucide-react'
 import { useEffect, useMemo, useRef } from 'react'
@@ -53,12 +39,13 @@ const GRID =
   'grid grid-cols-1 items-start gap-5 @[44rem]:grid-cols-[18rem_minmax(0,1fr)] @[62rem]:grid-cols-[20rem_minmax(0,1fr)] @[80rem]:grid-cols-[22rem_minmax(0,1fr)]'
 
 export default function StapelbearbeitungPage() {
+  const { t: tr } = useI18n()
   const root = useWorkspace().data?.root ?? null
   if (!root) {
     return (
       <PageBody>
-        <PageTitle title={TITLE} />
-        <div className={GRID} aria-busy="true" aria-label="Stapelbearbeitung wird geladen">
+        <PageTitle title={tr(TITLE)} />
+        <div className={GRID} aria-busy="true" aria-label={tr("Stapelbearbeitung wird geladen")}>
           <Skeleton className="h-[32rem] rounded-card" />
           <Skeleton className="h-80 rounded-card" />
         </div>
@@ -70,6 +57,7 @@ export default function StapelbearbeitungPage() {
 }
 
 function BatchEditor({ root }: { root: string }) {
+  const { t: tr } = useI18n()
   const qc = useQueryClient()
   const navigate = useNavigate()
   const location = useLocation()
@@ -104,20 +92,20 @@ function BatchEditor({ root }: { root: string }) {
   const checking = checkRunning || jobs.starting.check
 
   const checkBlocked = jobs.busy
-    ? 'Ein Job der Stapelbearbeitung läuft gerade.'
+    ? tr("Ein Job der Stapelbearbeitung läuft gerade.")
     : rulesLoading
-      ? 'Die Regeln werden noch geladen.'
+      ? tr("Die Regeln werden noch geladen.")
       : problem
   const applyBlocked = jobs.busy
-    ? 'Ein Job der Stapelbearbeitung läuft gerade.'
+    ? tr("Ein Job der Stapelbearbeitung läuft gerade.")
     : !stored || !stats
-      ? 'Zuerst prüfen – „Anwenden“ ändert, was der Bericht zeigt.'
+      ? tr("Zuerst prüfen – „Anwenden“ ändert, was der Bericht zeigt.")
       : outdated
-        ? 'Der Bericht ist veraltet – bitte erneut prüfen.'
+        ? tr("Der Bericht ist veraltet – bitte erneut prüfen.")
         : !stats.pending
-          ? 'Alles im Hausstil – nichts anzuwenden.'
+          ? tr("Alles im Hausstil – nichts anzuwenden.")
           : stats.writeLibraries === 0
-            ? 'Keine der Bibliotheken lässt sich ändern (nicht prüfbar bzw. übersprungen).'
+            ? tr("Keine der Bibliotheken lässt sich ändern (nicht prüfbar bzw. übersprungen).")
             : null
 
   // ------------------------------------------------------------------ Aktionen
@@ -129,30 +117,27 @@ function BatchEditor({ root }: { root: string }) {
 
   const onApply = async () => {
     if (applyBlocked || !stored || !stats) return
-    const libs = plural(stats.writeLibraries, 'Bibliothek', 'Bibliotheken')
+    const libs = plural(stats.writeLibraries, tr("Bibliothek"), tr("Bibliotheken"))
     const lead =
       stats.writeComponents > 0
-        ? `${plural(stats.writeComponents, 'Bauteil', 'Bauteile')} in ${libs} ${stats.writeComponents === 1 ? 'wird' : 'werden'} an den Hausstil angepasst.`
-        : `In ${libs} wird der Lagen-Kopf an den Hausstil angepasst.`
+        ? tr("{0} in {1} {2} an den Hausstil angepasst.", { "0": String(plural(stats.writeComponents, tr("Bauteil"), tr("Bauteile"))), "1": String(libs), "2": String(stats.writeComponents === 1 ? 'wird' : 'werden') })
+        : tr("In {0} wird der Lagen-Kopf an den Hausstil angepasst.", { "0": String(libs) })
     const ok = await confirm({
-      title: 'Hausstil anwenden?',
+      title: tr("Hausstil anwenden?"),
       icon: <PaintbrushVertical />,
-      confirmLabel: 'Anwenden',
+      confirmLabel: tr("Anwenden"),
       description: (
         <>
           {lead}
           {stats.writeComponents > 0 &&
             stats.headerLibraries > 0 &&
-            ` Bei ${plural(stats.headerLibraries, 'Bibliothek', 'Bibliotheken')} wird außerdem der Lagen-Kopf erneuert.`}
+            tr(" Bei {0} wird außerdem der Lagen-Kopf erneuert.", { "0": String(plural(stats.headerLibraries, tr("Bibliothek"), tr("Bibliotheken"))) })}
           <span className="mt-2 block">
-            Jede Datei wird vorher nach <span className="mono">Backups\lib</span> gesichert – die Stapelbearbeitung
-            lässt sich rückgängig machen. Was keine Regel betrifft, bleibt unverändert; Namen ändern sich nie.
-          </span>
+            {tr("Jede Datei wird vorher nach ")}<span className="mono">Backups\lib</span> {tr(" gesichert – die Stapelbearbeitung lässt sich rückgängig machen. Was keine Regel betrifft, bleibt unverändert; Namen ändern sich nie.")}</span>
           <span className="mt-2 block">
-            Bibliotheken, die in Altium geöffnet und geändert sind, werden übersprungen
-            {stats.refused > 0 ? ` (laut Bericht ${plural(stats.refused, 'Bibliothek', 'Bibliotheken')})` : ''}.
+            {tr("Bibliotheken, die in Altium geöffnet und geändert sind, werden übersprungen")}{stats.refused > 0 ? tr(" (laut Bericht {0})", { "0": String(plural(stats.refused, tr("Bibliothek"), tr("Bibliotheken"))) }) : ''}.
           </span>
-          <span className="mt-2 block">PartForge merkt sich die Regeln für diese Bibliothek.</span>
+          <span className="mt-2 block">{tr("PartForge merkt sich die Regeln für diese Bibliothek.")}</span>
         </>
       ),
     })
@@ -164,21 +149,18 @@ function BatchEditor({ root }: { root: string }) {
   const onUndo = async () => {
     if (!undoInfo || jobs.busy) return
     const count = undoInfo.libraries?.length ?? 0
-    const when = undoInfo.created ? ` vom ${formatDateTime(undoInfo.created)}` : ''
+    const when = undoInfo.created ? tr(" vom {0}", { "0": String(formatDateTime(undoInfo.created)) }) : ''
     const ok = await confirm({
-      title: 'Stapelbearbeitung rückgängig machen?',
+      title: tr("Stapelbearbeitung rückgängig machen?"),
       icon: <Undo2 />,
-      confirmLabel: 'Rückgängig machen',
+      confirmLabel: tr("Rückgängig machen"),
       description: (
         <>
           {count === 1
-            ? `Die Bibliothek der Stapelbearbeitung${when} bekommt ihre Sicherung zurück`
-            : `Die ${plural(count, 'Bibliothek', 'Bibliotheken')} der Stapelbearbeitung${when} bekommen ihre Sicherungen zurück`}
-          , die Einträge in PartForge ihren vorherigen Stand.
-          <span className="mt-2 block">
-            Bibliotheken, die seitdem geändert wurden, bleiben unverändert und werden übersprungen. Der jetzige Stand
-            wird vorher ebenfalls gesichert.
-          </span>
+            ? tr("Die Bibliothek der Stapelbearbeitung{0} bekommt ihre Sicherung zurück", { "0": String(when) })
+            : tr("Die {0} der Stapelbearbeitung{1} bekommen ihre Sicherungen zurück", { "0": String(plural(count, tr("Bibliothek"), tr("Bibliotheken"))), "1": String(when) })}
+          {tr(", die Einträge in PartForge ihren vorherigen Stand.")}<span className="mt-2 block">
+            {tr("Bibliotheken, die seitdem geändert wurden, bleiben unverändert und werden übersprungen. Der jetzige Stand wird vorher ebenfalls gesichert.")}</span>
         </>
       ),
     })
@@ -220,19 +202,19 @@ function BatchEditor({ root }: { root: string }) {
   useRegisterCommands([
     {
       id: 'housestyle.check',
-      title: stored || last ? 'Hausstil erneut prüfen' : 'Hausstil prüfen',
-      subtitle: 'Stapelbearbeitung – zeigt, was sich ändern würde',
+      title: stored || last ? tr("Hausstil erneut prüfen") : tr("Hausstil prüfen"),
+      subtitle: tr("Stapelbearbeitung – zeigt, was sich ändern würde"),
       group: 'Aktionen',
       icon: ScanSearch,
-      keywords: ['stapelbearbeitung', 'hausstil', 'prüfen', 'symbole', 'footprints'],
+      keywords: ['stapelbearbeitung', 'hausstil', tr("prüfen"), 'symbole', 'footprints'],
       priority: 40,
       disabled: () => checkBlocked ?? false,
       run: onCheck,
     },
     {
       id: 'housestyle.apply',
-      title: 'Hausstil anwenden',
-      subtitle: 'Geprüfte Abweichungen angleichen – mit Sicherung und Rückgängig',
+      title: tr("Hausstil anwenden"),
+      subtitle: tr("Geprüfte Abweichungen angleichen – mit Sicherung und Rückgängig"),
       group: 'Aktionen',
       icon: PaintbrushVertical,
       keywords: ['stapelbearbeitung', 'hausstil', 'anwenden', 'angleichen'],
@@ -242,13 +224,13 @@ function BatchEditor({ root }: { root: string }) {
     },
     {
       id: 'housestyle.undo',
-      title: 'Stapelbearbeitung rückgängig machen',
-      subtitle: 'Letzte Stapelbearbeitung aus den Sicherungen wiederherstellen',
+      title: tr("Stapelbearbeitung rückgängig machen"),
+      subtitle: tr("Letzte Stapelbearbeitung aus den Sicherungen wiederherstellen"),
       group: 'Aktionen',
       icon: Undo2,
-      keywords: ['hausstil', 'rückgängig', 'sicherung'],
+      keywords: ['hausstil', tr("rückgängig"), 'sicherung'],
       when: () => Boolean(undoInfo),
-      disabled: () => (jobs.busy ? 'Ein Job der Stapelbearbeitung läuft gerade.' : false),
+      disabled: () => (jobs.busy ? tr("Ein Job der Stapelbearbeitung läuft gerade.") : false),
       run: () => void onUndo(),
     },
   ])
@@ -271,17 +253,17 @@ function BatchEditor({ root }: { root: string }) {
   // Abschluss für Screenreader (die Seite zeigt das Ergebnis selbst, ohne Toast)
   const announcement =
     last === 'check' && stored && jobs.check.state === 'done'
-      ? `Prüfung abgeschlossen. ${stored.report.message}`
+      ? tr("Prüfung abgeschlossen. {0}", { "0": String(localizeMessage(stored.report.message)) })
       : last === 'apply' && jobs.applyResult
-        ? jobs.applyResult.message
+        ? localizeMessage(jobs.applyResult.message)
         : last === 'undo' && jobs.undoResult
-          ? jobs.undoResult.message
+          ? localizeMessage(jobs.undoResult.message)
           : ''
 
   return (
     // unten Platz für die Pille des Job-Docks, solange sie zu sehen ist
     <PageBody className="pb-[max(3rem,var(--pf-dock-reserve))]">
-      <PageTitle title={TITLE} subtitle={describeSelection(input.selection)} />
+      <PageTitle title={tr(TITLE)} subtitle={describeSelection(input.selection)} />
       <PageActions>
         {undoInfo && (
           <Button
@@ -291,8 +273,7 @@ function BatchEditor({ root }: { root: string }) {
             disabled={jobs.busy}
             loading={jobs.starting.undo}
           >
-            Rückgängig
-          </Button>
+            {tr("Rückgängig")}</Button>
         )}
         <Button
           variant={applyPrimary ? 'secondary' : 'primary'}
@@ -301,7 +282,7 @@ function BatchEditor({ root }: { root: string }) {
           disabled={Boolean(checkBlocked)}
           loading={checking}
         >
-          {recheckLabel ? 'Erneut prüfen' : 'Prüfen'}
+          {recheckLabel ? tr("Erneut prüfen") : tr("Prüfen")}
         </Button>
         <Button
           variant={applyPrimary ? 'primary' : 'secondary'}
@@ -310,8 +291,7 @@ function BatchEditor({ root }: { root: string }) {
           disabled={applyBlocked !== null}
           loading={applying}
         >
-          Anwenden
-        </Button>
+          {tr("Anwenden")}</Button>
       </PageActions>
 
       <div className={GRID}>
@@ -358,9 +338,9 @@ function BatchEditor({ root }: { root: string }) {
           {last === 'check' && checkRunning && (
             <JobProgress
               job={jobs.check.job}
-              title="Hausstil wird geprüft"
+              title={tr("Hausstil wird geprüft")}
               icon={<ScanSearch />}
-              note="Liest nur – geändert wird dabei nichts."
+              note={tr("Liest nur – geändert wird dabei nichts.")}
               onCancel={jobs.cancelCheck}
               cancelling={jobs.cancelling}
             />
@@ -409,9 +389,7 @@ function BatchEditor({ root }: { root: string }) {
 
           {last === null && !stored && filesQ.isError && (
             <Card className="px-4 py-3 text-xs text-fg-muted">
-              Die Bibliotheksdateien ließen sich nicht lesen – prüfen geht trotzdem; die Auswahl einzelner Bibliotheken
-              ist dann nicht möglich.
-            </Card>
+              {tr("Die Bibliotheksdateien ließen sich nicht lesen – prüfen geht trotzdem; die Auswahl einzelner Bibliotheken ist dann nicht möglich.")}</Card>
           )}
         </div>
       </div>

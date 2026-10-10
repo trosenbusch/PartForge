@@ -1,11 +1,4 @@
-/**
- * Vor einem Bibliothekswechsel (Öffnen, Anlegen, Schließen) fragen, wenn dabei Jobs abgebrochen würden: Das Backend
- * bricht die schreibenden Jobs der offenen Bibliothek ab (`partforge.jobs.library_switch`, `cancel_reason
- * "library_switch"`) – ohne Rückfrage verlöre z. B. eine laufende Serie still ihre restlichen Bauteile.
- *
- *   if (!(await confirmLibrarySwitch('switch'))) return
- *   openWs.mutate(path, …)
- */
+import { t as tr } from '@/lib/i18n'
 import { queryClient } from '@/api/queryClient'
 import { isJobActive, SWITCH_CANCELLED_JOB_KINDS, systemKeys, type Job, type WorkspaceInfo } from '@/api/system'
 import { confirm } from '@/components/ui'
@@ -33,20 +26,20 @@ export function switchCancelNote(): string | null {
   const running = jobsCancelledBySwitch()
   if (!running.length) return null
   return running.length === 1
-    ? `„${running[0].title}“ wurde abgebrochen – Details im Job-Dock.`
-    : `${formatNumber(running.length)} Jobs wurden abgebrochen – Details im Job-Dock.`
+    ? tr("„{0}“ wurde abgebrochen – Details im Job-Dock.", { "0": String(running[0].title) })
+    : tr("{0} Jobs wurden abgebrochen – Details im Job-Dock.", { "0": String(formatNumber(running.length)) })
 }
 
 const TITLE: Record<LibrarySwitchKind, string> = {
-  switch: 'Bibliothek wechseln?',
-  create: 'Neue Bibliothek anlegen und wechseln?',
-  close: 'Bibliothek schließen?',
+  get switch() { return tr("Bibliothek wechseln?") },
+  get create() { return tr("Neue Bibliothek anlegen und wechseln?") },
+  get close() { return tr("Bibliothek schließen?") },
 }
 
 const CONFIRM: Record<LibrarySwitchKind, string> = {
-  switch: 'Trotzdem wechseln',
-  create: 'Trotzdem anlegen',
-  close: 'Trotzdem schließen',
+  get switch() { return tr("Trotzdem wechseln") },
+  get create() { return tr("Trotzdem anlegen") },
+  get close() { return tr("Trotzdem schließen") },
 }
 
 /**
@@ -58,17 +51,17 @@ export async function confirmLibrarySwitch(kind: LibrarySwitchKind): Promise<boo
   if (!running.length) return true
   const current = queryClient.getQueryData<WorkspaceInfo | null>(systemKeys.workspace)?.name
   const names = running.slice(0, 3).map((j) => `„${j.title}“`)
-  const more = running.length > 3 ? ` und ${formatNumber(running.length - 3)} weitere` : ''
+  const more = running.length > 3 ? tr(" und {0} weitere", { "0": String(formatNumber(running.length - 3)) }) : ''
   const what =
     running.length === 1
-      ? `${names[0]} läuft noch und wird abgebrochen.`
-      : `${formatNumber(running.length)} Jobs laufen noch und werden abgebrochen: ${names.join(', ')}${more}.`
-  const kept = current ? ` Was schon geschrieben ist, bleibt in „${current}“ erhalten.` : ''
+      ? tr("{0} läuft noch und wird abgebrochen.", { "0": String(names[0]) })
+      : tr("{0} Jobs laufen noch und werden abgebrochen: {1}{2}.", { "0": String(formatNumber(running.length)), "1": String(names.join(', ')), "2": String(more) })
+  const kept = current ? tr(" Was schon geschrieben ist, bleibt in „{0}“ erhalten.", { "0": String(current) }) : ''
   return confirm({
     title: TITLE[kind],
     description: `${what}${kept}`,
     confirmLabel: CONFIRM[kind],
-    cancelLabel: 'Weiterlaufen lassen',
+    cancelLabel: tr("Weiterlaufen lassen"),
     destructive: true,
   })
 }

@@ -1,4 +1,4 @@
-/** Fundstellen: welche extrahierten Angaben von welcher Datenblattseite stammen (für Sprünge in beide Richtungen). */
+import { t } from '@/lib/i18n'
 import type { DeviceData, ExtractionData } from '@/api/datasheets'
 import type { DataSection } from '../store'
 import { packageLabel } from './context'
@@ -8,7 +8,7 @@ export interface PageReference {
   label: string
 }
 
-export function pageReferences(extraction: ExtractionData, device: DeviceData | undefined): Map<number, PageReference[]> {
+export function pageReferences(extraction: ExtractionData, device: DeviceData | undefined, translate: typeof t = t): Map<number, PageReference[]> {
   const out = new Map<number, PageReference[]>()
   const add = (pages: readonly (number | null | undefined)[], ref: PageReference) => {
     for (const p of pages) {
@@ -21,11 +21,11 @@ export function pageReferences(extraction: ExtractionData, device: DeviceData | 
   if (device) {
     add(
       device.parameters.map((p) => p.page),
-      { section: 'parameter', label: 'Parameter' },
+      { section: 'parameter', label: translate("Parameter") },
     )
     add(
       device.variants.flatMap((v) => v.pages),
-      { section: 'varianten', label: 'Bestellnummern' },
+      { section: 'varianten', label: translate("Bestellnummern") },
     )
     for (const t of device.pin_tables) {
       add(t.pages, { section: 'pins', label: `Pins ${packageLabel(extraction.packages.find((p) => p.code === t.package), t.package)}` })
@@ -33,8 +33,8 @@ export function pageReferences(extraction: ExtractionData, device: DeviceData | 
   }
   for (const pkg of extraction.packages) {
     if (pkg.origin) continue // aus einem anderen Datenblatt übernommen: die Seiten gehören zu dessen PDF
-    add(pkg.pages, { section: 'gehaeuse', label: `Maße ${packageLabel(pkg)}` })
-    add(pkg.land_pattern.pages, { section: 'gehaeuse', label: `Lötflächen ${packageLabel(pkg)}` })
+    add(pkg.pages, { section: 'gehaeuse', label: translate("Maße {0}", { "0": String(packageLabel(pkg)) }) })
+    add(pkg.land_pattern.pages, { section: 'gehaeuse', label: translate("Lötflächen {0}", { "0": String(packageLabel(pkg)) }) })
   }
   return out
 }

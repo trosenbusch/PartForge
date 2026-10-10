@@ -1,11 +1,4 @@
-/**
- * API der Einstellungsseite: Bibliothekseinstellungen (Änderung auf den frischen Serverstand angewendet),
- * Sicherungen, Schema-Designer (Kategorien und Felder), Vorlagen-Vorschau (gespeicherte Vorlagen und beliebige
- * Entwürfe über `render-template`), Symboltypen, Systemstatus (Altium, KI-Verbindungstest) und Lagenaufbau.
- *
- * Typen kommen aus dem OpenAPI-Schema (`schema.d.ts`). Der Altium-Status teilt sich Abfrage und Cache mit der
- * Altium-Seite (`@/api/altium`).
- */
+import { useI18n } from '@/lib/i18n'
 import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { api, ApiError } from './client'
 import { altiumApi, altiumKeys, useAltiumStatus as useSharedAltiumStatus } from './altium'
@@ -110,10 +103,11 @@ function invalidateStyleDependent(qc: QueryClient) {
 }
 
 export function useUpdateWorkspaceSettings() {
+  const { t: tr } = useI18n()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: updateWorkspaceSettings,
-    meta: { errorTitle: 'Bibliothekseinstellungen konnten nicht gespeichert werden' },
+    meta: { errorTitle: tr("Bibliothekseinstellungen konnten nicht gespeichert werden") },
     onSuccess: (info) => {
       qc.setQueryData(systemKeys.workspace, info)
       void qc.invalidateQueries({ queryKey: systemKeys.health })
@@ -144,10 +138,11 @@ export function useBackups(enabled = true) {
 }
 
 export function useCreateBackup() {
+  const { t: tr } = useI18n()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (reason: string) => api.post<BackupInfo>('/api/backups', { reason }),
-    meta: { errorTitle: 'Sicherung konnte nicht erstellt werden' },
+    meta: { errorTitle: tr("Sicherung konnte nicht erstellt werden") },
     onSuccess: () => void qc.invalidateQueries({ queryKey: settingsKeys.backups }),
   })
 }
@@ -266,6 +261,7 @@ export function useCreateCategory() {
 }
 
 export function useUpdateCategory() {
+  const { t: tr } = useI18n()
   const qc = useQueryClient()
   return useMutation({
     /** `root` = Bibliothek, zu der der Entwurf gehört (nie in eine inzwischen geöffnete andere schreiben) */
@@ -273,7 +269,7 @@ export function useUpdateCategory() {
       await assertWorkspaceRoot(root, 'PATCH', `/api/categories/${enc(table)}`)
       return schemaApi.updateCategory(table, patch)
     },
-    meta: { errorTitle: 'Kategorie konnte nicht gespeichert werden' },
+    meta: { errorTitle: tr("Kategorie konnte nicht gespeichert werden") },
     onSuccess: (cat, { table }) => {
       putCategory(qc, cat, table)
       invalidateSchema(qc)
@@ -310,10 +306,11 @@ export function useFieldMutation<V>(fn: (vars: V) => Promise<CategoryDef>, error
 }
 
 export function useRegenerateTexts() {
+  const { t: tr } = useI18n()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: schemaApi.regenerateTexts,
-    meta: { errorTitle: 'Texte konnten nicht neu erzeugt werden' },
+    meta: { errorTitle: tr("Texte konnten nicht neu erzeugt werden") },
     onSuccess: (out) => {
       if (out.updated > 0) void qc.invalidateQueries({ queryKey: ['parts'] })
     },
@@ -428,8 +425,9 @@ export function useBuiltinLayerSet(layers: LayerMap | null, current: boolean) {
 }
 
 export function useApplyLayerStack() {
+  const { t: tr } = useI18n()
   return useMutation({
     mutationFn: () => api.post<{ job: Job }>('/api/libraries/layer-stack/apply'),
-    meta: { errorTitle: 'Lagen konnten nicht übertragen werden' },
+    meta: { errorTitle: tr("Lagen konnten nicht übertragen werden") },
   })
 }

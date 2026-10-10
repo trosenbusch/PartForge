@@ -1,3 +1,4 @@
+import { metadataLabel, t, useI18n } from '@/lib/i18n'
 /**
  * „Alle Kategorien“ (`/bauteile`): Suche über die ganze Bibliothek (Teilenummer, MPN, Wert, Beschreibung) und die
  * Kategorien als Karten mit Anzahl und offenen Punkten (ohne Symbol/Footprint/Datenblatt). Ohne Bauteile ein
@@ -33,6 +34,7 @@ const item = {
 }
 
 export function AllCategoriesView({ search, onSearchChange, onNewPart, onImport }: AllCategoriesViewProps) {
+  const { t } = useI18n()
   const navigate = useNavigate()
   const categories = useCategories()
   const stats = useLibraryStats()
@@ -56,21 +58,21 @@ export function AllCategoriesView({ search, onSearchChange, onNewPart, onImport 
           size="lg"
           titleAs="h2"
           illustration="no-parts"
-          title="Noch keine Bauteile in dieser Bibliothek"
-          description="Legen Sie eine komplette Serie an (z. B. alle E96-Widerstände in 0603), lesen Sie ein Datenblatt mit KI ein oder übernehmen Sie eine vorhandene Tabelle."
+          title={t("Noch keine Bauteile in dieser Bibliothek")}
+          description={t("Legen Sie eine komplette Serie an (z. B. alle E96-Widerstände in 0603), lesen Sie ein Datenblatt mit KI ein oder übernehmen Sie eine vorhandene Tabelle.")}
           actions={
             <>
               <Button variant="secondary" leftIcon={<Layers />} onClick={() => navigate('/serien')}>
-                Serien-Assistent
+                {t("Serien-Assistent")}
               </Button>
               <Button variant="spark" leftIcon={<FileScan />} onClick={() => navigate('/import')}>
-                Datenblatt importieren
+                {t("Datenblatt importieren")}
               </Button>
               <Button variant="secondary" leftIcon={<Upload />} onClick={onImport}>
-                Tabelle importieren
+                {t("Tabelle importieren")}
               </Button>
               <Button variant="ghost" leftIcon={<Plus />} onClick={onNewPart}>
-                Einzelnes Bauteil
+                {t("Einzelnes Bauteil")}
               </Button>
             </>
           }
@@ -99,8 +101,8 @@ export function AllCategoriesView({ search, onSearchChange, onNewPart, onImport 
                 onSearchChange('')
               }
             }}
-            placeholder={`In allen ${formatNumber(total)} Bauteilen suchen …`}
-            aria-label="In allen Bauteilen suchen"
+            placeholder={t("In allen {1} Bauteilen suchen …", { 1: formatNumber(total) })}
+            aria-label={t("In allen Bauteilen suchen")}
             aria-keyshortcuts="Control+F"
             className="h-full min-w-0 flex-1 bg-transparent text-sm text-fg outline-none placeholder:text-fg-subtle [&::-webkit-search-cancel-button]:hidden"
           />
@@ -108,7 +110,7 @@ export function AllCategoriesView({ search, onSearchChange, onNewPart, onImport 
             <button
               type="button"
               onClick={() => onSearchChange('')}
-              aria-label="Suche leeren"
+              aria-label={t("Suche leeren")}
               className="flex size-6 items-center justify-center rounded-control text-fg-subtle outline-none hover:bg-surface-3 hover:text-fg focus-ring"
             >
               <X aria-hidden className="size-3.5" />
@@ -140,7 +142,7 @@ export function AllCategoriesView({ search, onSearchChange, onNewPart, onImport 
             <section key={group} aria-labelledby={groupId(group)}>
               <div className="mb-2 flex items-baseline gap-2">
                 <h2 id={groupId(group)} className="micro-label">
-                  {group}
+                  {t(group)}
                 </h2>
                 <span className="mono text-2xs text-fg-subtle">
                   {formatNumber(list.reduce((s, c) => s + (c.part_count ?? 0), 0))}
@@ -151,7 +153,7 @@ export function AllCategoriesView({ search, onSearchChange, onNewPart, onImport 
                   const m = missing.get(c.table)
                   const count = c.part_count ?? 0
                   const issue = m ? missingSummary(m.missing_library_ref, m.missing_footprint_ref, m.missing_datasheet) : null
-                  const values = c.fields.filter((f) => !f.common).slice(0, 3).map((f) => f.label)
+                  const values = c.fields.filter((f) => !f.common).slice(0, 3).map((f) => metadataLabel(f.label, t))
                   return (
                     <motion.li key={c.table} variants={item}>
                       <button
@@ -175,9 +177,9 @@ export function AllCategoriesView({ search, onSearchChange, onNewPart, onImport 
                             <CategoryIcon name={c.icon} color={c.color} />
                           </span>
                           <span className="min-w-0 flex-1">
-                            <span className="block truncate text-ui font-semibold text-fg">{c.label}</span>
+                            <span className="block truncate text-ui font-semibold text-fg">{metadataLabel(c.label, t)}</span>
                             <span className="block truncate text-2xs text-fg-subtle" title={values.join(', ')}>
-                              {values.length ? values.join(' · ') : `Bezeichner ${c.prefix}`}
+                              {values.length ? values.join(' · ') : t("Bezeichner {1}", { 1: c.prefix })}
                             </span>
                           </span>
                           <ArrowRight
@@ -190,10 +192,10 @@ export function AllCategoriesView({ search, onSearchChange, onNewPart, onImport 
                             <span className={cn('mono text-h3 font-semibold tabular-nums', count ? 'text-fg' : 'text-fg-subtle')}>
                               {formatNumber(count)}
                             </span>
-                            <span className="text-xs text-fg-muted">{count === 1 ? 'Bauteil' : 'Bauteile'}</span>
+                            <span className="text-xs text-fg-muted">{count === 1 ? t("Bauteil") : t("Bauteile")}</span>
                           </span>
                           <span className="min-w-0 truncate text-right text-2xs text-fg-subtle">
-                            {count === 0 ? 'noch leer' : issue ? <span className="text-warning-text">{issue}</span> : 'vollständig'}
+                            {count === 0 ? t("noch leer") : issue ? <span className="text-warning-text">{issue}</span> : t("vollständig")}
                           </span>
                         </span>
                       </button>
@@ -218,11 +220,11 @@ const groupId = (group: string) => `grp-${group.toLowerCase().replace(/[^a-z0-9�
  * der größte Einzelpunkt.
  */
 function missingSummary(symbol: number, footprint: number, datasheet: number): string | null {
-  if (symbol && footprint && symbol === footprint) return `${formatNumber(symbol)} ohne Symbol und Footprint`
+  if (symbol && footprint && symbol === footprint) return t("{1} ohne Symbol und Footprint", { 1: formatNumber(symbol) })
   const items: [number, string][] = [
-    [footprint, 'ohne Footprint'],
-    [symbol, 'ohne Symbol'],
-    [datasheet, 'ohne Datenblatt'],
+    [footprint, t("ohne Footprint")],
+    [symbol, t("ohne Symbol")],
+    [datasheet, t("ohne Datenblatt")],
   ]
   const top = items.filter(([n]) => n > 0).sort((a, b) => b[0] - a[0])[0]
   return top ? `${formatNumber(top[0])} ${top[1]}` : null
@@ -256,7 +258,8 @@ function SearchResults({
   categories: CategoryDef[]
   onOpen: (table: string, pn: string) => void
 }) {
-  if (error) return <Callout tone="danger" title="Suche nicht möglich">{error}</Callout>
+  const { t } = useI18n()
+  if (error) return <Callout tone="danger" title={t("Suche nicht möglich")}>{error}</Callout>
   if (loading) {
     return (
       <div className="flex flex-col gap-2">
@@ -271,17 +274,17 @@ function SearchResults({
       <EmptyState
         illustration="search-empty"
         titleAs="h2"
-        title={`Nichts zu „${query}“ gefunden`}
-        description="Gesucht wird in Teilenummer, Hersteller-Teilenummer, Wert, Kommentar und Beschreibung aller Kategorien. Werte mit Einheit werden erkannt („10k“ findet „10 kΩ“)."
+        title={t("Nichts zu „{1}“ gefunden", { 1: query })}
+        description={t("Gesucht wird in Teilenummer, Hersteller-Teilenummer, Wert, Kommentar und Beschreibung aller Kategorien. Werte mit Einheit werden erkannt („10k“ findet „10 kΩ“).")}
       />
     )
   }
   const byTable = new Map(categories.map((c) => [c.table, c]))
   return (
-    <section aria-label={`Suchergebnisse für „${query}“`} className="flex flex-col gap-2">
+    <section aria-label={t("Suchergebnisse für „{1}“", { 1: query })} className="flex flex-col gap-2">
       <p className="text-xs text-fg-muted" aria-live="polite">
-        {plural(hits.length, 'Treffer', 'Treffer')} in {plural(new Set(hits.map((h) => h.table)).size, 'Kategorie', 'Kategorien')}
-        {hits.length >= 80 && ' – die besten 80'}
+        {plural(hits.length, t("Treffer"), t("Treffer"))}  {t("in")} {plural(new Set(hits.map((h) => h.table)).size, t("Kategorie"), t("Kategorien"))}
+        {hits.length >= 80 && t(" – die besten 80")}
       </p>
       <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-card">
         {hits.map((h) => {
@@ -296,7 +299,7 @@ function SearchResults({
               >
                 <span className="flex min-w-0 items-center gap-2 text-xs text-fg-muted">
                   <CategoryIcon name={h.icon} color={h.color} className="size-3.5" />
-                  <span className="truncate">{h.label}</span>
+                  <span className="truncate">{metadataLabel(h.label, t)}</span>
                 </span>
                 <span className="mono truncate text-ui font-medium text-fg">{h.part_number}</span>
                 <span className="mono truncate text-xs text-fg">{h.value ? displayValue(valueField, h.value) : '–'}</span>
@@ -315,6 +318,7 @@ function SearchResults({
 }
 
 function RecentParts() {
+  const { t } = useI18n()
   const navigate = useNavigate()
   const stats = useLibraryStats()
   const recent = (stats.data?.recent_parts ?? [])
@@ -325,7 +329,7 @@ function RecentParts() {
   return (
     <section aria-labelledby="recent-parts">
       <h2 id="recent-parts" className="micro-label mb-2">
-        Zuletzt geändert
+        {t("Zuletzt geändert")}
       </h2>
       <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-card">
         {recent.map((r) => (
@@ -338,7 +342,7 @@ function RecentParts() {
               <span aria-hidden className="size-2 rounded-full" style={{ background: r.color ?? 'var(--pf-fg-subtle)' }} />
               <span className="mono truncate text-ui text-fg">{r.part_number}</span>
               <span className="truncate text-xs text-fg-muted">
-                {r.label}
+                {metadataLabel(r.label, t)}
                 {r.description && <span className="text-fg-subtle"> · {r.description}</span>}
               </span>
               <span className="whitespace-nowrap text-2xs text-fg-subtle">

@@ -1,3 +1,6 @@
+import { localizeMessage } from '@/lib/i18n'
+import { useI18n } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { AnimatePresence, motion } from 'motion/react'
 import { Ban, Check, ChevronDown, ChevronUp, CircleStop, Minus, ScrollText, TriangleAlert, X } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
@@ -21,11 +24,11 @@ import { baseName, formatClock, formatNumber, formatNumbersInText, formatPercent
 import { useJobDock } from '../stores'
 
 const STATUS_LABEL: Record<JobStatus, string> = {
-  queued: 'Wartet …',
-  running: 'Läuft …',
-  done: 'Fertig',
-  failed: 'Fehlgeschlagen',
-  cancelled: 'Abgebrochen',
+  get queued() { return tr("Wartet …") },
+  get running() { return tr("Läuft …") },
+  get done() { return tr("Fertig") },
+  get failed() { return tr("Fehlgeschlagen") },
+  get cancelled() { return tr("Abgebrochen") },
 }
 
 const STATUS_TONE: Record<JobStatus, ProgressTone> = {
@@ -83,8 +86,8 @@ function useForeignLibraryName(): (job: Job) => string | null {
 function statusLine(job: Job, outcome: JobOutcome | null): string {
   if (job.status === 'failed') return outcome?.description ?? STATUS_LABEL.failed
   if (outcome?.tone === 'warning') return outcome.problem ?? outcome.description
-  if (isJobActive(job) && job.cancel_requested) return 'Wird abgebrochen …'
-  if (isJobActive(job)) return formatNumbersInText(job.message) || STATUS_LABEL[job.status]
+  if (isJobActive(job) && job.cancel_requested) return tr("Wird abgebrochen …")
+  if (isJobActive(job)) return formatNumbersInText(localizeMessage(job.message)) || STATUS_LABEL[job.status]
   const when = formatRelativeTime(job.finished ?? job.created)
   if (job.status === 'cancelled') {
     // Grund vor Zeit: „Abgebrochen – Bibliothek gewechselt“ passt sonst nicht in die Zeile (voller Text als Tooltip)
@@ -109,6 +112,7 @@ function publishReserve(block: number, inline: number) {
  * `noteJobSnapshot` (`@/api/jobs`) – genau einmal je Job.
  */
 export function JobDock() {
+  const { t: tr } = useI18n()
   const jobsQuery = useJobs()
   // gezielt abonnieren – nicht bei jeder Änderung im Dock-Store neu rendern
   const open = useJobDock((s) => s.open)
@@ -145,7 +149,7 @@ export function JobDock() {
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [open, setOpen])
+  }, [open, setOpen, tr])
 
   // Die Liste hält je Job den neuesten bekannten Stand – auch aus `useJob` der Seiten (Dock und Seite stimmen überein)
   const all = jobsQuery.data
@@ -177,14 +181,14 @@ export function JobDock() {
         all.filter((j) => j.status === 'failed').map((j) => j.id),
       )
     }
-  }, [all])
+  }, [all, tr])
 
   // ------------------------------------------------------------------ Ruhezustand: ausblenden bzw. verkleinern
   // Panel geöffnet = Fehlschläge gesehen (nach dem Zuklappen startet der Ruhe-Zeitgeber neu, siehe Store)
   const failedKey = failedIds.join(',')
   useEffect(() => {
     if (open && failedKey) useJobDock.getState().markFailuresSeen(failedKey.split(','))
-  }, [open, failedKey])
+  }, [open, failedKey, tr])
 
   const unseenFailures = failedIds.some((id) => !seenFailures.includes(id))
   const idle = pillJobs.length > 0 && active.length === 0 && !open
@@ -212,11 +216,11 @@ export function JobDock() {
     }
     window.setTimeout(check, action === 'hide' ? IDLE_HIDE_MS : FAILED_COLLAPSE_MS)
     return () => cancelled.abort()
-  }, [booted, idle, unseenFailures, hiddenFor, compactFor, signature])
+  }, [booted, idle, unseenFailures, hiddenFor, compactFor, signature, tr])
 
   useEffect(() => {
     setVisible(visible)
-  }, [visible, setVisible])
+  }, [visible, setVisible, tr])
 
   // Höhe messen, damit Toasts über Pille bzw. Panel erscheinen und nichts verdecken
   useEffect(() => {
@@ -225,7 +229,7 @@ export function JobDock() {
     const ro = new ResizeObserver(() => setHeight(Math.round(el.getBoundingClientRect().height)))
     ro.observe(el)
     return () => ro.disconnect()
-  }, [setHeight])
+  }, [setHeight, tr])
 
   // Platzbedarf der Pille als CSS-Variable (`--pf-dock-reserve`) – Seiten halten damit Inhalte frei
   useLayoutEffect(() => {
@@ -242,8 +246,8 @@ export function JobDock() {
     const ro = new ResizeObserver(update)
     ro.observe(el)
     return () => ro.disconnect()
-  }, [pillVisible, compact])
-  useEffect(() => () => publishReserve(0, 0), [])
+  }, [pillVisible, compact, tr])
+  useEffect(() => () => publishReserve(0, 0), [tr])
 
   const avg = active.length ? active.reduce((sum, j) => sum + j.progress, 0) / active.length : 1
   const lead = active[0]
@@ -252,16 +256,16 @@ export function JobDock() {
     active.length === 0
       ? anyFailed
         ? failedIds.length === 1
-          ? 'Job fehlgeschlagen'
-          : `${formatNumber(failedIds.length)} Jobs fehlgeschlagen`
+          ? tr("Job fehlgeschlagen")
+          : tr("{0} Jobs fehlgeschlagen", { "0": String(formatNumber(failedIds.length)) })
         : anyWarning
-          ? 'Erledigt mit Hinweisen'
-          : 'Alle Jobs erledigt'
+          ? tr("Erledigt mit Hinweisen")
+          : tr("Alle Jobs erledigt")
       : active.length === 1
-        ? '1 Job läuft'
-        : `${formatNumber(active.length)} Jobs laufen`
+        ? tr("1 Job läuft")
+        : tr("{0} Jobs laufen", { "0": String(formatNumber(active.length)) })
   /** Zweite Zeile der Pille: Meldung des ersten laufenden Jobs (gekürzt) und – immer sichtbar – sein Fortschritt */
-  const leadText = lead ? formatNumbersInText(lead.message) || lead.title : 'Details anzeigen'
+  const leadText = lead ? formatNumbersInText(localizeMessage(lead.message)) || localizeMessage(lead.title) : tr("Details anzeigen")
   const leadPercent = lead ? formatPercent(lead.progress) : null
 
   return (
@@ -279,7 +283,7 @@ export function JobDock() {
         {visible && open && (
           <motion.section
             key="panel"
-            aria-label="Hintergrundjobs"
+            aria-label={tr("Hintergrundjobs")}
             className="pointer-events-auto flex w-[400px] flex-col overflow-hidden rounded-panel border border-line-strong bg-surface shadow-pop"
             initial={{ opacity: 0, y: 14, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -288,21 +292,19 @@ export function JobDock() {
             style={{ transformOrigin: 'bottom right' }}
           >
             <header className="flex items-center gap-2 border-b border-line px-4 py-3">
-              <h2 className="text-ui font-semibold text-fg">Hintergrundjobs</h2>
+              <h2 className="text-ui font-semibold text-fg">{tr("Hintergrundjobs")}</h2>
               {panelActive > 0 && (
                 <Badge variant="accent" dot pulse>
-                  {formatNumber(panelActive)} aktiv
-                </Badge>
+                  {formatNumber(panelActive)} {tr(" aktiv")}</Badge>
               )}
               <div className="ml-auto flex items-center gap-1">
                 {panelFinished.length > 0 && (
                   <Button size="xs" variant="ghost" onClick={() => dismiss(panelFinished.map((j) => j.id))}>
-                    Erledigte ausblenden
-                  </Button>
+                    {tr("Erledigte ausblenden")}</Button>
                 )}
                 <IconButton
                   size="xs"
-                  label="Minimieren"
+                  label={tr("Minimieren")}
                   icon={<Minus />}
                   onClick={() => {
                     setOpen(false)
@@ -330,7 +332,7 @@ export function JobDock() {
             onClick={toggle}
             aria-expanded={open}
             // Eingeklappt (nur Symbol) braucht die Pille einen Namen; sonst gilt der sichtbare Text (Sprachsteuerung)
-            aria-label={compact ? `${headline} – Jobliste anzeigen` : undefined}
+            aria-label={compact ? tr("{0} – Jobliste anzeigen", { "0": String(headline) }) : undefined}
             title={compact ? headline : undefined}
             className={cn(
               'pointer-events-auto flex items-center rounded-full border border-line-strong bg-surface text-left shadow-pop outline-none focus-ring',
@@ -390,6 +392,7 @@ export function JobDock() {
 
 /** Zeile im Panel; `library` = Name der Bibliothek, wenn der Job zu einer anderen als der geöffneten gehört */
 function JobRow({ job, library, onDismiss }: { job: Job; library: string | null; onDismiss: () => void }) {
+  const { t: tr } = useI18n()
   const expandedId = useJobDock((s) => s.expandedId)
   const toggleExpanded = useJobDock((s) => s.toggleExpanded)
   const highlightId = useJobDock((s) => s.highlightId)
@@ -401,8 +404,8 @@ function JobRow({ job, library, onDismiss }: { job: Job; library: string | null;
   const switched = isLibrarySwitchCancel(job)
   // Abbruch durch Bibliothekswechsel: gelb wie „Hinweis“ (nicht gewollt, nicht fertig) – Abbruch durch den Benutzer: grau
   const tone: ProgressTone = warned || switched ? 'warning' : STATUS_TONE[job.status]
-  const statusLabel = warned ? 'Fertig mit Hinweisen' : switched ? jobCancelText(job, true) : STATUS_LABEL[job.status]
-  const line = statusLine(job, outcome)
+  const statusLabel = warned ? tr("Fertig mit Hinweisen") : switched ? jobCancelText(job, true) : STATUS_LABEL[job.status]
+  const line = localizeMessage(statusLine(job, outcome))
   /** voller Text als Tooltip, wenn die Zeile gekürzt sein kann */
   const fullText =
     job.status === 'failed' || warned ? (outcome?.problem ?? undefined) : job.status === 'cancelled' ? jobCancelText(job) : undefined
@@ -416,7 +419,7 @@ function JobRow({ job, library, onDismiss }: { job: Job; library: string | null;
           stroke={3}
           tone={tone}
           indeterminate={job.status === 'queued'}
-          label={`${job.title}: ${statusLabel}`}
+          label={`${localizeMessage(job.title)}: ${statusLabel}`}
         >
           {warned ? (
             <TriangleAlert className="size-3.5 text-warning" />
@@ -432,15 +435,15 @@ function JobRow({ job, library, onDismiss }: { job: Job; library: string | null;
         </ProgressRing>
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-baseline gap-1.5">
-            <span className="min-w-0 truncate text-ui font-medium text-fg" title={job.title}>
-              {job.title}
+            <span className="min-w-0 truncate text-ui font-medium text-fg" title={localizeMessage(job.title)}>
+              {localizeMessage(job.title)}
             </span>
             {library && (
               <span
                 className="max-w-[40%] shrink-0 truncate rounded-full border border-line-strong px-1.5 text-2xs leading-4 text-fg-muted"
-                title={`Gehört zur Bibliothek „${library}“ (nicht die geöffnete)`}
+                title={tr("Gehört zur Bibliothek „{0}“ (nicht die geöffnete)", { "0": String(library) })}
               >
-                <span className="sr-only">Bibliothek </span>
+                <span className="sr-only">{tr("Bibliothek ")}</span>
                 {library}
               </span>
             )}
@@ -450,7 +453,7 @@ function JobRow({ job, library, onDismiss }: { job: Job; library: string | null;
               'truncate text-2xs',
               job.status === 'failed' ? 'text-danger-text' : warned || switched ? 'text-warning-text' : 'text-fg-subtle',
             )}
-            title={fullText}
+            title={fullText ? localizeMessage(fullText) : undefined}
           >
             {line}
           </div>
@@ -459,7 +462,7 @@ function JobRow({ job, library, onDismiss }: { job: Job; library: string | null;
           {active && (
             <IconButton
               size="xs"
-              label={job.cancel_requested ? 'Wird abgebrochen …' : 'Abbrechen'}
+              label={job.cancel_requested ? tr("Wird abgebrochen …") : tr("Abbrechen")}
               icon={<CircleStop />}
               loading={cancel.isPending || Boolean(job.cancel_requested)}
               disabled={Boolean(job.cancel_requested)}
@@ -468,12 +471,12 @@ function JobRow({ job, library, onDismiss }: { job: Job; library: string | null;
           )}
           <IconButton
             size="xs"
-            label={expanded ? 'Log ausblenden' : 'Log anzeigen'}
+            label={expanded ? tr("Log ausblenden") : tr("Log anzeigen")}
             icon={<ScrollText />}
             onClick={() => toggleExpanded(job.id)}
             className={cn(expanded && 'bg-surface-2 text-fg')}
           />
-          {!active && <IconButton size="xs" label="Ausblenden" icon={<X />} onClick={onDismiss} />}
+          {!active && <IconButton size="xs" label={tr("Ausblenden")} icon={<X />} onClick={onDismiss} />}
         </div>
       </div>
       <AnimatePresence initial={false}>
@@ -494,6 +497,7 @@ function JobRow({ job, library, onDismiss }: { job: Job; library: string | null;
 }
 
 function JobLog({ id }: { id: string }) {
+  const { t: tr } = useI18n()
   const { job } = useJob(id)
   const ref = useRef<HTMLDivElement>(null)
   const count = job?.log.length ?? 0
@@ -502,21 +506,21 @@ function JobLog({ id }: { id: string }) {
   useLayoutEffect(() => {
     const el = ref.current
     if (el) el.scrollTop = el.scrollHeight
-  }, [count])
+  }, [count, tr])
   return (
     <div
       ref={ref}
       role="log"
-      aria-label="Protokoll"
+      aria-label={tr("Protokoll")}
       className="mx-4 mb-3 max-h-44 overflow-y-auto rounded-button border border-line bg-bg/80 px-3 py-2 font-mono text-2xs leading-[1.6]"
     >
-      {!job && <div className="text-fg-subtle">Log wird geladen …</div>}
-      {job && count === 0 && <div className="text-fg-subtle">Noch keine Einträge.</div>}
-      {offset > 0 && <div className="pb-1 text-fg-subtle">… {offset} ältere Einträge ausgeblendet</div>}
+      {!job && <div className="text-fg-subtle">{tr("Log wird geladen …")}</div>}
+      {job && count === 0 && <div className="text-fg-subtle">{tr("Noch keine Einträge.")}</div>}
+      {offset > 0 && <div className="pb-1 text-fg-subtle">… {offset} {tr(" ältere Einträge ausgeblendet")}</div>}
       {visible.map((entry, i) => (
         <div key={offset + i} className="flex gap-2">
           <span className="shrink-0 text-fg-subtle">{formatClock(entry.ts)}</span>
-          <span className={cn('min-w-0 whitespace-pre-wrap break-words', LOG_COLOR[entry.level])}>{entry.text}</span>
+          <span className={cn('min-w-0 whitespace-pre-wrap break-words', LOG_COLOR[entry.level])}>{localizeMessage(entry.text)}</span>
         </div>
       ))}
     </div>

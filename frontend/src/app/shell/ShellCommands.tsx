@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import {
   FileScan,
   FolderOpen,
@@ -61,6 +62,7 @@ function modalOpen(): boolean {
 
 /** Eingebaute Befehle (Navigation, Bibliothek, Darstellung), Bauteil-Schnellsuche und globale Tastenkürzel. */
 export function ShellCommands() {
+  const { t: tr } = useI18n()
   const navigate = useNavigate()
   const workspace = useWorkspace().data
   const recent = useRecentWorkspaces().data
@@ -75,9 +77,9 @@ export function ShellCommands() {
   const aiUnavailable = !settings
     ? null
     : !settings.settings.ai.enabled
-      ? 'KI-Funktionen sind ausgeschaltet'
+      ? tr("KI-Funktionen sind ausgeschaltet")
       : !settings.ai_key_configured
-        ? 'Kein Claude-API-Schlüssel hinterlegt'
+        ? tr("Kein Claude-API-Schlüssel hinterlegt")
         : null
 
   /** Bibliothek wechseln bzw. schließen – vorher fragen, wenn dabei laufende Jobs abgebrochen würden */
@@ -86,16 +88,16 @@ export function ShellCommands() {
     const note = switchCancelNote()
     openWs.mutate(path, {
       onSuccess: (info) => {
-        toast.success(`„${info.name}“ geöffnet`, { description: note ?? undefined })
+        toast.success(tr("„{0}“ geöffnet", { "0": String(info.name) }), { description: note ?? undefined })
         go('/')
       },
-      onError: (err) => toast.error('Bibliothek konnte nicht geöffnet werden', { description: errorMessage(err) }),
+      onError: (err) => toast.error(tr("Bibliothek konnte nicht geöffnet werden"), { description: errorMessage(err) }),
     })
   }
   const closeLibrary = async () => {
     if (!(await confirmLibrarySwitch('close'))) return
     const note = switchCancelNote()
-    closeWs.mutate(undefined, { onSuccess: () => toast.success('Bibliothek geschlossen', { description: note ?? undefined }) })
+    closeWs.mutate(undefined, { onSuccess: () => toast.success(tr("Bibliothek geschlossen"), { description: note ?? undefined }) })
   }
 
   const commands: AppCommand[] = [
@@ -109,15 +111,15 @@ export function ShellCommands() {
       hotkey: item.hotkey,
       ai: item.ai,
       target: item.to,
-      keywords: ['gehe zu', 'öffnen', 'seite'],
+      keywords: [tr("gehe zu"), tr("öffnen"), 'seite'],
       when: item.requiresWorkspace ? needsWs : undefined,
       run: ({ navigate: go }) => go(item.to),
     })),
     // --- Aktionen (Seiten können diese IDs mit eigenen Implementierungen überlagern)
     {
       id: 'parts.new',
-      title: 'Neues Bauteil',
-      subtitle: 'Geführte Anlage mit Smart-Eingabe',
+      title: tr("Neues Bauteil"),
+      subtitle: tr("Geführte Anlage mit Smart-Eingabe"),
       group: 'Aktionen',
       icon: Plus,
       hotkey: 'mod+n',
@@ -128,8 +130,8 @@ export function ShellCommands() {
     },
     {
       id: 'series.new',
-      title: 'Serie erzeugen',
-      subtitle: 'Komplette Widerstands- oder Kondensatorserie im Serien-Assistenten',
+      title: tr("Serie erzeugen"),
+      subtitle: tr("Komplette Widerstands- oder Kondensatorserie im Serien-Assistenten"),
       group: 'Aktionen',
       icon: Layers,
       priority: 90,
@@ -140,8 +142,8 @@ export function ShellCommands() {
     },
     {
       id: 'import.datasheet',
-      title: 'Datenblatt importieren',
-      subtitle: 'PDF analysieren und Bauteil erzeugen',
+      title: tr("Datenblatt importieren"),
+      subtitle: tr("PDF analysieren und Bauteil erzeugen"),
       group: 'Aktionen',
       icon: FileScan,
       ai: true,
@@ -154,21 +156,21 @@ export function ShellCommands() {
     {
       // global (auch außerhalb von /import): Seiten mit eigener Fassung überlagern ihn (gleiche ID)
       id: 'import.find',
-      title: 'Datenblatt suchen …',
-      subtitle: 'Claude sucht das PDF zur Teilenummer im Web',
+      title: tr("Datenblatt suchen …"),
+      subtitle: tr("Claude sucht das PDF zur Teilenummer im Web"),
       group: 'Aktionen',
       icon: Search,
       ai: true,
       priority: 75,
       target: '/import?suche=1',
-      keywords: ['teilenummer', 'suche', 'web', 'internet', 'pdf finden', 'hersteller', 'claude', 'datenblattsuche'],
+      keywords: ['teilenummer', 'suche', 'web', 'internet', tr("pdf finden"), 'hersteller', 'claude', 'datenblattsuche'],
       when: needsWs,
       disabled: () => aiUnavailable,
       run: ({ navigate: go }) => go('/import?suche=1'),
     },
     {
       id: 'altium.regenerate',
-      title: 'DbLib neu erzeugen',
+      title: tr("DbLib neu erzeugen"),
       group: 'Aktionen',
       icon: RefreshCw,
       priority: 60,
@@ -179,8 +181,8 @@ export function ShellCommands() {
     },
     {
       id: 'library.sync',
-      title: 'Bibliotheksdateien synchronisieren',
-      subtitle: 'Ausstehende Symbole und Footprints in SchLib/PcbLib schreiben',
+      title: tr("Bibliotheksdateien synchronisieren"),
+      subtitle: tr("Ausstehende Symbole und Footprints in SchLib/PcbLib schreiben"),
       group: 'Aktionen',
       icon: FolderSync,
       priority: 55,
@@ -190,19 +192,19 @@ export function ShellCommands() {
     },
     {
       id: 'library.check',
-      title: 'Bibliothek prüfen',
-      subtitle: 'Fehlende Symbole, Footprints und Felder finden',
+      title: tr("Bibliothek prüfen"),
+      subtitle: tr("Fehlende Symbole, Footprints und Felder finden"),
       group: 'Aktionen',
       icon: ShieldCheck,
       priority: 50,
-      keywords: ['validieren', 'prüfbericht', 'fehler'],
+      keywords: ['validieren', tr("prüfbericht"), 'fehler'],
       when: needsWs,
       run: ({ navigate: go }) => go(ALTIUM_PATH, { state: altiumActionState('pruefen') }),
     },
     {
       id: 'altium.install',
-      title: 'In Altium installieren',
-      subtitle: 'DbLib in Altium Designer einbinden',
+      title: tr("In Altium installieren"),
+      subtitle: tr("DbLib in Altium Designer einbinden"),
       group: 'Aktionen',
       icon: PlugZap,
       priority: 40,
@@ -212,7 +214,7 @@ export function ShellCommands() {
     // --- Bibliothek
     {
       id: 'library.new',
-      title: 'Neue Bibliothek anlegen …',
+      title: tr("Neue Bibliothek anlegen …"),
       group: 'Bibliothek',
       icon: FolderPlus,
       priority: 20,
@@ -220,7 +222,7 @@ export function ShellCommands() {
     },
     {
       id: 'library.open',
-      title: 'Bibliothek öffnen …',
+      title: tr("Bibliothek öffnen …"),
       group: 'Bibliothek',
       icon: FolderOpen,
       priority: 19,
@@ -231,7 +233,7 @@ export function ShellCommands() {
       .slice(0, 5)
       .map<AppCommand>((r) => ({
         id: `library.recent:${r.path}`,
-        title: `Wechseln zu „${r.name ?? baseName(r.path)}“`,
+        title: tr("Wechseln zu „{0}“", { "0": String(r.name ?? baseName(r.path)) }),
         subtitle: shortenPath(r.path, 44),
         group: 'Bibliothek',
         icon: Library,
@@ -240,18 +242,18 @@ export function ShellCommands() {
       })),
     {
       id: 'library.reveal',
-      title: 'Bibliotheksordner im Explorer zeigen',
+      title: tr("Bibliotheksordner im Explorer zeigen"),
       group: 'Bibliothek',
       icon: FolderSearch,
       keywords: ['ordner', 'explorer', 'pfad', 'datei'],
       when: needsWs,
       run: () => {
-        if (workspace) void revealPath(workspace.root, { what: 'Bibliotheksordner' })
+        if (workspace) void revealPath(workspace.root, { what: tr("Bibliotheksordner") })
       },
     },
     {
       id: 'library.close',
-      title: 'Bibliothek schließen',
+      title: tr("Bibliothek schließen"),
       group: 'Bibliothek',
       icon: LogOut,
       when: needsWs,
@@ -260,7 +262,7 @@ export function ShellCommands() {
     // --- Darstellung
     {
       id: 'view.theme.dark',
-      title: 'Darstellung: Dunkel',
+      title: tr("Darstellung: Dunkel"),
       group: 'Darstellung',
       icon: Moon,
       keywords: ['theme', 'design', 'dark'],
@@ -268,7 +270,7 @@ export function ShellCommands() {
     },
     {
       id: 'view.theme.light',
-      title: 'Darstellung: Hell',
+      title: tr("Darstellung: Hell"),
       group: 'Darstellung',
       icon: Sun,
       keywords: ['theme', 'design', 'light'],
@@ -276,7 +278,7 @@ export function ShellCommands() {
     },
     {
       id: 'view.theme.system',
-      title: 'Darstellung: Wie System',
+      title: tr("Darstellung: Wie System"),
       group: 'Darstellung',
       icon: Monitor,
       keywords: ['theme', 'design', 'windows'],
@@ -284,7 +286,7 @@ export function ShellCommands() {
     },
     {
       id: 'view.sidebar',
-      title: 'Seitenleiste ein-/ausklappen',
+      title: tr("Seitenleiste ein-/ausklappen"),
       group: 'Darstellung',
       icon: PanelLeft,
       hotkey: 'mod+b',
@@ -293,23 +295,23 @@ export function ShellCommands() {
     // --- System
     {
       id: 'view.jobs',
-      title: 'Hintergrundjobs anzeigen',
+      title: tr("Hintergrundjobs anzeigen"),
       group: 'System',
       icon: ListChecks,
       run: () => useJobDock.getState().setOpen(true),
     },
     {
       id: 'settings.ai',
-      title: 'KI-Funktionen einstellen',
+      title: tr("KI-Funktionen einstellen"),
       subtitle: SETTINGS_PLACE.ai.label,
       group: 'System',
       icon: Sparkles,
-      keywords: ['claude', 'api-schlüssel', 'schlüssel', 'modell', 'ki', 'einschalten'],
+      keywords: ['claude', tr("api-schlüssel"), tr("schlüssel"), 'modell', 'ki', 'einschalten'],
       run: ({ navigate: go }) => go(SETTINGS_PLACE.ai.to),
     },
     {
       id: 'settings.altium',
-      title: 'Altium und Bibliotheks-Writer einstellen',
+      title: tr("Altium und Bibliotheks-Writer einstellen"),
       subtitle: SETTINGS_PLACE.altium.label,
       group: 'System',
       icon: Settings2,
@@ -321,8 +323,8 @@ export function ShellCommands() {
       ? [
           {
             id: 'system.uikit',
-            title: 'UI-Kit anzeigen',
-            subtitle: 'Komponenten-Galerie des Designsystems',
+            title: tr("UI-Kit anzeigen"),
+            subtitle: tr("Komponenten-Galerie des Designsystems"),
             group: 'System',
             icon: Shapes,
             keywords: ['komponenten', 'design', 'galerie'],
@@ -332,7 +334,7 @@ export function ShellCommands() {
       : []),
     {
       id: 'system.reload',
-      title: 'Oberfläche neu laden',
+      title: tr("Oberfläche neu laden"),
       group: 'System',
       icon: RotateCw,
       run: () => window.location.reload(),
@@ -343,7 +345,7 @@ export function ShellCommands() {
   // --- Bauteil-Schnellsuche (Teilenummer, MPN, Beschreibung, Wert) – nur mit geöffneter Bibliothek
   useRegisterSearchProvider({
     id: 'parts',
-    group: 'Bauteile',
+    group: tr("Bauteile"),
     minQueryLength: hasWs ? 2 : 10_000,
     search: async (q, signal) => {
       if (!hasWs) return []
@@ -373,7 +375,7 @@ export function ShellCommands() {
     }
     window.addEventListener('keydown', onSaveKey, { capture: true })
     return () => window.removeEventListener('keydown', onSaveKey, { capture: true })
-  }, [navigate])
+  }, [navigate, tr])
 
   // --- Globale Tastenkürzel
   useEffect(() => {
@@ -401,7 +403,7 @@ export function ShellCommands() {
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [navigate])
+  }, [navigate, tr])
 
   return null
 }

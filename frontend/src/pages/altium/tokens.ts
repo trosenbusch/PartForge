@@ -1,4 +1,4 @@
-/** Darstellungs-Konstanten der Altium-Seite (Statusfarben, Beschriftungen) – auch von der Übersicht genutzt. */
+import { t as tr } from '@/lib/i18n'
 import {
   ArchiveRestore,
   Cable,
@@ -27,29 +27,29 @@ import type { ActionKey, Level } from './model'
 
 /** Beschriftung und Symbol je Aktion (Knöpfe, Menüs, Befehlspalette) */
 export const ACTION_META: Record<ActionKey, { label: string; short: string; icon: LucideIcon }> = {
-  regenerate: { label: 'DbLib neu erzeugen', short: 'Neu erzeugen', icon: RefreshCw },
-  preview: { label: 'DbLib-Vorschau', short: 'Vorschau', icon: FileCode2 },
-  odbc: { label: 'ODBC-Verbindung testen', short: 'ODBC testen', icon: Cable },
-  sync: { label: 'Bibliotheksdateien synchronisieren', short: 'Synchronisieren', icon: FolderSync },
-  scan: { label: 'Bibliotheksdateien prüfen', short: 'Dateien prüfen', icon: FolderSearch },
-  scanSync: { label: 'Prüfen und synchronisieren', short: 'Prüfen und synchronisieren', icon: FolderSync },
-  repairHeights: { label: 'Footprint-Höhen nachtragen', short: 'Höhen nachtragen', icon: RulerDimensionLine },
-  restoreBackup: { label: 'Aus Sicherung wiederherstellen', short: 'Wiederherstellen', icon: ArchiveRestore },
-  install: { label: 'In Altium installieren', short: 'Installieren', icon: PlugZap },
-  installReplace: { label: 'Ersetzen und installieren', short: 'Ersetzen und installieren', icon: Replace },
-  uninstall: { label: 'Aus Altium deinstallieren', short: 'Deinstallieren', icon: Unplug },
-  installState: { label: 'Installationsstatus prüfen', short: 'Status prüfen', icon: SearchCheck },
-  refresh: { label: 'In Altium aktualisieren', short: 'Aktualisieren', icon: RotateCw },
-  refreshRebuild: { label: 'Aktualisieren mit Index-Neuaufbau', short: 'Index neu aufbauen', icon: RotateCw },
-  verify: { label: 'Bibliothek in Altium prüfen', short: 'In Altium prüfen', icon: ScanSearch },
-  open: { label: 'DbLib in Altium öffnen', short: 'In Altium öffnen', icon: SquareArrowOutUpRight },
-  settings: { label: 'Altium-Einstellungen', short: 'Einstellungen', icon: Settings2 },
-  writer: { label: 'Bibliotheks-Writer einrichten', short: 'Writer einrichten', icon: FileCog },
-  report: { label: 'Prüfbericht ansehen', short: 'Prüfbericht', icon: ListChecks },
-  check: { label: 'Bibliothek prüfen', short: 'Erneut prüfen', icon: ShieldCheck },
-  normalize: { label: 'Werte vereinheitlichen', short: 'Vereinheitlichen', icon: Wrench },
-  series: { label: 'Serie erzeugen', short: 'Serie erzeugen', icon: Layers },
-  reload: { label: 'Erneut versuchen', short: 'Erneut versuchen', icon: RotateCw },
+  regenerate: { get label() { return tr("DbLib neu erzeugen") }, get short() { return tr("Neu erzeugen") }, icon: RefreshCw },
+  preview: { get label() { return tr("DbLib-Vorschau") }, get short() { return tr("Vorschau") }, icon: FileCode2 },
+  odbc: { get label() { return tr("ODBC-Verbindung testen") }, get short() { return tr("ODBC testen") }, icon: Cable },
+  sync: { get label() { return tr("Bibliotheksdateien synchronisieren") }, get short() { return tr("Synchronisieren") }, icon: FolderSync },
+  scan: { get label() { return tr("Bibliotheksdateien prüfen") }, get short() { return tr("Dateien prüfen") }, icon: FolderSearch },
+  scanSync: { get label() { return tr("Prüfen und synchronisieren") }, get short() { return tr("Prüfen und synchronisieren") }, icon: FolderSync },
+  repairHeights: { get label() { return tr("Footprint-Höhen nachtragen") }, get short() { return tr("Höhen nachtragen") }, icon: RulerDimensionLine },
+  restoreBackup: { get label() { return tr("Aus Sicherung wiederherstellen") }, get short() { return tr("Wiederherstellen") }, icon: ArchiveRestore },
+  install: { get label() { return tr("In Altium installieren") }, get short() { return tr("Installieren") }, icon: PlugZap },
+  installReplace: { get label() { return tr("Ersetzen und installieren") }, get short() { return tr("Ersetzen und installieren") }, icon: Replace },
+  uninstall: { get label() { return tr("Aus Altium deinstallieren") }, get short() { return tr("Deinstallieren") }, icon: Unplug },
+  installState: { get label() { return tr("Installationsstatus prüfen") }, get short() { return tr("Status prüfen") }, icon: SearchCheck },
+  refresh: { get label() { return tr("In Altium aktualisieren") }, get short() { return tr("Aktualisieren") }, icon: RotateCw },
+  refreshRebuild: { get label() { return tr("Aktualisieren mit Index-Neuaufbau") }, get short() { return tr("Index neu aufbauen") }, icon: RotateCw },
+  verify: { get label() { return tr("Bibliothek in Altium prüfen") }, get short() { return tr("In Altium prüfen") }, icon: ScanSearch },
+  open: { get label() { return tr("DbLib in Altium öffnen") }, get short() { return tr("In Altium öffnen") }, icon: SquareArrowOutUpRight },
+  settings: { get label() { return tr("Altium-Einstellungen") }, get short() { return tr("Einstellungen") }, icon: Settings2 },
+  writer: { get label() { return tr("Bibliotheks-Writer einrichten") }, get short() { return tr("Writer einrichten") }, icon: FileCog },
+  report: { get label() { return tr("Prüfbericht ansehen") }, get short() { return tr("Prüfbericht") }, icon: ListChecks },
+  check: { get label() { return tr("Bibliothek prüfen") }, get short() { return tr("Erneut prüfen") }, icon: ShieldCheck },
+  normalize: { get label() { return tr("Werte vereinheitlichen") }, get short() { return tr("Vereinheitlichen") }, icon: Wrench },
+  series: { get label() { return tr("Serie erzeugen") }, get short() { return tr("Serie erzeugen") }, icon: Layers },
+  reload: { get label() { return tr("Erneut versuchen") }, get short() { return tr("Erneut versuchen") }, icon: RotateCw },
 }
 
 export const LEVEL_DOT: Record<Level, string> = {
@@ -70,11 +70,11 @@ export const LEVEL_TEXT: Record<Level, string> = {
 
 /** Zustand für Screenreader (der Punkt selbst ist dekorativ) */
 export const LEVEL_LABEL: Record<Level, string> = {
-  ok: 'in Ordnung',
-  warn: 'Hinweis',
+  get ok() { return tr("in Ordnung") },
+  get warn() { return tr("Hinweis") },
   error: 'Problem',
-  off: 'inaktiv',
-  busy: 'läuft gerade',
+  get off() { return tr("inaktiv") },
+  get busy() { return tr("läuft gerade") },
 }
 
 /** Grafikfarbe je Schwere (Ringe, Balken) */

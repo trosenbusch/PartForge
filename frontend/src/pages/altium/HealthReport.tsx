@@ -1,10 +1,5 @@
-/**
- * Prüfbericht: Daten-, Datei- und DbLib-Prüfung zusammengeführt, gruppiert nach Schwere und Prüfung. Je Gruppe ein
- * Lösungshinweis und – wo es einen Endpunkt gibt – eine Ein-Klick-Behebung (abhängig von der Schwere: dieselbe Prüfung
- * kann als Fehler eine andere Ursache haben; „Footprint-Höhen nachtragen“ nur, wenn das Backend sie erlaubt). Gruppen
- * mit nur einem Befund nennen ihn gleich im Kopf. Jede Zeile mit Bauteil führt in die Bauteiltabelle
- * (`/bauteile/:table?pn=…`); Befunde zu Symbol, Footprint oder Datei nennen die Bauteile, die sie verwenden.
- */
+import { useI18n, localizeMessage } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { AnimatePresence, motion } from 'motion/react'
 import {
   ArchiveRestore,
@@ -55,19 +50,19 @@ import { FilterLabel, SeverityIcon } from './ui'
 export type SeverityFilter = 'all' | IssueSeverity
 
 const FIX: Record<FixKind, { label: string; icon: LucideIcon }> = {
-  regenerate: { label: 'DbLib neu erzeugen', icon: RefreshCw },
-  sync: { label: 'Synchronisieren', icon: FolderSync },
-  scan: { label: 'Dateien prüfen', icon: FolderSearch },
-  'scan-register': { label: 'Aus Dateien übernehmen', icon: FolderInput },
-  'scan-sync': { label: 'Prüfen und synchronisieren', icon: FolderSync },
-  'repair-heights': { label: 'Footprint-Höhen nachtragen', icon: RulerDimensionLine },
-  'restore-backup': { label: 'Aus Sicherung wiederherstellen', icon: ArchiveRestore },
-  'install-replace': { label: 'Ersetzen und installieren', icon: Replace },
-  normalize: { label: 'Vereinheitlichen', icon: Wrench },
-  'open-part': { label: 'Bauteil öffnen', icon: PencilLine },
-  import: { label: 'Datenblatt-Import öffnen', icon: FileScan },
-  categories: { label: 'Kategorien öffnen', icon: ListTree },
-  settings: { label: 'Einstellungen öffnen', icon: Settings2 },
+  regenerate: { get label() { return tr("DbLib neu erzeugen") }, icon: RefreshCw },
+  sync: { get label() { return tr("Synchronisieren") }, icon: FolderSync },
+  scan: { get label() { return tr("Dateien prüfen") }, icon: FolderSearch },
+  'scan-register': { get label() { return tr("Aus Dateien übernehmen") }, icon: FolderInput },
+  'scan-sync': { get label() { return tr("Prüfen und synchronisieren") }, icon: FolderSync },
+  'repair-heights': { get label() { return tr("Footprint-Höhen nachtragen") }, icon: RulerDimensionLine },
+  'restore-backup': { get label() { return tr("Aus Sicherung wiederherstellen") }, icon: ArchiveRestore },
+  'install-replace': { get label() { return tr("Ersetzen und installieren") }, icon: Replace },
+  normalize: { get label() { return tr("Vereinheitlichen") }, icon: Wrench },
+  'open-part': { get label() { return tr("Bauteil öffnen") }, icon: PencilLine },
+  import: { get label() { return tr("Datenblatt-Import öffnen") }, icon: FileScan },
+  categories: { get label() { return tr("Kategorien öffnen") }, icon: ListTree },
+  settings: { get label() { return tr("Einstellungen öffnen") }, icon: Settings2 },
 }
 
 /** Aktionsschlüssel der Seite je Behebung (Fortschrittsanzeige am Knopf) */
@@ -108,15 +103,16 @@ export interface HealthReportProps {
  * die Tabelle, dann `/bauteile/:table?pn=…`.
  */
 function useOpenPartNumber() {
+  const { t: tr } = useI18n()
   const navigate = useNavigate()
   return async (pn: string) => {
     try {
       const hits = await libraryApi.search(pn, 8)
       const hit = hits.find((h) => h.part_number.toLowerCase() === pn.toLowerCase())
       if (hit) navigate(partPath({ table: hit.table, part_number: hit.part_number }))
-      else toast.info('Bauteil nicht gefunden', { id: 'health-open-part', description: `„${pn}“ steht nicht mehr in der Bibliothek.` })
+      else toast.info(tr("Bauteil nicht gefunden"), { id: 'health-open-part', description: tr("„{0}“ steht nicht mehr in der Bibliothek.", { "0": String(pn) }) })
     } catch (err) {
-      toast.error('Bauteil konnte nicht geöffnet werden', { id: 'health-open-part', description: errorMessage(err) })
+      toast.error(tr("Bauteil konnte nicht geöffnet werden"), { id: 'health-open-part', description: errorMessage(err) })
     }
   }
 }
@@ -133,6 +129,7 @@ export function HealthReport({
   initialFilter = 'all',
   ready,
 }: HealthReportProps) {
+  const { t: tr } = useI18n()
   const navigate = useNavigate()
   const openPartNumber = useOpenPartNumber()
   const categories = useCategories().data
@@ -160,17 +157,17 @@ export function HealthReport({
       .map((g) => {
         if (!needle) return g
         const items = g.items.filter((i) => matches(i, g, needle, catMap))
-        return items.length || g.info.label.toLowerCase().includes(needle)
+        return items.length || tr(g.info.label).toLowerCase().includes(needle)
           ? { ...g, items: items.length ? items : g.items, total: items.length || g.total, partial: items.length ? false : g.partial }
           : null
       })
       .filter((g): g is HealthGroup => g !== null)
-  }, [report, filter, needle, catMap])
+  }, [report, filter, needle, catMap, tr])
 
   const focusRef = useRef<HTMLLIElement | null>(null)
   useEffect(() => {
     if (focusCheck && seededFor) focusRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
-  }, [focusCheck, seededFor])
+  }, [focusCheck, seededFor, tr])
 
   const toggle = (key: string) =>
     setOpen((cur) => {
@@ -242,14 +239,14 @@ export function HealthReport({
       <div className="flex flex-wrap items-center gap-3">
         <SegmentedControl<SeverityFilter>
           size="sm"
-          aria-label="Nach Schwere filtern"
+          aria-label={tr("Nach Schwere filtern")}
           value={filter}
           onValueChange={setFilter}
           options={[
-            { value: 'all', label: <FilterLabel label="Alle" count={counts ? totalIssues : undefined} /> },
-            { value: 'error', label: <FilterLabel label="Fehler" count={counts?.error} tone="error" /> },
-            { value: 'warning', label: <FilterLabel label="Warnungen" count={counts?.warning} tone="warning" /> },
-            { value: 'info', label: <FilterLabel label="Hinweise" count={counts?.info} tone="info" /> },
+            { value: 'all', label: <FilterLabel label={tr("Alle")} count={counts ? totalIssues : undefined} /> },
+            { value: 'error', label: <FilterLabel label={tr("Fehler")} count={counts?.error} tone="error" /> },
+            { value: 'warning', label: <FilterLabel label={tr("Warnungen")} count={counts?.warning} tone="warning" /> },
+            { value: 'info', label: <FilterLabel label={tr("Hinweise")} count={counts?.info} tone="info" /> },
           ]}
         />
         <Input
@@ -263,17 +260,17 @@ export function HealthReport({
               setQuery('')
             }
           }}
-          placeholder="Bauteil, Kategorie, Meldung …"
-          aria-label="Prüfbericht durchsuchen"
+          placeholder={tr("Bauteil, Kategorie, Meldung …")}
+          aria-label={tr("Prüfbericht durchsuchen")}
           prefix={<Search />}
-          suffix={query ? <IconButton size="xs" label="Suche leeren" icon={<X />} onClick={() => setQuery('')} tooltip={false} /> : undefined}
+          suffix={query ? <IconButton size="xs" label={tr("Suche leeren")} icon={<X />} onClick={() => setQuery('')} tooltip={false} /> : undefined}
           containerClassName="w-60 max-w-full @[62rem]:w-72"
         />
         <div className="ml-auto flex items-center gap-3">
           {report && (
             <span className="hidden text-xs text-fg-subtle @[62rem]:inline" aria-live="polite">
-              {report.checkedParts > 0 && `${plural(report.checkedParts, 'Bauteil', 'Bauteile')} · `}
-              {updatedAt ? `geprüft ${formatRelativeTime(updatedAt)}` : 'geprüft'}
+              {report.checkedParts > 0 && `${plural(report.checkedParts, tr("Bauteil"), tr("Bauteile"))} · `}
+              {updatedAt ? tr("geprüft {0}", { "0": String(formatRelativeTime(updatedAt)) }) : tr("geprüft")}
             </span>
           )}
           <Button
@@ -282,10 +279,9 @@ export function HealthReport({
             leftIcon={<RefreshCw />}
             loading={fetching}
             onClick={onRecheck}
-            title={updatedAt ? `Zuletzt geprüft ${formatRelativeTime(updatedAt)}` : undefined}
+            title={updatedAt ? tr("Zuletzt geprüft {0}", { "0": String(formatRelativeTime(updatedAt)) }) : undefined}
           >
-            Erneut prüfen
-          </Button>
+            {tr("Erneut prüfen")}</Button>
         </div>
       </div>
 
@@ -293,24 +289,23 @@ export function HealthReport({
       {report && (report.missing.data || report.missing.files || report.missing.dblib) && (
         <Callout
           tone="warning"
-          title="Der Bericht ist unvollständig"
+          title={tr("Der Bericht ist unvollständig")}
           actions={
             <Button size="sm" onClick={onRecheck} loading={fetching}>
-              Erneut prüfen
-            </Button>
+              {tr("Erneut prüfen")}</Button>
           }
         >
-          {report.missing.data && <span className="block">Datenprüfung: {report.missing.data}</span>}
-          {report.missing.files && <span className="block">Dateiprüfung: {report.missing.files}</span>}
-          {report.missing.dblib && <span className="block">DbLib-Status: {report.missing.dblib}</span>}
+          {report.missing.data && <span className="block">{tr("Datenprüfung: ")}{report.missing.data}</span>}
+          {report.missing.files && <span className="block">{tr("Dateiprüfung: ")}{report.missing.files}</span>}
+          {report.missing.dblib && <span className="block">{tr("DbLib-Status: ")}{report.missing.dblib}</span>}
         </Callout>
       )}
 
       {loading && <ReportSkeleton />}
 
       {error && !report && (
-        <Callout tone="danger" title="Die Prüfung ist fehlgeschlagen" actions={<Button size="sm" onClick={onRecheck} loading={fetching}>Erneut versuchen</Button>}>
-          {error.message}
+        <Callout tone="danger" title={tr("Die Prüfung ist fehlgeschlagen")} actions={<Button size="sm" onClick={onRecheck} loading={fetching}>{tr("Erneut versuchen")}</Button>}>
+          {localizeMessage(error.message)}
         </Callout>
       )}
 
@@ -319,18 +314,17 @@ export function HealthReport({
           {report.checkedParts > 0 ? (
             <EmptyState
               illustration="all-good"
-              title="Keine Probleme gefunden"
-              description={`${plural(report.checkedParts, 'Bauteil', 'Bauteile')}, ihre Symbole, Footprints und Bibliotheksdateien sowie die DbLib sind in Ordnung.`}
+              title={tr("Keine Probleme gefunden")}
+              description={tr("{0}, ihre Symbole, Footprints und Bibliotheksdateien sowie die DbLib sind in Ordnung.", { "0": String(plural(report.checkedParts, tr("Bauteil"), tr("Bauteile"))) })}
             />
           ) : (
             <EmptyState
               illustration="no-parts"
-              title="Noch nichts zu prüfen"
-              description="Sobald Bauteile angelegt sind, prüft PartForge Pflichtfelder, Werte und Dubletten, Symbole, Footprints und Bibliotheksdateien – und die DbLib für Altium."
+              title={tr("Noch nichts zu prüfen")}
+              description={tr("Sobald Bauteile angelegt sind, prüft PartForge Pflichtfelder, Werte und Dubletten, Symbole, Footprints und Bibliotheksdateien – und die DbLib für Altium.")}
               actions={
                 <Button size="sm" leftIcon={<Layers />} onClick={() => navigate('/serien')}>
-                  Serie erzeugen
-                </Button>
+                  {tr("Serie erzeugen")}</Button>
               }
             />
           )}
@@ -342,8 +336,8 @@ export function HealthReport({
           <EmptyState
             size="sm"
             illustration="search-empty"
-            title="Keine Treffer"
-            description="Kein Befund passt zu Filter und Suche."
+            title={tr("Keine Treffer")}
+            description={tr("Kein Befund passt zu Filter und Suche.")}
             actions={
               <Button
                 size="sm"
@@ -352,8 +346,7 @@ export function HealthReport({
                   setFilter('all')
                 }}
               >
-                Filter zurücksetzen
-              </Button>
+                {tr("Filter zurücksetzen")}</Button>
             }
           />
         </Card>
@@ -396,15 +389,15 @@ export function HealthReport({
 
 /** Was gekürzt ist – passend zu den Grenzen des Backends (Datenprüfung je Prüfung, Dateiprüfung insgesamt) */
 function TruncationNote({ report }: { report: MergedHealth }) {
+  const { t: tr } = useI18n()
   const parts = [
-    report.dataTruncated && `die Datenprüfung je Prüfung höchstens ${formatNumber(DATA_CHECK_LIMIT)} Befunde`,
-    report.filesTruncated && `die Dateiprüfung insgesamt die ersten ${formatNumber(FILE_ISSUE_LIMIT)} (nach Schwere sortiert)`,
+    report.dataTruncated && tr("die Datenprüfung je Prüfung höchstens {0} Befunde", { "0": String(formatNumber(DATA_CHECK_LIMIT)) }),
+    report.filesTruncated && tr("die Dateiprüfung insgesamt die ersten {0} (nach Schwere sortiert)", { "0": String(formatNumber(FILE_ISSUE_LIMIT)) }),
   ].filter(Boolean)
   const mixed = report.groups.some((g) => g.partial && g.areas.length > 1)
   return (
     <p className="px-1 text-xs leading-relaxed text-fg-subtle">
-      Sehr viele Befunde – aufgeführt sind {parts.join(' und ')}. Die Zahlen an den Gruppen zählen alle Befunde
-      {mixed ? '; bei Gruppen aus beiden Prüfungen nur die aufgeführten' : ''}.
+      {tr("Sehr viele Befunde – aufgeführt sind ")}{parts.join(' und ')}{tr(". Die Zahlen an den Gruppen zählen alle Befunde")}{mixed ? tr("; bei Gruppen aus beiden Prüfungen nur die aufgeführten") : ''}.
     </p>
   )
 }
@@ -463,6 +456,7 @@ function GroupRow({
   onOpenPartNumber: (pn: string) => void
   ref?: Ref<HTMLLIElement>
 }) {
+  const { t: tr } = useI18n()
   const [limit, setLimit] = useState(ITEM_PAGE)
   const fix = group.info.fix
   const meta = fix ? FIX[fix] : null
@@ -495,13 +489,12 @@ function GroupRow({
               <span className="text-ui font-medium text-fg">{group.info.label}</span>
               <span className="mono text-xs text-fg-muted">
                 {formatNumber(group.total)}
-                <span className="sr-only"> {group.total === 1 ? 'Befund' : 'Befunde'}</span>
+                <span className="sr-only"> {group.total === 1 ? tr("Befund") : tr("Befunde")}</span>
               </span>
               {parts.count > 0 && showParts(group, parts.count) && (
                 <span className="text-xs text-fg-subtle">
                   · {parts.exact ? '' : 'mind. '}
-                  {plural(parts.count, 'Bauteil', 'Bauteile')} betroffen
-                </span>
+                  {plural(parts.count, tr("Bauteil"), tr("Bauteile"))} {' '}{tr("betroffen")}</span>
               )}
               {group.areas.map((a) => (
                 <Badge key={a} variant="outline" size="sm" className="font-normal">
@@ -520,7 +513,7 @@ function GroupRow({
                 {findingMessage(single, group)}
               </span>
             )}
-            {group.hint && <span className="mt-0.5 block text-xs leading-snug text-fg-subtle">{group.hint}</span>}
+            {group.hint && <span className="mt-0.5 block text-xs leading-snug text-fg-subtle">{localizeMessage(group.hint)}</span>}
           </span>
         </button>
         {meta && FixIcon && fix && (
@@ -561,12 +554,11 @@ function GroupRow({
                 <li className="px-4 py-1.5 pl-12">
                   {shown.length < group.items.length ? (
                     <Button size="xs" variant="ghost" onClick={() => setLimit((l) => l + 200)}>
-                      {formatNumber(Math.min(200, group.items.length - shown.length))} weitere anzeigen
-                    </Button>
+                      {formatNumber(Math.min(200, group.items.length - shown.length))} {tr(" weitere anzeigen")}</Button>
                   ) : hidden > 0 ? (
-                    <span className="text-xs text-fg-subtle">… und {formatNumber(hidden)} weitere (nicht aufgeführt)</span>
+                    <span className="text-xs text-fg-subtle">{tr("… und ")}{formatNumber(hidden)} {tr(" weitere (nicht aufgeführt)")}</span>
                   ) : (
-                    <span className="text-xs text-fg-subtle">… weitere Befunde nicht aufgeführt (Liste gekürzt)</span>
+                    <span className="text-xs text-fg-subtle">{tr("… weitere Befunde nicht aufgeführt (Liste gekürzt)")}</span>
                   )}
                 </li>
               )}
@@ -591,34 +583,35 @@ function subjectKind(item: HealthItem): string {
   if (item.kind === 'symbol') return 'Symbol'
   if (item.kind === 'footprint') return 'Footprint'
   const name = (item.subject ?? item.library ?? '').toLowerCase()
-  if (name.endsWith('.schlib')) return 'Symbolbibliothek'
-  if (name.endsWith('.pcblib')) return 'Footprint-Bibliothek'
-  return item.area === 'files' ? 'Bibliotheksdatei' : 'Registrierung'
+  if (name.endsWith('.schlib')) return tr("Symbolbibliothek")
+  if (name.endsWith('.pcblib')) return tr("Footprint-Bibliothek")
+  return item.area === 'files' ? tr("Bibliotheksdatei") : tr("Registrierung")
 }
 
 /** Betroffene Bauteile einer Zeile zu Symbol, Footprint oder Datei: die ersten als Links, der Rest als Anzahl */
 function AffectedParts({ item, onOpenPartNumber }: { item: HealthItem; onOpenPartNumber: (pn: string) => void }) {
+  const { t: tr } = useI18n()
   const total = Math.max(item.affectedParts, item.partNumbers.length)
-  if (!total) return <span className="mt-0.5 block text-2xs text-fg-subtle">Kein Bauteil verwendet es.</span>
+  if (!total) return <span className="mt-0.5 block text-2xs text-fg-subtle">{tr("Kein Bauteil verwendet es.")}</span>
   const first = item.partNumbers.slice(0, PART_LINKS)
   const rest = total - first.length
   return (
     <span className="mt-0.5 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-2xs text-fg-subtle">
-      <span>{total === 1 ? 'Betrifft' : `Betrifft ${plural(total, 'Bauteil', 'Bauteile')}:`}</span>
+      <span>{total === 1 ? tr("Betrifft") : tr("Betrifft {0}:", { "0": String(plural(total, tr("Bauteil"), tr("Bauteile"))) })}</span>
       {first.map((pn, i) => (
         <span key={pn}>
           <button
             type="button"
             onClick={() => onOpenPartNumber(pn)}
             className="mono rounded-sm text-fg-muted underline decoration-line-strong underline-offset-2 outline-none hover:text-accent-text hover:decoration-current focus-ring"
-            aria-label={`${pn} in der Bauteiltabelle öffnen`}
+            aria-label={tr("{0} in der Bauteiltabelle öffnen", { "0": String(pn) })}
           >
             {pn}
           </button>
           {i < first.length - 1 ? ',' : ''}
         </span>
       ))}
-      {rest > 0 && <span>und {formatNumber(rest)} weitere</span>}
+      {rest > 0 && <span>{tr("und ")}{formatNumber(rest)} {' '}{tr("weitere")}</span>}
     </span>
   )
 }
@@ -636,6 +629,7 @@ function ItemRow({
   onOpenPart: (item: HealthItem) => void
   onOpenPartNumber: (pn: string) => void
 }) {
+  const { t: tr } = useI18n()
   const linkable = Boolean(item.table && item.part_number)
   const ownHint = item.fix_hint && item.fix_hint !== group.hint ? item.fix_hint : null
   // Befund zu Symbol, Footprint oder Datei (ohne eigenes Bauteil): die Bauteile, die es verwenden
@@ -669,9 +663,9 @@ function ItemRow({
         )}
       </span>
       <span className="min-w-0 text-xs leading-snug text-fg-muted">
-        <span className="block">{findingMessage(item, group)}</span>
-        {ownHint && <span className="mt-0.5 block text-2xs text-fg-subtle">{ownHint}</span>}
-        {others > 0 && <span className="mt-0.5 block text-2xs text-fg-subtle">und {plural(others, 'weiteres Bauteil', 'weitere Bauteile')} mit demselben Paar</span>}
+        <span className="block">{localizeMessage(findingMessage(item, group))}</span>
+        {ownHint && <span className="mt-0.5 block text-2xs text-fg-subtle">{localizeMessage(ownHint)}</span>}
+        {others > 0 && <span className="mt-0.5 block text-2xs text-fg-subtle">{tr("und ")}{plural(others, tr("weiteres Bauteil"), tr("weitere Bauteile"))} {tr(" mit demselben Paar")}</span>}
         {aboutComponent && <AffectedParts item={item} onOpenPartNumber={onOpenPartNumber} />}
       </span>
       <span aria-hidden className="flex justify-end">
@@ -688,7 +682,7 @@ function ItemRow({
         <button
           type="button"
           onClick={() => onOpenPart(item)}
-          aria-label={`${item.part_number} in der Bauteiltabelle öffnen: ${item.message}`}
+          aria-label={tr("{0} in der Bauteiltabelle öffnen: {1}", { "0": String(item.part_number), "1": String(localizeMessage(item.message)) })}
           className={cn(grid, 'group/item outline-none transition-colors hover:bg-surface-2 focus-ring-inset')}
         >
           {content}
@@ -701,8 +695,9 @@ function ItemRow({
 }
 
 function ReportSkeleton() {
+  const { t: tr } = useI18n()
   return (
-    <div className="flex flex-col gap-3" aria-busy="true" aria-label="Prüfbericht wird erstellt">
+    <div className="flex flex-col gap-3" aria-busy="true" aria-label={tr("Prüfbericht wird erstellt")}>
       {[0, 1].map((s) => (
         <div key={s} className="flex flex-col gap-2">
           <Skeleton className="h-4 w-28" />

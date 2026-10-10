@@ -1,10 +1,5 @@
-/**
- * DbLib-Vorschau: der Soll-Stand (so schreibt PartForge die Datei), die Datei auf der Festplatte und – wenn sie
- * abweichen – die Unterschiede. INI-Hervorhebung, Zeilennummern, Suche mit Trefferzähler und Sprung im Suchfeld
- * (Enter / ⇧ Enter; Esc leert die Suche, erst das nächste Esc schließt) – nichts liegt über dem Code. Kopieren,
- * Speichern (exakte Bytes vom Backend: Windows-1252, CRLF, Dateiname aus der Antwort) und „Im Explorer zeigen“.
- * Kennwörter der Verbindung sind in der Ansicht maskiert, in der gespeicherten Datei nicht (Altium braucht sie).
- */
+import { useI18n, localizeMessage } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { ChevronDown, ChevronUp, ClipboardCopy, Download, FileCode2, FolderOpen, Search, X } from 'lucide-react'
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
@@ -34,13 +29,14 @@ import { diffLines } from './diff'
 
 type View = 'text' | 'current' | 'diff'
 
-const DBLIB_TYPE: SaveFileType = { description: 'Altium-Datenbankbibliothek', mime: 'text/plain', extensions: ['.DbLib'] }
+const DBLIB_TYPE: SaveFileType = { get description() { return tr("Altium-Datenbankbibliothek") }, mime: 'text/plain', extensions: ['.DbLib'] }
 /** Maskiertes Kennwort in der Vorschau (`mask_secrets`: `PWD=***`, `Password=***`) */
 const MASKED_SECRET = /\b(?:pwd|password)\s*=\s*\*\*\*/i
 
 const splitLines = (text: string) => text.replace(/\r\n/g, '\n').split('\n')
 
 export function DblibPreviewDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const { t: tr } = useI18n()
   const preview = useDblibPreview(open)
   const data = preview.data
   const bridge = useNativeBridge()
@@ -81,8 +77,8 @@ export function DblibPreviewDialog({ open, onOpenChange }: { open: boolean; onOp
   const copy = () =>
     void navigator.clipboard
       ?.writeText(text)
-      .then(() => toast.success('DbLib-Text kopiert', { description: `${plural(lines.length, 'Zeile', 'Zeilen')}${masked ? ' · Kennwort maskiert' : ''}` }))
-      .catch(() => toast.error('Kopieren nicht möglich'))
+      .then(() => toast.success(tr("DbLib-Text kopiert"), { description: `${plural(lines.length, tr("Zeile"), tr("Zeilen"))}${masked ? tr(" · Kennwort maskiert") : ''}` }))
+      .catch(() => toast.error(tr("Kopieren nicht möglich")))
 
   /**
    * Speichern: die exakten Bytes vom Backend (`?raw=true`, Windows-1252/CRLF, Kennwort im Klartext) mit dem Dateinamen
@@ -91,12 +87,12 @@ export function DblibPreviewDialog({ open, onOpenChange }: { open: boolean; onOp
   const download = async () => {
     if (saving) return
     setSaving(true)
-    const what = which === 'file' ? 'DbLib' : 'DbLib (Soll-Stand)'
+    const what = which === 'file' ? 'DbLib' : tr("DbLib (Soll-Stand)")
     try {
       const file = await altiumApi.dblibFile(which)
       await saveFileWithFeedback({ suggestedName: file.fileName, content: file.blob, type: DBLIB_TYPE, what, id: 'dblib-download' })
     } catch (err) {
-      toast.error(`${what} konnte nicht geladen werden`, { id: 'dblib-download', description: cleanErrorText(errorMessage(err)) })
+      toast.error(tr("{0} konnte nicht geladen werden", { "0": String(what) }), { id: 'dblib-download', description: cleanErrorText(errorMessage(err)) })
     } finally {
       setSaving(false)
     }
@@ -125,30 +121,27 @@ export function DblibPreviewDialog({ open, onOpenChange }: { open: boolean; onOp
           icon={<FileCode2 />}
           title={
             <span className="flex flex-wrap items-center gap-2">
-              DbLib-Vorschau
-              {data && (
+              {tr("DbLib-Vorschau")}{data && (
                 <Badge variant={data.up_to_date ? 'success' : 'warning'} dot>
-                  {data.up_to_date ? 'Datei ist aktuell' : data.current === null ? 'Datei fehlt' : 'Datei ist veraltet'}
+                  {data.up_to_date ? tr("Datei ist aktuell") : data.current === null ? tr("Datei fehlt") : tr("Datei ist veraltet")}
                 </Badge>
               )}
             </span>
           }
           description={
             data
-              ? `${data.file_name} – so schreibt PartForge die Datei.${masked ? ' Kennwörter sind hier maskiert; die gespeicherte Datei enthält sie, weil Altium sie braucht.' : ''}`
-              : 'Wird geladen …'
+              ? tr("{0} – so schreibt PartForge die Datei.{1}", { "0": String(data.file_name), "1": String(masked ? ' Kennwörter sind hier maskiert; die gespeicherte Datei enthält sie, weil Altium sie braucht.' : '') })
+              : tr("Wird geladen …")
           }
         />
         <div className="flex shrink-0 flex-wrap items-center gap-3 px-6 pb-3">
           <Tabs value={effectiveView} onValueChange={(v) => setView(v as View)} variant="pill">
-            <TabsList aria-label="Ansicht">
-              <TabsTrigger value="text">Soll-Stand</TabsTrigger>
+            <TabsList aria-label={tr("Ansicht")}>
+              <TabsTrigger value="text">{tr("Soll-Stand")}</TabsTrigger>
               <TabsTrigger value="current" disabled={!data?.current}>
-                Datei auf der Festplatte
-              </TabsTrigger>
+                {tr("Datei auf der Festplatte")}</TabsTrigger>
               <TabsTrigger value="diff" disabled={!differs}>
-                Unterschiede
-              </TabsTrigger>
+                {tr("Unterschiede")}</TabsTrigger>
             </TabsList>
           </Tabs>
           {effectiveView !== 'diff' && (
@@ -157,10 +150,10 @@ export function DblibPreviewDialog({ open, onOpenChange }: { open: boolean; onOp
         </div>
         {data && data.warnings.length > 0 && (
           <div className="shrink-0 px-6 pb-3">
-            <Callout tone="warning" title={plural(data.warnings.length, 'Hinweis', 'Hinweise')}>
+            <Callout tone="warning" title={plural(data.warnings.length, tr("Hinweis"), tr("Hinweise"))}>
               {data.warnings.map((w) => (
                 <span key={w} className="block">
-                  {w}
+                  {localizeMessage(w)}
                 </span>
               ))}
             </Callout>
@@ -175,7 +168,7 @@ export function DblibPreviewDialog({ open, onOpenChange }: { open: boolean; onOp
             </div>
           ) : preview.isError ? (
             <div className="p-6">
-              <Callout tone="danger" title="Vorschau nicht verfügbar">
+              <Callout tone="danger" title={tr("Vorschau nicht verfügbar")}>
                 {errorMessage(preview.error)}
               </Callout>
             </div>
@@ -188,20 +181,18 @@ export function DblibPreviewDialog({ open, onOpenChange }: { open: boolean; onOp
         <DialogFooter className="justify-between">
           <div className="flex items-center gap-2">
             <Button variant="ghost" leftIcon={<ClipboardCopy />} onClick={copy} disabled={!data}>
-              Kopieren
-            </Button>
+              {tr("Kopieren")}</Button>
             <Button variant="ghost" leftIcon={<Download />} onClick={() => void download()} disabled={!data} loading={saving}>
-              {which === 'file' ? 'Datei speichern …' : 'Soll-Stand speichern …'}
+              {which === 'file' ? tr("Datei speichern …") : tr("Soll-Stand speichern …")}
             </Button>
             {data && (
               <Button variant="ghost" leftIcon={<FolderOpen />} onClick={() => void revealPath(data.path, { what: 'DbLib' })}>
-                {bridge.canRevealPath || bridge.canOpenPath ? 'Im Explorer zeigen' : 'Pfad kopieren'}
+                {bridge.canRevealPath || bridge.canOpenPath ? tr("Im Explorer zeigen") : tr("Pfad kopieren")}
               </Button>
             )}
           </div>
           <Button variant="primary" onClick={() => onOpenChange(false)}>
-            Schließen
-          </Button>
+            {tr("Schließen")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -225,6 +216,7 @@ function SearchBox({
   current: number
   onStep: (delta: number) => void
 }) {
+  const { t: tr } = useI18n()
   const searching = Boolean(query.trim())
   return (
     <Input
@@ -238,8 +230,8 @@ function SearchBox({
           onStep(e.shiftKey ? -1 : 1)
         }
       }}
-      placeholder="In der DbLib suchen …"
-      aria-label="In der DbLib suchen"
+      placeholder={tr("In der DbLib suchen …")}
+      aria-label={tr("In der DbLib suchen")}
       aria-keyshortcuts="Enter Shift+Enter"
       prefix={<Search />}
       suffix={
@@ -247,11 +239,11 @@ function SearchBox({
           <>
             <span className={cn('mono whitespace-nowrap pr-0.5 text-2xs', hits ? 'text-fg-muted' : 'text-danger-text')} aria-live="polite">
               <span aria-hidden>{hits ? `${formatNumber(current + 1)}/${formatNumber(hits)}` : '0/0'}</span>
-              <span className="sr-only">{hits ? `Treffer ${current + 1} von ${hits} Zeilen` : 'Keine Treffer'}</span>
+              <span className="sr-only">{hits ? tr("Treffer {0} von {1} Zeilen", { "0": String(current + 1), "1": String(hits) }) : tr("Keine Treffer")}</span>
             </span>
-            <IconButton size="xs" label="Vorheriger Treffer" icon={<ChevronUp />} disabled={!hits} onClick={() => onStep(-1)} tooltip={false} />
-            <IconButton size="xs" label="Nächster Treffer" icon={<ChevronDown />} disabled={!hits} onClick={() => onStep(1)} tooltip={false} />
-            <IconButton size="xs" label="Suche leeren" icon={<X />} onClick={() => onQuery('')} tooltip={false} />
+            <IconButton size="xs" label={tr("Vorheriger Treffer")} icon={<ChevronUp />} disabled={!hits} onClick={() => onStep(-1)} tooltip={false} />
+            <IconButton size="xs" label={tr("Nächster Treffer")} icon={<ChevronDown />} disabled={!hits} onClick={() => onStep(1)} tooltip={false} />
+            <IconButton size="xs" label={tr("Suche leeren")} icon={<X />} onClick={() => onQuery('')} tooltip={false} />
           </>
         ) : undefined
       }
@@ -335,6 +327,7 @@ function highlight(line: string, query: string): ReactNode {
 }
 
 function CodeView({ lines, query, active }: { lines: string[]; query: string; active: number }) {
+  const { t: tr } = useI18n()
   const container = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (active < 0) return
@@ -351,7 +344,7 @@ function CodeView({ lines, query, active }: { lines: string[]; query: string; ac
       role="textbox"
       aria-readonly="true"
       aria-multiline="true"
-      aria-label="DbLib-Text"
+      aria-label={tr("DbLib-Text")}
       tabIndex={0}
       className="overflow-x-auto py-2 font-mono text-xs leading-[1.6] outline-none focus-ring-inset"
     >
@@ -374,22 +367,23 @@ function CodeView({ lines, query, active }: { lines: string[]; query: string; ac
 // --------------------------------------------------------------------------- Unterschiede
 
 function DiffView({ before, after }: { before: string; after: string }) {
+  const { t: tr } = useI18n()
   const rows = useMemo(() => diffLines(splitLines(before), splitLines(after)), [before, after])
   const added = rows.filter((r) => r.kind === 'add').length
   const removed = rows.filter((r) => r.kind === 'del').length
   return (
     <div className="py-2 font-mono text-xs leading-[1.6]">
       <div className="flex items-center gap-3 px-4 pb-2 font-sans text-2xs text-fg-muted">
-        <span>Datei auf der Festplatte → Soll-Stand:</span>
+        <span>{tr("Datei auf der Festplatte → Soll-Stand:")}</span>
         <span className="mono text-success-text">+{formatNumber(added)}</span>
         <span className="mono text-danger-text">−{formatNumber(removed)}</span>
       </div>
-      {rows.length === 0 && <p className="px-4 font-sans text-xs text-fg-muted">Nur Zeilenenden oder Zeichensatz unterscheiden sich.</p>}
+      {rows.length === 0 && <p className="px-4 font-sans text-xs text-fg-muted">{tr("Nur Zeilenenden oder Zeichensatz unterscheiden sich.")}</p>}
       {rows.map((r, i) => (
         <Fragment key={i}>
           {r.kind === 'gap' ? (
             <div className="my-1 border-y border-line bg-surface-2/50 px-4 py-0.5 font-sans text-2xs text-fg-subtle">
-              {plural(r.count ?? 0, 'unveränderte Zeile', 'unveränderte Zeilen')}
+              {plural(r.count ?? 0, tr("unveränderte Zeile"), tr("unveränderte Zeilen"))}
             </div>
           ) : (
             <div className={cn('flex min-w-max pr-6', r.kind === 'add' && 'bg-success/10', r.kind === 'del' && 'bg-danger/10')}>
@@ -406,7 +400,7 @@ function DiffView({ before, after }: { before: string; after: string }) {
                 )}
               >
                 {r.kind === 'add' ? '+' : r.kind === 'del' ? '−' : ' '}
-                <span className="sr-only">{r.kind === 'add' ? 'neu' : r.kind === 'del' ? 'entfällt' : ''}</span>
+                <span className="sr-only">{r.kind === 'add' ? tr("neu") : r.kind === 'del' ? tr("entfällt") : ''}</span>
               </span>
               <span className={cn('whitespace-pre', r.kind === 'same' ? 'text-fg-muted' : 'text-fg')}>{r.text || ' '}</span>
             </div>

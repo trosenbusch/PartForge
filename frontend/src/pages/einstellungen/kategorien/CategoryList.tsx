@@ -1,3 +1,4 @@
+import { t as translate, useI18n, getLocale } from '@/lib/i18n'
 /** Linke Spalte des Schema-Designers: Suche, Kategorien mit Symbol, Tabellenname, Zähler und Altium-Status. */
 import { motion } from 'motion/react'
 import { EyeOff, Plus, Search } from 'lucide-react'
@@ -19,9 +20,10 @@ export interface CategoryListProps {
   className?: string
 }
 
-const fold = (s: string) => s.toLocaleLowerCase('de-DE')
+const fold = (s: string) => s.toLocaleLowerCase(getLocale())
 
 export function CategoryList({ categories, loading, selected, dirtyTable, onSelect, onCreate, className }: CategoryListProps) {
+  useI18n()
   const [query, setQuery] = useState('')
   const listRef = useRef<HTMLUListElement>(null)
   const q = fold(query.trim())
@@ -81,12 +83,12 @@ export function CategoryList({ categories, loading, selected, dirtyTable, onSele
               setQuery('')
             }
           }}
-          placeholder="Kategorie suchen …"
-          aria-label="Kategorien durchsuchen"
+          placeholder={translate("Kategorie suchen …")}
+          aria-label={translate("Kategorien durchsuchen")}
           containerClassName="flex-1"
         />
-        <Tooltip content="Neue Kategorie">
-          <Button size="sm" variant="secondary" iconOnly aria-label="Neue Kategorie" onClick={onCreate}>
+        <Tooltip content={translate("Neue Kategorie")}>
+          <Button size="sm" variant="secondary" iconOnly aria-label={translate("Neue Kategorie")} onClick={onCreate}>
             <Plus />
           </Button>
         </Tooltip>
@@ -99,10 +101,10 @@ export function CategoryList({ categories, loading, selected, dirtyTable, onSele
         </div>
       ) : visible.length === 0 ? (
         <p className="px-4 py-8 text-center text-xs text-fg-subtle">
-          {q ? `Keine Kategorie passt zu „${query.trim()}“.` : 'Noch keine Kategorien.'}
+          {q ? translate("Keine Kategorie passt zu „{value1}“.", { value1: query.trim() }) : translate("Noch keine Kategorien.")}
         </p>
       ) : (
-        <ul ref={listRef} aria-label="Kategorien" className="relative min-h-0 flex-1 overflow-y-auto p-2">
+        <ul ref={listRef} aria-label={translate("Kategorien")} className="relative min-h-0 flex-1 overflow-y-auto p-2">
           {visible.map((c, i) => {
             const active = c.table === selected
             return (
@@ -131,7 +133,7 @@ export function CategoryList({ categories, loading, selected, dirtyTable, onSele
                     <span className="flex items-start gap-1.5">
                       <span className="line-clamp-2 text-ui font-medium leading-snug text-fg">{c.label}</span>
                       {dirtyTable === c.table && (
-                        <span aria-label="ungespeichert" role="img" className="mt-1.5 size-1.5 shrink-0 rounded-full bg-accent shadow-[0_0_6px_var(--pf-accent)]" />
+                        <span aria-label={translate("ungespeichert")} role="img" className="mt-1.5 size-1.5 shrink-0 rounded-full bg-accent shadow-[0_0_6px_var(--pf-accent)]" />
                       )}
                     </span>
                     <span className="mono block truncate text-2xs text-fg-subtle">
@@ -139,8 +141,8 @@ export function CategoryList({ categories, loading, selected, dirtyTable, onSele
                     </span>
                   </span>
                   {!c.altium_enabled && (
-                    <Tooltip content="Nicht in Altium sichtbar">
-                      <span className="flex shrink-0 text-fg-subtle" role="img" aria-label="nicht in Altium sichtbar">
+                    <Tooltip content={translate("Nicht in Altium sichtbar")}>
+                      <span className="flex shrink-0 text-fg-subtle" role="img" aria-label={translate("nicht in Altium sichtbar")}>
                         <EyeOff aria-hidden className="size-3.5" />
                       </span>
                     </Tooltip>

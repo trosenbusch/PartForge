@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { AnimatePresence, motion } from 'motion/react'
 import { TriangleAlert } from 'lucide-react'
 import { AlertDialog } from 'radix-ui'
@@ -13,6 +14,7 @@ import { useReturnFocus } from './dialogContext'
  * Bei destruktiven Aktionen liegt der Fokus auf „Abbrechen“ – Entf + Enter löscht also nicht versehentlich.
  */
 export function ConfirmHost() {
+  const { t: tr } = useI18n()
   const { current, open } = useConfirmStore()
   const [busy, setBusy] = useState(false)
   const confirmRef = useRef<HTMLButtonElement>(null)
@@ -111,7 +113,7 @@ export function ConfirmHost() {
                   <div className="mt-3 flex items-center justify-end gap-2 border-t border-line bg-[color-mix(in_oklab,var(--pf-surface-2)_55%,transparent)] px-6 py-3.5">
                     <AlertDialog.Cancel asChild>
                       <Button variant="ghost" disabled={busy}>
-                        {current.cancelLabel ?? 'Abbrechen'}
+                        {current.cancelLabel ?? tr("Abbrechen")}
                       </Button>
                     </AlertDialog.Cancel>
                     <Button
@@ -120,7 +122,7 @@ export function ConfirmHost() {
                       onClick={() => void onConfirm()}
                       loading={busy}
                     >
-                      {current.confirmLabel ?? 'Bestätigen'}
+                      {current.confirmLabel ?? tr("Bestätigen")}
                     </Button>
                   </div>
                 </motion.div>

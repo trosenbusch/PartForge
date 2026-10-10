@@ -1,9 +1,4 @@
-/**
- * Bauteile des Berichts mit Änderungen oder Problemen – virtualisiert (TanStack Virtual, Zeilenhöhe gemessen), nach
- * Bibliothek gruppiert: Name, Art, Herkunft, je Regel die Änderung als kurze Zeile, Probleme als Warnung. Suche
- * (Name, Bibliothek, Meldung), Filter nach Art und – aus der Zusammenfassung – nach Regel. Die Liste scrollt in sich
- * (Tab-Stopp mit Pfeiltasten, solange sie keine Bedienelemente enthält).
- */
+import { useI18n, localizeMessage } from '@/lib/i18n'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { CircuitBoard, Search, Shapes, TriangleAlert, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -57,13 +52,13 @@ function matchesRule(item: ConformComponentReport, filter: string[]): boolean {
   return item.changes.some((c) => filter.includes(c.rule))
 }
 
-function matchesQuery(item: ConformComponentReport, terms: string[]): boolean {
+function matchesQuery(item: ConformComponentReport, terms: string[], translate: (source: string) => string): boolean {
   if (!terms.length) return true
   const hay = [
     item.name,
     item.library,
-    ...item.changes.map((c) => `${ruleLabel(c.rule)} ${c.message}`),
-    ...item.problems,
+    ...item.changes.map((c) => `${translate(ruleLabel(c.rule))} ${localizeMessage(c.message)}`),
+    ...item.problems.map(localizeMessage),
   ]
     .join('\n')
     .toLowerCase()
@@ -97,6 +92,7 @@ export interface ComponentListProps {
 }
 
 export function ComponentList({ report, ruleFilter, onClearRuleFilter }: ComponentListProps) {
+  const { t: tr } = useI18n()
   const [query, setQuery] = useState('')
   const [kind, setKind] = useState<'all' | Kind>('all')
   const counts = useMemo(() => {
@@ -112,9 +108,9 @@ export function ComponentList({ report, ruleFilter, onClearRuleFilter }: Compone
     () =>
       report.components.filter(
         (c) =>
-          (effectiveKind === 'all' || c.kind === effectiveKind) && matchesRule(c, ruleFilter) && matchesQuery(c, terms),
+          (effectiveKind === 'all' || c.kind === effectiveKind) && matchesRule(c, ruleFilter) && matchesQuery(c, terms, tr),
       ),
-    [report.components, effectiveKind, ruleFilter, terms],
+    [report.components, effectiveKind, ruleFilter, terms, tr],
   )
   const order = useMemo(() => report.libraries.map((l) => l.library), [report.libraries])
   const rows = useMemo(() => groupRows(items, order), [items, order])
@@ -132,10 +128,10 @@ export function ComponentList({ report, ruleFilter, onClearRuleFilter }: Compone
   // neuer Filter bzw. neue Suche → wieder oben beginnen
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0 })
-  }, [items])
+  }, [items, tr])
 
   const filtered = items.length !== report.components.length
-  const ruleNames = ruleFilter.map((r) => (r === PROBLEMS_FILTER ? 'Probleme' : ruleLabel(r)))
+  const ruleNames = ruleFilter.map((r) => (r === PROBLEMS_FILTER ? tr("Probleme") : ruleLabel(r)))
   const resetAll = () => {
     setQuery('')
     setKind('all')
@@ -145,22 +141,22 @@ export function ComponentList({ report, ruleFilter, onClearRuleFilter }: Compone
   return (
     <Card className="overflow-hidden">
       <CardHeader
-        title="Bauteile"
+        title={tr("Bauteile")}
         description={
           report.truncated
-            ? `Mit Änderungen oder Problemen – die ersten ${formatNumber(report.components.length)}, nach Bibliothek`
-            : 'Mit Änderungen oder Problemen, nach Bibliothek'
+            ? tr("Mit Änderungen oder Problemen – die ersten {0}, nach Bibliothek", { "0": String(formatNumber(report.components.length)) })
+            : tr("Mit Änderungen oder Problemen, nach Bibliothek")
         }
       />
       <div className="flex flex-wrap items-center gap-2 border-t border-line px-4 py-2.5">
         {bothKinds && (
           <SegmentedControl<'all' | Kind>
             size="sm"
-            aria-label="Nach Art filtern"
+            aria-label={tr("Nach Art filtern")}
             value={effectiveKind}
             onValueChange={setKind}
             options={[
-              { value: 'all', label: `Alle ${formatNumber(report.components.length)}` },
+              { value: 'all', label: tr("Alle {0}", { "0": String(formatNumber(report.components.length)) }) },
               { value: 'symbol', label: `${KIND_LABEL.symbol} ${formatNumber(counts.symbol)}` },
               { value: 'footprint', label: `${KIND_LABEL.footprint} ${formatNumber(counts.footprint)}` },
             ]}
@@ -177,30 +173,29 @@ export function ComponentList({ report, ruleFilter, onClearRuleFilter }: Compone
               setQuery('')
             }
           }}
-          placeholder="Name, Bibliothek, Änderung …"
-          aria-label="Bauteile durchsuchen"
+          placeholder={tr("Name, Bibliothek, Änderung …")}
+          aria-label={tr("Bauteile durchsuchen")}
           prefix={<Search />}
           suffix={
             query ? (
-              <IconButton size="xs" label="Suche leeren" icon={<X />} onClick={() => setQuery('')} tooltip={false} />
+              <IconButton size="xs" label={tr("Suche leeren")} icon={<X />} onClick={() => setQuery('')} tooltip={false} />
             ) : undefined
           }
           containerClassName="w-56 min-w-0 flex-1 basis-40 @[60rem]:max-w-72"
         />
         <span className="ml-auto text-xs text-fg-subtle" aria-live="polite">
           {filtered
-            ? `${formatNumber(items.length)} von ${formatNumber(report.components.length)}`
-            : plural(items.length, 'Bauteil', 'Bauteile')}
+            ? tr("{0} von {1}", { "0": String(formatNumber(items.length)), "1": String(formatNumber(report.components.length)) })
+            : plural(items.length, tr("Bauteil"), tr("Bauteile"))}
         </span>
       </div>
       {ruleFilter.length > 0 && (
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-line bg-accent-soft/40 px-4 py-1.5 text-2xs text-fg-muted">
           <span>
-            Nur <span className="font-medium text-fg">{joinDe(ruleNames)}</span>
+            {tr("Nur ")}<span className="font-medium text-fg">{joinDe(ruleNames)}</span>
           </span>
           <Button size="xs" variant="link" className="text-2xs" onClick={onClearRuleFilter}>
-            Filter aufheben
-          </Button>
+            {tr("Filter aufheben")}</Button>
         </div>
       )}
 
@@ -209,12 +204,11 @@ export function ComponentList({ report, ruleFilter, onClearRuleFilter }: Compone
           <EmptyState
             size="sm"
             illustration="search-empty"
-            title="Keine Treffer"
-            description="Kein Bauteil passt zu Suche und Filter."
+            title={tr("Keine Treffer")}
+            description={tr("Kein Bauteil passt zu Suche und Filter.")}
             actions={
               <Button size="sm" onClick={resetAll}>
-                Filter zurücksetzen
-              </Button>
+                {tr("Filter zurücksetzen")}</Button>
             }
           />
         </div>
@@ -222,7 +216,7 @@ export function ComponentList({ report, ruleFilter, onClearRuleFilter }: Compone
         <ScrollArea
           viewportRef={scrollRef}
           viewportClassName="max-h-[min(40rem,calc(100dvh-15rem))]"
-          aria-label="Bauteile mit Änderungen"
+          aria-label={tr("Bauteile mit Änderungen")}
         >
           <div className="relative w-full border-t border-line" style={{ height: virtualizer.getTotalSize() }}>
             {virtualizer.getVirtualItems().map((v) => {
@@ -250,15 +244,14 @@ export function ComponentList({ report, ruleFilter, onClearRuleFilter }: Compone
 
       {report.truncated && (
         <p className="border-t border-line px-4 py-2 text-2xs leading-snug text-fg-subtle">
-          Sehr viele Abweichungen – die Liste zeigt die ersten {formatNumber(report.components.length)} Bauteile. Die
-          Zahlen der Zusammenfassung zählen alle; „Anwenden“ ändert alle.
-        </p>
+          {tr("Sehr viele Abweichungen – die Liste zeigt die ersten ")}{formatNumber(report.components.length)} {tr(" Bauteile. Die Zahlen der Zusammenfassung zählen alle; „Anwenden“ ändert alle.")}</p>
       )}
     </Card>
   )
 }
 
 function LibraryHeading({ row, first }: { row: LibraryRow; first: boolean }) {
+  const { t: tr } = useI18n()
   const { folder, name } = splitPath(row.library)
   const Icon = libraryFileKind(row.library) === 'schlib' ? Shapes : CircuitBoard
   return (
@@ -273,12 +266,13 @@ function LibraryHeading({ row, first }: { row: LibraryRow; first: boolean }) {
         <span className="font-semibold text-fg">{name}</span>
         {folder && <PathText path={folder} className="ml-2 text-2xs text-fg-subtle" />}
       </span>
-      <span className="ml-auto shrink-0 text-2xs text-fg-subtle">{plural(row.count, 'Bauteil', 'Bauteile')}</span>
+      <span className="ml-auto shrink-0 text-2xs text-fg-subtle">{plural(row.count, tr("Bauteil"), tr("Bauteile"))}</span>
     </h3>
   )
 }
 
 function ComponentItem({ item, highlight }: { item: ConformComponentReport; highlight: string[] }) {
+  const { t: tr } = useI18n()
   const Icon = item.kind === 'symbol' ? Shapes : CircuitBoard
   return (
     <div className="flex gap-2.5 border-t border-line px-4 py-2">
@@ -294,7 +288,7 @@ function ComponentItem({ item, highlight }: { item: ConformComponentReport; high
           </Badge>
         </div>
         {item.changes.length > 0 && (
-          <ul className="mt-1 flex flex-col gap-0.5" aria-label="Änderungen">
+          <ul className="mt-1 flex flex-col gap-0.5" aria-label={tr("Änderungen")}>
             {item.changes.map((c, i) => (
               <li
                 key={`${c.rule}-${i}`}
@@ -317,7 +311,7 @@ function ComponentItem({ item, highlight }: { item: ConformComponentReport; high
         {item.problems.map((p, i) => (
           <p key={i} className="mt-1 flex items-start gap-1.5 text-xs leading-[18px] text-warning-text">
             <TriangleAlert aria-hidden className="mt-0.5 size-3.5 shrink-0" />
-            <span className="min-w-0 [overflow-wrap:anywhere]">{p}</span>
+            <span className="min-w-0 [overflow-wrap:anywhere]">{localizeMessage(p)}</span>
           </p>
         ))}
       </div>

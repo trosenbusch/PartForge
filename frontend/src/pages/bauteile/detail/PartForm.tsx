@@ -1,3 +1,4 @@
+import { metadataLabel, localizeMessage, useI18n } from '@/lib/i18n'
 /**
  * Parameter eines Bauteils, gruppiert (Allgemein, Werte, Altium, Beschaffung, Verwaltung) mit Eingaben je Feldart.
  * **Speichern sofort** beim Verlassen eines Felds, mit Enter oder bei einer Auswahl (`PATCH`) – aber erst nach der
@@ -65,6 +66,7 @@ export interface PartFormProps {
 }
 
 export function PartForm({ category, row, onSaved, onStatus, focusRequest }: PartFormProps) {
+  const { t } = useI18n()
   const qc = useQueryClient()
   const table = category.table
   const pn = String(row[PART_NUMBER] ?? '')
@@ -76,7 +78,7 @@ export function PartForm({ category, row, onSaved, onStatus, focusRequest }: Par
   const [saving, setSaving] = useState<string | null>(null)
   const [flash, setFlash] = useState<Set<string>>(new Set())
   const [collapsed, setCollapsed] = useState(readCollapsed)
-  const groups = useMemo(() => groupFields(category.fields), [category])
+  const groups = useMemo(() => groupFields(category.fields, t), [category, t])
   const validateTimer = useRef<number | undefined>(undefined)
   const validateAbort = useRef<AbortController | null>(null)
   useEffect(
@@ -125,7 +127,7 @@ export function PartForm({ category, row, onSaved, onStatus, focusRequest }: Par
       el?.focus({ preventScroll: true })
     }, 220)
     return () => window.clearTimeout(t)
-  }, [focusRequest])
+  }, [focusRequest, t])
 
   const valueOf = (col: string) => drafts[col] ?? row[col] ?? ''
 
@@ -193,9 +195,9 @@ export function PartForm({ category, row, onSaved, onStatus, focusRequest }: Par
     }
     if (col === PART_NUMBER) {
       const ok = await confirm({
-        title: 'Teilenummer ändern?',
-        description: `Schaltpläne, die „${before}“ bereits verwenden, finden das Bauteil danach nicht mehr über die Datenbank-Bibliothek. Neue Teilenummer: „${next}“.`,
-        confirmLabel: 'Ändern',
+        title: t("Teilenummer ändern?"),
+        description: t("Schaltpläne, die „{1}“ bereits verwenden, finden das Bauteil danach nicht mehr über die Datenbank-Bibliothek. Neue Teilenummer: „{2}“.", { 1: before, 2: next }),
+        confirmLabel: t("Ändern"),
       })
       if (!ok) {
         clearField(col)
@@ -218,7 +220,7 @@ export function PartForm({ category, row, onSaved, onStatus, focusRequest }: Par
       onStatus?.({ saving: false, savedAt: now() })
       // Hinweise zu diesem Feld wurden bestätigt – nur die übrigen melden (z. B. zu lange Beschreibung)
       const rest = otherWarnings([field], res.warnings)
-      if (rest.length) toast.warning(`${field.label} gespeichert – bitte prüfen`, { description: rest.join(' · ') })
+      if (rest.length) toast.warning(t("{1} gespeichert – bitte prüfen", { 1: metadataLabel(field.label, t) }), { description: rest.map(localizeMessage).join(' · ') })
     } catch (err) {
       const msg = fieldErrors(err)[col] ?? Object.values(fieldErrors(err))[0] ?? errorMessage(err)
       setErrors((e) => ({ ...e, [col]: msg }))
@@ -245,10 +247,10 @@ export function PartForm({ category, row, onSaved, onStatus, focusRequest }: Par
       const res = await partsApi.regenerateTexts(table, [pn])
       const fresh = await partsApi.get(table, pn)
       onSaved(fresh, pn)
-      if (res.updated) showChangeToast(qc, table, res, 'Texte aus den Vorlagen erzeugt')
-      else toast.success('Texte entsprechen bereits den Vorlagen')
+      if (res.updated) showChangeToast(qc, table, res, t("Texte aus den Vorlagen erzeugt"))
+      else toast.success(t("Texte entsprechen bereits den Vorlagen"))
     } catch (err) {
-      toast.error('Texte konnten nicht erzeugt werden', { description: errorMessage(err) })
+      toast.error(t("Texte konnten nicht erzeugt werden"), { description: errorMessage(err) })
     }
   }
 
@@ -269,11 +271,11 @@ export function PartForm({ category, row, onSaved, onStatus, focusRequest }: Par
                 className="group/grp flex h-9 w-full items-center gap-2 rounded-control px-1 text-left outline-none focus-ring-inset"
               >
                 <ChevronRight aria-hidden className={cn('size-3.5 text-fg-subtle transition-transform duration-150', open && 'rotate-90')} />
-                <span className="micro-label flex-1 text-fg-muted group-hover/grp:text-fg">{g.label}</span>
+                <span className="micro-label flex-1 text-fg-muted group-hover/grp:text-fg">{metadataLabel(g.label, t)}</span>
                 {groupErrors > 0 ? (
-                  <CircleAlert aria-label="Fehler" className="size-3.5 text-danger-text" />
+                  <CircleAlert aria-label={t("Fehler")} className="size-3.5 text-danger-text" />
                 ) : groupHeld > 0 ? (
-                  <TriangleAlert aria-label="Nicht gespeichert" className="size-3.5 text-warning-text" />
+                  <TriangleAlert aria-label={t("Nicht gespeichert")} className="size-3.5 text-warning-text" />
                 ) : null}
                 <span className="mono text-2xs tabular-nums text-fg-subtle">
                   {filled}/{g.fields.length}
@@ -384,6 +386,7 @@ function FieldRow({
   onForce: () => void
   onCancel: () => void
 }) {
+  const { t } = useI18n()
   const id = fieldDomId(field.column)
   const root = useWorkspace().data?.root
   const readOnly = BOOKKEEPING.has(field.column)
@@ -396,11 +399,11 @@ function FieldRow({
     extra = (
       <IconButton
         size="sm"
-        label="Datenblatt öffnen"
+        label={t("Datenblatt öffnen")}
         icon={<ExternalLink />}
         onClick={() =>
           void openDatasheet(stored, root).then((ok) => {
-            if (!ok) toast.info('Datei kann im Browser nicht geöffnet werden', { description: stored })
+            if (!ok) toast.info(t("Datei kann im Browser nicht geöffnet werden"), { description: stored })
           })
         }
       />
@@ -410,7 +413,7 @@ function FieldRow({
     extra = (
       <IconButton
         size="sm"
-        label="Im Explorer zeigen"
+        label={t("Im Explorer zeigen")}
         icon={<FolderOpen />}
         onClick={() => void revealPath(resolveLibraryPath(root, stored), { what: pathLabel(field.column) })}
       />
@@ -424,8 +427,8 @@ function FieldRow({
   return (
     <div className="grid grid-cols-[9rem_minmax(0,1fr)] items-start gap-x-3">
       <div className="flex min-h-7 flex-wrap items-center gap-x-1.5 gap-y-0.5 py-1">
-        <label htmlFor={id} className="flex items-center gap-1 text-xs leading-tight text-fg-muted" title={field.help ?? field.column}>
-          <span className="break-words">{field.label}</span>
+        <label htmlFor={id} className="flex items-center gap-1 text-xs leading-tight text-fg-muted" title={field.help ? metadataLabel(field.help, t) : field.column}>
+          <span className="break-words">{metadataLabel(field.label, t)}</span>
           {field.required && (
             <span aria-hidden className="text-accent-text">
               *
@@ -434,10 +437,10 @@ function FieldRow({
         </label>
         {altiumText && (
           <span
-            title="Text für Altium aus der Vorlage der Kategorie – Zahlen mit Dezimalpunkt, so wie Altium sie zeigt"
+            title={t("Text für Altium aus der Vorlage der Kategorie – Zahlen mit Dezimalpunkt, so wie Altium sie zeigt")}
             className="rounded-sm border border-line px-1 text-2xs leading-4 text-fg-subtle"
           >
-            Altium-Text
+            {t("Altium-Text")}
           </span>
         )}
       </div>
@@ -467,12 +470,12 @@ function FieldRow({
               onCommit={onCommit}
               onCancel={onCancel}
               className={cn('min-w-0 flex-1', held && !error && 'border-warning hover:border-warning')}
-              aria-label={field.label}
+              aria-label={metadataLabel(field.label, t)}
               describedBy={hasMessage ? msgId : undefined}
               required={field.required}
             />
             {saving ? (
-              <span className="flex size-7 shrink-0 items-center justify-center" aria-label="Wird gespeichert">
+              <span className="flex size-7 shrink-0 items-center justify-center" aria-label={t("Wird gespeichert")}>
                 <Spinner size={13} tone="accent" />
               </span>
             ) : (
@@ -484,22 +487,22 @@ function FieldRow({
           <p id={msgId} role="alert" className="mt-1 flex items-start gap-1.5 text-xs leading-snug text-danger-text">
             <CircleAlert aria-hidden className="mt-px size-3.5 shrink-0" />
             <span>
-              {error}
-              {dirty && <span className="text-fg-subtle"> · Esc verwirft</span>}
+              {localizeMessage(error)}
+              {dirty && <span className="text-fg-subtle">  {t("· Esc verwirft")}</span>}
             </span>
           </p>
         ) : hints?.length ? (
           <div id={msgId} role={held ? 'alert' : undefined} className="mt-1 flex items-start gap-1.5 text-xs leading-snug">
             <TriangleAlert aria-hidden className="mt-px size-3.5 shrink-0 text-warning-text" />
             <div className="min-w-0">
-              <p className="text-warning-text">{hints.join(' · ')}</p>
+              <p className="text-warning-text">{hints.map(localizeMessage).join(' · ')}</p>
               {held && (
                 <p className="mt-0.5 text-fg-muted">
-                  Nicht gespeichert.{' '}
+                  {t("Nicht gespeichert.")}{' '}
                   <Button variant="link" size="xs" onClick={onForce} className="h-auto p-0 align-baseline">
-                    Trotzdem speichern
+                    {t("Trotzdem speichern")}
                   </Button>{' '}
-                  (Enter) · Esc verwirft
+                  {t("(Enter) · Esc verwirft")}
                 </p>
               )}
             </div>
@@ -508,11 +511,11 @@ function FieldRow({
           <p className="mt-1 flex items-center gap-1.5 text-2xs text-fg-subtle">
             <Wand aria-hidden className="size-3 shrink-0" />
             <span className="min-w-0 truncate">
-              Manuell – Vorlage ergibt <span className="mono text-fg-muted">{templateText}</span>
+              {t("Manuell – Vorlage ergibt")} <span className="mono text-fg-muted">{templateText}</span>
             </span>
-            <Tooltip content="Wert, Kommentar und Beschreibung aus den Vorlagen der Kategorie neu erzeugen">
+            <Tooltip content={t("Wert, Kommentar und Beschreibung aus den Vorlagen der Kategorie neu erzeugen")}>
               <Button variant="link" size="xs" leftIcon={<RefreshCw />} onClick={onRegenerate} className="shrink-0">
-                übernehmen
+                {t("übernehmen")}
               </Button>
             </Tooltip>
           </p>

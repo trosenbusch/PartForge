@@ -1,3 +1,4 @@
+import { metadataLabel, useI18n } from '@/lib/i18n'
 /**
  * Gespeicherte Ansichten (`/api/views`): Suche, Filter, Sortierung und sichtbare Spalten unter einem Namen –
  * anwenden, speichern, überschreiben, löschen. Ansichten ohne Kategorie gelten in allen Kategorien. Weicht der
@@ -47,6 +48,7 @@ export interface ViewsMenuProps {
 }
 
 export function ViewsMenu({ category, activeId, modified = false, snapshot, onApply, compact }: ViewsMenuProps) {
+  const { t } = useI18n()
   const qc = useQueryClient()
   const views = useSavedViews(category.table)
   const [saveOpen, setSaveOpen] = useState(false)
@@ -56,20 +58,20 @@ export function ViewsMenu({ category, activeId, modified = false, snapshot, onAp
 
   const overwrite = useMutation({
     mutationFn: (view: SavedView) => partsApi.updateView(view.id as number, snapshot()),
-    meta: { errorTitle: 'Ansicht konnte nicht gespeichert werden' },
+    meta: { errorTitle: t("Ansicht konnte nicht gespeichert werden") },
     onSuccess: (view) => {
       void invalidate()
       onApply(view, { silent: true })
-      toast.success(`Ansicht „${view.name}“ aktualisiert`)
+      toast.success(t("Ansicht „{1}“ aktualisiert", { 1: view.name }))
     },
   })
   const remove = useMutation({
     mutationFn: (view: SavedView) => partsApi.deleteView(view.id as number),
-    meta: { errorTitle: 'Ansicht konnte nicht gelöscht werden' },
+    meta: { errorTitle: t("Ansicht konnte nicht gelöscht werden") },
     onSuccess: (_r, view) => {
       void invalidate()
       if (view.id === activeId) onApply(null, { keep: true })
-      toast.success(`Ansicht „${view.name}“ gelöscht`)
+      toast.success(t("Ansicht „{1}“ gelöscht", { 1: view.name }))
     },
   })
 
@@ -82,14 +84,14 @@ export function ViewsMenu({ category, activeId, modified = false, snapshot, onAp
             size="sm"
             leftIcon={active ? <BookmarkCheck className="text-accent" /> : <Bookmark />}
             rightIcon={<ChevronDown className="opacity-60" />}
-            aria-label={active ? `Ansicht: ${active.name}${modified ? ' (geändert)' : ''}` : 'Ansichten'}
+            aria-label={active ? t("Ansicht: {1}{2}", { 1: active.name, 2: modified ? t(" (geändert)") : '' }) : t("Ansichten")}
             className={cn('relative max-w-56', active && 'text-fg')}
           >
-            {!compact && <span className="truncate">{active ? active.name : 'Ansichten'}</span>}
+            {!compact && <span className="truncate">{active ? active.name : t("Ansichten")}</span>}
             {active && modified && (
               <span
                 aria-hidden
-                title="Geändert – im Menü aktualisieren oder verwerfen"
+                title={t("Geändert – im Menü aktualisieren oder verwerfen")}
                 className={cn('size-1.5 shrink-0 rounded-full bg-accent', compact && 'absolute right-1 top-1')}
               />
             )}
@@ -98,19 +100,19 @@ export function ViewsMenu({ category, activeId, modified = false, snapshot, onAp
         <DropdownMenuContent align="start" className="w-72">
           {active && modified && (
             <>
-              <DropdownMenuLabel>„{active.name}“ – geändert</DropdownMenuLabel>
-              <DropdownMenuItem icon={<Save />} onSelect={() => overwrite.mutate(active)} description="Mit aktueller Suche, Filtern und Spalten">
-                „{active.name}“ aktualisieren
+              <DropdownMenuLabel>{t("„{1}“ – geändert", {1: active.name})}</DropdownMenuLabel>
+              <DropdownMenuItem icon={<Save />} onSelect={() => overwrite.mutate(active)} description={t("Mit aktueller Suche, Filtern und Spalten")}>
+                {t("„{1}“ aktualisieren", {1: active.name})}
               </DropdownMenuItem>
               <DropdownMenuItem icon={<Undo2 />} onSelect={() => onApply(active)}>
-                Änderungen verwerfen
+                {t("Änderungen verwerfen")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
             </>
           )}
-          <DropdownMenuLabel>Gespeicherte Ansichten</DropdownMenuLabel>
-          <DropdownMenuItem icon={<RotateCcw />} onSelect={() => onApply(null)} description="Ohne Suche und Filter, Standardspalten">
-            Standardansicht
+          <DropdownMenuLabel>{t("Gespeicherte Ansichten")}</DropdownMenuLabel>
+          <DropdownMenuItem icon={<RotateCcw />} onSelect={() => onApply(null)} description={t("Ohne Suche und Filter, Standardspalten")}>
+            {t("Standardansicht")}
           </DropdownMenuItem>
           {list.map((v) => (
             <DropdownMenuItem
@@ -119,8 +121,8 @@ export function ViewsMenu({ category, activeId, modified = false, snapshot, onAp
               onSelect={() => onApply(v)}
               description={[
                 v.filters.length ? plural(v.filters.length, 'Filter', 'Filter') : null,
-                v.search ? `Suche „${v.search}“` : null,
-                v.table ? null : 'alle Kategorien',
+                v.search ? t("Suche „{1}“", { 1: v.search }) : null,
+                v.table ? null : t("alle Kategorien"),
                 v.modified ? formatRelativeTime(v.modified) : null,
               ]
                 .filter(Boolean)
@@ -130,21 +132,21 @@ export function ViewsMenu({ category, activeId, modified = false, snapshot, onAp
               {v.name}
             </DropdownMenuItem>
           ))}
-          {views.isPending && <div className="px-2 py-1.5 text-xs text-fg-subtle">Ansichten werden geladen …</div>}
+          {views.isPending && <div className="px-2 py-1.5 text-xs text-fg-subtle">{t("Ansichten werden geladen …")}</div>}
           {!views.isPending && list.length === 0 && (
             <div className="px-2 py-1.5 text-xs leading-snug text-fg-subtle">
-              Noch keine gespeicherte Ansicht – Suche, Filter, Sortierung und Spalten lassen sich unter einem Namen merken.
+              {t("Noch keine gespeicherte Ansicht – Suche, Filter, Sortierung und Spalten lassen sich unter einem Namen merken.")}
             </div>
           )}
           <DropdownMenuSeparator />
           <DropdownMenuItem icon={<BookmarkPlus />} onSelect={() => setSaveOpen(true)}>
-            Aktuelle Ansicht speichern …
+            {t("Aktuelle Ansicht speichern …")}
           </DropdownMenuItem>
           {active && (
             <>
               {!modified && (
                 <DropdownMenuItem icon={<Save />} onSelect={() => overwrite.mutate(active)}>
-                  „{active.name}“ aktualisieren
+                  {t("„{1}“ aktualisieren", {1: active.name})}
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem
@@ -152,14 +154,14 @@ export function ViewsMenu({ category, activeId, modified = false, snapshot, onAp
                 destructive
                 onSelect={() => {
                   void confirm({
-                    title: `Ansicht „${active.name}“ löschen?`,
-                    description: 'Die Bauteile bleiben unverändert – nur die gespeicherte Ansicht wird entfernt.',
-                    confirmLabel: 'Löschen',
+                    title: t("Ansicht „{1}“ löschen?", { 1: active.name }),
+                    description: t("Die Bauteile bleiben unverändert – nur die gespeicherte Ansicht wird entfernt."),
+                    confirmLabel: t("Löschen"),
                     destructive: true,
                   }).then((ok) => ok && remove.mutate(active))
                 }}
               >
-                Ansicht löschen
+                {t("Ansicht löschen")}
               </DropdownMenuItem>
             </>
           )}
@@ -192,13 +194,14 @@ function SaveViewDialog({
   snapshot: ViewsMenuProps['snapshot']
   onSaved: (view: SavedView) => void
 }) {
+  const { t } = useI18n()
   const [name, setName] = useState('')
   const [global, setGlobal] = useState(false)
   const save = useMutation({
     mutationFn: () => partsApi.createView({ ...snapshot(), name: name.trim(), table: global ? null : category.table }),
-    meta: { errorTitle: 'Ansicht konnte nicht gespeichert werden' },
+    meta: { errorTitle: t("Ansicht konnte nicht gespeichert werden") },
     onSuccess: (view) => {
-      toast.success(`Ansicht „${view.name}“ gespeichert`)
+      toast.success(t("Ansicht „{1}“ gespeichert", { 1: view.name }))
       onSaved(view)
       onOpenChange(false)
       setName('')
@@ -215,45 +218,45 @@ function SaveViewDialog({
         <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
           <DialogHeader
             icon={<BookmarkPlus />}
-            title="Ansicht speichern"
-            description={`Suche, Filter, Sortierung und sichtbare Spalten von „${category.label}“ unter einem Namen merken.`}
+            title={t("Ansicht speichern")}
+            description={t("Suche, Filter, Sortierung und sichtbare Spalten von „{1}“ unter einem Namen merken.", { 1: metadataLabel(category.label, t) })}
           />
           <DialogBody className="flex flex-col gap-4">
-            <Field label="Name" required>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="z. B. 0603 · 1 % · aktiv" />
+            <Field label={t("Name")} required>
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("z. B. 0603 · 1 % · aktiv")} />
             </Field>
             {snap && (
               <ul className="flex flex-col gap-1 rounded-button border border-line bg-surface-2/50 px-3 py-2.5 text-xs text-fg-muted">
-                <li>Suche: {snap.search ? <span className="text-fg">„{snap.search}“</span> : '–'}</li>
-                <li>Filter: {snap.filters?.length ? <span className="text-fg">{snap.filters.length}</span> : '–'}</li>
+                <li>{t("Suche:")} {snap.search ? <span className="text-fg">„{snap.search}“</span> : '–'}</li>
+                <li>{t("Filter:")} {snap.filters?.length ? <span className="text-fg">{snap.filters.length}</span> : '–'}</li>
                 <li>
-                  Sortierung:{' '}
+                  {t("Sortierung:")}{' '}
                   {snap.sort?.length ? (
                     <span className="text-fg">
                       {snap.sort
-                        .map((s) => `${category.fields.find((f) => f.column === s.column)?.label ?? s.column} ${s.desc ? '↓' : '↑'}`)
+                        .map((s) => `${metadataLabel(category.fields.find((f) => f.column === s.column)?.label ?? s.column, t)} ${s.desc ? '↓' : '↑'}`)
                         .join(', ')}
                     </span>
                   ) : (
-                    'Teilenummer ↑'
+                    t("Teilenummer ↑")
                   )}
                 </li>
-                <li>Spalten: {snap.columns?.length ? <span className="text-fg">{snap.columns.length} sichtbar</span> : 'Standard'}</li>
+                <li>{t("Spalten:")} {snap.columns?.length ? <span className="text-fg">{snap.columns.length}  {t("sichtbar")}</span> : t("Standard")}</li>
               </ul>
             )}
             <Checkbox
               checked={global}
               onCheckedChange={(v) => setGlobal(v === true)}
-              label="In allen Kategorien anbieten"
-              description="Spalten, die es in einer Kategorie nicht gibt, werden dort ignoriert."
+              label={t("In allen Kategorien anbieten")}
+              description={t("Spalten, die es in einer Kategorie nicht gibt, werden dort ignoriert.")}
             />
           </DialogBody>
           <DialogFooter>
             <Button variant="ghost" onClick={() => onOpenChange(false)}>
-              Abbrechen
+              {t("Abbrechen")}
             </Button>
             <Button type="submit" variant="primary" loading={save.isPending} disabled={!name.trim()}>
-              Speichern
+              {t("Speichern")}
             </Button>
           </DialogFooter>
         </form>

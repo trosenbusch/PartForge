@@ -1,3 +1,4 @@
+import { t, useI18n } from '@/lib/i18n'
 /** Bausteine der Einstellungsseite: Karten, Zeilen, Pfade, Standardwert-Hinweise, Leer-/Fehlerzustände. */
 import { Check, Copy, FolderOpen, Hammer, RotateCcw } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -77,15 +78,16 @@ export function DefaultHint({
   /** Name der Einstellung (für die Beschriftung des Knopfs) */
   label: string
 }) {
+  const { t } = useI18n()
   if (isDefault) return null
   return (
     <span className="inline-flex items-center gap-1 text-2xs text-fg-subtle">
-      <span>Standard: {defaultText}</span>
-      <Tooltip content={`${label} auf ${defaultText} zurücksetzen`}>
+      <span>{t("Standard:")} {defaultText}</span>
+      <Tooltip content={t("{0} auf {1} zurücksetzen", { "0": label, "1": defaultText })}>
         <button
           type="button"
           onClick={onReset}
-          aria-label={`${label} auf Standard (${defaultText}) zurücksetzen`}
+          aria-label={t("{0} auf Standard ({1}) zurücksetzen", { "0": label, "1": defaultText })}
           className="flex size-5 items-center justify-center rounded-md text-fg-subtle outline-none transition-colors hover:bg-surface-3 hover:text-fg focus-ring"
         >
           <RotateCcw aria-hidden className="size-3" />
@@ -106,22 +108,23 @@ export function PathActions({
   path,
   revealTarget,
   reveal = true,
-  what = 'Pfad',
+  what = t("Pfad"),
 }: {
   path: string
   revealTarget?: string
   reveal?: boolean
   what?: string
 }) {
+  const { t } = useI18n()
   const { copied, copy } = useCopyText()
   return (
     <div className="flex shrink-0 items-center">
       {reveal && (
-        <IconButton size="sm" label="Im Explorer zeigen" icon={<FolderOpen />} onClick={() => void revealPath(revealTarget ?? path, { what })} />
+        <IconButton size="sm" label={t("Im Explorer zeigen")} icon={<FolderOpen />} onClick={() => void revealPath(revealTarget ?? path, { what })} />
       )}
       <IconButton
         size="sm"
-        label={copied === path ? 'Kopiert' : `${what} kopieren`}
+        label={copied === path ? t("Kopiert") : t("{0} kopieren", { "0": what })}
         icon={copied === path ? <Check className="text-success-text" /> : <Copy />}
         onClick={() => void copy(path, what)}
       />
@@ -133,6 +136,7 @@ export function PathActions({
 
 /** Bereich braucht eine geöffnete Bibliothek */
 export function NoWorkspace({ what }: { what: string }) {
+  const { t } = useI18n()
   const setLibraryDialog = useUi((s) => s.setLibraryDialog)
   return (
     <Card>
@@ -140,16 +144,14 @@ export function NoWorkspace({ what }: { what: string }) {
         illustration="no-library"
         size="lg"
         titleAs="h2"
-        title="Keine Bibliothek geöffnet"
-        description={`${what} gehören zu einer Bibliothek. Öffnen Sie eine Bibliothek oder legen Sie eine neue an.`}
+        title={t("Keine Bibliothek geöffnet")}
+        description={t("{0} gehören zu einer Bibliothek. Öffnen Sie eine Bibliothek oder legen Sie eine neue an.", { "0": what })}
         actions={
           <>
             <Button variant="secondary" onClick={() => setLibraryDialog('open')}>
-              Bibliothek öffnen …
-            </Button>
+              {t("Bibliothek öffnen …")}</Button>
             <Button variant="secondary" onClick={() => setLibraryDialog('create')}>
-              Neue Bibliothek anlegen …
-            </Button>
+              {t("Neue Bibliothek anlegen …")}</Button>
           </>
         }
       />
@@ -159,11 +161,12 @@ export function NoWorkspace({ what }: { what: string }) {
 
 /** Hinweis für Funktionen, deren Backend gerade gebaut wird (404/501) */
 export function PendingFeature({ children, className }: { children?: ReactNode; className?: string }) {
+  const { t } = useI18n()
   return (
     <div className={cn('flex items-start gap-2.5 rounded-control border border-dashed border-line-strong px-3 py-2.5 text-xs text-fg-muted', className)}>
       <Hammer aria-hidden className="mt-px size-3.5 shrink-0 text-fg-subtle" />
       <span>
-        <span className="font-medium text-fg">Funktion wird gerade eingebaut.</span> {children}
+        <span className="font-medium text-fg">{t("Funktion wird gerade eingebaut.")}</span> {children}
       </span>
     </div>
   )

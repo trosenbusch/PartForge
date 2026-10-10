@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { motion } from 'motion/react'
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import { Navigate, Outlet, useLocation, useOutlet } from 'react-router'
@@ -9,6 +10,7 @@ import { Topbar } from './Topbar'
 
 /** Hauptlayout: Sidebar links, rechts der Scrollbereich mit klebender Topbar und Seiteninhalt. */
 export function AppShell() {
+  const { t: tr } = useI18n()
   const mainRef = useRef<HTMLElement>(null)
   return (
     <div className="flex h-screen w-full min-w-[1120px] overflow-hidden">
@@ -21,8 +23,7 @@ export function AppShell() {
         }}
         className="fixed left-3 top-3 z-skip -translate-y-16 rounded-button bg-surface-3 px-3 py-2 text-ui text-fg shadow-pop transition-transform focus:translate-y-0"
       >
-        Zum Inhalt springen
-      </a>
+        {tr("Zum Inhalt springen")}</a>
       <Sidebar />
       <main
         id="main"
@@ -40,6 +41,7 @@ export function AppShell() {
 
 /** Seitenwechsel: Fade + 6 px Slide (180 ms). Schlüssel = erster Pfadabschnitt (Unterseiten ohne Remount). */
 function PageTransition({ scrollRef }: { scrollRef: RefObject<HTMLElement | null> }) {
+  useI18n()
   const { pathname } = useLocation()
   const outlet = useOutlet()
   const section = pathname.split('/')[1] || 'uebersicht'
@@ -63,6 +65,7 @@ function PageTransition({ scrollRef }: { scrollRef: RefObject<HTMLElement | null
 
 /** Sagt Seitenwechsel für Screenreader an („Bauteile – Widerstände“). */
 function RouteAnnouncer() {
+  const { t: tr } = useI18n()
   const { pathname } = useLocation()
   const meta = useTopbar((s) => s.meta)
   const [message, setMessage] = useState('')
@@ -76,13 +79,13 @@ function RouteAnnouncer() {
       return
     }
     // kurz verzögert, damit der neue Seitentitel (PageTitle) schon gesetzt ist
-    const t = setTimeout(() => setMessage(`Seite: ${text}`), 120)
+    const t = setTimeout(() => setMessage(tr("Seite: {0}", { "0": String(text) })), 120)
     return () => clearTimeout(t)
-  }, [pathname, text])
+  }, [pathname, text, tr])
 
   useEffect(() => {
     document.title = text === 'PartForge' ? 'PartForge' : `${text} · PartForge`
-  }, [text])
+  }, [text, tr])
 
   return (
     <div className="sr-only" aria-live="polite" aria-atomic="true">
@@ -93,6 +96,7 @@ function RouteAnnouncer() {
 
 /** Leitet auf /willkommen um, wenn keine Bibliothek geöffnet ist. */
 export function WorkspaceGuard() {
+  useI18n()
   const workspace = useWorkspace().data
   const location = useLocation()
   if (workspace === null) return <Navigate to="/willkommen" replace state={{ from: location.pathname }} />

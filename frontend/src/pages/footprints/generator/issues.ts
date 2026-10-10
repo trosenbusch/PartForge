@@ -1,3 +1,4 @@
+import { localizeMessage } from '@/components/preview/i18n'
 /** Prüfergebnisse des Generators: Meldungen sammeln (jede genau einmal), zählen und zur Prüfung springen. */
 import type { FootprintCheckIssue, TimedPreview } from '@/api/footprints'
 import type { CalcRecord } from '../lib/calc'
@@ -23,7 +24,7 @@ export function collectIssues(data: TimedPreview | null, calc: CalcRecord | null
     const n = normMsg(message)
     if (!n || seen.has(n)) return
     seen.add(n)
-    items.push({ severity, message: message.replace(/^Fehler:\s*/, ''), key })
+    items.push({ severity, message: localizeMessage(message.replace(/^Fehler:\s*/, '')), key })
   }
   data.issues.forEach((i: FootprintCheckIssue, n) => add(i.severity, i.message, `i${n}`))
   data.warnings.forEach((w, n) => add('warning', w, `w${n}`))

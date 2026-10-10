@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { Popover as PopoverPrimitive } from 'radix-ui'
 import type { ComponentProps } from 'react'
 import { cn } from '@/lib/cn'
@@ -20,6 +21,7 @@ export function PopoverContent({
   matchTriggerWidth,
   ...props
 }: PopoverContentProps) {
+  useI18n()
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Content

@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { Check, Copy } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
@@ -22,11 +23,12 @@ export interface KeyValueListProps {
 }
 
 function CopyButton({ text }: { text: string }) {
+  const { t: tr } = useI18n()
   const [done, setDone] = useState(false)
   return (
     <button
       type="button"
-      aria-label="Kopieren"
+      aria-label={tr("Kopieren")}
       onClick={() => {
         void navigator.clipboard
           ?.writeText(text)
@@ -34,7 +36,7 @@ function CopyButton({ text }: { text: string }) {
             setDone(true)
             setTimeout(() => setDone(false), 1200)
           })
-          .catch(() => toast.error('Kopieren nicht möglich'))
+          .catch(() => toast.error(tr("Kopieren nicht möglich")))
       }}
       className="ml-1 inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-fg-subtle opacity-0 outline-none transition-opacity hover:bg-surface-3 hover:text-fg focus-ring focus-visible:opacity-100 group-hover/kv:opacity-100"
     >
@@ -45,6 +47,7 @@ function CopyButton({ text }: { text: string }) {
 
 /** Beschriftete Werte als Definitionsliste. */
 export function KeyValueList({ items, labelWidth = '9rem', dense, className }: KeyValueListProps) {
+  useI18n()
   return (
     <dl
       className={cn('grid gap-x-4', dense ? 'gap-y-1.5' : 'gap-y-2.5', className)}

@@ -1,3 +1,4 @@
+import { t, useI18n } from '@/lib/i18n'
 /**
  * Bibliothek: Speicherort und Kennzahlen, Name, Aufteilung der Bibliotheksdateien (mit den echten Dateien),
  * Teilenummern-Schema und Sicherungen (anlegen, wiederherstellen mit starker Bestätigung).
@@ -57,7 +58,8 @@ const selectLibrary = (s: WorkspaceSettings): LibraryDraft => ({
 const applyLibrary = (s: WorkspaceSettings, v: LibraryDraft): WorkspaceSettings => ({ ...s, ...v })
 
 export function BibliothekSection() {
-  const ws = useWorkspaceDraft(selectLibrary, applyLibrary, { label: 'Bibliothek' })
+  const { t } = useI18n()
+  const ws = useWorkspaceDraft(selectLibrary, applyLibrary, { label: t("Bibliothek") })
   if (ws.workspace.isPending) {
     return (
       <div className="flex flex-col gap-5" aria-busy="true">
@@ -66,52 +68,52 @@ export function BibliothekSection() {
       </div>
     )
   }
-  if (!ws.info || !ws.draft) return <NoWorkspace what="Speicherort, Teilenummern und Sicherungen" />
+  if (!ws.info || !ws.draft) return <NoWorkspace what={t("Speicherort, Teilenummern und Sicherungen")} />
 
   const draft = ws.draft
   const set = <K extends keyof LibraryDraft>(key: K, value: LibraryDraft[K]) => ws.setDraft((d) => setKey(d, key, value))
   const pn = compilePnFormat(draft.internal_pn_format)
   const invalid =
     !draft.name.trim()
-      ? 'Die Bibliothek braucht einen Namen.'
+      ? t("Die Bibliothek braucht einen Namen.")
       : draft.part_number_scheme === 'internal' && !pn.ok
-        ? 'Das Nummernformat ist ungültig.'
+        ? t("Das Nummernformat ist ungültig.")
         : null
 
   return (
     <div className="flex flex-col gap-5">
       <LocationCard info={ws.info} />
 
-      <SettingsCard icon={<FolderTree />} title="Name und Dateien" description="Wie die Bibliothek heißt und wie Symbole und Footprints auf Dateien verteilt werden">
+      <SettingsCard icon={<FolderTree />} title={t("Name und Dateien")} description={t("Wie die Bibliothek heißt und wie Symbole und Footprints auf Dateien verteilt werden")}>
         <Field
           label="Name"
           layout="row"
           className="py-4"
           required
-          error={!draft.name.trim() ? 'Bitte einen Namen eingeben.' : undefined}
-          help="Erscheint im Bibliotheks-Umschalter und in der Liste zuletzt geöffneter Bibliotheken."
+          error={!draft.name.trim() ? t("Bitte einen Namen eingeben.") : undefined}
+          help={t("Erscheint im Bibliotheks-Umschalter und in der Liste zuletzt geöffneter Bibliotheken.")}
         >
-          <Input value={draft.name} onChange={(e) => set('name', e.target.value)} placeholder="z. B. Firmenbibliothek" />
+          <Input value={draft.name} onChange={(e) => set('name', e.target.value)} placeholder={t("z. B. Firmenbibliothek")} />
         </Field>
         <Field
-          label="Bibliotheksdateien"
+          label={t("Bibliotheksdateien")}
           layout="row"
           className="py-4"
           help={
             draft.library_layout === 'grouped'
-              ? 'Wenige Dateien, nach Bauteilgruppe bzw. Gehäusefamilie gebündelt – übersichtlich in Altium.'
-              : 'Jedes Symbol und jeder Footprint in einer eigenen Datei – ideal für Versionsverwaltung.'
+              ? t("Wenige Dateien, nach Bauteilgruppe bzw. Gehäusefamilie gebündelt – übersichtlich in Altium.")
+              : t("Jedes Symbol und jeder Footprint in einer eigenen Datei – ideal für Versionsverwaltung.")
           }
         >
           <div className="flex flex-col gap-3">
             <SegmentedControl<WorkspaceSettings['library_layout']>
-              aria-label="Bibliotheksdateien"
+              aria-label={t("Bibliotheksdateien")}
               fullWidth
               value={draft.library_layout}
               onValueChange={(v) => set('library_layout', v)}
               options={[
-                { value: 'grouped', label: 'Gebündelt' },
-                { value: 'per_item', label: 'Je Symbol/Footprint' },
+                { value: 'grouped', label: t("Gebündelt") },
+                { value: 'per_item', label: t("Je Symbol/Footprint") },
               ]}
             />
             <LayoutPreview layout={draft.library_layout} saved={ws.saved?.library_layout ?? draft.library_layout} />
@@ -119,25 +121,25 @@ export function BibliothekSection() {
         </Field>
       </SettingsCard>
 
-      <SettingsCard icon={<Hash />} title="Teilenummern" description="Der eindeutige Schlüssel jedes Bauteils (Spalte „Part Number“)">
+      <SettingsCard icon={<Hash />} title={t("Teilenummern")} description={t("Der eindeutige Schlüssel jedes Bauteils (Spalte „Part Number“)")}>
         <Field
-          label="Schema"
+          label={t("Schema")}
           layout="row"
           className="py-4"
           help={
             draft.part_number_scheme === 'mpn'
-              ? 'Die Teilenummer ist die Hersteller-Teilenummer – eindeutig, sprechend und direkt bestellbar.'
-              : 'PartForge vergibt fortlaufende interne Nummern je Präfix. Die Hersteller-Teilenummer bleibt ein eigenes Feld.'
+              ? t("Die Teilenummer ist die Hersteller-Teilenummer – eindeutig, sprechend und direkt bestellbar.")
+              : t("PartForge vergibt fortlaufende interne Nummern je Präfix. Die Hersteller-Teilenummer bleibt ein eigenes Feld.")
           }
         >
           <SegmentedControl<WorkspaceSettings['part_number_scheme']>
-            aria-label="Teilenummern-Schema"
+            aria-label={t("Teilenummern-Schema")}
             fullWidth
             value={draft.part_number_scheme}
             onValueChange={(v) => set('part_number_scheme', v)}
             options={[
-              { value: 'mpn', label: 'Hersteller-Nr. (MPN)' },
-              { value: 'internal', label: 'Interne Nummer' },
+              { value: 'mpn', label: t("Hersteller-Nr. (MPN)") },
+              { value: 'internal', label: t("Interne Nummer") },
             ]}
           />
         </Field>
@@ -146,7 +148,7 @@ export function BibliothekSection() {
         ) : (
           <div className="py-4">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-control bg-surface-2/60 px-3 py-2.5 text-xs text-fg-muted">
-              <span className="micro-label">Beispiel</span>
+              <span className="micro-label">{t("Beispiel")}</span>
               <span className="mono text-fg">RC0603FR-0710KL</span>
               <span aria-hidden>·</span>
               <span className="mono text-fg">GRM188R71H104KA93D</span>
@@ -157,9 +159,8 @@ export function BibliothekSection() {
         )}
         {draft.part_number_scheme !== ws.saved?.part_number_scheme && (
           <div className="py-4">
-            <Callout tone="info" title="Gilt für neue Bauteile">
-              Vorhandene Bauteile behalten ihre Teilenummer – Altium speichert sie in platzierten Bauteilen.
-            </Callout>
+            <Callout tone="info" title={t("Gilt für neue Bauteile")}>
+              {t("Vorhandene Bauteile behalten ihre Teilenummer – Altium speichert sie in platzierten Bauteilen.")}</Callout>
           </div>
         )}
       </SettingsCard>
@@ -171,7 +172,7 @@ export function BibliothekSection() {
         saving={ws.saving}
         onSave={ws.save}
         onDiscard={ws.reset}
-        label="Bibliothek"
+        label={t("Bibliothek")}
         invalid={ws.dirty ? invalid : null}
         root={ws.root}
       />
@@ -190,6 +191,7 @@ function maskUrl(url: string): string {
 }
 
 function LocationCard({ info }: { info: WorkspaceInfo }) {
+  const { t } = useI18n()
   const stats = useLibraryStatsSummary()
   const status = useAltiumStatus()
   const s = info.settings
@@ -199,28 +201,28 @@ function LocationCard({ info }: { info: WorkspaceInfo }) {
   const dbSize = (info as WorkspaceInfo & { db_size?: number | null }).db_size
 
   const folders: { key: keyof WorkspaceSettings['folders']; label: string; icon: ReactNode }[] = [
-    { key: 'symbols', label: 'Symbole', icon: <Shapes /> },
+    { key: 'symbols', label: t("Symbole"), icon: <Shapes /> },
     { key: 'footprints', label: 'Footprints', icon: <CircuitBoard /> },
-    { key: 'models', label: '3D‑Modelle', icon: <Box /> },
-    { key: 'datasheets', label: 'Datenblätter', icon: <FileText /> },
-    { key: 'backups', label: 'Sicherungen', icon: <Archive /> },
-    { key: 'exports', label: 'Exporte', icon: <FolderOutput /> },
+    { key: 'models', label: t("3D‑Modelle"), icon: <Box /> },
+    { key: 'datasheets', label: t("Datenblätter"), icon: <FileText /> },
+    { key: 'backups', label: t("Sicherungen"), icon: <Archive /> },
+    { key: 'exports', label: t("Exporte"), icon: <FolderOutput /> },
   ]
 
   const counts: { label: string; value: number | null | undefined }[] = [
-    { label: 'Bauteile', value: stats.data?.total_parts },
-    { label: 'Kategorien', value: stats.data?.category_count },
-    { label: 'Symbole', value: stats.data?.symbols.total },
+    { label: t("Bauteile"), value: stats.data?.total_parts },
+    { label: t("Kategorien"), value: stats.data?.category_count },
+    { label: t("Symbole"), value: stats.data?.symbols.total },
     { label: 'Footprints', value: stats.data?.footprints.total },
-    { label: 'Datenblätter', value: stats.data?.datasheets },
+    { label: t("Datenblätter"), value: stats.data?.datasheets },
   ]
 
   return (
     <SettingsCard
       flush
       icon={<FolderOpen />}
-      title="Speicherort"
-      description="Alles liegt in einem Ordner – verschieben, sichern oder versionieren Sie ihn als Ganzes."
+      title={t("Speicherort")}
+      description={t("Alles liegt in einem Ordner – verschieben, sichern oder versionieren Sie ihn als Ganzes.")}
       aside={
         <Badge variant="outline" size="md">
           <Database />
@@ -240,30 +242,30 @@ function LocationCard({ info }: { info: WorkspaceInfo }) {
           ))}
         </dl>
         <div className="flex flex-col divide-y divide-line px-5">
-          <PathLine icon={<FolderOpen />} label="Bibliotheksordner" path={info.root} what="Bibliotheksordner" />
+          <PathLine icon={<FolderOpen />} label={t("Bibliotheksordner")} path={info.root} what={t("Bibliotheksordner")} />
           {isSqlite ? (
             <PathLine
               icon={<Database />}
-              label="Datenbank"
+              label={t("Datenbank")}
               hint={
                 <>
-                  {s.db.journal_mode === 'wal' ? 'SQLite im WAL-Modus – Altium liest parallel' : 'SQLite'}
+                  {s.db.journal_mode === 'wal' ? t("SQLite im WAL-Modus – Altium liest parallel") : 'SQLite'}
                   {typeof dbSize === 'number' && <span className="mono"> · {formatBytes(dbSize)}</span>}
                 </>
               }
               path={info.sqlite_path}
-              what="Datenbankdatei"
+              what={t("Datenbankdatei")}
             />
           ) : (
-            <PathLine icon={<Database />} label="Datenbank" hint="PostgreSQL-Server" path={maskUrl(s.db.postgres_url ?? '–')} reveal={false} what="Adresse" />
+            <PathLine icon={<Database />} label={t("Datenbank")} hint={t("PostgreSQL-Server")} path={maskUrl(s.db.postgres_url ?? '–')} reveal={false} what={t("Adresse")} />
           )}
           <PathLine
             icon={<FileCode2 />}
-            label="DbLib für Altium"
+            label={t("DbLib für Altium")}
             hint={
               dblib ? (
                 <span className={dblib.exists && dblib.up_to_date ? 'text-success-text' : 'text-warning-text'}>
-                  {!dblib.exists ? 'fehlt' : dblib.up_to_date ? 'aktuell' : 'veraltet'}
+                  {!dblib.exists ? t("fehlt") : dblib.up_to_date ? t("aktuell") : t("veraltet")}
                 </span>
               ) : undefined
             }
@@ -272,7 +274,7 @@ function LocationCard({ info }: { info: WorkspaceInfo }) {
           />
         </div>
         <div className="border-t border-line px-3 pb-3 pt-3.5">
-          <div className="micro-label mb-1.5 px-2">Unterordner</div>
+          <div className="micro-label mb-1.5 px-2">{t("Unterordner")}</div>
           <ul className="grid grid-cols-2 gap-x-1 @[34rem]:grid-cols-3">
             {folders.map((f) => (
               <li key={f.key} className="min-w-0">
@@ -288,13 +290,14 @@ function LocationCard({ info }: { info: WorkspaceInfo }) {
 
 /** Unterordner als randlose Zeile: Klick öffnet den Ordner im Explorer (außerhalb des Desktop-Programms: Pfad kopieren) */
 function FolderRow({ icon, label, folder, path }: { icon: ReactNode; label: string; folder: string; path: string }) {
+  const { t } = useI18n()
   const bridge = useNativeBridge()
-  const action = bridge.canRevealPath || bridge.canOpenPath ? 'Im Explorer zeigen' : 'Pfad kopieren'
+  const action = bridge.canRevealPath || bridge.canOpenPath ? t("Im Explorer zeigen") : t("Pfad kopieren")
   return (
     <Tooltip content={`${action}: ${path}`}>
       <button
         type="button"
-        onClick={() => void revealPath(path, { what: `Ordner „${label}“` })}
+        onClick={() => void revealPath(path, { what: t("Ordner „{0}“", { "0": label }) })}
         className="group/ft flex w-full min-w-0 items-center gap-2.5 rounded-control px-2 py-1.5 text-left outline-none transition-colors hover:bg-surface-2/70 focus-ring-inset"
       >
         <span aria-hidden className="flex size-7 shrink-0 items-center justify-center rounded-md bg-surface-2 text-fg-muted transition-colors group-hover/ft:text-fg [&_svg]:size-3.5">
@@ -367,7 +370,7 @@ function realTree(files: LibraryFileInfo[]): { folder: string; files: TreeFile[]
           note:
             f.components === null || f.components === undefined
               ? ''
-              : `${formatNumber(f.components)} ${f.kind === 'schlib' ? (f.components === 1 ? 'Symbol' : 'Symbole') : f.components === 1 ? 'Footprint' : 'Footprints'}`,
+              : `${formatNumber(f.components)} ${f.kind === 'schlib' ? (f.components === 1 ? 'Symbol' : t("Symbole")) : f.components === 1 ? 'Footprint' : 'Footprints'}`,
         })),
         more: Math.max(0, sorted.length - FILES_PER_FOLDER),
       }
@@ -375,11 +378,12 @@ function realTree(files: LibraryFileInfo[]): { folder: string; files: TreeFile[]
 }
 
 function LayoutPreview({ layout, saved }: { layout: WorkspaceSettings['library_layout']; saved: WorkspaceSettings['library_layout'] }) {
+  const { t } = useI18n()
   const changed = layout !== saved
   const files = useLibraryFiles(!changed)
   const real = !changed && files.data && files.data.some((f) => f.exists) ? realTree(files.data) : null
   const tree = real ?? LAYOUT_EXAMPLE[layout].map((g) => ({ ...g, more: 0 }))
-  const caption = real ? 'Dateien dieser Bibliothek' : changed ? 'So werden neue Dateien abgelegt (Beispiel)' : 'Beispiel'
+  const caption = real ? t("Dateien dieser Bibliothek") : changed ? t("So werden neue Dateien abgelegt (Beispiel)") : t("Beispiel")
 
   return (
     <div className="rounded-control bg-surface-2/50 px-3 py-2.5">
@@ -399,12 +403,12 @@ function LayoutPreview({ layout, saved }: { layout: WorkspaceSettings['library_l
                 <li key={f.name} className="flex min-w-0 items-baseline gap-2 pl-4 text-fg">
                   <FileBox aria-hidden className="size-3 shrink-0 translate-y-0.5 text-fg-subtle" />
                   <span className="min-w-0 break-all">{f.name}</span>
-                  {f.note && <span className="ml-auto shrink-0 pl-2 font-sans text-fg-subtle">{f.note}</span>}
+                  {f.note && <span className="ml-auto shrink-0 pl-2 font-sans text-fg-subtle">{t(f.note)}</span>}
                 </li>
               ))}
               {(group.more > 0 || (!real && layout === 'per_item')) && (
                 <li className="pl-4 font-sans text-fg-subtle">
-                  {group.more > 0 ? `… und ${formatNumber(group.more)} weitere` : '…'}
+                  {group.more > 0 ? t("… und {0} weitere", { "0": formatNumber(group.more) }) : '…'}
                 </li>
               )}
             </ul>
@@ -413,8 +417,7 @@ function LayoutPreview({ layout, saved }: { layout: WorkspaceSettings['library_l
       </ul>
       {changed && (
         <p className="mt-2 border-t border-line pt-2 text-2xs leading-snug text-fg-muted">
-          Gilt für neu geschriebene Symbole und Footprints. Vorhandene Dateien bleiben, bis sie neu geschrieben werden.
-        </p>
+          {t("Gilt für neu geschriebene Symbole und Footprints. Vorhandene Dateien bleiben, bis sie neu geschrieben werden.")}</p>
       )}
     </div>
   )
@@ -423,13 +426,14 @@ function LayoutPreview({ layout, saved }: { layout: WorkspaceSettings['library_l
 // --------------------------------------------------------------------------- Interne Nummern
 
 function PnFormatEditor({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { t } = useI18n()
   const inputRef = useRef<HTMLInputElement>(null)
   const categories = useCategories()
   const compiled = compilePnFormat(value)
   const samples = (categories.data ?? [])
     .filter((c, i, list) => list.findIndex((o) => o.prefix === c.prefix) === i)
     .slice(0, 4)
-  const examples = samples.length ? samples : [{ table: 'Resistors', prefix: 'R', label: 'Widerstände' }]
+  const examples = samples.length ? samples : [{ table: 'Resistors', prefix: 'R', label: t("Widerstände") }]
 
   const insert = (token: string) => {
     const el = inputRef.current
@@ -445,17 +449,17 @@ function PnFormatEditor({ value, onChange }: { value: string; onChange: (v: stri
 
   return (
     <Field
-      label="Nummernformat"
+      label={t("Nummernformat")}
       layout="row"
       className="py-4"
       error={compiled.error ?? undefined}
-      help="Platzhalter: {prefix} = Bezeichner-Präfix der Kategorie, {counter} = fortlaufender Zähler je Präfix, {table} = Tabellenname."
+      help={t("Platzhalter: {prefix} = Bezeichner-Präfix der Kategorie, {counter} = fortlaufender Zähler je Präfix, {table} = Tabellenname.")}
     >
       <div className="flex flex-col gap-2.5">
         <Input ref={inputRef} mono value={value} onChange={(e) => onChange(e.target.value)} placeholder="{prefix}-{counter:06d}" />
-        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Platzhalter einfügen">
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("Platzhalter einfügen")}>
           {PN_PLACEHOLDERS.map((p) => (
-            <Tooltip key={p.token} content={`${p.label} (z. B. ${p.example})`}>
+            <Tooltip key={p.token} content={t("{0} (z. B. {1})", { "0": t(p.label), "1": p.example })}>
               <button
                 type="button"
                 onClick={() => insert(p.token)}
@@ -468,7 +472,7 @@ function PnFormatEditor({ value, onChange }: { value: string; onChange: (v: stri
           ))}
         </div>
         <div className="rounded-control bg-surface-2/60 px-3 py-2.5" aria-live="polite">
-          <div className="micro-label mb-1.5">Vorschau</div>
+          <div className="micro-label mb-1.5">{t("Vorschau")}</div>
           <ul className="flex flex-col gap-1">
             {examples.map((c) => (
               <li key={c.table} className="flex min-w-0 items-baseline justify-between gap-3 text-xs">
@@ -481,7 +485,7 @@ function PnFormatEditor({ value, onChange }: { value: string; onChange: (v: stri
             ))}
           </ul>
           {!compiled.ok && (
-            <p className="mt-1.5 text-2xs text-fg-subtle">Ungültige Formate ersetzt PartForge durch {'{prefix}-{counter:06d}'}.</p>
+            <p className="mt-1.5 text-2xs text-fg-subtle">{t("Ungültige Formate ersetzt PartForge durch")} {'{prefix}-{counter:06d}'}.</p>
           )}
         </div>
       </div>
@@ -492,14 +496,14 @@ function PnFormatEditor({ value, onChange }: { value: string; onChange: (v: stri
 // --------------------------------------------------------------------------- Sicherungen
 
 const REASONS: [RegExp, (m: RegExpMatchArray) => string][] = [
-  [/^manuell$/i, () => 'Manuell'],
-  [/^vor_loeschen_(\d+)_bauteile$/i, (m) => `Vor dem Löschen von ${formatNumber(Number(m[1]))} Bauteilen`],
-  [/^vor_loeschen_(.+)$/i, (m) => `Vor dem Löschen der Kategorie „${m[1].replace(/_/g, ' ')}“`],
-  [/^vor_feld_entfernen_(.+)$/i, (m) => `Vor dem Entfernen eines Felds in „${m[1].replace(/_/g, ' ')}“`],
-  [/^vor_serie$/i, () => 'Vor dem Anlegen einer Serie'],
-  [/^vor_import$/i, () => 'Vor einem Import'],
-  [/^vor_wiederherstellung_roh$/i, () => 'Vor dem Wiederherstellen (Rohkopie)'],
-  [/^vor_wiederherstellung$/i, () => 'Vor dem Wiederherstellen'],
+  [/^manuell$/i, () => t("Manuell")],
+  [/^vor_loeschen_(\d+)_bauteile$/i, (m) => t("Vor dem Löschen von {0} Bauteilen", { "0": formatNumber(Number(m[1])) })],
+  [/^vor_loeschen_(.+)$/i, (m) => t("Vor dem Löschen der Kategorie „{0}“", { "0": m[1].replace(/_/g, ' ') })],
+  [/^vor_feld_entfernen_(.+)$/i, (m) => t("Vor dem Entfernen eines Felds in „{0}“", { "0": m[1].replace(/_/g, ' ') })],
+  [/^vor_serie$/i, () => t("Vor dem Anlegen einer Serie")],
+  [/^vor_import$/i, () => t("Vor einem Import")],
+  [/^vor_wiederherstellung_roh$/i, () => t("Vor dem Wiederherstellen (Rohkopie)")],
+  [/^vor_wiederherstellung$/i, () => t("Vor dem Wiederherstellen")],
 ]
 
 function reasonText(reason: string): string {
@@ -508,7 +512,7 @@ function reasonText(reason: string): string {
     if (m) return fn(m)
   }
   const text = reason.replace(/_/g, ' ').trim()
-  return text ? text[0].toUpperCase() + text.slice(1) : 'Sicherung'
+  return text ? text[0].toUpperCase() + text.slice(1) : t("Sicherung")
 }
 
 /** Automatische Sicherungen (vor riskanten Aktionen) – eigene Notizen zählen nicht dazu */
@@ -517,6 +521,7 @@ function isAutomatic(reason: string): boolean {
 }
 
 function BackupsCard({ info }: { info: WorkspaceInfo }) {
+  const { t } = useI18n()
   const backups = useBackups()
   const create = useCreateBackup()
   const restore = useRestoreBackup()
@@ -529,7 +534,7 @@ function BackupsCard({ info }: { info: WorkspaceInfo }) {
     create.mutate(note.trim() || 'manuell', {
       onSuccess: (b) => {
         setNote('')
-        toast.success('Sicherung erstellt', { description: `${b.name} · ${formatBytes(b.size)}` })
+        toast.success(t("Sicherung erstellt"), { description: `${b.name} · ${formatBytes(b.size)}` })
       },
     })
 
@@ -539,20 +544,17 @@ function BackupsCard({ info }: { info: WorkspaceInfo }) {
     <SettingsCard
       flush
       icon={<DatabaseBackup />}
-      title="Sicherungen"
-      description="Vollständige Kopien der Datenbank im Ordner „Backups“ – die neuesten 30 bleiben erhalten."
+      title={t("Sicherungen")}
+      description={t("Vollständige Kopien der Datenbank im Ordner „Backups“ – die neuesten 30 bleiben erhalten.")}
       aside={
-        <Button size="sm" variant="ghost" leftIcon={<FolderOpen />} onClick={() => void revealPath(folder, { what: 'Sicherungsordner' })}>
-          Ordner
-        </Button>
+        <Button size="sm" variant="ghost" leftIcon={<FolderOpen />} onClick={() => void revealPath(folder, { what: t("Sicherungsordner") })}>
+          {t("Ordner")}</Button>
       }
     >
       {!isSqlite ? (
         <div className="p-5">
-          <Callout tone="info" title="Sicherungen übernimmt der Datenbankserver">
-            Für PostgreSQL-Bibliotheken erstellt der Server die Sicherungen (z. B. mit pg_dump). PartForge sichert nur
-            SQLite-Bibliotheken.
-          </Callout>
+          <Callout tone="info" title={t("Sicherungen übernimmt der Datenbankserver")}>
+            {t("Für PostgreSQL-Bibliotheken erstellt der Server die Sicherungen (z. B. mit pg_dump). PartForge sichert nur SQLite-Bibliotheken.")}</Callout>
         </div>
       ) : (
         <>
@@ -567,14 +569,13 @@ function BackupsCard({ info }: { info: WorkspaceInfo }) {
             <Input
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Notiz (optional), z. B. vor Umbau Kondensatoren"
-              aria-label="Notiz zur Sicherung"
+              placeholder={t("Notiz (optional), z. B. vor Umbau Kondensatoren")}
+              aria-label={t("Notiz zur Sicherung")}
               containerClassName="min-w-56 flex-1"
               maxLength={60}
             />
             <Button type="submit" variant="secondary" leftIcon={<DatabaseBackup />} loading={create.isPending}>
-              Jetzt sichern
-            </Button>
+              {t("Jetzt sichern")}</Button>
           </form>
 
           {backups.isPending ? (
@@ -584,7 +585,7 @@ function BackupsCard({ info }: { info: WorkspaceInfo }) {
             </div>
           ) : backups.isError ? (
             <div className="p-5">
-              <Callout tone="warning" title="Sicherungen konnten nicht gelesen werden">
+              <Callout tone="warning" title={t("Sicherungen konnten nicht gelesen werden")}>
                 {errorMessage(backups.error)}
               </Callout>
             </div>
@@ -592,11 +593,11 @@ function BackupsCard({ info }: { info: WorkspaceInfo }) {
             <EmptyState
               size="sm"
               icon={<History />}
-              title="Noch keine Sicherungen"
-              description="PartForge sichert automatisch vor riskanten Aktionen – Kategorie löschen, Feld entfernen, Import, Serie, Wiederherstellen."
+              title={t("Noch keine Sicherungen")}
+              description={t("PartForge sichert automatisch vor riskanten Aktionen – Kategorie löschen, Feld entfernen, Import, Serie, Wiederherstellen.")}
             />
           ) : (
-            <ul className="max-h-[22rem] divide-y divide-line overflow-y-auto" aria-label="Sicherungen">
+            <ul className="max-h-[22rem] divide-y divide-line overflow-y-auto" aria-label={t("Sicherungen")}>
               {list.map((b, i) => (
                 <li key={b.name} className="group/bk flex items-center gap-3 px-5 py-2.5 transition-colors hover:bg-surface-2/50">
                   <span
@@ -611,7 +612,7 @@ function BackupsCard({ info }: { info: WorkspaceInfo }) {
                   <div className="min-w-0 flex-1">
                     <div className="flex min-w-0 items-baseline gap-2">
                       <span className="truncate text-ui font-medium text-fg">{reasonText(b.reason)}</span>
-                      {i === 0 && <Badge variant="neutral">neueste</Badge>}
+                      {i === 0 && <Badge variant="neutral">{t("neueste")}</Badge>}
                     </div>
                     <div className="flex items-center gap-1.5 text-2xs text-fg-subtle">
                       <time dateTime={b.created} title={formatDateTime(b.created)}>
@@ -624,8 +625,7 @@ function BackupsCard({ info }: { info: WorkspaceInfo }) {
                     </div>
                   </div>
                   <Button size="sm" variant="ghost" leftIcon={<ArchiveRestore />} onClick={() => setTarget(b)}>
-                    Wiederherstellen …
-                  </Button>
+                    {t("Wiederherstellen …")}</Button>
                 </li>
               ))}
             </ul>
@@ -637,39 +637,35 @@ function BackupsCard({ info }: { info: WorkspaceInfo }) {
         open={target !== null}
         onOpenChange={(o) => !o && setTarget(null)}
         icon={<ArchiveRestore />}
-        title="Sicherung wiederherstellen?"
+        title={t("Sicherung wiederherstellen?")}
         description={
           target ? (
             <>
-              Die Datenbank wird auf den Stand vom <strong className="font-medium text-fg">{formatDateTime(target.created)}</strong>{' '}
-              zurückgesetzt ({reasonText(target.reason)}).
+              {t("Die Datenbank wird auf den Stand vom")} <strong className="font-medium text-fg">{formatDateTime(target.created)}</strong>{' '}
+              {t("zurückgesetzt (")}{reasonText(target.reason)}).
             </>
           ) : undefined
         }
-        phrase="wiederherstellen"
-        confirmLabel="Wiederherstellen"
+        phrase={t('wiederherstellen')}
+        confirmLabel={t("Wiederherstellen")}
         onConfirm={async () => {
           if (!target) return
           await restore.mutateAsync(target.name)
-          toast.success('Sicherung wiederhergestellt', {
-            description: 'Der vorherige Stand liegt als „Vor dem Wiederherstellen“ in den Sicherungen.',
+          toast.success(t("Sicherung wiederhergestellt"), {
+            description: t("Der vorherige Stand liegt als „Vor dem Wiederherstellen“ in den Sicherungen."),
           })
         }}
       >
         <ul className="flex flex-col gap-1.5 text-xs leading-snug text-fg-muted">
           <li className="flex gap-2">
             <span aria-hidden className="mt-1.5 size-1 shrink-0 rounded-full bg-danger" />
-            Alle Änderungen an Bauteilen, Kategorien und Feldern nach diesem Zeitpunkt gehen verloren.
-          </li>
+            {t("Alle Änderungen an Bauteilen, Kategorien und Feldern nach diesem Zeitpunkt gehen verloren.")}</li>
           <li className="flex gap-2">
             <span aria-hidden className="mt-1.5 size-1 shrink-0 rounded-full bg-fg-subtle" />
-            Der aktuelle Stand wird vorher automatisch gesichert – Sie können jederzeit zurück.
-          </li>
+            {t("Der aktuelle Stand wird vorher automatisch gesichert – Sie können jederzeit zurück.")}</li>
           <li className="flex gap-2">
             <span aria-hidden className="mt-1.5 size-1 shrink-0 rounded-full bg-fg-subtle" />
-            Danach gleicht PartForge die Symbol- und Footprint-Dateien mit dem wiederhergestellten Stand ab und schreibt
-            Fehlendes neu (Hintergrundjob); ein laufendes Altium liest die Datenbank neu ein.
-          </li>
+            {t("Danach gleicht PartForge die Symbol- und Footprint-Dateien mit dem wiederhergestellten Stand ab und schreibt Fehlendes neu (Hintergrundjob); ein laufendes Altium liest die Datenbank neu ein.")}</li>
         </ul>
       </TypedConfirm>
     </SettingsCard>

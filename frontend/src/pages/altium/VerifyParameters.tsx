@@ -1,9 +1,4 @@
-/**
- * „In Altium geprüft“ je Bauteil: Comment und Beschreibung, wie Altium sie platziert, und – aufklappbar – alle
- * Parameter, die Altium liefert, verglichen mit der Datenbank (E2EREG-3, `partforge.altium.verify.compare_parameters`):
- * gleich, abweichend (Wert der Datenbank daneben) oder kein Datenbankfeld (z. B. aus dem Symbol). Felder, die in Altium
- * fehlen, stehen am Ende. Ältere Prüfergebnisse ohne Parameter zeigen nur den Comment.
- */
+import { useI18n } from '@/lib/i18n'
 import { Check, ChevronRight, Eye, TriangleAlert } from 'lucide-react'
 import { useId, useMemo, useState } from 'react'
 import type { VerifiedPart } from '@/api/altium'
@@ -14,6 +9,7 @@ import { isDescriptionParameter, parameterRows, type ParameterRow } from './mode
 
 /** Comment, Beschreibung und die aufklappbare Parameterliste eines Bauteils (Zeile unter dem Ergebnis) */
 export function PartTexts({ part: p, cat }: { part: VerifiedPart; cat: CategoryDef | undefined }) {
+  const { t: tr } = useI18n()
   const [open, setOpen] = useState(false)
   const regionId = useId()
   const rows = useMemo(() => parameterRows(p), [p])
@@ -30,19 +26,19 @@ export function PartTexts({ part: p, cat }: { part: VerifiedPart; cat: CategoryD
             <span className="text-fg-subtle">Comment</span>
             <span className="mono break-all font-medium text-fg">{p.comment}</span>
             {p.comment_visible === true && <VisibleMark />}
-            {p.comment_visible === false && <span className="text-fg-subtle">(im Schaltplan ausgeblendet)</span>}
+            {p.comment_visible === false && <span className="text-fg-subtle">{tr("(im Schaltplan ausgeblendet)")}</span>}
           </p>
         )}
         {(p.description || descriptionDiff) && (
           <p className="flex min-w-0 flex-[1_1_20rem] items-start gap-1.5">
-            <span className="shrink-0 text-fg-subtle">Beschreibung</span>
+            <span className="shrink-0 text-fg-subtle">{tr("Beschreibung")}</span>
             <span className="min-w-0 break-words">
               {descriptionDiff && <TriangleAlert aria-hidden className="mr-1 inline size-3 align-[-2px] text-warning" />}
               <span className={descriptionDiff ? 'text-warning-text' : 'text-fg-muted'}>{p.description || '–'}</span>
               {descriptionDiff && (
                 <span className="text-fg-subtle">
                   {' '}
-                  (in der Datenbank: {descriptionDiff.database ? `„${descriptionDiff.database}“` : 'leer'})
+                  {tr("(in der Datenbank: ")}{descriptionDiff.database ? `„${descriptionDiff.database}“` : tr("leer")})
                 </span>
               )}
             </span>
@@ -60,12 +56,12 @@ export function PartTexts({ part: p, cat }: { part: VerifiedPart; cat: CategoryD
             {plural(rows.length, 'Parameter', 'Parameter')}
             {checked ? (
               diffCount > 0 ? (
-                <span className="text-warning-text">· {diffCount === 1 ? '1 weicht ab' : `${formatNumber(diffCount)} weichen ab`}</span>
+                <span className="text-warning-text">· {diffCount === 1 ? tr("1 weicht ab") : tr("{0} weichen ab", { "0": String(formatNumber(diffCount)) })}</span>
               ) : (
-                <span className="font-normal text-fg-subtle">· wie in der Datenbank</span>
+                <span className="font-normal text-fg-subtle">{tr("· wie in der Datenbank")}</span>
               )
             ) : (
-              <span className="font-normal text-fg-subtle">· nicht verglichen</span>
+              <span className="font-normal text-fg-subtle">{tr("· nicht verglichen")}</span>
             )}
           </button>
         )}
@@ -76,31 +72,31 @@ export function PartTexts({ part: p, cat }: { part: VerifiedPart; cat: CategoryD
 }
 
 function VisibleMark() {
+  const { t: tr } = useI18n()
   return (
-    <span title="Im Schaltplan sichtbar" className="flex shrink-0">
+    <span title={tr("Im Schaltplan sichtbar")} className="flex shrink-0">
       <Eye aria-hidden className="size-3 text-fg-subtle" />
-      <span className="sr-only">(im Schaltplan sichtbar)</span>
+      <span className="sr-only">{tr("(im Schaltplan sichtbar)")}</span>
     </span>
   )
 }
 
 function ParameterTable({ id, rows, cat, partNumber }: { id: string; rows: ParameterRow[]; cat: CategoryDef | undefined; partNumber: string }) {
+  const { t: tr } = useI18n()
   const labels = useMemo(() => new Map((cat?.fields ?? []).map((f) => [f.column.trim().toLowerCase(), f.label] as const)), [cat])
   return (
     <div id={id} className="overflow-hidden rounded-control bg-surface-2/60">
       <table className="w-full table-fixed border-collapse text-left text-2xs leading-4">
-        <caption className="sr-only">Parameter von {partNumber} in Altium, verglichen mit der Datenbank</caption>
+        <caption className="sr-only">{tr("Parameter von ")}{partNumber} {tr(" in Altium, verglichen mit der Datenbank")}</caption>
         <thead>
           <tr className="text-fg-subtle">
             <th scope="col" className="w-[30%] px-3 py-1.5 font-medium">
               Parameter
             </th>
             <th scope="col" className="px-3 py-1.5 font-medium">
-              In Altium
-            </th>
+              {tr("In Altium")}</th>
             <th scope="col" className="w-[34%] px-3 py-1.5 font-medium">
-              In der Datenbank
-            </th>
+              {tr("In der Datenbank")}</th>
           </tr>
         </thead>
         <tbody>
@@ -121,26 +117,25 @@ function ParameterTable({ id, rows, cat, partNumber }: { id: string; rows: Param
                     r.altium === null ? 'text-fg-subtle' : r.state === 'diff' ? 'text-warning-text' : 'text-fg',
                   )}
                 >
-                  {r.altium ?? 'fehlt'}
+                  {r.altium ?? tr("fehlt")}
                 </td>
                 <td className="min-w-0 break-words px-3 py-1.5">
                   {r.state === 'same' ? (
                     <span className="flex items-center gap-1 text-fg-subtle">
                       <Check aria-hidden className="size-3 shrink-0 text-success" />
-                      gleich
-                    </span>
+                      {tr("gleich")}</span>
                   ) : r.state === 'diff' ? (
                     <span className="flex items-start gap-1 text-warning-text">
                       <TriangleAlert aria-hidden className="mt-0.5 size-3 shrink-0 text-warning" />
                       <span className="min-w-0">
-                        <span className="sr-only">weicht ab: </span>
-                        {r.database === null ? 'leer' : r.database}
+                        <span className="sr-only">{tr("weicht ab: ")}</span>
+                        {r.database === null ? tr("leer") : r.database}
                       </span>
                     </span>
                   ) : r.state === 'extra' ? (
-                    <span className="text-fg-subtle">kein Datenbankfeld</span>
+                    <span className="text-fg-subtle">{tr("kein Datenbankfeld")}</span>
                   ) : (
-                    <span className="text-fg-subtle">nicht verglichen</span>
+                    <span className="text-fg-subtle">{tr("nicht verglichen")}</span>
                   )}
                 </td>
               </tr>

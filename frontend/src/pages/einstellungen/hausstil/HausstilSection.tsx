@@ -1,3 +1,4 @@
+import { t as translate, useI18n } from '@/lib/i18n'
 /**
  * Hausstil: Footprints (FootprintStyle), Lagen (LayerMap + .stackup + Lagensatz) und Symbole (SymbolStyle) – ein
  * gemeinsamer Entwurf für alle drei Reiter, gespeichert über PUT /api/workspace/settings (Strg+S).
@@ -53,9 +54,10 @@ const HEX = /^#[0-9A-Fa-f]{6}$/
 const leavesSection = (a: Location, b: Location) => a.pathname !== b.pathname
 
 export default function HausstilSection() {
+  useI18n()
   const ws = useWorkspaceDraft(selectStyle, applyStyle, {
-    label: 'Hausstil',
-    savedDescription: 'Gilt für neu erzeugte Footprints und Symbole.',
+    label: translate("Hausstil"),
+    savedDescription: translate("Gilt für neu erzeugte Footprints und Symbole."),
   })
   const [params, setParams] = useSearchParams()
   const raw = params.get('ansicht') as Tab | null
@@ -73,7 +75,7 @@ export default function HausstilSection() {
       </div>
     )
   }
-  if (!ws.info || !ws.draft || !ws.saved) return <NoWorkspace what="Hausstil und Lagenzuordnung" />
+  if (!ws.info || !ws.draft || !ws.saved) return <NoWorkspace what={translate("Hausstil und Lagenzuordnung")} />
 
   const draft = ws.draft
   const saved = ws.saved
@@ -90,9 +92,9 @@ export default function HausstilSection() {
   }
   const s = draft.symbol
   const invalid = [s.ic_line_color, s.ic_fill_color, s.discrete_line_color, s.pin_color].some((c) => !HEX.test(c))
-    ? 'Ungültige Farbe – bitte #RRGGBB eingeben.'
+    ? translate("Ungültige Farbe – bitte #RRGGBB eingeben.")
     : draft.layer_set.mode === 'file' && !draft.layer_set.layers.length
-      ? 'Lagensatz: bitte eine lesbare .layerset-Datei wählen (oder „Keiner“).'
+      ? translate("Lagensatz: bitte eine lesbare .layerset-Datei wählen (oder „Keiner“).")
       : null
 
   const applyLearned = (learned: LearnedStyle, count: number) => {
@@ -103,13 +105,13 @@ export default function HausstilSection() {
       footprint: { ...d.footprint, ...learned.footprint },
       layers: { ...d.layers, ...learned.layers },
     }))
-    toast.success(count === 1 ? '1 Einstellung übernommen' : `${count} Einstellungen übernommen`, {
-      description: 'Bitte prüfen und speichern (Strg+S).',
+    toast.success(count === 1 ? translate("1 Einstellung übernommen") : translate("{value1} Einstellungen übernommen", { value1: count }), {
+      description: translate("Bitte prüfen und speichern (Strg+S)."),
     })
   }
 
   const dot = (on: boolean) =>
-    on ? <span aria-label="geändert" role="img" className="size-1.5 rounded-full bg-accent shadow-[0_0_6px_var(--pf-accent)]" /> : null
+    on ? <span aria-label={translate("geändert")} role="img" className="size-1.5 rounded-full bg-accent shadow-[0_0_6px_var(--pf-accent)]" /> : null
 
   return (
     <div className="flex flex-col">
@@ -129,20 +131,19 @@ export default function HausstilSection() {
         className="gap-5"
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <TabsList aria-label="Hausstil-Bereiche">
+          <TabsList aria-label={translate("Hausstil-Bereiche")}>
             <TabsTrigger value="footprints" icon={<CircuitBoard />}>
               Footprints {dot(changed.footprints)}
             </TabsTrigger>
             <TabsTrigger value="lagen" icon={<Layers3 />}>
-              Lagen {dot(changed.lagen)}
+              {translate("Lagen")}{' '}{dot(changed.lagen)}
             </TabsTrigger>
             <TabsTrigger value="symbole" icon={<Shapes />}>
-              Symbole {dot(changed.symbole)}
+              {translate("Symbole")}{' '}{dot(changed.symbole)}
             </TabsTrigger>
           </TabsList>
           <Button size="sm" variant="secondary" leftIcon={<Pipette />} onClick={() => setLearnOpen(true)}>
-            Aus Beispielbibliothek …
-          </Button>
+            {translate("Aus Beispielbibliothek …")}</Button>
         </div>
         <TabsContent value="footprints">
           <FootprintStyleTab saved={saved.footprint} draft={draft.footprint} onChange={setFootprint} />
@@ -178,7 +179,7 @@ export default function HausstilSection() {
         saving={ws.saving}
         onSave={ws.save}
         onDiscard={ws.reset}
-        label="Hausstil"
+        label={translate("Hausstil")}
         invalid={ws.dirty ? invalid : null}
         shouldBlock={leavesSection}
         root={ws.root}

@@ -1,3 +1,5 @@
+import { localizeMessage } from '@/lib/i18n'
+import { t, useI18n } from '@/lib/i18n'
 import { ArrowRight, CircleAlert, GitCompareArrows, Info, ShieldCheck } from 'lucide-react'
 import { RadioGroup } from 'radix-ui'
 import { useEffect, useId, useRef } from 'react'
@@ -73,6 +75,7 @@ const typeLabel = (t: string | null | undefined) => (t ? electricalLabel(t as El
 
 /** Ein Pin-Unterschied: Namen in Altium-Überstrich-Syntax mit echtem Überstrich, dazu Typ und Teil, wenn sie abweichen */
 function PinoutChangeLine({ change: c, oldKnown }: { change: PinoutChangeData; oldKnown: boolean }) {
+  useI18n()
   const added = oldKnown && !c.old_name && Boolean(c.new_name)
   const removed = !c.new_name && Boolean(c.old_name)
   const typeChanged = oldKnown && c.old_type && c.new_type && c.old_type !== c.new_type
@@ -84,17 +87,17 @@ function PinoutChangeLine({ change: c, oldKnown }: { change: PinoutChangeData; o
       </span>
       {removed ? (
         <span>
-          entfällt (<OverbarName name={c.old_name ?? ''} className="mono text-fg" />)
+          {t("entfällt (")}<OverbarName name={c.old_name ?? ''} className="mono text-fg" />)
         </span>
       ) : added ? (
         <span>
-          neu <OverbarName name={c.new_name ?? ''} className="mono text-fg" />
+          {t("neu ")}<OverbarName name={c.new_name ?? ''} className="mono text-fg" />
         </span>
       ) : oldKnown && c.old_name !== c.new_name ? (
         <span className="inline-flex flex-wrap items-baseline gap-x-1">
           <OverbarName name={c.old_name ?? ''} className="mono text-fg" />
           <span aria-hidden>→</span>
-          <span className="sr-only">wird zu</span>
+          <span className="sr-only">{t("wird zu")}</span>
           <OverbarName name={c.new_name ?? ''} className="mono text-fg" />
         </span>
       ) : (
@@ -102,12 +105,12 @@ function PinoutChangeLine({ change: c, oldKnown }: { change: PinoutChangeData; o
       )}
       {typeChanged && (
         <span>
-          · Typ {typeLabel(c.old_type)} → {typeLabel(c.new_type)}
+          {t("· Typ ")}{typeLabel(c.old_type)} → {typeLabel(c.new_type)}
         </span>
       )}
       {partChanged && (
         <span>
-          · Teil {c.old_part} → {c.new_part}
+          {t("· Teil ")}{c.old_part} → {c.new_part}
         </span>
       )}
     </li>
@@ -120,6 +123,7 @@ function PinoutChangeLine({ change: c, oldKnown }: { change: PinoutChangeData; o
  * und – nach einer abgelehnten Übernahme – was seitdem neu zu prüfen ist.
  */
 export function ChecklistSection({ state }: { state: Readiness }) {
+  useI18n()
   const { proposal, acknowledged, setAcknowledged } = useReview()
   const showSection = useReviewUi((s) => s.showSection)
   const refusal = useReviewUi((s) => s.refusal)
@@ -151,9 +155,8 @@ export function ChecklistSection({ state }: { state: Readiness }) {
           <ShieldCheck />
         </span>
         <h2 id="sec-pruefen-title" className="text-ui font-semibold text-fg">
-          Vor dem Anlegen prüfen
-        </h2>
-        <span className="ml-auto text-2xs text-fg-subtle">{blockers.length > 0 && `${confirmed} von ${blockers.length} bestätigt`}</span>
+          {t("Vor dem Anlegen prüfen")}</h2>
+        <span className="ml-auto text-2xs text-fg-subtle">{blockers.length > 0 && t("{0} von {1} bestätigt", { "0": String(confirmed), "1": String(blockers.length) })}</span>
       </div>
 
       {refusal && refusalOpen && (
@@ -161,34 +164,31 @@ export function ChecklistSection({ state }: { state: Readiness }) {
           tone={refusal.kind === 'invalid' ? 'danger' : 'warning'}
           title={
             refusal.kind === 'blockers'
-              ? 'Übernahme abgelehnt – es wurde nichts geschrieben'
+              ? t("Übernahme abgelehnt – es wurde nichts geschrieben")
               : refusal.kind === 'changed'
-                ? 'Der Vorschlag hat sich geändert – es wurde nichts geschrieben'
-                : 'Übernahme abgelehnt'
+                ? t("Der Vorschlag hat sich geändert – es wurde nichts geschrieben")
+                : t("Übernahme abgelehnt")
           }
           actions={
             refusal.kind === 'blockers' ? undefined : (
               <Button size="xs" variant="ghost" onClick={() => useReviewUi.getState().setRefusal(null)}>
-                Verstanden
-              </Button>
+                {t("Verstanden")}</Button>
             )
           }
           className="mt-3"
         >
           {refusal.kind === 'blockers'
-            ? `Beim Anlegen kam ${refusal.items.length === 1 ? 'ein neues Problem' : `${formatNumber(refusal.items.length)} neue Probleme`} hinzu (markiert mit „neu“). Bitte prüfen und bestätigen, dann erneut anlegen.`
+            ? t("Beim Anlegen kam {0} hinzu (markiert mit „neu“). Bitte prüfen und bestätigen, dann erneut anlegen.", { "0": String(refusal.items.length === 1 ? t("ein neues Problem") : t("{0} neue Probleme", { "0": String(formatNumber(refusal.items.length)) })) })
             : refusal.kind === 'changed'
-              ? 'Seit der Prüfung haben sich Bibliothek oder Analyse geändert – etwa durch inzwischen angelegte Bauteile, Symbole oder Footprints. Angezeigt ist jetzt der neue Stand: bitte prüfen und erneut anlegen.'
-              : refusal.message}
+              ? t("Seit der Prüfung haben sich Bibliothek oder Analyse geändert – etwa durch inzwischen angelegte Bauteile, Symbole oder Footprints. Angezeigt ist jetzt der neue Stand: bitte prüfen und erneut anlegen.")
+              : localizeMessage(refusal.message)}
         </Callout>
       )}
 
       {blockers.length > 0 && (
         <div className="mt-3 rounded-card border border-danger/30 bg-surface px-3.5 py-3">
           <p className="text-xs leading-relaxed text-fg-muted">
-            Die automatische Prüfung hat Probleme gefunden, die zu einem fehlerhaften Bauteil führen können. Bitte im Datenblatt
-            nachsehen, korrigieren – oder bewusst bestätigen:
-          </p>
+            {t("Die automatische Prüfung hat Probleme gefunden, die zu einem fehlerhaften Bauteil führen können. Bitte im Datenblatt nachsehen, korrigieren – oder bewusst bestätigen:")}</p>
           <ul className="mt-2.5 flex flex-col gap-2">
             {ordered.map((b) => (
               <BlockerItem
@@ -209,8 +209,7 @@ export function ChecklistSection({ state }: { state: Readiness }) {
               className="mt-2"
               onClick={() => setAcknowledged([...acknowledged.filter((a) => !blockers.some((b) => sameBlocker(a, b))), ...blockers])}
             >
-              Alle bestätigen
-            </Button>
+              {t("Alle bestätigen")}</Button>
           )}
         </div>
       )}
@@ -225,9 +224,7 @@ export function ChecklistSection({ state }: { state: Readiness }) {
             <li key={`${s.package}-${s.name}`} className="flex items-start gap-2 text-xs leading-relaxed text-fg-muted">
               <Info aria-hidden className="mt-0.5 size-3.5 shrink-0 text-info-text" />
               <span>
-                Symbol <span className="mono text-fg">„{s.name}“</span> bekommt einen eigenen Namen: „{s.taken_name}“ verwendet in diesem
-                Vorschlag schon eine andere Pinbelegung.
-              </span>
+                Symbol <span className="mono text-fg">„{s.name}“</span> {t(" bekommt einen eigenen Namen: „")}{s.taken_name}{t("“ verwendet in diesem Vorschlag schon eine andere Pinbelegung.")}</span>
             </li>
           ))}
         </ul>
@@ -243,12 +240,12 @@ export function ChecklistSection({ state }: { state: Readiness }) {
                 className="group/reason flex w-full items-start gap-2 rounded-control px-2 py-1 text-left text-xs text-fg-muted outline-none transition-colors hover:bg-surface-2 hover:text-fg focus-ring"
               >
                 <CircleAlert aria-hidden className="mt-0.5 size-3.5 shrink-0 text-danger-text" />
-                <span className="min-w-0 flex-1">{r.text}</span>
+                <span className="min-w-0 flex-1">{localizeMessage(r.text)}</span>
                 <ArrowRight aria-hidden className="mt-0.5 size-3.5 shrink-0 opacity-0 transition-opacity group-hover/reason:opacity-100" />
               </button>
             </li>
           ))}
-          {reasons.length > 6 && <li className="px-2 text-2xs text-fg-subtle">… und {reasons.length - 6} weitere</li>}
+          {reasons.length > 6 && <li className="px-2 text-2xs text-fg-subtle">{t("… und ")}{reasons.length - 6} {t(" weitere")}</li>}
         </ul>
       )}
     </section>
@@ -272,6 +269,7 @@ function BlockerItem({
   target: ReturnType<typeof blockerTarget>
   onJump: () => void
 }) {
+  useI18n()
   const ref = useRef<HTMLLIElement>(null)
   useEffect(() => {
     const el = ref.current
@@ -307,18 +305,16 @@ function BlockerItem({
           <span className={cn('text-ui', checked ? 'text-fg-muted' : 'text-fg')}>
             {fresh && (
               <Badge variant="warning" size="sm" className="mr-1.5 align-[1px]">
-                neu
-              </Badge>
+                {t("neu")}</Badge>
             )}
-            {text}
+            {localizeMessage(text)}
           </span>
         }
         className="min-w-0 flex-1"
       />
       {target && (
         <Button size="xs" variant="ghost" onClick={onJump} className="shrink-0">
-          Zu den Pins
-        </Button>
+          {t("Zu den Pins")}</Button>
       )}
     </li>
   )
@@ -330,6 +326,7 @@ function BlockerItem({
  * Unterschiede und Verwendung kommen strukturiert vom Backend (`taken_changes`, `usage`).
  */
 function PinoutDecision({ symbol: s }: { symbol: SymbolProposal }) {
+  useI18n()
   const { proposal, choices, setChoices } = useReview()
   const uid = useId()
   const key = conflictName(s) ?? ''
@@ -357,20 +354,18 @@ function PinoutDecision({ symbol: s }: { symbol: SymbolProposal }) {
           <div id={`${uid}-title`} className="text-ui font-medium text-fg">
             {change ? (
               <>
-                Symbol <span className="mono">„{key}“</span> bekommt eine neue Pinbelegung
-              </>
+                Symbol <span className="mono">„{key}“</span> {t(" bekommt eine neue Pinbelegung")}</>
             ) : (
               <>
-                Symbol <span className="mono">„{key}“</span> gibt es schon – mit anderer Pinbelegung
-              </>
+                Symbol <span className="mono">„{key}“</span> {t(" gibt es schon – mit anderer Pinbelegung")}</>
             )}
           </div>
           <div className="mt-0.5 text-2xs text-fg-subtle">
-            {packages.length ? `Für ${packages.join(', ')}` : 'Für dieses Bauteil'}
-            {usage ? ` · ${plural(usage, 'Bauteil verwendet', 'Bauteile verwenden')} das vorhandene Symbol` : ' · noch von keinem Bauteil verwendet'}
+            {packages.length ? t("Für {0}", { "0": String(packages.join(', ')) }) : t("Für dieses Bauteil")}
+            {usage ? t(" · {0} das vorhandene Symbol", { "0": String(plural(usage, t("Bauteil verwendet"), t("Bauteile verwenden"))) }) : t(" · noch von keinem Bauteil verwendet")}
           </div>
           {shown.length > 0 && (
-            <ul aria-label={`Unterschiede zur Pinbelegung von „${key}“`} className="mt-1.5 flex flex-col gap-0.5 text-xs text-fg-muted">
+            <ul aria-label={t("Unterschiede zur Pinbelegung von „{0}“", { "0": String(key) })} className="mt-1.5 flex flex-col gap-0.5 text-xs text-fg-muted">
               {shown.map((c, i) =>
                 typeof c === 'string' ? (
                   <li key={`${c}-${i}`}>{c}</li>
@@ -378,26 +373,23 @@ function PinoutDecision({ symbol: s }: { symbol: SymbolProposal }) {
                   <PinoutChangeLine key={`${c.pin}-${i}`} change={c} oldKnown={oldKnown} />
                 ),
               )}
-              {diffs.length > shown.length && <li>… und {formatNumber(diffs.length - shown.length)} weitere</li>}
-              {!oldKnown && <li>Die Belegung des vorhandenen Symbols ist unbekannt (ohne Geometrie registriert).</li>}
+              {diffs.length > shown.length && <li>{t("… und ")}{formatNumber(diffs.length - shown.length)} {t(" weitere")}</li>}
+              {!oldKnown && <li>{t("Die Belegung des vorhandenen Symbols ist unbekannt (ohne Geometrie registriert).")}</li>}
             </ul>
           )}
           <p className="mt-1.5 text-xs leading-relaxed text-fg-muted">
             {change ? (
               usage ? (
                 <>
-                  <span className="font-medium text-warning-text">{plural(usage, 'vorhandenes Bauteil', 'vorhandene Bauteile')}</span> mit diesem
-                  Symbol {usage === 1 ? 'bekommt' : 'bekommen'} die neue Pinbelegung.
-                </>
+                  <span className="font-medium text-warning-text">{plural(usage, t("vorhandenes Bauteil"), t("vorhandene Bauteile"))}</span> {t(" mit diesem Symbol ")}{usage === 1 ? t("bekommt") : t("bekommen")} {t(" die neue Pinbelegung.")}</>
               ) : (
-                'Das vorhandene Symbol wird mit der neuen Pinbelegung überschrieben.'
+                t("Das vorhandene Symbol wird mit der neuen Pinbelegung überschrieben.")
               )
             ) : renamedTo ? (
               <>
-                Damit vorhandene Bauteile unverändert bleiben, legt PartForge ein neues Symbol <span className="mono text-fg">„{renamedTo}“</span> an.
-              </>
+                {t("Damit vorhandene Bauteile unverändert bleiben, legt PartForge ein neues Symbol ")}<span className="mono text-fg">„{renamedTo}“</span> {t(" an.")}</>
             ) : (
-              'Damit vorhandene Bauteile unverändert bleiben, bitte einen anderen Namen wählen oder die neue Pinbelegung bestätigen.'
+              t("Damit vorhandene Bauteile unverändert bleiben, bitte einen anderen Namen wählen oder die neue Pinbelegung bestätigen.")
             )}
           </p>
           <RadioGroup.Root
@@ -408,16 +400,16 @@ function PinoutDecision({ symbol: s }: { symbol: SymbolProposal }) {
           >
             <ChoiceRadio
               value="new"
-              label={renamedTo ? `Neues Symbol „${renamedTo}“ anlegen (empfohlen)` : 'Neues Symbol unter freiem Namen anlegen (empfohlen)'}
-              description="Vorhandene Bauteile behalten ihr Symbol."
+              label={renamedTo ? t("Neues Symbol „{0}“ anlegen (empfohlen)", { "0": String(renamedTo) }) : t("Neues Symbol unter freiem Namen anlegen (empfohlen)")}
+              description={t("Vorhandene Bauteile behalten ihr Symbol.")}
             />
             <ChoiceRadio
               value="change"
-              label={`Vorhandenes Symbol „${key}“ ändern`}
+              label={t("Vorhandenes Symbol „{0}“ ändern", { "0": String(key) })}
               description={
                 usage
-                  ? `${plural(usage, 'Bauteil', 'Bauteile')} mit diesem Symbol ${usage === 1 ? 'bekommt' : 'bekommen'} die neue Pinbelegung.`
-                  : 'Kein Bauteil verwendet es bisher.'
+                  ? t("{0} mit diesem Symbol {1} die neue Pinbelegung.", { "0": String(plural(usage, t("Bauteil"), t("Bauteile"))), "1": String(usage === 1 ? t("bekommt") : t("bekommen")) })
+                  : t("Kein Bauteil verwendet es bisher.")
               }
               tone="warning"
             />
@@ -429,6 +421,7 @@ function PinoutDecision({ symbol: s }: { symbol: SymbolProposal }) {
 }
 
 function ChoiceRadio({ value, label, description, tone }: { value: string; label: string; description: string; tone?: 'warning' }) {
+  useI18n()
   return (
     <RadioGroup.Item
       value={value}

@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 /**
  * Werkzeugleiste über der Bauteiltabelle: Kategoriebaum ein/aus, Suche (entprellt, Strg+F, wächst mit dem Platz),
  * Filter, Ansichten | Trefferzahl, Spalten (inkl. Zeilenhöhe), Export, Import, Detailbereich. Bei wenig Platz
@@ -56,6 +57,7 @@ function SearchField({
   /** Wenig Platz: kurzer Platzhalter (der Kategoriename steht im Titel) */
   short?: boolean
 }) {
+  const { t } = useI18n()
   const [text, setText] = useState(value)
   const [synced, setSynced] = useState(value)
   // von außen gesetzt (Ansicht, „Filter zurücksetzen“) → übernehmen
@@ -71,7 +73,7 @@ function SearchField({
     if (text === value) return
     const t = window.setTimeout(() => latest.current(text), SEARCH_DEBOUNCE_MS)
     return () => window.clearTimeout(t)
-  }, [text, value])
+  }, [text, value, t])
 
   return (
     <div className="@container w-full min-w-0">
@@ -92,8 +94,8 @@ function SearchField({
               onChange(text)
             }
           }}
-          placeholder={short ? 'Suchen …' : `${label} durchsuchen …`}
-          aria-label={`${label} durchsuchen`}
+          placeholder={short ? t("Suchen …") : t("{1} durchsuchen …", { 1: label })}
+          aria-label={t("{1} durchsuchen", { 1: label })}
           aria-keyshortcuts="Control+F"
           spellCheck={false}
           className="h-full min-w-0 flex-1 truncate bg-transparent text-ui text-fg outline-none placeholder:text-fg-subtle [&::-webkit-search-cancel-button]:hidden"
@@ -105,7 +107,7 @@ function SearchField({
               setText('')
               onChange('')
             }}
-            aria-label="Suche leeren"
+            aria-label={t("Suche leeren")}
             className="flex size-5 shrink-0 items-center justify-center rounded-sm text-fg-subtle outline-none hover:bg-surface-3 hover:text-fg focus-ring"
           >
             <X aria-hidden className="size-3" />
@@ -140,13 +142,14 @@ export function PartsToolbar({
   canOpenDetail,
   level,
 }: PartsToolbarProps) {
+  const { t } = useI18n()
   const filtered = total !== null && unfilteredTotal !== null && total !== unfilteredTotal
   const iconOnly = level >= 1
   return (
-    <div role="group" aria-label={`Werkzeuge für ${label}`} className={cn('flex h-9 shrink-0 items-center', level === 2 ? 'gap-1' : 'gap-1.5')}>
+    <div role="group" aria-label={t("Werkzeuge für {1}", { 1: label })} className={cn('flex h-9 shrink-0 items-center', level === 2 ? 'gap-1' : 'gap-1.5')}>
       <IconButton
         size="sm"
-        label={treeCollapsed ? 'Kategorien einblenden' : 'Kategorien ausblenden'}
+        label={treeCollapsed ? t("Kategorien einblenden") : t("Kategorien ausblenden")}
         icon={treeCollapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
         onClick={onToggleTree}
         aria-pressed={!treeCollapsed}
@@ -166,12 +169,12 @@ export function PartsToolbar({
         ) : filtered ? (
           <>
             <span className="mono font-medium text-fg">{formatNumber(total)}</span>
-            <span>von {formatNumber(unfilteredTotal ?? 0)}</span>
+            <span>{t("von")} {formatNumber(unfilteredTotal ?? 0)}</span>
           </>
         ) : (
           <>
             <span className="mono font-medium text-fg">{formatNumber(total)}</span>
-            <span>{total === 1 ? 'Bauteil' : 'Bauteile'}</span>
+            <span>{total === 1 ? t("Bauteil") : t("Bauteile")}</span>
           </>
         )}
       </span>
@@ -179,13 +182,13 @@ export function PartsToolbar({
       {columns}
       {exportMenu}
       {/* Name = sichtbarer Text („Import“); nur als Symbolknopf trägt er eine eigene Beschriftung */}
-      <Tooltip content="Tabelle importieren (CSV, Excel, ODS)" disabled={!iconOnly}>
+      <Tooltip content={t("Tabelle importieren (CSV, Excel, ODS)")} disabled={!iconOnly}>
         <Button
           variant="ghost"
           size="sm"
           leftIcon={<Upload />}
           onClick={onImport}
-          aria-label={iconOnly ? 'Tabelle importieren' : undefined}
+          aria-label={iconOnly ? t("Tabelle importieren") : undefined}
           iconOnly={iconOnly}
         >
           {!iconOnly && 'Import'}
@@ -194,7 +197,7 @@ export function PartsToolbar({
       <span aria-hidden className="mx-1 h-5 w-px shrink-0 bg-line-strong" />
       <IconButton
         size="sm"
-        label={detailOpen ? 'Details ausblenden' : 'Details einblenden'}
+        label={detailOpen ? t("Details ausblenden") : t("Details einblenden")}
         icon={<PanelRight />}
         onClick={onToggleDetail}
         disabled={!detailOpen && !canOpenDetail}

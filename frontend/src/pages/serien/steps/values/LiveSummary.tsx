@@ -1,3 +1,4 @@
+import { localizeMessage, useI18n } from '@/lib/i18n'
 /**
  * Live-Zähler im Schritt „Werte und Varianten“: „4 Bauformen × 673 Werte + 4 Brücken = 2.696 Bauteile“ sofort
  * aus der Vorlage, daneben die Prüfung durch das Backend (neu/vorhanden/Konflikt/ungültig, Footprints) und ein
@@ -75,6 +76,7 @@ export function LiveSummary({
   sizeOrder,
   className,
 }: LiveSummaryProps) {
+  const { t: tr } = useI18n()
   const serverTotal = preview && current && !error ? serverParts(preview.counts) : null
   const total = serverTotal ?? e.total
   /** Ausgelassene Reihenwerte: laut Prüfung (je Baugröße, mit Grund), bis dahin geschätzt */
@@ -89,26 +91,24 @@ export function LiveSummary({
   const failed = Boolean(error)
   const counted = !tooMany && e.total > 0
 
-  const partsWord = total === 1 ? 'Bauteil' : 'Bauteile'
+  const partsWord = total === 1 ? tr("Bauteil") : tr("Bauteile")
   const announcement = useSettledAnnouncement(
     failed || checking
       ? null
       : serverTotal !== null && preview
-        ? `${formatNumber(total)} ${partsWord} laut Prüfung: ${STATUS_ORDER.map((s) => `${formatNumber(preview.counts[s] ?? 0)} ${countLabel(s, preview.counts[s] ?? 0)}`).join(', ')}.`
+        ? tr("{v0} {v1} laut Prüfung: {v2}.", { v0: formatNumber(total), v1: partsWord, v2: STATUS_ORDER.map((s) => `${formatNumber(preview.counts[s] ?? 0)} ${countLabel(s, preview.counts[s] ?? 0)}`).join(', ') })
         : `${formatNumber(total)} ${partsWord}.`,
   )
 
   const status = failed ? (
     <span className="flex items-center gap-1.5 font-medium text-danger-text">
-      <TriangleAlert aria-hidden className="size-3.5" /> Prüfung fehlgeschlagen
-    </span>
+      <TriangleAlert aria-hidden className="size-3.5" /> {tr("Prüfung fehlgeschlagen")}</span>
   ) : checking || !current ? (
     <>
-      <Spinner size={12} /> wird geprüft …
-    </>
+      <Spinner size={12} /> {tr("wird geprüft …")}</>
   ) : preview ? (
     <>
-      <CircleCheck aria-hidden className="size-3.5 text-success" /> geprüft in {formatNumber(Math.max(0.01, preview.duration_s), 2)} s
+      <CircleCheck aria-hidden className="size-3.5 text-success" /> {tr("geprüft in")} {formatNumber(Math.max(0.01, preview.duration_s), 2)} s
     </>
   ) : null
 
@@ -124,12 +124,12 @@ export function LiveSummary({
       </p>
       <div className="grid grid-cols-1 @[44rem]:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)_minmax(0,1fr)]">
         {/* ------------------------------------------------------------ Ergebnis */}
-        <section aria-label="Ergebnis" className={cn(SECTION, 'relative')}>
+        <section aria-label={tr("Ergebnis")} className={cn(SECTION, 'relative')}>
           <div
             aria-hidden
             className="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full bg-[radial-gradient(closest-side,var(--pf-ember-faint),transparent)]"
           />
-          <div className="micro-label">Ergebnis</div>
+          <div className="micro-label">{tr("Ergebnis")}</div>
           <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2">
             <span
               aria-hidden
@@ -141,32 +141,32 @@ export function LiveSummary({
               {partsWord}
             </span>
             <span className="sr-only">{`${formatNumber(total)} ${partsWord}`}</span>
-            {serverTotal !== null && serverTotal !== e.total && <span className="text-2xs text-fg-subtle">laut Prüfung</span>}
+            {serverTotal !== null && serverTotal !== e.total && <span className="text-2xs text-fg-subtle">{tr("laut Prüfung")}</span>}
           </div>
           <p className="mt-1 flex flex-wrap items-baseline gap-x-1.5 text-ui text-fg-muted">
-            <Num>{formatNumber(e.sizes)}</Num> {e.sizes === 1 ? 'Bauform' : 'Bauformen'}
+            <Num>{formatNumber(e.sizes)}</Num> {e.sizes === 1 ? tr("Bauform") : tr("Bauformen")}
             <span aria-hidden className="text-fg-subtle">
               ×
             </span>
-            <span className="sr-only">mal</span>
-            <Num>{formatNumber(e.values)}</Num> {e.values === 1 ? 'Wert' : 'Werte'}
+            <span className="sr-only">{tr("mal")}</span>
+            <Num>{formatNumber(e.values)}</Num> {e.values === 1 ? tr("Wert") : tr("Werte")}
             {e.jumpers > 0 && (
               <>
                 <span aria-hidden className="text-fg-subtle">
                   +
                 </span>
                 <span className="sr-only">plus</span>
-                <Num>{formatNumber(e.jumpers)}</Num> {e.jumpers === 1 ? 'Brücke' : 'Brücken'}
+                <Num>{formatNumber(e.jumpers)}</Num> {e.jumpers === 1 ? tr("Brücke") : tr("Brücken")}
               </>
             )}
           </p>
-          {!exact && e.parts > 0 && <p className="mt-1 text-2xs text-fg-subtle">Nicht jeder Wert ist in jeder Bauform lieferbar.</p>}
+          {!exact && e.parts > 0 && <p className="mt-1 text-2xs text-fg-subtle">{tr("Nicht jeder Wert ist in jeder Bauform lieferbar.")}</p>}
           {skipped > 0 && !tooMany && (
             <div className="mt-1.5 text-2xs leading-snug text-fg-subtle">
               <p>
-                {plural(skipped, 'Reihenwert', 'Reihenwerte')} ausgelassen –{' '}
+                {plural(skipped, tr("Reihenwert"), tr("Reihenwerte"))} {tr("ausgelassen –")}{' '}
                 {/* kurz – der volle Grund (mit Klammerzusatz) steht in der Vorschau */}
-                {checked?.skipped_reason ? midSentence(checked.skipped_reason.replace(/\s*\([^)]*\)\s*$/, '')) : 'laut Datenblatt nicht lieferbar'}.
+                {checked?.skipped_reason ? midSentence(localizeMessage(checked.skipped_reason).replace(/\s*\([^)]*\)\s*$/, '')) : tr("laut Datenblatt nicht lieferbar")}.
               </p>
               {skippedBySize.length > 1 && (
                 <p className="mt-0.5 flex flex-wrap gap-x-2.5">
@@ -181,29 +181,25 @@ export function LiveSummary({
           )}
           {e.invalid > 0 && (
             <p className="mt-1 text-2xs text-warning-text">
-              {plural(e.invalid, 'Kombination', 'Kombinationen')} aus Wert und Bauform gibt es so nicht – sie erscheinen als
-              „ungültig“.
-            </p>
+              {plural(e.invalid, tr("Kombination"), tr("Kombinationen"))} {tr("aus Wert und Bauform gibt es so nicht – sie erscheinen als „ungültig“.")}</p>
           )}
         </section>
 
         {/* ------------------------------------------------------------ Prüfung */}
         {tooMany ? (
           <div className="border-t border-line p-4 @[44rem]:col-span-2 @[44rem]:border-l @[44rem]:border-t-0">
-            <Callout tone="danger" title={`Höchstens ${formatNumber(maxRows)} Bauteile je Serie`}>
-              Bitte Bereich, Bauformen oder E-Reihe einschränken.
-            </Callout>
+            <Callout tone="danger" title={tr("Höchstens {v0} Bauteile je Serie", { v0: formatNumber(maxRows) })}>
+              {tr("Bitte Bereich, Bauformen oder E-Reihe einschränken.")}</Callout>
           </div>
         ) : e.total === 0 ? (
           <div className="border-t border-line p-4 @[44rem]:col-span-2 @[44rem]:border-l @[44rem]:border-t-0">
-            <Callout tone="warning" title="Mit dieser Auswahl entstehen keine Bauteile">
-              Bauformen, Bereich oder Varianten anpassen.
-            </Callout>
+            <Callout tone="warning" title={tr("Mit dieser Auswahl entstehen keine Bauteile")}>
+              {tr("Bauformen, Bereich oder Varianten anpassen.")}</Callout>
           </div>
         ) : (
-          <section aria-label="Prüfung" className={cn(SECTION, 'border-t border-line @[44rem]:border-l @[44rem]:border-t-0')}>
+          <section aria-label={tr("Prüfung")} className={cn(SECTION, 'border-t border-line @[44rem]:border-l @[44rem]:border-t-0')}>
             <div className="flex items-center justify-between gap-2">
-              <span className="micro-label">Prüfung</span>
+              <span className="micro-label">{tr("Prüfung")}</span>
               <span className="flex items-center gap-1.5 text-2xs text-fg-subtle">{status}</span>
             </div>
             {failed ? (
@@ -211,8 +207,7 @@ export function LiveSummary({
                 <p className="text-xs leading-relaxed text-danger-text">{errorMessage(error)}</p>
                 {onRetry && (
                   <Button size="xs" variant="secondary" leftIcon={<RefreshCw />} onClick={onRetry}>
-                    Erneut prüfen
-                  </Button>
+                    {tr("Erneut prüfen")}</Button>
                 )}
               </div>
             ) : preview ? (
@@ -237,9 +232,9 @@ export function LiveSummary({
                   <CircuitBoard aria-hidden className="mt-0.5 size-3.5 shrink-0 text-fg-subtle" />
                   <span>
                     {needed
-                      ? `${plural(needed, 'Footprint wird', 'Footprints werden')} erzeugt`
-                      : `Alle ${plural(preview.footprints.length, 'Footprint', 'Footprints')} vorhanden`}
-                    {preview.symbol ? ` · Symbol „${preview.symbol.name}“${preview.symbol.exists ? '' : ' (neu)'}` : ''}
+                      ? tr("{v0} erzeugt", { v0: plural(needed, tr("Footprint wird"), tr("Footprints werden")) })
+                      : tr("Alle {v0} vorhanden", { v0: plural(preview.footprints.length, tr("Footprint"), tr("Footprints")) })}
+                    {preview.symbol ? tr(" · Symbol „{v0}“{v1}", { v0: preview.symbol.name, v1: preview.symbol.exists ? '' : tr("(neu)") }) : ''}
                   </span>
                 </p>
               </div>
@@ -254,17 +249,17 @@ export function LiveSummary({
 
         {/* ------------------------------------------------------------ Beispiel */}
         {counted && (
-          <section aria-label="Beispiel" className={cn(SECTION, 'border-t border-line @[44rem]:border-l @[44rem]:border-t-0')}>
-            <div className="micro-label mb-2">Beispiel</div>
+          <section aria-label={tr("Beispiel")} className={cn(SECTION, 'border-t border-line @[44rem]:border-l @[44rem]:border-t-0')}>
+            <div className="micro-label mb-2">{tr("Beispiel")}</div>
             {example ? (
               <>
                 <MpnAnatomy mpn={example.mpn} segments={example.segments} labels="short" size="md" />
                 {example.description && <p className="mt-2 line-clamp-2 text-xs text-fg-muted">{example.description}</p>}
               </>
             ) : failed ? (
-              <p className="text-xs text-fg-subtle">Erscheint nach der Prüfung.</p>
+              <p className="text-xs text-fg-subtle">{tr("Erscheint nach der Prüfung.")}</p>
             ) : preview && current ? (
-              <p className="text-xs text-fg-subtle">Kein anlegbares Bauteil in dieser Auswahl.</p>
+              <p className="text-xs text-fg-subtle">{tr("Kein anlegbares Bauteil in dieser Auswahl.")}</p>
             ) : (
               <div className="flex flex-col gap-2">
                 <Skeleton className="h-6 w-4/5" />
@@ -276,12 +271,12 @@ export function LiveSummary({
       </div>
 
       {warnings.length > 0 && (
-        <section aria-label="Hinweise der Prüfung" className="border-t border-line px-5 py-3.5">
+        <section aria-label={tr("Hinweise der Prüfung")} className="border-t border-line px-5 py-3.5">
           <ul className="flex flex-col gap-1.5">
             {warnings.slice(0, 4).map((w) => (
               <li key={w} className="flex gap-2 text-xs leading-snug text-fg-muted">
                 <Info aria-hidden className="mt-0.5 size-3.5 shrink-0 text-warning" />
-                {w}
+                {localizeMessage(w)}
               </li>
             ))}
           </ul>

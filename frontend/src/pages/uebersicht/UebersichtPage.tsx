@@ -1,11 +1,5 @@
-/**
- * Übersicht: Begrüßung mit den zwei Schnellaktionen „Serie erzeugen“ und „Datenblatt importieren“, Kennzahlen
- * (zählen hoch), Verteilung je Kategorie, Bibliotheksgesundheit (Ring aus dem zusammengeführten Prüfbericht mit den
- * wichtigsten Befunden und „Beheben“), letzte Änderungen, Altium/DbLib/Bibliotheksdateien und weitere Aktionen.
- *
- * Aktionen laufen hier an Ort und Stelle (Job-Dock und Meldungen) – nur Berichte (Prüfbericht, ODBC, Vorschau)
- * öffnen die Altium-Seite.
- */
+import { useI18n, localizeMessage } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { motion } from 'motion/react'
 import {
   ArchiveRestore,
@@ -91,6 +85,7 @@ const item = {
 }
 
 export default function UebersichtPage() {
+  const { t: tr } = useI18n()
   usePageHeading() // die Begrüßung ist die <h1> dieser Seite
   const navigate = useNavigate()
   const workspace = useWorkspace().data
@@ -157,7 +152,7 @@ export default function UebersichtPage() {
                 <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-ui text-fg-muted">
                   <span className="flex items-center gap-1.5">
                     <span aria-hidden className="size-1.5 rounded-full bg-success shadow-[0_0_8px_var(--pf-success)]" />
-                    <span className="font-medium text-fg">{workspace?.name ?? 'Bibliothek'}</span>
+                    <span className="font-medium text-fg">{workspace?.name ?? tr("Bibliothek")}</span>
                   </span>
                   {workspace && (
                     <>
@@ -175,20 +170,18 @@ export default function UebersichtPage() {
                         ·
                       </span>
                       <span>
-                        {plural(stats.total_parts, 'Bauteil', 'Bauteile')} in{' '}
-                        {plural(stats.categories.filter((c) => c.count > 0).length, 'Kategorie', 'Kategorien')}
+                        {plural(stats.total_parts, tr("Bauteil"), tr("Bauteile"))} in{' '}
+                        {plural(stats.categories.filter((c) => c.count > 0).length, tr("Kategorie"), tr("Kategorien"))}
                       </span>
                     </>
                   )}
                 </p>
               </div>
-              <div className="flex shrink-0 flex-wrap items-center gap-2.5" role="group" aria-label="Schnellaktionen">
+              <div className="flex shrink-0 flex-wrap items-center gap-2.5" role="group" aria-label={tr("Schnellaktionen")}>
                 <Button size="lg" variant="primary" leftIcon={<Layers />} onClick={() => run('series.new')}>
-                  Serie erzeugen
-                </Button>
+                  {tr("Serie erzeugen")}</Button>
                 <Button size="lg" variant="spark" leftIcon={<FileScan />} onClick={() => run('import.datasheet')}>
-                  Datenblatt importieren
-                </Button>
+                  {tr("Datenblatt importieren")}</Button>
               </div>
             </div>
           </div>
@@ -197,7 +190,7 @@ export default function UebersichtPage() {
         {/* Kennzahlen */}
         <motion.section
           variants={item}
-          aria-label="Kennzahlen"
+          aria-label={tr("Kennzahlen")}
           className="grid grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] gap-4"
         >
           <KpiRow
@@ -286,6 +279,7 @@ function KpiRow({
   healthFailed: boolean
   onNavigate: (to: string) => void
 }) {
+  const { t: tr } = useI18n()
   const v = (n: number | undefined) => (unavailable ? null : n)
   const lastChange = stats?.recent_parts[0]?.modified
   const pendingSymbols = (stats?.symbols.by_status.pending ?? 0) + (stats?.symbols.by_status.error ?? 0)
@@ -295,14 +289,14 @@ function KpiRow({
   const absentFootprints = Math.max(absentIn(files, 'pcblib') ?? 0, stats?.footprints.by_status.missing ?? 0)
   const syncHint = (total: number, pending: number, absent: number) =>
     total === 0
-      ? 'noch keine'
+      ? tr("noch keine")
       : pending
-        ? `${formatNumber(pending)} ausstehend`
+        ? tr("{0} ausstehend", { "0": String(formatNumber(pending)) })
         : absent
-          ? plural(absent, 'fehlt in Datei', 'fehlen in Dateien')
+          ? plural(absent, tr("fehlt in Datei"), tr("fehlen in Dateien"))
           : files
-            ? 'alle in Dateien'
-            : 'registriert'
+            ? tr("alle in Dateien")
+            : tr("registriert")
   const filled = stats?.categories.filter((c) => c.count > 0).length ?? 0
   // fehlende/nicht geschriebene Bibliotheksdateien sind Fehler – auch wenn der Prüfbericht (der Ausstehendes übergeht) nichts meldet
   const fileErrors = fileErrorCount(libraryFiles)
@@ -312,51 +306,51 @@ function KpiRow({
   const nothingToCheck = Boolean(report && stats && stats.total_parts === 0 && errors + warnings === 0)
   const problems = nothingToCheck ? null : report ? errors + warnings : healthFailed ? null : undefined
   const problemHint = nothingToCheck
-    ? 'noch nichts zu prüfen'
+    ? tr("noch nichts zu prüfen")
     : !report
       ? healthFailed
-        ? 'Prüfung nicht verfügbar'
+        ? tr("Prüfung nicht verfügbar")
         : undefined
       : fileErrors && libraryFiles?.missingFiles
-        ? plural(libraryFiles.missingFiles, 'Bibliotheksdatei fehlt', 'Bibliotheksdateien fehlen')
+        ? plural(libraryFiles.missingFiles, tr("Bibliotheksdatei fehlt"), tr("Bibliotheksdateien fehlen"))
         : errors
         ? warnings
-          ? `davon ${plural(errors, 'Fehler', 'Fehler')}`
-          : 'Fehler'
+          ? tr("davon {0}", { "0": String(plural(errors, tr("Fehler"), tr("Fehler"))) })
+          : tr("Fehler")
         : warnings
           ? warnings === 1
-            ? 'Warnung'
-            : 'Warnungen'
+            ? tr("Warnung")
+            : tr("Warnungen")
           : report.counts.info
-            ? `nur ${plural(report.counts.info, 'Hinweis', 'Hinweise')}`
-            : 'alles in Ordnung'
+            ? tr("nur {0}", { "0": String(plural(report.counts.info, tr("Hinweis"), tr("Hinweise"))) })
+            : tr("alles in Ordnung")
 
   return (
     <>
       <StatCard
-        label="Bauteile"
+        label={tr("Bauteile")}
         value={v(stats?.total_parts)}
         icon={<Microchip />}
-        hint={unavailable ? 'nicht verfügbar' : !stats ? undefined : lastChange ? `zuletzt ${formatRelativeTime(lastChange)}` : 'noch keine'}
+        hint={unavailable ? tr("nicht verfügbar") : !stats ? undefined : lastChange ? tr("zuletzt {0}", { "0": String(formatRelativeTime(lastChange)) }) : tr("noch keine")}
         onClick={() => onNavigate('/bauteile')}
-        actionLabel="Zur Bauteiltabelle"
+        actionLabel={tr("Zur Bauteiltabelle")}
       />
       <StatCard
-        label="Kategorien"
+        label={tr("Kategorien")}
         value={v(stats?.category_count)}
         icon={<Boxes />}
-        hint={stats ? `${formatNumber(filled)} mit Bauteilen` : undefined}
+        hint={stats ? tr("{0} mit Bauteilen", { "0": String(formatNumber(filled)) }) : undefined}
         onClick={() => onNavigate('/einstellungen/kategorien')}
-        actionLabel="Kategorien und Felder bearbeiten"
+        actionLabel={tr("Kategorien und Felder bearbeiten")}
       />
       <StatCard
-        label="Symbole"
+        label={tr("Symbole")}
         value={v(stats?.symbols.total)}
         icon={<Shapes />}
         hint={stats ? syncHint(stats.symbols.total, pendingSymbols, absentSymbols) : undefined}
         tone={pendingSymbols || absentSymbols ? 'warning' : 'neutral'}
         onClick={() => onNavigate('/symbole')}
-        actionLabel="Zu den Symbolen"
+        actionLabel={tr("Zu den Symbolen")}
       />
       <StatCard
         label="Footprints"
@@ -365,16 +359,16 @@ function KpiRow({
         hint={stats ? syncHint(stats.footprints.total, pendingFootprints, absentFootprints) : undefined}
         tone={pendingFootprints || absentFootprints ? 'warning' : 'neutral'}
         onClick={() => onNavigate('/footprints')}
-        actionLabel="Zu den Footprints"
+        actionLabel={tr("Zu den Footprints")}
       />
       <StatCard
-        label="Probleme"
+        label={tr("Probleme")}
         value={problems}
         icon={problems ? <TriangleAlert /> : <ShieldCheck />}
         tone={errors ? 'danger' : warnings ? 'warning' : report && !nothingToCheck ? 'success' : 'neutral'}
         hint={problemHint}
         onClick={() => onNavigate(fileErrors && !report?.counts.error ? '/altium?bereich=dateien' : '/altium?bereich=pruefbericht')}
-        actionLabel={fileErrors && !report?.counts.error ? 'Bibliotheksdateien ansehen' : 'Prüfbericht öffnen'}
+        actionLabel={fileErrors && !report?.counts.error ? tr("Bibliotheksdateien ansehen") : tr("Prüfbericht öffnen")}
       />
     </>
   )
@@ -391,6 +385,7 @@ function DistributionCard({
   unavailable: boolean
   onNavigate: (to: string) => void
 }) {
+  const { t: tr } = useI18n()
   const rows = (stats?.categories ?? []).filter((c) => c.count > 0).sort((a, b) => b.count - a.count)
   const shown = rows.slice(0, 7)
   const max = Math.max(1, ...shown.map((r) => r.count))
@@ -402,16 +397,15 @@ function DistributionCard({
     <Card className="flex h-full flex-col">
       <CardHeader
         icon={<Boxes />}
-        title="Bauteile je Kategorie"
+        title={tr("Bauteile je Kategorie")}
         description={
           stats
-            ? `${plural(total, 'Bauteil', 'Bauteile')} in ${formatNumber(rows.length)} von ${formatNumber(stats.categories.length)} Kategorien`
-            : 'Wie sich Ihre Bauteile verteilen'
+            ? tr("{0} in {1} von {2} Kategorien", { "0": String(plural(total, tr("Bauteil"), tr("Bauteile"))), "1": String(formatNumber(rows.length)), "2": String(formatNumber(stats.categories.length)) })
+            : tr("Wie sich Ihre Bauteile verteilen")
         }
         actions={
           <Button size="sm" variant="ghost" rightIcon={<ArrowRight />} onClick={() => onNavigate('/bauteile')}>
-            Alle Bauteile
-          </Button>
+            {tr("Alle Bauteile")}</Button>
         }
       />
       <CardContent className="flex flex-1 flex-col">
@@ -423,7 +417,7 @@ function DistributionCard({
           </div>
         )}
         {unavailable && (
-          <EmptyState size="sm" illustration="offline" title="Kennzahlen nicht verfügbar" description="Die Datenbank antwortet gerade nicht." />
+          <EmptyState size="sm" illustration="offline" title={tr("Kennzahlen nicht verfügbar")} description={tr("Die Datenbank antwortet gerade nicht.")} />
         )}
         {stats && (
           <ul className="-mx-2 flex flex-col">
@@ -449,7 +443,7 @@ function DistributionCard({
                   </span>
                   <span className="mono text-right text-ui text-fg">
                     <CountNumber value={c.count} />
-                    <span className="sr-only"> Bauteile, {shareText(c.count, total)}</span>
+                    <span className="sr-only"> {tr(" Bauteile, ")}{shareText(c.count, total)}</span>
                   </span>
                 </button>
               </li>
@@ -458,9 +452,9 @@ function DistributionCard({
         )}
         {stats && (hidden > 0 || empty > 0) && (
           <p className="mt-auto pt-3 text-xs text-fg-subtle">
-            {hidden > 0 && `+ ${plural(hidden, 'weitere Kategorie', 'weitere Kategorien')}`}
+            {hidden > 0 && `+ ${plural(hidden, tr("weitere Kategorie"), tr("weitere Kategorien"))}`}
             {hidden > 0 && empty > 0 && ' · '}
-            {empty > 0 && `${plural(empty, 'Kategorie', 'Kategorien')} noch leer`}
+            {empty > 0 && tr("{0} noch leer", { "0": String(plural(empty, tr("Kategorie"), tr("Kategorien"))) })}
           </p>
         )}
       </CardContent>
@@ -469,6 +463,7 @@ function DistributionCard({
 }
 
 function CountNumber({ value }: { value: number }) {
+  useI18n()
   return <>{formatNumber(Math.round(useCountUp(value)))}</>
 }
 
@@ -493,6 +488,7 @@ function FirstSteps({
   status: AltiumStatus | undefined
   actions: AltiumActions
 }) {
+  const { t: tr } = useI18n()
   const settings = useSettings().data
   const workspace = useWorkspace().data
   const keyOk = Boolean(settings?.ai_key_configured)
@@ -508,57 +504,53 @@ function FirstSteps({
     optional?: boolean
     action?: ReactNode
   }[] = [
-    { id: 'lib', title: 'Bibliothek angelegt', text: workspace?.name ?? 'Bibliotheksordner bereit', done: true },
+    { id: 'lib', title: tr("Bibliothek angelegt"), text: workspace?.name ?? tr("Bibliotheksordner bereit"), done: true },
     {
       id: 'key',
-      title: 'Claude-API-Schlüssel hinterlegt',
-      text: keyOk ? 'Datenblatt-Import per KI ist bereit.' : 'Optional – nur für den Datenblatt-Import nötig.',
+      title: tr("Claude-API-Schlüssel hinterlegt"),
+      text: keyOk ? tr("Datenblatt-Import per KI ist bereit.") : tr("Optional – nur für den Datenblatt-Import nötig."),
       done: keyOk,
       optional: true,
       action: (
         <Button size="sm" variant="ghost" leftIcon={<KeyRound />} onClick={() => onNavigate(SETTINGS_PLACE.ai.to)}>
-          Einrichten
-        </Button>
+          {tr("Einrichten")}</Button>
       ),
     },
     {
       id: 'altium',
-      title: 'Altium Designer gefunden',
+      title: tr("Altium Designer gefunden"),
       text: altiumOk
-        ? 'Symbol- und Footprint-Bibliotheken können erzeugt werden.'
-        : `Bibliotheks-Writer oder Pfad zu X2.EXE unter ${SETTINGS_PLACE.altium.label} festlegen.`,
+        ? tr("Symbol- und Footprint-Bibliotheken können erzeugt werden.")
+        : tr("Bibliotheks-Writer oder Pfad zu X2.EXE unter {0} festlegen.", { "0": String(SETTINGS_PLACE.altium.label) }),
       done: altiumOk,
       optional: true,
       action: (
         <Button size="sm" variant="ghost" onClick={() => onNavigate(SETTINGS_PLACE.altium.to)}>
-          Pfad festlegen
-        </Button>
+          {tr("Pfad festlegen")}</Button>
       ),
     },
     {
       id: 'series',
-      title: 'Erste Bauteile anlegen',
-      text: 'Eine komplette Widerstandsserie mit dem Serien-Assistenten – oder ein Datenblatt importieren.',
+      title: tr("Erste Bauteile anlegen"),
+      text: tr("Eine komplette Widerstandsserie mit dem Serien-Assistenten – oder ein Datenblatt importieren."),
       done: false,
       action: (
         <Button size="sm" variant="secondary" leftIcon={<Layers />} onClick={() => onRun('series.new')}>
-          Serie erzeugen
-        </Button>
+          {tr("Serie erzeugen")}</Button>
       ),
     },
     {
       id: 'install',
-      title: 'DbLib in Altium einbinden',
+      title: tr("DbLib in Altium einbinden"),
       text: installed
-        ? 'Die DbLib ist in Altium installiert.'
+        ? tr("Die DbLib ist in Altium installiert.")
         : running
-          ? 'Danach stehen alle Bauteile in Altium im Components-Panel bereit.'
-          : 'Sobald Altium Designer läuft, lässt sich die DbLib hier mit einem Klick installieren.',
+          ? tr("Danach stehen alle Bauteile in Altium im Components-Panel bereit.")
+          : tr("Sobald Altium Designer läuft, lässt sich die DbLib hier mit einem Klick installieren."),
       done: installed,
       action: running ? (
         <Button size="sm" variant="ghost" leftIcon={<PlugZap />} loading={actions.pending.install} onClick={() => actions.run('install')}>
-          In Altium installieren
-        </Button>
+          {tr("In Altium installieren")}</Button>
       ) : undefined,
     },
   ]
@@ -569,8 +561,8 @@ function FirstSteps({
     <Card className="flex h-full flex-col">
       <CardHeader
         icon={<ListTree />}
-        title="Erste Schritte"
-        description="In wenigen Minuten zur ersten Altium-Bibliothek"
+        title={tr("Erste Schritte")}
+        description={tr("In wenigen Minuten zur ersten Altium-Bibliothek")}
         actions={
           <span className="mono text-xs text-fg-subtle">
             {doneCount}/{steps.length}
@@ -605,7 +597,7 @@ function FirstSteps({
                 <div className="min-w-0 flex-1 pt-0.5">
                   <div className={cn('text-ui font-medium', s.done ? 'text-fg-muted' : 'text-fg')}>
                     {s.title}
-                    <span className="sr-only">{s.done ? ' – erledigt' : isCurrent ? ' – nächster Schritt' : ''}</span>
+                    <span className="sr-only">{s.done ? tr(" – erledigt") : isCurrent ? tr(" – nächster Schritt") : ''}</span>
                   </div>
                   <p className="mt-0.5 text-xs leading-snug text-fg-subtle">{s.text}</p>
                 </div>
@@ -623,15 +615,15 @@ function FirstSteps({
 
 /** Behebung je Prüfung auf der Übersicht (ohne Eintrag: bei genau einem Bauteil „Bauteil öffnen“) */
 const DASH_FIX: Partial<Record<FixKind, { label: string; icon: LucideIcon; action?: ActionKey }>> = {
-  regenerate: { label: 'DbLib neu erzeugen', icon: RefreshCw, action: 'regenerate' },
-  sync: { label: 'Synchronisieren', icon: FolderSync, action: 'sync' },
-  scan: { label: 'Dateien prüfen', icon: FolderSearch, action: 'scan' },
-  'scan-sync': { label: 'Prüfen und synchronisieren', icon: FolderSync, action: 'scanSync' },
-  'scan-register': { label: 'Aus Dateien übernehmen', icon: FolderInput, action: 'scan' },
-  'repair-heights': { label: 'Footprint-Höhen nachtragen', icon: RulerDimensionLine, action: 'repairHeights' },
-  'install-replace': { label: 'Ersetzen und installieren', icon: Replace, action: 'installReplace' },
-  normalize: { label: 'Vereinheitlichen', icon: Wrench, action: 'normalize' },
-  'open-part': { label: 'Bauteil öffnen', icon: PencilLine },
+  regenerate: { get label() { return tr("DbLib neu erzeugen") }, icon: RefreshCw, action: 'regenerate' },
+  sync: { get label() { return tr("Synchronisieren") }, icon: FolderSync, action: 'sync' },
+  scan: { get label() { return tr("Dateien prüfen") }, icon: FolderSearch, action: 'scan' },
+  'scan-sync': { get label() { return tr("Prüfen und synchronisieren") }, icon: FolderSync, action: 'scanSync' },
+  'scan-register': { get label() { return tr("Aus Dateien übernehmen") }, icon: FolderInput, action: 'scan' },
+  'repair-heights': { get label() { return tr("Footprint-Höhen nachtragen") }, icon: RulerDimensionLine, action: 'repairHeights' },
+  'install-replace': { get label() { return tr("Ersetzen und installieren") }, icon: Replace, action: 'installReplace' },
+  normalize: { get label() { return tr("Vereinheitlichen") }, icon: Wrench, action: 'normalize' },
+  'open-part': { get label() { return tr("Bauteil öffnen") }, icon: PencilLine },
 }
 
 /** Einziges betroffenes Bauteil einer Gruppe (sonst `null`) */
@@ -644,7 +636,7 @@ function singlePart(group: HealthGroup) {
 function singleLine(group: HealthGroup): string | null {
   if (group.total !== 1 || group.items.length !== 1) return null
   const item = group.items[0]
-  const message = findingMessage(item, group)
+  const message = localizeMessage(findingMessage(item, group))
   const subject = item.part_number ?? (item.subject && !message.includes(item.subject) ? item.subject : null)
   return subject ? `${subject} – ${message}` : message
 }
@@ -676,6 +668,7 @@ function HealthCard({
   writerMissing: boolean
   actions: AltiumActions
 }) {
+  const { t: tr } = useI18n()
   const navigate = useNavigate()
   const hasParts = (totalParts ?? 0) > 0
   // Bibliotheksdateien fehlen bzw. scheitern (Fehler) oder Einträge warten noch auf das Schreiben (Warnung): Altium
@@ -707,46 +700,42 @@ function HealthCard({
   const fileVerdict = !files
     ? null
     : files.missingFiles
-      ? plural(files.missingFiles, 'Bibliotheksdatei fehlt', 'Bibliotheksdateien fehlen')
+      ? plural(files.missingFiles, tr("Bibliotheksdatei fehlt"), tr("Bibliotheksdateien fehlen"))
       : files.errors
-        ? `${plural(files.errors, 'Eintrag', 'Einträge')} nicht geschrieben`
+        ? tr("{0} nicht geschrieben", { "0": String(plural(files.errors, tr("Eintrag"), tr("Einträge"))) })
         : filePending
-          ? `${plural(filePending, 'Eintrag wartet', 'Einträge warten')} auf das Schreiben`
+          ? tr("{0} auf das Schreiben", { "0": String(plural(filePending, tr("Eintrag wartet"), tr("Einträge warten"))) })
           : null
   const verdict = !report
     ? failed
-      ? 'Prüfung nicht verfügbar'
-      : 'Wird geprüft …'
+      ? tr("Prüfung nicht verfügbar")
+      : tr("Wird geprüft …")
     : fileProblem === 'error' && fileVerdict
       ? fileVerdict
       : !hasParts && !counts?.error && !counts?.warning
-        ? 'Noch nichts zu prüfen'
+        ? tr("Noch nichts zu prüfen")
         : counts?.error
-          ? `${plural(counts.error, 'Fehler', 'Fehler')} zu beheben`
+          ? tr("{0} zu beheben", { "0": String(plural(counts.error, tr("Fehler"), tr("Fehler"))) })
           : counts?.warning
-            ? `${plural(counts.warning, 'Warnung', 'Warnungen')} offen`
+            ? tr("{0} offen", { "0": String(plural(counts.warning, tr("Warnung"), tr("Warnungen"))) })
             : fileProblem && fileVerdict
               ? fileVerdict
               : counts?.info
-                ? 'Keine Fehler oder Warnungen'
-                : 'Alles in Ordnung'
+                ? tr("Keine Fehler oder Warnungen")
+                : tr("Alles in Ordnung")
 
   const fileDetail = fileProblem
-    ? `Altium findet Symbole und Footprints erst, wenn sie in den SchLib-/PcbLib-Dateien stehen${
-        writerMissing ? ' – dafür fehlt ein Bibliotheks-Writer' : ''
-      }.`
+    ? tr("Altium findet Symbole und Footprints erst, wenn sie in den SchLib-/PcbLib-Dateien stehen{0}.", { "0": String(writerMissing ? tr(" – dafür fehlt ein Bibliotheks-Writer") : '') })
     : null
   const detail = !hasParts
-    ? 'Sobald Bauteile angelegt sind, zeigt PartForge hier, wie gut sie für Altium vorbereitet sind.'
+    ? tr("Sobald Bauteile angelegt sind, zeigt PartForge hier, wie gut sie für Altium vorbereitet sind.")
     : blocked
       ? fileDetail
       : !scored || totalParts === undefined
         ? fileDetail
         : scored.dblib
-          ? `DbLib-Fehler: Altium sieht die ${plural(totalParts, 'Bauteil', 'Bauteile')} nicht oder falsch.`
-          : `${scored.exact ? '' : 'Höchstens '}${formatNumber(scored.clean)} von ${plural(totalParts, 'Bauteil', 'Bauteilen')} ohne Fehler und Warnungen${
-              unrelated ? ` · ${plural(unrelated, 'Befund betrifft', 'Befunde betreffen')} kein Bauteil` : ''
-            }${fileDetail ? `. ${fileDetail}` : ''}`
+          ? tr("DbLib-Fehler: Altium sieht die {0} nicht oder falsch.", { "0": String(plural(totalParts, tr("Bauteil"), tr("Bauteile"))) })
+          : tr("{0}{1} von {2} ohne Fehler und Warnungen{3}{4}", { "0": String(scored.exact ? '' : tr("Höchstens ")), "1": String(formatNumber(scored.clean)), "2": String(plural(totalParts, tr("Bauteil"), tr("Bauteilen"))), "3": String(unrelated ? tr(" · {0} kein Bauteil", { 0: String(plural(unrelated, tr("Befund betrifft"), tr("Befunde betreffen"))) }) : ''), "4": String(fileDetail ? `. ${fileDetail}` : '') })
 
   const fix = (group: HealthGroup) => {
     const meta = group.info.fix ? DASH_FIX[group.info.fix] : undefined
@@ -764,8 +753,8 @@ function HealthCard({
     <Card className="flex h-full flex-col">
       <CardHeader
         icon={<ShieldCheck />}
-        title="Bibliotheksgesundheit"
-        description={updatedAt ? `Daten, Dateien und DbLib · geprüft ${formatRelativeTime(updatedAt)}` : 'Daten, Dateien und DbLib'}
+        title={tr("Bibliotheksgesundheit")}
+        description={updatedAt ? tr("Daten, Dateien und DbLib · geprüft {0}", { "0": String(formatRelativeTime(updatedAt)) }) : tr("Daten, Dateien und DbLib")}
       />
       <CardContent className="@container flex flex-1 flex-col">
         <div className="flex flex-col items-start gap-4 @[20rem]:flex-row @[20rem]:items-center">
@@ -774,17 +763,17 @@ function HealthCard({
             size={92}
             stroke={7}
             tone={tone}
-            label="Bibliotheksgesundheit"
+            label={tr("Bibliotheksgesundheit")}
             valueText={
               blocked
-                ? `${fileVerdict ?? 'Bibliotheksdateien fehlen'} – Altium findet die Bauteile noch nicht`
+                ? tr("{0} – Altium findet die Bauteile noch nicht", { "0": String(fileVerdict ?? tr("Bibliotheksdateien fehlen")) })
                 : scored
-                  ? `${scored.exact ? '' : 'höchstens '}${percent} Prozent der Bauteile ohne Fehler und Warnungen`
+                  ? tr("{0}{1} Prozent der Bauteile ohne Fehler und Warnungen", { "0": String(scored.exact ? '' : tr("höchstens ")), "1": String(percent) })
                   : failed
-                    ? 'nicht verfügbar'
+                    ? tr("nicht verfügbar")
                     : !report
-                      ? 'wird geprüft'
-                      : 'noch keine Bauteile'
+                      ? tr("wird geprüft")
+                      : tr("noch keine Bauteile")
             }
           >
             <span
@@ -809,10 +798,10 @@ function HealthCard({
                 <div className={cn('text-ui font-medium', fileProblem === 'error' ? 'text-danger-text' : 'text-fg')}>{verdict}</div>
                 {detail && <p className="mt-0.5 text-xs leading-relaxed text-fg-muted">{detail}</p>}
                 {counts && (
-                  <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-fg-muted" aria-label="Befunde nach Schwere">
-                    <SeverityCount n={counts.error} label="Fehler" color="var(--pf-danger)" />
-                    <SeverityCount n={counts.warning} label={counts.warning === 1 ? 'Warnung' : 'Warnungen'} color="var(--pf-warning)" />
-                    <SeverityCount n={counts.info} label={counts.info === 1 ? 'Hinweis' : 'Hinweise'} color="var(--pf-info)" />
+                  <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-fg-muted" aria-label={tr("Befunde nach Schwere")}>
+                    <SeverityCount n={counts.error} label={tr("Fehler")} color="var(--pf-danger)" />
+                    <SeverityCount n={counts.warning} label={counts.warning === 1 ? tr("Warnung") : tr("Warnungen")} color="var(--pf-warning)" />
+                    <SeverityCount n={counts.info} label={counts.info === 1 ? tr("Hinweis") : tr("Hinweise")} color="var(--pf-info)" />
                   </ul>
                 )}
               </>
@@ -822,7 +811,7 @@ function HealthCard({
 
         {(top.length > 0 || (fileProblem && fileVerdict)) && (
           <div className="mt-4">
-            <h3 className="micro-label mb-1">Wichtigste Befunde</h3>
+            <h3 className="micro-label mb-1">{tr("Wichtigste Befunde")}</h3>
             <ul className="-mx-2 flex flex-col">
               {fileProblem && fileVerdict && (
                 <li className="rounded-control px-2 py-1">
@@ -834,12 +823,12 @@ function HealthCard({
                       className="line-clamp-2 min-w-0 flex-1 rounded-sm text-left text-ui leading-snug text-fg outline-none hover:underline focus-ring"
                     >
                       {fileVerdict}
-                      <span className="sr-only"> – Bibliotheksdateien ansehen</span>
+                      <span className="sr-only"> {tr(" – Bibliotheksdateien ansehen")}</span>
                     </button>
                   </div>
                   {writerMissing && (
                     <p className="ml-[1.375rem] mt-0.5 text-2xs leading-snug text-fg-subtle">
-                      Kein Bibliotheks-Writer bereit – Pfad unter {SETTINGS_PLACE.altium.label}
+                      {tr("Kein Bibliotheks-Writer bereit – Pfad unter ")}{SETTINGS_PLACE.altium.label}
                     </p>
                   )}
                   <Button
@@ -870,7 +859,7 @@ function HealthCard({
                         className="line-clamp-2 min-w-0 flex-1 rounded-sm text-left text-ui leading-snug text-fg outline-none hover:underline focus-ring"
                       >
                         {g.info.label}
-                        <span className="sr-only">: {plural(g.total, 'Befund', 'Befunde')} – im Prüfbericht ansehen</span>
+                        <span className="sr-only">: {plural(g.total, tr("Befund"), tr("Befunde"))} {tr(" – im Prüfbericht ansehen")}</span>
                       </button>
                       <span aria-hidden className="mono shrink-0 text-xs leading-5 text-fg-muted">
                         {formatNumber(g.total)}
@@ -902,26 +891,22 @@ function HealthCard({
         {infoOnly && counts && (
           <p className="mt-4 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 rounded-control bg-success/8 px-3 py-2 text-xs text-success-text">
             <Check aria-hidden className="size-3.5" />
-            Keine Fehler ·
-            <button
+            {tr("Keine Fehler ·")}<button
               type="button"
               onClick={() => navigate('/altium?bereich=pruefbericht&schwere=hinweise')}
               className="rounded-sm font-medium underline-offset-2 outline-none hover:underline focus-ring"
             >
-              {plural(counts.info, 'Hinweis', 'Hinweise')} ansehen
-            </button>
+              {plural(counts.info, tr("Hinweis"), tr("Hinweise"))} {' '}{tr("ansehen")}</button>
           </p>
         )}
         {report && !top.length && !infoOnly && !fileProblem && hasParts && (
           <p className="mt-4 flex items-center gap-2 rounded-control bg-success/8 px-3 py-2 text-xs text-success-text">
             <Check aria-hidden className="size-3.5" />
-            Keine Befunde – Daten, Dateien und DbLib passen zusammen.
-          </p>
+            {tr("Keine Befunde – Daten, Dateien und DbLib passen zusammen.")}</p>
         )}
         <div className="mt-auto pt-4">
           <Button className="w-full" variant="secondary" leftIcon={<ShieldCheck />} loading={actions.pending.check} onClick={() => void actions.checkLibrary()}>
-            Bibliothek prüfen
-          </Button>
+            {tr("Bibliothek prüfen")}</Button>
         </div>
       </CardContent>
     </Card>
@@ -929,6 +914,7 @@ function HealthCard({
 }
 
 function SeverityCount({ n, label, color }: { n: number; label: string; color: string }) {
+  useI18n()
   return (
     <li className="flex items-center gap-1.5">
       <span aria-hidden className="size-2 rounded-full" style={{ background: n ? color : 'var(--pf-surface-3)' }} />
@@ -943,13 +929,13 @@ function SeverityCount({ n, label, color }: { n: number; label: string; color: s
 const ACTION_LABEL: Partial<Record<AuditEntry['action'], { label: string; icon: LucideIcon }>> & {
   update: { label: string; icon: LucideIcon }
 } = {
-  create: { label: 'angelegt', icon: Plus },
-  update: { label: 'bearbeitet', icon: Pencil },
-  delete: { label: 'gelöscht', icon: Trash2 },
-  restore: { label: 'wiederhergestellt', icon: ArchiveRestore },
-  bulk_update: { label: 'per Massenänderung geändert', icon: Layers },
-  import: { label: 'importiert', icon: FileDown },
-  schema: { label: 'Kategorie geändert', icon: ListTree },
+  create: { get label() { return tr("angelegt") }, icon: Plus },
+  update: { get label() { return tr("bearbeitet") }, icon: Pencil },
+  delete: { get label() { return tr("gelöscht") }, icon: Trash2 },
+  restore: { get label() { return tr("wiederhergestellt") }, icon: ArchiveRestore },
+  bulk_update: { get label() { return tr("per Massenänderung geändert") }, icon: Layers },
+  import: { get label() { return tr("importiert") }, icon: FileDown },
+  schema: { get label() { return tr("Kategorie geändert") }, icon: ListTree },
 }
 
 /** Autor automatischer Sammeländerungen (Vorlagen neu angewendet, Pfade nachgezogen – `db.lifecycle.MIGRATION_AUTHOR`) */
@@ -959,6 +945,7 @@ const AUTOMATIC_AUTHOR = 'PartForge'
 const partKey = (e: Pick<AuditEntry, 'table' | 'part_number'>) => `${e.table ?? ''}|${(e.part_number ?? '').toLowerCase()}`
 
 function RecentChanges({ stats, unavailable }: { stats: LibraryStats | undefined; unavailable: boolean }) {
+  const { t: tr } = useI18n()
   const navigate = useNavigate()
   const qc = useQueryClient()
   const labels = new Map((stats?.categories ?? []).map((c) => [c.table, c] as const))
@@ -979,13 +966,12 @@ function RecentChanges({ stats, unavailable }: { stats: LibraryStats | undefined
     <Card className="flex h-full flex-col">
       <CardHeader
         icon={<History />}
-        title="Letzte Änderungen"
-        description="Neu angelegte und bearbeitete Bauteile"
+        title={tr("Letzte Änderungen")}
+        description={tr("Neu angelegte und bearbeitete Bauteile")}
         actions={
           entries.length > 0 ? (
             <Button size="sm" variant="ghost" rightIcon={<ArrowRight />} onClick={() => navigate('/bauteile')}>
-              Zu den Bauteilen
-            </Button>
+              {tr("Zu den Bauteilen")}</Button>
           ) : undefined
         }
       />
@@ -1001,8 +987,8 @@ function RecentChanges({ stats, unavailable }: { stats: LibraryStats | undefined
           <EmptyState
             size="sm"
             icon={<History />}
-            title="Noch keine Änderungen"
-            description="Neu angelegte und bearbeitete Bauteile erscheinen hier als Zeitleiste."
+            title={tr("Noch keine Änderungen")}
+            description={tr("Neu angelegte und bearbeitete Bauteile erscheinen hier als Zeitleiste.")}
           />
         )}
         {entries.length > 0 && (
@@ -1010,7 +996,7 @@ function RecentChanges({ stats, unavailable }: { stats: LibraryStats | undefined
             {entries.map((e, i) => {
               const meta =
                 e.action === 'bulk_update' && e.author === AUTOMATIC_AUTHOR
-                  ? { label: 'automatisch angepasst', icon: Layers }
+                  ? { label: tr("automatisch angepasst"), icon: Layers }
                   : (ACTION_LABEL[e.action] ?? ACTION_LABEL.update)
               const cat = e.table ? labels.get(e.table) : undefined
               const target =
@@ -1042,7 +1028,7 @@ function RecentChanges({ stats, unavailable }: { stats: LibraryStats | undefined
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
-                      <span className={cn('min-w-0 break-all text-ui text-fg', e.part_number && 'mono')}>{e.part_number ?? cat?.label ?? 'Bibliothek'}</span>
+                      <span className={cn('min-w-0 break-all text-ui text-fg', e.part_number && 'mono')}>{e.part_number ?? cat?.label ?? tr("Bibliothek")}</span>
                       <span className="shrink-0 text-xs text-fg-subtle">{meta.label}</span>
                     </span>
                     <span className="block text-2xs leading-4 text-fg-subtle">
@@ -1090,11 +1076,10 @@ function RecentChanges({ stats, unavailable }: { stats: LibraryStats | undefined
                           className="shrink-0"
                           loading={restoring === partKey(e)}
                           disabled={Boolean(restoring) && restoring !== partKey(e)}
-                          aria-label={`${e.part_number} wiederherstellen`}
+                          aria-label={tr("{0} wiederherstellen", { "0": String(e.part_number) })}
                           onClick={() => void restore(e)}
                         >
-                          Wiederherstellen
-                        </Button>
+                          {tr("Wiederherstellen")}</Button>
                       )}
                     </div>
                   )}
@@ -1123,6 +1108,7 @@ function AltiumCard({
   actions: AltiumActions
   onNavigate: (to: string) => void
 }) {
+  const { t: tr } = useI18n()
   const primary = model?.headline.primary ?? null
   const order = ['altium', 'dblib', 'files'] as const
   const rows = model ? order.map((k) => model.nodes.find((n) => n.key === k)).filter((n) => n !== undefined) : []
@@ -1133,8 +1119,8 @@ function AltiumCard({
     <Card className="flex flex-col">
       <CardHeader
         icon={<PlugZap />}
-        title="Altium und DbLib"
-        description={failed ? 'Status nicht verfügbar' : (model?.headline.title ?? 'Wird geprüft …')}
+        title={tr("Altium und DbLib")}
+        description={failed ? tr("Status nicht verfügbar") : (model?.headline.title ?? tr("Wird geprüft …"))}
         actions={
           <Button size="sm" variant="ghost" rightIcon={<ArrowRight />} onClick={() => onNavigate('/altium')}>
             Details
@@ -1167,9 +1153,9 @@ function AltiumCard({
                         'line-clamp-2 text-2xs',
                         node.emphasis === 'detail' && node.level !== 'ok' ? LEVEL_TEXT[node.level] : 'text-fg-subtle',
                       )}
-                      title={node.detail}
+                      title={localizeMessage(node.detail)}
                     >
-                      {node.detail}
+                      {localizeMessage(node.detail)}
                     </span>
                   )}
                 </dd>
@@ -1179,14 +1165,14 @@ function AltiumCard({
               <div className="flex items-center gap-3 py-2">
                 <dt className="flex min-w-0 flex-1 items-center gap-2 text-xs text-fg-muted">
                   <LevelDot level={status.refresh.running ? 'busy' : status.refresh.last_error ? 'warn' : 'ok'} />
-                  <span className="truncate">Aktualisierung</span>
+                  <span className="truncate">{tr("Aktualisierung")}</span>
                 </dt>
                 <dd className="min-w-0 text-right">
                   <span className="block truncate text-xs font-medium text-fg">
-                    {status.refresh.running ? 'läuft …' : refreshed ? refreshed : 'noch nicht'}
+                    {status.refresh.running ? tr("läuft …") : refreshed ? refreshed : tr("noch nicht")}
                   </span>
                   <span className="block truncate text-2xs text-fg-subtle">
-                    {status.refresh.auto_refresh ? 'automatisch nach Änderungen' : 'nur manuell'}
+                    {status.refresh.auto_refresh ? tr("automatisch nach Änderungen") : tr("nur manuell")}
                   </span>
                 </dd>
               </div>
@@ -1223,32 +1209,33 @@ function QuickActions({
   /** Altium gefunden, aber nicht gestartet */
   notRunning: boolean
 }) {
-  const altiumText = (ready: string) => (blocker ? (notRunning ? 'erst Altium starten' : 'Altium nicht bereit') : ready)
+  const { t: tr } = useI18n()
+  const altiumText = (ready: string) => (blocker ? (notRunning ? tr("erst Altium starten") : tr("Altium nicht bereit")) : ready)
   return (
     <Card>
-      <CardHeader icon={<Zap />} title="Weitere Aktionen" />
+      <CardHeader icon={<Zap />} title={tr("Weitere Aktionen")} />
       <CardContent className="@container -mt-1">
         <div className="grid grid-cols-1 gap-x-2 @[26rem]:grid-cols-2">
-          <QuickAction icon={Plus} title="Neues Bauteil" text="Mit Smart-Eingabe" hotkey="mod+n" onClick={() => onRun('parts.new')} />
+          <QuickAction icon={Plus} title={tr("Neues Bauteil")} text={tr("Mit Smart-Eingabe")} hotkey="mod+n" onClick={() => onRun('parts.new')} />
           <QuickAction
             icon={ShieldCheck}
-            title="Bibliothek prüfen"
-            text="Prüfbericht aktualisieren"
+            title={tr("Bibliothek prüfen")}
+            text={tr("Prüfbericht aktualisieren")}
             pending={actions.pending.check}
             onClick={() => void actions.checkLibrary()}
           />
           <QuickAction
             icon={RefreshCw}
-            title="DbLib neu erzeugen"
-            text="Für Altium"
+            title={tr("DbLib neu erzeugen")}
+            text={tr("Für Altium")}
             pending={actions.pending.regenerate}
             onClick={() => actions.run('regenerate')}
           />
           {installed ? (
             <QuickAction
               icon={RotateCw}
-              title="In Altium aktualisieren"
-              text={altiumText('Datenbank neu einlesen')}
+              title={tr("In Altium aktualisieren")}
+              text={altiumText(tr("Datenbank neu einlesen"))}
               pending={actions.pending.refresh}
               blocked={Boolean(blocker)}
               onClick={() => actions.run('refresh')}
@@ -1256,8 +1243,8 @@ function QuickActions({
           ) : (
             <QuickAction
               icon={PlugZap}
-              title="In Altium installieren"
-              text={altiumText('DbLib einbinden')}
+              title={tr("In Altium installieren")}
+              text={altiumText(tr("DbLib einbinden"))}
               pending={actions.pending.install}
               blocked={Boolean(blocker)}
               onClick={() => actions.run('install')}
@@ -1265,12 +1252,12 @@ function QuickActions({
           )}
           <QuickAction
             icon={FolderSync}
-            title="Synchronisieren"
-            text="SchLib/PcbLib schreiben"
+            title={tr("Synchronisieren")}
+            text={tr("SchLib/PcbLib schreiben")}
             pending={actions.pending.sync}
             onClick={() => actions.run('sync')}
           />
-          <QuickAction icon={ListTree} title="Kategorien und Felder" text="Felder anpassen" onClick={() => onNavigate('/einstellungen/kategorien')} />
+          <QuickAction icon={ListTree} title={tr("Kategorien und Felder")} text={tr("Felder anpassen")} onClick={() => onNavigate('/einstellungen/kategorien')} />
         </div>
       </CardContent>
     </Card>
@@ -1295,6 +1282,7 @@ function QuickAction({
   blocked?: boolean
   onClick: () => void
 }) {
+  useI18n()
   return (
     <button
       type="button"

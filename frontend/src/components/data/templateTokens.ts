@@ -1,5 +1,4 @@
-/** Zerlegung von Beschreibungs-/Kommentar-Vorlagen wie „RES {Size} {Resistance:rkm}“ (wie partforge/db/values.py). */
-
+import { t as tr } from '@/lib/i18n'
 export interface TemplateSegmentText {
   kind: 'text'
   start: number
@@ -84,9 +83,9 @@ export interface TemplateFormatDef {
 
 /** Formatangaben des Backends (partforge/db/values.py) */
 export const TEMPLATE_FORMATS: TemplateFormatDef[] = [
-  { name: 'rkm', label: 'RKM-Code', example: '4k7 · 100n · 6V3' },
-  { name: 'si', label: 'SI mit Einheit', example: '4.7kΩ' },
-  { name: 'nounit', label: 'ohne Einheit', example: '4.7k' },
-  { name: 'upper', label: 'GROSSBUCHSTABEN', example: 'SMD' },
-  { name: 'lower', label: 'kleinbuchstaben', example: 'smd' },
+  { name: 'rkm', get label() { return tr("RKM-Code") }, example: '4k7 · 100n · 6V3' },
+  { name: 'si', get label() { return tr("SI mit Einheit") }, example: '4.7kΩ' },
+  { name: 'nounit', get label() { return tr("ohne Einheit") }, example: '4.7k' },
+  { name: 'upper', get label() { return tr("GROSSBUCHSTABEN") }, example: 'SMD' },
+  { name: 'lower', get label() { return tr("kleinbuchstaben") }, example: 'smd' },
 ]

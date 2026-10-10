@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { CircleCheck, CircleX, Info, TriangleAlert, X } from 'lucide-react'
 import { Toaster as Sonner } from 'sonner'
 import { Spinner } from './Spinner'
@@ -14,6 +15,7 @@ export interface ToasterProps {
  *   toast.success('Bibliothek erstellt', { description: '…' })
  */
 export function Toaster({ theme, offsetBottom = 20 }: ToasterProps) {
+  const { t } = useI18n()
   return (
     <Sonner
       theme={theme}
@@ -23,7 +25,7 @@ export function Toaster({ theme, offsetBottom = 20 }: ToasterProps) {
       visibleToasts={4}
       closeButton={false}
       duration={4500}
-      containerAriaLabel="Benachrichtigungen"
+      containerAriaLabel={t('Benachrichtigungen')}
       icons={{
         success: <CircleCheck className="size-[18px] text-success" />,
         error: <CircleX className="size-[18px] text-danger" />,

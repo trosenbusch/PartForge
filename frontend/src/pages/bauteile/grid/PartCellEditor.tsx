@@ -1,3 +1,4 @@
+import { metadataLabel, localizeMessage, useI18n } from '@/lib/i18n'
 /**
  * Zelleneditor der Bauteiltabelle (Popup über der Zelle): Eingabe mit Vorschlägen je Feldart (Auswahllisten,
  * Ja/Nein, Symbole/Footprints der Bibliothek, vorhandene Werte), Einheit als Suffix und **Prüfung vor dem
@@ -33,6 +34,7 @@ const DISTINCT_SUGGESTIONS = new Set(['Manufacturer', 'Package', 'Supplier 1', '
 const MAX_OPTIONS = 60
 
 function useEditorOptions(field: FieldDef, table: string): string[] {
+  useI18n()
   const isSymbol = field.column === 'Library Ref'
   const isFootprint = /^Footprint Ref( \d+)?$/.test(field.column)
   const symbols = useLibrarySymbols(isSymbol)
@@ -50,6 +52,7 @@ function useEditorOptions(field: FieldDef, table: string): string[] {
 }
 
 export function PartCellEditor(props: CustomCellEditorProps<PartRow, string | null> & PartCellEditorParams) {
+  const { t } = useI18n()
   // `value` ist der laufende Editorwert (kontrolliert), `initialValue` der gespeicherte Wert
   const { field, table, initialValue, onValueChange, stopEditing, eventKey, data, eGridCell } = props
   const stored = initialValue ?? ''
@@ -73,8 +76,8 @@ export function PartCellEditor(props: CustomCellEditorProps<PartRow, string | nu
   useEffect(() => {
     const popup = rootRef.current?.closest<HTMLElement>('.ag-popup-editor')
     if (!popup) return
-    popup.setAttribute('aria-label', pn ? `${field.label} bearbeiten – ${pn}` : `${field.label} bearbeiten`)
-  }, [field.label, pn])
+    popup.setAttribute('aria-label', pn ? t("{1} bearbeiten – {2}", { 1: metadataLabel(field.label, t), 2: pn }) : t("{1} bearbeiten", { 1: metadataLabel(field.label, t) }))
+  }, [field.label, pn, t])
 
   // Fokus + Auswahl beim Öffnen (beim Start per Taste bleibt die Schreibmarke hinter dem Zeichen)
   useEffect(() => {
@@ -89,9 +92,9 @@ export function PartCellEditor(props: CustomCellEditorProps<PartRow, string | nu
   const filtered = useMemo(() => {
     if (!options.length) return []
     const exact = options.some((o) => o.toLowerCase() === query)
-    const list = !query || exact ? options : options.filter((o) => o.toLowerCase().includes(query))
+    const list = !query || exact ? options : options.filter((o) => (o.toLowerCase().includes(query) || metadataLabel(o, t).toLowerCase().includes(query)))
     return list.slice(0, MAX_OPTIONS)
-  }, [options, query])
+  }, [options, query, t])
 
   // aktiven Vorschlag sichtbar halten
   useEffect(() => {
@@ -141,7 +144,7 @@ export function PartCellEditor(props: CustomCellEditorProps<PartRow, string | nu
       finish()
     } catch (err) {
       // Prüfung nicht möglich (z. B. Netzwerk) → übernehmen; das Speichern meldet Fehler selbst
-      if (import.meta.env.DEV) console.warn('Prüfung fehlgeschlagen', errorMessage(err))
+      if (import.meta.env.DEV) console.warn(t("Prüfung fehlgeschlagen"), errorMessage(err))
       finish()
     } finally {
       setChecking(false)
@@ -187,7 +190,7 @@ export function PartCellEditor(props: CustomCellEditorProps<PartRow, string | nu
           onChange={(e) => update(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder={placeholderFor(field)}
-          aria-label={field.label}
+          aria-label={metadataLabel(field.label, t)}
           aria-invalid={error || warning ? true : undefined}
           aria-describedby={error || warning ? msgId : undefined}
           role={filtered.length ? 'combobox' : undefined}
@@ -211,16 +214,16 @@ export function PartCellEditor(props: CustomCellEditorProps<PartRow, string | nu
       {error ? (
         <p id={msgId} role="alert" className="flex items-start gap-1.5 border-t border-danger/25 bg-danger/8 px-2.5 py-1.5 text-xs leading-snug text-danger-text">
           <CircleAlert aria-hidden className="mt-px size-3.5 shrink-0" />
-          <span>{error}</span>
+          <span>{localizeMessage(error)}</span>
         </p>
       ) : warning ? (
         <div id={msgId} role="alert" className="flex flex-col gap-1 border-t border-warning/30 bg-warning/8 px-2.5 py-1.5 text-xs leading-snug">
           <p className="flex items-start gap-1.5 text-warning-text">
             <TriangleAlert aria-hidden className="mt-px size-3.5 shrink-0" />
-            <span>{warning.text}</span>
+            <span>{localizeMessage(warning.text)}</span>
           </p>
           <p className="pl-5 text-fg-muted">
-            Nicht gespeichert. Korrigieren – oder{' '}
+            {t("Nicht gespeichert. Korrigieren – oder")}{' '}
             <button
               type="button"
               onPointerDown={(e) => {
@@ -229,9 +232,9 @@ export function PartCellEditor(props: CustomCellEditorProps<PartRow, string | nu
               }}
               className="rounded-sm font-medium text-fg underline underline-offset-2 outline-none hover:text-accent-text focus-ring"
             >
-              trotzdem übernehmen
+              {t("trotzdem übernehmen")}
             </button>{' '}
-            (Enter). Esc bricht ab.
+            {t("(Enter). Esc bricht ab.")}
           </p>
         </div>
       ) : null}
@@ -240,7 +243,7 @@ export function PartCellEditor(props: CustomCellEditorProps<PartRow, string | nu
           ref={listRef}
           id={listId}
           role="listbox"
-          aria-label={`${field.label} – Vorschläge`}
+          aria-label={t("{1} – Vorschläge", { 1: metadataLabel(field.label, t) })}
           className="max-h-56 overflow-y-auto border-t border-line p-1"
         >
           {filtered.map((opt, i) => (
@@ -263,7 +266,7 @@ export function PartCellEditor(props: CustomCellEditorProps<PartRow, string | nu
                 isMono(field) && 'mono text-xs',
               )}
             >
-              <span className="truncate">{opt}</span>
+              <span className="truncate">{field.kind === 'bool' || (field.kind === 'enum' && field.options.includes(opt)) ? metadataLabel(opt, t) : opt}</span>
             </div>
           ))}
         </div>
@@ -271,13 +274,13 @@ export function PartCellEditor(props: CustomCellEditorProps<PartRow, string | nu
       {!warning && (
         <div className="flex items-center justify-between gap-3 overflow-hidden whitespace-nowrap border-t border-line bg-surface-2/60 px-2.5 py-1 text-2xs text-fg-subtle">
           <span className="flex min-w-0 items-center gap-1 truncate">
-            <Kbd size="xs">Enter</Kbd> übernehmen
+            <Kbd size="xs">Enter</Kbd>  {t("übernehmen")}
             <span aria-hidden className="px-0.5">
               ·
             </span>
-            <Kbd size="xs">Esc</Kbd> abbrechen
+            <Kbd size="xs">Esc</Kbd>  {t("abbrechen")}
           </span>
-          {field.kind === 'enum' && <span className="shrink-0 truncate">auch freie Eingabe</span>}
+          {field.kind === 'enum' && <span className="shrink-0 truncate">{t("auch freie Eingabe")}</span>}
         </div>
       )}
     </div>

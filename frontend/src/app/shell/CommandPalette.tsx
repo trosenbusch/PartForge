@@ -1,3 +1,5 @@
+import { useI18n } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { Command, defaultFilter } from 'cmdk'
 import { AnimatePresence, motion } from 'motion/react'
 import { CornerDownLeft, Search, Sparkles } from 'lucide-react'
@@ -48,6 +50,7 @@ interface ProviderResults {
 }
 
 function useProviderSearch(query: string, open: boolean) {
+  const { language } = useI18n()
   const providers = useSearchProviders()
   const providersRef = useRef(providers)
   useEffect(() => {
@@ -64,7 +67,7 @@ function useProviderSearch(query: string, open: boolean) {
     .filter((p) => q.length >= (p.minQueryLength ?? 2))
     .map((p) => p.id)
     .join(',')
-  const key = `${q}::${activeIds}`
+  const key = `${language}::${q}::${activeIds}`
 
   useEffect(() => {
     if (!open || !activeIds) return
@@ -95,6 +98,7 @@ function useProviderSearch(query: string, open: boolean) {
 }
 
 function ItemIcon({ icon: Icon, ai }: { icon?: CommandIcon; ai?: boolean }) {
+  useI18n()
   return (
     <span
       className={cn(
@@ -123,6 +127,7 @@ function CommandRow({
   showGroup?: boolean
   onRun: (cmd: AppCommand) => void
 }) {
+  useI18n()
   // gerade nicht ausführbar: gedimmt, nicht wählbar, der Grund steht statt des Untertitels da
   const reason = commandDisabledReason(cmd)
   return (
@@ -132,7 +137,7 @@ function CommandRow({
         <span className={cn(cmd.ai && 'text-gradient-spark font-medium')}>{cmd.title}</span>
         {(reason ?? cmd.subtitle) && <span className="ml-2 text-xs text-fg-subtle">{reason ?? cmd.subtitle}</span>}
       </span>
-      {showGroup && cmd.group && <span className="shrink-0 text-2xs text-fg-subtle">{cmd.group}</span>}
+      {showGroup && cmd.group && <span className="shrink-0 text-2xs text-fg-subtle">{tr(cmd.group)}</span>}
       {cmd.hotkey && <Kbd hotkey={cmd.hotkey} size="xs" />}
       <CornerDownLeft className="hidden size-3.5 text-fg-subtle group-data-[selected=true]/item:block" />
     </Command.Item>
@@ -140,6 +145,7 @@ function CommandRow({
 }
 
 export function CommandPalette() {
+  const { t: tr } = useI18n()
   const open = useUi((s) => s.commandPaletteOpen)
   const setOpen = useUi((s) => s.setCommandPaletteOpen)
   const navigate = useNavigate()
@@ -226,18 +232,18 @@ export function CommandPalette() {
                   exit={{ opacity: 0, y: -6, scale: 0.985, transition: { duration: 0.12 } }}
                   transition={{ type: 'spring', stiffness: 520, damping: 38 }}
                 >
-                  <DialogPrimitive.Title className="sr-only">Befehlspalette</DialogPrimitive.Title>
+                  <DialogPrimitive.Title className="sr-only">{tr("Befehlspalette")}</DialogPrimitive.Title>
                   <span
                     aria-hidden
                     className="pointer-events-none absolute inset-x-16 top-0 h-px bg-[linear-gradient(90deg,transparent,var(--pf-accent),transparent)] opacity-70"
                   />
-                  <Command loop vimBindings={false} shouldFilter={false} label="Befehlspalette" className="flex flex-col">
+                  <Command loop vimBindings={false} shouldFilter={false} label={tr("Befehlspalette")} className="flex flex-col">
                     <div className="flex items-center gap-3 border-b border-line px-4">
                       <Search className="size-[18px] shrink-0 text-fg-subtle" />
                       <Command.Input
                         value={query}
                         onValueChange={setQuery}
-                        placeholder="Wohin oder was? Seiten, Aktionen, Bauteile …"
+                        placeholder={tr("Wohin oder was? Seiten, Aktionen, Bauteile …")}
                         className="h-14 flex-1 bg-transparent text-md text-fg outline-none placeholder:text-fg-subtle"
                       />
                       {provider.loading && <Spinner size={16} tone="accent" />}
@@ -255,7 +261,7 @@ export function CommandPalette() {
                             </Command.Group>
                           )}
                           {providerGroups.map((g) => (
-                            <Command.Group key={g.group} heading={g.group}>
+                            <Command.Group key={g.group} heading={tr(g.group)}>
                               {g.results.map((r) => (
                                 <Command.Item
                                   key={r.id}
@@ -282,16 +288,15 @@ export function CommandPalette() {
                           ))}
                           {ranked.length === 0 && providerGroups.length === 0 && !provider.loading && (
                             <div className="flex flex-col items-center gap-1 py-10 text-center">
-                              <span className="text-ui font-medium text-fg">Keine Treffer</span>
+                              <span className="text-ui font-medium text-fg">{tr("Keine Treffer")}</span>
                               <span className="text-xs text-fg-muted">
-                                Für „{q}“ gibt es weder Befehl noch Bauteil. Versuchen Sie einen anderen Begriff.
-                              </span>
+                                {tr("Für „")}{q}{tr("“ gibt es weder Befehl noch Bauteil. Versuchen Sie einen anderen Begriff.")}</span>
                             </div>
                           )}
                         </>
                       ) : (
                         groups.map(([group, cmds]) => (
-                          <Command.Group key={group} heading={group}>
+                          <Command.Group key={group} heading={tr(group)}>
                             {cmds.map((cmd) => (
                               <CommandRow key={cmd.id} cmd={cmd} onRun={runCmd} />
                             ))}
@@ -308,12 +313,10 @@ export function CommandPalette() {
                       </span>
                       <span className="flex items-center gap-1.5">
                         <Kbd size="xs">↵</Kbd>
-                        ausführen
-                      </span>
+                        {tr("ausführen")}</span>
                       <span className="flex items-center gap-1.5">
                         <Kbd size="xs">Esc</Kbd>
-                        schließen
-                      </span>
+                        {tr("schließen")}</span>
                       <span className="ml-auto flex items-center gap-1.5">
                         <ForgeMark size={14} />
                         PartForge{version ? ` ${version}` : ''}

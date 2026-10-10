@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 import { Checkbox as CheckboxPrimitive } from 'radix-ui'
 import { useId, type ReactNode } from 'react'
 import { cn } from '@/lib/cn'
@@ -31,6 +32,7 @@ export function Checkbox({
   className,
   'aria-label': ariaLabel,
 }: CheckboxProps) {
+  useI18n()
   const field = useFieldContext()
   const auto = useId()
   const boxId = id ?? field?.id ?? `cb-${auto.replace(/:/g, '')}`

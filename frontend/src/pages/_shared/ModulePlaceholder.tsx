@@ -1,3 +1,5 @@
+import { useI18n } from '@/lib/i18n'
+import { t as tr } from '@/lib/i18n'
 import { motion } from 'motion/react'
 import { CircleDashed } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -25,7 +27,7 @@ export interface ModulePlaceholderProps {
 /** Platzhalter für Module, die gerade entstehen (wird durch die echte Seite ersetzt). */
 export function ModulePlaceholder({
   icon,
-  eyebrow = 'Modul',
+  eyebrow = tr("Modul"),
   title,
   description,
   illustration = 'forge',
@@ -36,6 +38,7 @@ export function ModulePlaceholder({
   header = true,
   width = 'default',
 }: ModulePlaceholderProps) {
+  const { t: tr } = useI18n()
   return (
     <PageBody width={width}>
       {header && (
@@ -47,8 +50,7 @@ export function ModulePlaceholder({
               {title}
               {ai && (
                 <Badge variant="spark" size="md">
-                  KI-gestützt
-                </Badge>
+                  {tr("KI-gestützt")}</Badge>
               )}
             </span>
           }
@@ -60,10 +62,10 @@ export function ModulePlaceholder({
           illustration={illustration}
           size="lg"
           titleAs="h2"
-          title="Dieses Modul wird gerade geschmiedet"
+          title={tr("Dieses Modul wird gerade geschmiedet")}
           description={
             header
-              ? 'Die Werkstatt ist eingerichtet – Funktionen und Daten folgen in Kürze. Alles Weitere erreichen Sie über die Navigation oder mit Strg+K.'
+              ? tr("Die Werkstatt ist eingerichtet – Funktionen und Daten folgen in Kürze. Alles Weitere erreichen Sie über die Navigation oder mit Strg+K.")
               : description
           }
           actions={actions}

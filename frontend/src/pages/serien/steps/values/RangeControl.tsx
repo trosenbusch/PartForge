@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n'
 /**
  * Wertebereich: logarithmischer Doppel-Slider (rastet auf lieferbare Werte ein) mit Werteskala darüber – jeder
  * Strich ein lieferbarer Wert, im Bereich hervorgehoben – und Eingabefeldern für Unter-/Obergrenze, die
@@ -70,6 +71,7 @@ function BoundInput({
   onCommit: (v: number | null) => string | null
   disabled?: boolean
 }) {
+  const { t: tr } = useI18n()
   const shown = value ?? fallback
   const [text, setText] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -85,7 +87,7 @@ function BoundInput({
     }
     const parsed = parseEngineering(t)
     if (parsed === null || !(parsed > 0)) {
-      setError('Kein gültiger Wert – z. B. 4k7, 1M')
+      setError(tr("Kein gültiger Wert – z. B. 4k7, 1M"))
       return
     }
     const problem = onCommit(parsed)
@@ -124,8 +126,7 @@ function BoundInput({
         title={displayValue(shown, unit)}
       />
       <span id={`${id}-hint`} className="sr-only">
-        Technische Schreibweise möglich, z. B. 4k7, 1M, 100n. Leer = Grenze der Serie.
-      </span>
+        {tr("Technische Schreibweise möglich, z. B. 4k7, 1M, 100n. Leer = Grenze der Serie.")}</span>
       {error && (
         <p id={`${id}-error`} role="alert" className="text-2xs leading-snug text-danger-text">
           {error}
@@ -136,11 +137,12 @@ function BoundInput({
 }
 
 export function RangeControl({ domain, value, onValueChange, candidates, unit, idPrefix, disabled }: RangeControlProps) {
+  const { t: tr } = useI18n()
   const [dLo, dHi] = domain
   const lo = Math.min(Math.max(value[0] ?? dLo, dLo), dHi)
   const hi = Math.max(Math.min(value[1] ?? dHi, dHi), dLo)
   const single = dHi <= dLo * (1 + REL)
-  const marks = useMemo(() => decadeMarks(dLo, dHi).map((v) => ({ value: v, label: compactValue(v) })), [dLo, dHi])
+  const marks = useMemo(() => decadeMarks(dLo, dHi).map((v) => ({ value: v, label: tr(compactValue(v)) })), [dLo, dHi, tr])
 
   // Werteskala: ein Strich je lieferbarem Wert (Pfad statt vieler Elemente)
   const { inside, outside } = useMemo(() => {
@@ -164,10 +166,10 @@ export function RangeControl({ domain, value, onValueChange, candidates, unit, i
       return null
     }
     if (v < dLo * (1 - REL) || v > dHi * (1 + REL)) {
-      return `Nur ${displayValue(dLo, unit)} … ${displayValue(dHi, unit)}`
+      return tr("Nur {v0} … {v1}", { v0: displayValue(dLo, unit), v1: displayValue(dHi, unit) })
     }
-    if (index === 0 && v > hi * (1 + REL)) return `Größer als „Bis“ (${displayValue(hi, unit)})`
-    if (index === 1 && v < lo * (1 - REL)) return `Kleiner als „Von“ (${displayValue(lo, unit)})`
+    if (index === 0 && v > hi * (1 + REL)) return tr("Größer als „Bis“ ({v0})", { v0: displayValue(hi, unit) })
+    if (index === 1 && v < lo * (1 - REL)) return tr("Kleiner als „Von“ ({v0})", { v0: displayValue(lo, unit) })
     const atEdge = index === 0 ? v <= dLo * (1 + REL) : v >= dHi * (1 - REL)
     onValueChange(index === 0 ? [atEdge ? null : v, value[1]] : [value[0], atEdge ? null : v])
     return null
@@ -184,7 +186,7 @@ export function RangeControl({ domain, value, onValueChange, candidates, unit, i
     <div className="flex items-start gap-4">
       <BoundInput
         id={`${idPrefix}-min`}
-        label="Von"
+        label={tr("Von")}
         value={value[0]}
         fallback={dLo}
         unit={unit}
@@ -205,8 +207,8 @@ export function RangeControl({ domain, value, onValueChange, candidates, unit, i
           disabled={disabled || single}
           marks={scaledMarks}
           formatValue={(v) => displayValue(v / k, unit)}
-          thumbLabels={['Untergrenze', 'Obergrenze']}
-          aria-label="Wertebereich"
+          thumbLabels={[tr("Untergrenze"), tr("Obergrenze")]}
+          aria-label={tr("Wertebereich")}
           onValueChange={([sa, sb]) => {
             const a = sa / k
             const b = sb / k
@@ -219,7 +221,7 @@ export function RangeControl({ domain, value, onValueChange, candidates, unit, i
       </div>
       <BoundInput
         id={`${idPrefix}-max`}
-        label="Bis"
+        label={tr("Bis")}
         value={value[1]}
         fallback={dHi}
         unit={unit}

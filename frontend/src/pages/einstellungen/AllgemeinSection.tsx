@@ -1,3 +1,4 @@
+import { localizeMessage, t, translate, useI18n, type TranslationParams } from '@/lib/i18n'
 /**
  * Allgemein: Profil und Darstellung, KI-Funktionen (inkl. Verbindungstest) und Altium Designer (inkl. Status).
  * App-Einstellungen gelten für diesen Windows-Benutzer (settings.json) – unabhängig von der Bibliothek.
@@ -96,6 +97,7 @@ import { useDraft } from './draft'
 import { UnsavedChanges } from './UnsavedChanges'
 
 export function AllgemeinSection() {
+  const { t } = useI18n()
   const settings = useSettings()
   if (settings.isPending) {
     return (
@@ -116,9 +118,9 @@ export function AllgemeinSection() {
         <EmptyState
           illustration="offline"
           titleAs="h2"
-          title="Einstellungen konnten nicht geladen werden"
-          description="Das Backend antwortet nicht. Bitte später erneut versuchen."
-          actions={<Button onClick={() => void settings.refetch()}>Erneut versuchen</Button>}
+          title={t("Einstellungen konnten nicht geladen werden")}
+          description={t("Das Backend antwortet nicht. Bitte später erneut versuchen.")}
+          actions={<Button onClick={() => void settings.refetch()}>{t("Erneut versuchen")}</Button>}
         />
       </Card>
     )
@@ -182,10 +184,11 @@ function anchorAtTop(root: HTMLElement): GeneralAnchor | null {
 
 /** Inhaltsverzeichnis rechts neben dem Formular (Sprung + Fokus auf die Kartenüberschrift) */
 function GeneralToc({ onJump, className }: { onJump: (id: GeneralAnchor) => void; className?: string }) {
+  const { t } = useI18n()
   const active = useActiveAnchor()
   return (
-    <nav aria-label="Abschnitte von Allgemein" className={cn('sticky top-[5.5rem]', className)}>
-      <div className="micro-label mb-2 pl-3">Auf dieser Seite</div>
+    <nav aria-label={t("Abschnitte von Allgemein")} className={cn('sticky top-[5.5rem]', className)}>
+      <div className="micro-label mb-2 pl-3">{t("Auf dieser Seite")}</div>
       <ul className="flex flex-col border-l border-line">
         {GENERAL_ANCHORS.map((a) => {
           const on = a.id === active
@@ -203,7 +206,7 @@ function GeneralToc({ onJump, className }: { onJump: (id: GeneralAnchor) => void
                   on ? 'border-accent font-medium text-fg' : 'border-transparent text-fg-muted hover:border-line-strong hover:text-fg',
                 )}
               >
-                {a.label}
+                {t(a.label)}
               </a>
             </li>
           )
@@ -240,10 +243,10 @@ function useAnchorJump(focusFor: (id: GeneralAnchor) => string | null): (id: Gen
   }
 }
 
-type Editable = Pick<AppSettings, 'author' | 'ai' | 'altium'>
+type Editable = Pick<AppSettings, 'author' | 'language' | 'ai' | 'altium'>
 
 function editable(s: AppSettings): Editable {
-  return { author: s.author, ai: s.ai, altium: s.altium }
+  return { author: s.author, language: s.language, ai: s.ai, altium: s.altium }
 }
 
 const MODEL_OPTIONS: SelectOption[] = [
@@ -251,7 +254,7 @@ const MODEL_OPTIONS: SelectOption[] = [
     value: 'claude-opus-5-5',
     label: 'Claude Opus 5.5',
     description: 'Liest Zeichnungen und Tabellen am genauesten · ca. 0,15–0,18 $ je Datenblatt',
-    badge: <Badge variant="neutral">empfohlen</Badge>,
+    badge: <RecommendedBadge />,
   },
   { value: 'claude-sonnet-5-5', label: 'Claude Sonnet 5.5', description: 'Ausgewogen · ca. 0,09 $ je Datenblatt' },
   { value: 'claude-haiku-5-5', label: 'Claude Haiku 5.5', description: 'Sehr günstig (< 0,01 $), aber langsamer' },
@@ -262,16 +265,22 @@ const FAST_MODEL_OPTIONS: SelectOption[] = [
     value: 'claude-haiku-5-5',
     label: 'Claude Haiku 5.5',
     description: 'Schnell und günstig – für Smart-Eingabe und Seitenauswahl',
-    badge: <Badge variant="neutral">empfohlen</Badge>,
+    badge: <RecommendedBadge />,
   },
   { value: 'claude-sonnet-5-5', label: 'Claude Sonnet 5.5', description: 'Gründlicher, etwas teurer' },
   { value: 'claude-opus-5-5', label: 'Claude Opus 5.5', description: 'Höchste Qualität, am teuersten' },
 ]
 
 function withCurrent(options: SelectOption[], current: string): SelectOption[] {
+  const translated = options.map((option) => ({ ...option, description: typeof option.description === 'string' ? t(option.description) : option.description }))
   return options.some((o) => o.value === current)
-    ? options
-    : [...options, { value: current, label: current, description: 'Benutzerdefiniertes Modell' }]
+    ? translated
+    : [...translated, { value: current, label: current, description: t("Benutzerdefiniertes Modell") }]
+}
+
+function RecommendedBadge() {
+  const { t } = useI18n()
+  return <Badge variant="neutral">{t('empfohlen')}</Badge>
 }
 
 const EFFORT_HELP: Record<AiEffort, string> = {
@@ -301,6 +310,7 @@ function nullIfEmpty(value: string): string | null {
 }
 
 function SettingsForm({ data }: { data: SettingsOut }) {
+  const { t } = useI18n()
   const saved = editable(data.settings)
   const { draft, setDraft, dirty, reset, commit } = useDraft<Editable>(saved)
   const [keyDialog, setKeyDialog] = useState(false)
@@ -340,6 +350,8 @@ function SettingsForm({ data }: { data: SettingsOut }) {
       // Änderungen auf den aktuellen Serverstand anwenden (Theme, zuletzt geöffnete Bibliotheken bleiben unberührt)
       const out = await save.mutateAsync((current) => ({ ...current, ...draft }))
       commit(editable(out.settings))
+      // The save callback was created in the previous language; feedback follows the saved setting.
+      const savedText = (source: string, params?: TranslationParams) => translate(source, out.settings.language, params)
       const notes: string[] = []
       let warn = false
       if (altiumChanged) {
@@ -357,24 +369,24 @@ function SettingsForm({ data }: { data: SettingsOut }) {
             warn = true
             notes.push(
               out.rust_writer
-                ? `Bibliotheks-Writer nicht gefunden: ${path} – es gilt der automatisch gefundene.`
-                : `Bibliotheks-Writer nicht gefunden: ${path}`,
+                ? savedText("Bibliotheks-Writer nicht gefunden: {0} – es gilt der automatisch gefundene.", { "0": path })
+                : savedText("Bibliotheks-Writer nicht gefunden: {0}", { "0": path }),
             )
           } else if (rust?.available || (!status && out.rust_writer)) {
-            notes.push(`Bibliotheks-Writer gefunden${rust?.version ? ` (${rust.version})` : ''}.`)
+            notes.push(savedText("Bibliotheks-Writer gefunden{0}.", { "0": rust?.version ? ` (${rust.version})` : '' }))
           } else if (out.settings.altium.library_backend !== 'altium') {
             warn = true
-            notes.push('Kein Bibliotheks-Writer gefunden – Bibliotheksdateien entstehen nur über Altium Designer.')
+            notes.push(savedText("Kein Bibliotheks-Writer gefunden – Bibliotheksdateien entstehen nur über Altium Designer."))
           }
         }
       }
       // Der Schlüssel-Hinweis gehört zu Änderungen an der KI – nicht zu jedem Speichern
       if (aiChanged && out.settings.ai.enabled && !out.ai_key_configured) {
-        notes.push('Hinweis: Es ist noch kein Claude-API-Schlüssel hinterlegt.')
+        notes.push(savedText("Hinweis: Es ist noch kein Claude-API-Schlüssel hinterlegt."))
       }
       const description = notes.length ? notes.join(' ') : undefined
-      if (warn) toast.warning('Einstellungen gespeichert', { description, duration: 8000 })
-      else toast.success('Einstellungen gespeichert', { description })
+      if (warn) toast.warning(savedText("Einstellungen gespeichert"), { description, duration: 8000 })
+      else toast.success(savedText("Einstellungen gespeichert"), { description })
       return true
     } catch {
       return false
@@ -383,16 +395,16 @@ function SettingsForm({ data }: { data: SettingsOut }) {
 
   const removeKey = async () => {
     const ok = await confirm({
-      title: 'Gespeicherten Schlüssel entfernen?',
-      description: 'KI-Funktionen sind danach erst wieder verfügbar, wenn ein Schlüssel hinterlegt ist.',
-      confirmLabel: 'Entfernen',
+      title: t("Gespeicherten Schlüssel entfernen?"),
+      description: t("KI-Funktionen sind danach erst wieder verfügbar, wenn ein Schlüssel hinterlegt ist."),
+      confirmLabel: t("Entfernen"),
       destructive: true,
       icon: <Trash2 />,
       onConfirm: () => deleteKey.mutateAsync(),
     })
     if (ok) {
       aiTest.reset()
-      toast.success('Schlüssel entfernt')
+      toast.success(t("Schlüssel entfernt"))
     }
   }
 
@@ -424,39 +436,47 @@ function SettingsForm({ data }: { data: SettingsOut }) {
       <SettingsCard
         id="profil"
         icon={<UserRound />}
-        title="Profil und Darstellung"
-        description="Ihr Name in der Änderungshistorie, Farbschema und Zeilendichte"
+        title={t("Profil und Darstellung")}
+        description={t("Ihr Name in der Änderungshistorie, Farbschema und Zeilendichte")}
       >
-        <Field label="Autor" layout="row" className="py-4" help="Wird bei neuen und geänderten Bauteilen als Bearbeiter eingetragen.">
-          <Input value={draft.author} onChange={(e) => setDraft((d) => ({ ...d, author: e.target.value }))} placeholder="Ihr Name" />
+        <Field label={t("Autor")} layout="row" className="py-4" help={t("Wird bei neuen und geänderten Bauteilen als Bearbeiter eingetragen.")}>
+          <Input value={draft.author} onChange={(e) => setDraft((d) => ({ ...d, author: e.target.value }))} placeholder={t("Ihr Name")} />
         </Field>
-        <Field label="Farbschema" layout="row" className="py-4" help="Wird sofort angewendet. „Wie System“ folgt der Windows‑Einstellung.">
+        <Field label={t("Sprache")} layout="row" className="py-4" help={t("Die Sprache wird nach dem Speichern für die gesamte Anwendung übernommen.")}>
+          <Select
+            value={draft.language}
+            onValueChange={(language) => setDraft((d) => ({ ...d, language: language as AppSettings['language'] }))}
+            options={[{ value: 'en', label: 'English' }, { value: 'de', label: 'Deutsch' }]}
+            aria-label={t("Sprache")}
+          />
+        </Field>
+        <Field label={t("Farbschema")} layout="row" className="py-4" help={t("Wird sofort angewendet. „Wie System“ folgt der Windows‑Einstellung.")}>
           <SegmentedControl<ThemePreference>
-            aria-label="Farbschema"
+            aria-label={t("Farbschema")}
             fullWidth
             value={theme}
             onValueChange={setTheme}
             options={[
-              { value: 'dark', label: 'Dunkel', icon: <Moon /> },
-              { value: 'light', label: 'Hell', icon: <Sun /> },
-              { value: 'system', label: 'Wie System', icon: <Monitor /> },
+              { value: 'dark', label: t("Dunkel"), icon: <Moon /> },
+              { value: 'light', label: t("Hell"), icon: <Sun /> },
+              { value: 'system', label: t("Wie System"), icon: <Monitor /> },
             ]}
           />
         </Field>
         <Field
-          label="Dichte der Tabellen"
+          label={t("Dichte der Tabellen")}
           layout="row"
           className="py-4"
-          help="Zeilenhöhe der Bauteiltabelle: kompakt zeigt mehr Zeilen, komfortabel liest sich leichter. Wird sofort angewendet."
+          help={t("Zeilenhöhe der Bauteiltabelle: kompakt zeigt mehr Zeilen, komfortabel liest sich leichter. Wird sofort angewendet.")}
         >
           <SegmentedControl<GridDensity>
-            aria-label="Dichte der Tabellen"
+            aria-label={t("Dichte der Tabellen")}
             fullWidth
             value={density}
             onValueChange={setDensity}
             options={[
-              { value: 'compact', label: 'Kompakt', icon: <Rows4 /> },
-              { value: 'comfortable', label: 'Komfortabel', icon: <Rows2 /> },
+              { value: 'compact', label: t("Kompakt"), icon: <Rows4 /> },
+              { value: 'comfortable', label: t("Komfortabel"), icon: <Rows2 /> },
             ]}
           />
         </Field>
@@ -467,33 +487,29 @@ function SettingsForm({ data }: { data: SettingsOut }) {
         id="ki"
         spark
         icon={<Sparkles />}
-        title="KI-Funktionen"
-        description="Claude liest Datenblätter, schlägt Werte vor und erzeugt Symbole"
+        title={t("KI-Funktionen")}
+        description={t("Claude liest Datenblätter, schlägt Werte vor und erzeugt Symbole")}
         aside={
           !aiOn ? (
             <Badge variant="neutral" size="md">
-              Ausgeschaltet
-            </Badge>
+              {t("Ausgeschaltet")}</Badge>
           ) : !data.ai_key_configured ? (
             <Badge variant="warning" size="md">
               <TriangleAlert />
-              Schlüssel fehlt
-            </Badge>
+              {t("Schlüssel fehlt")}</Badge>
           ) : verdict ? (
             <Badge variant={verdict.tone} size="md">
               {verdict.tone === 'success' ? <CircleCheck /> : verdict.tone === 'danger' ? <CircleX /> : <TriangleAlert />}
-              {verdict.label}
+              {t(verdict.label)}
             </Badge>
           ) : keySource === 'replay' ? (
             <Badge variant="neutral" size="md">
               <FlaskConical />
-              Testmodus
-            </Badge>
+              {t("Testmodus")}</Badge>
           ) : (
             <Badge variant="success" size="md">
               <CircleCheck />
-              Bereit
-            </Badge>
+              {t("Bereit")}</Badge>
           )
         }
       >
@@ -502,35 +518,35 @@ function SettingsForm({ data }: { data: SettingsOut }) {
             tone="spark"
             checked={aiOn}
             onCheckedChange={(v) => setAi('enabled', v)}
-            label="KI-Funktionen verwenden"
-            description="Datenblatt-Import, Smart-Eingabe und Vorschläge nutzen die Claude-API. Nur dann werden Datenblätter an die Claude-API gesendet – alles andere läuft lokal."
+            label={t("KI-Funktionen verwenden")}
+            description={t("Datenblatt-Import, Smart-Eingabe und Vorschläge nutzen die Claude-API. Nur dann werden Datenblätter an die Claude-API gesendet – alles andere läuft lokal.")}
           />
         </Row>
         <div className={cn('divide-y divide-line transition-opacity', !aiOn && 'opacity-50')} aria-disabled={!aiOn || undefined}>
           <Field
-            label="Claude-API-Schlüssel"
+            label={t("Claude-API-Schlüssel")}
             layout="row"
             className="py-4"
             help={
               keySource
-                ? (KEY_SOURCE[keySource]?.help ?? 'Schlüssel hinterlegt.')
-                : 'Noch kein Schlüssel hinterlegt. Den Schlüssel gibt es in der Claude Console.'
+                ? t(KEY_SOURCE[keySource]?.help ?? "Schlüssel hinterlegt.")
+                : t("Noch kein Schlüssel hinterlegt. Den Schlüssel gibt es in der Claude Console.")
             }
           >
             <div className="flex min-h-8.5 flex-wrap items-center justify-between gap-2">
               <Badge variant={!data.ai_key_configured ? 'warning' : verdict?.keyRejected ? 'danger' : 'success'} size="md">
                 {!data.ai_key_configured ? <TriangleAlert /> : verdict?.keyRejected ? <CircleX /> : <CircleCheck />}
-                {keySource ? (KEY_SOURCE[keySource]?.badge ?? 'Hinterlegt') : 'Fehlt'}
-                {data.ai_key_configured && verdict?.keyRejected && ' · abgelehnt'}
+                {keySource ? t(KEY_SOURCE[keySource]?.badge ?? "Hinterlegt") : t("Fehlt")}
+                {data.ai_key_configured && verdict?.keyRejected && t(" · abgelehnt")}
               </Badge>
               <div className="flex items-center gap-1">
                 {keySource === 'stored' && (
-                  <Button variant="ghost" iconOnly aria-label="Gespeicherten Schlüssel entfernen" disabled={!aiOn} onClick={() => void removeKey()}>
+                  <Button variant="ghost" iconOnly aria-label={t("Gespeicherten Schlüssel entfernen")} disabled={!aiOn} onClick={() => void removeKey()}>
                     <Trash2 />
                   </Button>
                 )}
                 <Button disabled={!aiOn} leftIcon={<KeyRound />} onClick={() => setKeyDialog(true)}>
-                  {keySource === 'stored' ? 'Ersetzen …' : 'Schlüssel eingeben …'}
+                  {keySource === 'stored' ? t("Ersetzen …") : t("Schlüssel eingeben …")}
                 </Button>
               </div>
             </div>
@@ -545,7 +561,7 @@ function SettingsForm({ data }: { data: SettingsOut }) {
             fastModel={data.settings.ai.fast_model}
             pendingChanges={dirty}
           />
-          <Field label="Modell für Datenblätter" layout="row" className="py-4" help="Liest PDFs und extrahiert Parameter, Pins und Gehäusemaße.">
+          <Field label={t("Modell für Datenblätter")} layout="row" className="py-4" help={t("Liest PDFs und extrahiert Parameter, Pins und Gehäusemaße.")}>
             <Select
               value={draft.ai.model}
               onValueChange={(v) => setAi('model', v)}
@@ -554,21 +570,21 @@ function SettingsForm({ data }: { data: SettingsOut }) {
               disabled={!aiOn}
             />
           </Field>
-          <Field label="Gründlichkeit" layout="row" className="py-4" help={EFFORT_HELP[draft.ai.effort]}>
+          <Field label={t("Gründlichkeit")} layout="row" className="py-4" help={t(EFFORT_HELP[draft.ai.effort])}>
             <SegmentedControl<AiEffort>
-              aria-label="Gründlichkeit"
+              aria-label={t("Gründlichkeit")}
               fullWidth
               disabled={!aiOn}
               value={draft.ai.effort}
               onValueChange={(v) => setAi('effort', v)}
               options={[
-                { value: 'low', label: 'Niedrig' },
-                { value: 'medium', label: 'Mittel' },
-                { value: 'high', label: 'Hoch' },
+                { value: 'low', label: t("Niedrig") },
+                { value: 'medium', label: t("Mittel") },
+                { value: 'high', label: t("Hoch") },
               ]}
             />
           </Field>
-          <Field label="Schnelles Modell" layout="row" className="py-4" help="Für kurze Aufgaben wie Smart-Eingabe, Seitenauswahl und Gegenprüfung.">
+          <Field label={t("Schnelles Modell")} layout="row" className="py-4" help={t("Für kurze Aufgaben wie Smart-Eingabe, Seitenauswahl und Gegenprüfung.")}>
             <Select
               value={draft.ai.fast_model}
               onValueChange={(v) => setAi('fast_model', v)}
@@ -583,11 +599,11 @@ function SettingsForm({ data }: { data: SettingsOut }) {
               checked={draft.ai.use_fallbacks}
               onCheckedChange={(v) => setAi('use_fallbacks', v)}
               disabled={!aiOn}
-              label="Ausweichmodell bei Überlastung"
-              description="Ist das gewählte Modell gerade ausgelastet, antwortet automatisch ein gleichwertiges Modell, statt abzubrechen."
+              label={t("Ausweichmodell bei Überlastung")}
+              description={t("Ist das gewählte Modell gerade ausgelastet, antwortet automatisch ein gleichwertiges Modell, statt abzubrechen.")}
             />
           </Row>
-          <Field label="Kostenlimit je Import" layout="row" className="py-4" help="Obergrenze der API-Kosten für einen einzelnen Datenblatt-Import.">
+          <Field label={t("Kostenlimit je Import")} layout="row" className="py-4" help={t("Obergrenze der API-Kosten für einen einzelnen Datenblatt-Import.")}>
             <NumberInput
               value={draft.ai.max_cost_per_import_usd}
               onValueChange={(v) => setAi('max_cost_per_import_usd', v ?? 0)}
@@ -600,15 +616,15 @@ function SettingsForm({ data }: { data: SettingsOut }) {
             />
           </Field>
           <Field
-            label="Schlüsseldatei"
-            hint="alternativ"
+            label={t("Schlüsseldatei")}
+            hint={t("alternativ")}
             layout="row"
             className="py-4"
-            error={!keyFileChanged && data.ai_key_file_problem ? data.ai_key_file_problem : undefined}
+            error={!keyFileChanged && data.ai_key_file_problem ? localizeMessage(data.ai_key_file_problem) : undefined}
             help={
               keyFileChanged
-                ? 'Die Datei wird nach dem Speichern geprüft.'
-                : 'Lokale Textdatei, die nur den Schlüssel (sk-ant-…) enthält. Ein gespeicherter Schlüssel oder ANTHROPIC_API_KEY hat Vorrang.'
+                ? t("Die Datei wird nach dem Speichern geprüft.")
+                : t("Lokale Textdatei, die nur den Schlüssel (sk-ant-…) enthält. Ein gespeicherter Schlüssel oder ANTHROPIC_API_KEY hat Vorrang.")
             }
           >
             <PathInput
@@ -616,8 +632,8 @@ function SettingsForm({ data }: { data: SettingsOut }) {
               onValueChange={(v) => setAi('api_key_file', nullIfEmpty(v))}
               prefix={<FileKey2 />}
               browse="file"
-              fileFilters={['Textdateien (*.txt)', 'Alle Dateien (*.*)']}
-              suffix={keyFileChanged ? <Badge>ungeprüft</Badge> : undefined}
+              fileFilters={[t("Textdateien (*.txt)"), t("Alle Dateien (*.*)")]}
+              suffix={keyFileChanged ? <Badge>{t("ungeprüft")}</Badge> : undefined}
               placeholder="C:\…\claude-api-key.txt"
               disabled={!aiOn}
             />
@@ -631,7 +647,7 @@ function SettingsForm({ data }: { data: SettingsOut }) {
         id="altium"
         icon={<PlugZap />}
         title="Altium Designer"
-        description="Wie PartForge Bibliotheksdateien erzeugt und Altium steuert"
+        description={t("Wie PartForge Bibliotheksdateien erzeugt und Altium steuert")}
         aside={<AltiumBadge found={Boolean(data.altium_exe)} />}
       >
         <AltiumStatusStrip onSetupWriter={() => revealAnchor('altium', WRITER_FIELD_ID)} />
@@ -643,85 +659,84 @@ function SettingsForm({ data }: { data: SettingsOut }) {
           error={
             x2Missing ? (
               <>
-                Datei nicht gefunden: <PathText path={x2Path} /> – Pfad korrigieren oder leer lassen (automatische Erkennung).
-              </>
+                {t("Datei nicht gefunden:")} <PathText path={x2Path} />  {t("– Pfad korrigieren oder leer lassen (automatische Erkennung).")}</>
             ) : undefined
           }
           help={
             x2Pending && x2Path ? (
-              'Der Pfad wird nach dem Speichern geprüft.'
+              t("Der Pfad wird nach dem Speichern geprüft.")
             ) : x2Detected ? (
               <>
-                Automatisch erkannt: <PathText path={data.altium_exe ?? ''} className="text-fg-muted" />
+                {t("Automatisch erkannt:")} <PathText path={data.altium_exe ?? ''} className="text-fg-muted" />
               </>
             ) : x2Path ? (
-              'Leer lassen für die automatische Erkennung.'
+              t("Leer lassen für die automatische Erkennung.")
             ) : (
-              'Nicht automatisch gefunden – bitte den Pfad zur Altium-Installation angeben.'
+              t("Nicht automatisch gefunden – bitte den Pfad zur Altium-Installation angeben.")
             )
           }
         >
           <PathInput
             value={draft.altium.x2_path ?? ''}
             onValueChange={(v) => setAltium('x2_path', nullIfEmpty(v))}
-            placeholder={data.altium_exe ? 'Automatisch erkannt' : 'C:\\Program Files\\Altium\\AD25\\X2.EXE'}
+            placeholder={data.altium_exe ? t("Automatisch erkannt") : 'C:\\Program Files\\Altium\\AD25\\X2.EXE'}
             browse="file"
             fileFilters={['Altium Designer (X2.EXE)']}
             suffix={x2Detected ? <CircleCheck className="text-success-text" /> : undefined}
           />
         </Field>
-        <Field label="Bibliotheksdateien erzeugen" layout="row" className="py-4" help={BACKEND_HELP[draft.altium.library_backend]}>
+        <Field label={t("Bibliotheksdateien erzeugen")} layout="row" className="py-4" help={t(BACKEND_HELP[draft.altium.library_backend])}>
           <SegmentedControl<LibraryBackend>
-            aria-label="Bibliotheksdateien erzeugen"
+            aria-label={t("Bibliotheksdateien erzeugen")}
             fullWidth
             value={draft.altium.library_backend}
             onValueChange={(v) => setAltium('library_backend', v)}
             options={[
-              { value: 'auto', label: 'Automatisch' },
-              { value: 'rust', label: 'Ohne Altium' },
-              { value: 'altium', label: 'Über Altium' },
+              { value: 'auto', label: t("Automatisch") },
+              { value: 'rust', label: t("Ohne Altium") },
+              { value: 'altium', label: t("Über Altium") },
             ]}
           />
         </Field>
         <Field
-          label="Bibliotheks-Writer"
+          label={t("Bibliotheks-Writer")}
           layout="row"
           className="py-4"
           htmlFor={WRITER_FIELD_ID}
           error={
             writerMissing ? (
               <>
-                Datei nicht gefunden: <PathText path={writerPath} /> –{' '}
+                {t("Datei nicht gefunden:")} <PathText path={writerPath} /> –{' '}
                 {data.rust_writer
-                  ? 'Pfad korrigieren oder leer lassen (dann gilt der automatisch gefundene Bibliotheks-Writer).'
-                  : 'Pfad zur altium-designer-mcp.exe korrigieren oder „Über Altium“ wählen.'}
+                  ? t("Pfad korrigieren oder leer lassen (dann gilt der automatisch gefundene Bibliotheks-Writer).")
+                  : t("Pfad zur altium-designer-mcp.exe korrigieren oder „Über Altium“ wählen.")}
               </>
             ) : undefined
           }
           help={
             writerPending && writerPath ? (
-              'Der Pfad wird nach dem Speichern geprüft.'
+              t("Der Pfad wird nach dem Speichern geprüft.")
             ) : writerDetected ? (
               <>
-                Automatisch erkannt: <PathText path={data.rust_writer ?? ''} className="text-fg-muted" />
+                {t("Automatisch erkannt:")} <PathText path={data.rust_writer ?? ''} className="text-fg-muted" />
               </>
             ) : writerPath ? (
-              'Leer lassen für die automatische Erkennung.'
+              t("Leer lassen für die automatische Erkennung.")
             ) : (
-              'Nicht gefunden – Pfad zur altium-designer-mcp.exe angeben oder „Über Altium“ wählen.'
+              t("Nicht gefunden – Pfad zur altium-designer-mcp.exe angeben oder „Über Altium“ wählen.")
             )
           }
         >
           <PathInput
             value={draft.altium.rust_writer_path ?? ''}
             onValueChange={(v) => setAltium('rust_writer_path', nullIfEmpty(v))}
-            placeholder={data.rust_writer ? 'Automatisch erkannt' : 'C:\\…\\altium-designer-mcp.exe'}
+            placeholder={data.rust_writer ? t("Automatisch erkannt") : 'C:\\…\\altium-designer-mcp.exe'}
             browse="file"
-            fileFilters={['Programme (*.exe)']}
+            fileFilters={[t("Programme (*.exe)")]}
             suffix={writerDetected ? <CircleCheck className="text-success-text" /> : undefined}
           />
         </Field>
-        <Field label="Skript-Zeitlimit" layout="row" className="py-4" help="Maximale Laufzeit eines Altium-Skripts, bevor PartForge abbricht.">
+        <Field label={t("Skript-Zeitlimit")} layout="row" className="py-4" help={t("Maximale Laufzeit eines Altium-Skripts, bevor PartForge abbricht.")}>
           <NumberInput
             value={draft.altium.script_timeout_s}
             onValueChange={(v) => setAltium('script_timeout_s', v ?? 180)}
@@ -737,20 +752,20 @@ function SettingsForm({ data }: { data: SettingsOut }) {
           <Switch
             checked={draft.altium.auto_refresh}
             onCheckedChange={(v) => setAltium('auto_refresh', v)}
-            label="Altium automatisch aktualisieren"
-            description="Nach Änderungen an der Datenbank liest ein laufendes Altium die Bauteile neu ein – ohne Neustart und ohne Klick auf „Aktualisieren“."
+            label={t("Altium automatisch aktualisieren")}
+            description={t("Nach Änderungen an der Datenbank liest ein laufendes Altium die Bauteile neu ein – ohne Neustart und ohne Klick auf „Aktualisieren“.")}
           />
         </Row>
         <Row>
           <Switch
             checked={draft.altium.auto_reload_libraries}
             onCheckedChange={(v) => setAltium('auto_reload_libraries', v)}
-            label="Geöffnete Bibliotheken neu laden"
-            description="Nach dem Neuschreiben von SchLib/PcbLib lädt Altium geöffnete, unveränderte Bibliotheksdateien neu."
+            label={t("Geöffnete Bibliotheken neu laden")}
+            description={t("Nach dem Neuschreiben von SchLib/PcbLib lädt Altium geöffnete, unveränderte Bibliotheksdateien neu.")}
           />
         </Row>
-        <Disclosure label="Erweitert" description="Zeitlimit des Bibliotheks-Writers und Austauschordner der Altium-Brücke">
-          <Field label="Zeitlimit des Bibliotheks-Writers" layout="row" className="py-4" help="Maximale Laufzeit für einen Schreibvorgang.">
+        <Disclosure label={t("Erweitert")} description={t("Zeitlimit des Bibliotheks-Writers und Austauschordner der Altium-Brücke")}>
+          <Field label={t("Zeitlimit des Bibliotheks-Writers")} layout="row" className="py-4" help={t("Maximale Laufzeit für einen Schreibvorgang.")}>
             <NumberInput
               value={draft.altium.rust_writer_timeout_s}
               onValueChange={(v) => setAltium('rust_writer_timeout_s', v ?? 120)}
@@ -763,18 +778,18 @@ function SettingsForm({ data }: { data: SettingsOut }) {
             />
           </Field>
           <Field
-            label="Austauschordner der Brücke"
+            label={t("Austauschordner der Brücke")}
             hint="optional"
             layout="row"
             className="py-4"
-            help="Über diesen Ordner tauschen PartForge und die Altium-Skripte Aufträge aus. Leer = %LOCALAPPDATA%\PartForge\bridge."
+            help={t("Über diesen Ordner tauschen PartForge und die Altium-Skripte Aufträge aus. Leer = %LOCALAPPDATA%\\PartForge\\bridge.")}
           >
             <PathInput
               value={draft.altium.bridge_exchange_dir ?? ''}
               onValueChange={(v) => setAltium('bridge_exchange_dir', nullIfEmpty(v))}
               prefix={<FolderCog />}
               browse="folder"
-              placeholder="Standardordner"
+              placeholder={t("Standardordner")}
             />
           </Field>
         </Disclosure>
@@ -783,11 +798,11 @@ function SettingsForm({ data }: { data: SettingsOut }) {
       {/* Info */}
       <p className="flex items-center gap-2 px-1 text-2xs text-fg-subtle">
         <Info aria-hidden className="size-3.5 shrink-0" />
-        <span>App-Einstellungen gelten für diesen Windows-Benutzer (settings.json im PartForge-Datenordner).</span>
+        <span>{t("App-Einstellungen gelten für diesen Windows-Benutzer (settings.json im PartForge-Datenordner).")}</span>
         {version && <span className="mono ml-auto shrink-0">PartForge {version}</span>}
       </p>
 
-      <UnsavedChanges dirty={dirty} saving={save.isPending} onSave={submit} onDiscard={reset} label="Allgemein" />
+      <UnsavedChanges dirty={dirty} saving={save.isPending} onSave={submit} onDiscard={reset} label={t("Allgemein")} />
 
       <ApiKeyDialog open={keyDialog} onOpenChange={setKeyDialog} replacing={keySource === 'stored'} onSaved={() => aiTest.reset()} />
     </form>
@@ -888,23 +903,24 @@ function AiConnectionTest({
   fastModel: string
   pendingChanges: boolean
 }) {
+  const { t } = useI18n()
   let result: ReactNode = (
-    <span className="text-xs text-fg-subtle">{keyConfigured ? 'Noch nicht geprüft' : 'Zuerst einen Schlüssel hinterlegen'}</span>
+    <span className="text-xs text-fg-subtle">{keyConfigured ? t("Noch nicht geprüft") : t("Zuerst einen Schlüssel hinterlegen")}</span>
   )
   if (test.isPending) {
-    result = <span className="text-xs text-fg-muted">Sende Testanfrage an {modelDisplayName(fastModel)} …</span>
+    result = <span className="text-xs text-fg-muted">{t("Sende Testanfrage an")} {modelDisplayName(fastModel)} …</span>
   } else if (check && verdict) {
-    const when = `${check.source === 'job' ? 'Bei einer Datenblatt-Analyse festgestellt' : 'Geprüft'} ${formatRelativeTime(check.at)}`
+    const when = `${check.source === 'job' ? t("Bei einer Datenblatt-Analyse festgestellt") : t("Geprüft")} ${formatRelativeTime(check.at)}`
     result = check.ok ? (
       // Kosten kennt nur die Antwort dieser Seite (der gemerkte Test speichert sie nicht)
       <AiTestOutcome check={check} costUsd={test.data?.cost_usd ?? null} when={when} />
     ) : (
       <TestOutcome
         ok={false}
-        title={verdict.label}
+        title={t(verdict.label)}
         detail={
           <>
-            {check.message && <span className="basis-full">{check.message}</span>}
+            {check.message && <span className="basis-full">{localizeMessage(check.message)}</span>}
             <span className="basis-full text-fg-subtle">{when}</span>
           </>
         }
@@ -914,13 +930,13 @@ function AiConnectionTest({
 
   return (
     <Field
-      label="Verbindung"
+      label={t("Verbindung")}
       layout="row"
       className="py-4"
       help={
         pendingChanges
-          ? 'Geprüft werden die gespeicherten Einstellungen – vorher speichern, um Änderungen zu testen.'
-          : 'Sendet eine winzige Anfrage an das schnelle Modell und misst die Antwortzeit (Kosten < 0,01 $).'
+          ? t("Geprüft werden die gespeicherten Einstellungen – vorher speichern, um Änderungen zu testen.")
+          : t("Sendet eine winzige Anfrage an das schnelle Modell und misst die Antwortzeit (Kosten < 0,01 $).")
       }
     >
       <div className="flex flex-col items-stretch gap-2">
@@ -932,8 +948,7 @@ function AiConnectionTest({
             loading={test.isPending}
             disabled={disabled || !keyConfigured}
           >
-            Verbindung testen
-          </Button>
+            {t("Verbindung testen")}</Button>
         </div>
         <div aria-live="polite" className="min-h-5">
           {result}
@@ -953,7 +968,7 @@ function AiTestOutcome({ check, costUsd, when }: { check: AiConnectionCheck; cos
   return (
     <TestOutcome
       ok
-      title={AI_CONNECTED.label}
+      title={t(AI_CONNECTED.label)}
       detail={
         <>
           {parts.map((p, i) => (
@@ -988,36 +1003,36 @@ function TestOutcome({ ok, title, detail }: { ok: boolean; title: string; detail
 // --------------------------------------------------------------------------- KI: Hinweise zur Nutzung
 
 function AiUsageNotes({ maxCost, model, fastModel }: { maxCost: number; model: string; fastModel: string }) {
+  const { t } = useI18n()
   const notes: { icon: ReactNode; title: string; text: ReactNode }[] = [
     {
       icon: <FileScan />,
-      title: 'Datenblatt-Import',
+      title: t("Datenblatt-Import"),
       text: (
         <>
-          {modelDisplayName(model)} liest Tabellen, Pinbelegung und Gehäusemaße. Typisch 0,10–0,20 $ je Datenblatt, nie mehr
-          als {formatDecimal(maxCost, 2)} $.
+          {modelDisplayName(model)}  {t("liest Tabellen, Pinbelegung und Gehäusemaße. Typisch 0,10–0,20 $ je Datenblatt, nie mehr als")} {formatDecimal(maxCost, 2)} $.
         </>
       ),
     },
     {
       icon: <Sparkles />,
-      title: 'Smart-Eingabe und Prüfung',
-      text: <>{modelDisplayName(fastModel)} ordnet Eingaben wie „10k 1% 0603“ zu und prüft Ergebnisse – Bruchteile eines Cents.</>,
+      title: t("Smart-Eingabe und Prüfung"),
+      text: <>{modelDisplayName(fastModel)}  {t("ordnet Eingaben wie „10k 1% 0603“ zu und prüft Ergebnisse – Bruchteile eines Cents.")}</>,
     },
     {
       icon: <ShieldCheck />,
-      title: 'Datenschutz',
-      text: 'Gesendet werden nur Datenblatt-Seiten und Ihre Eingaben. Bibliothek, Bauteile und Dateien bleiben auf diesem Rechner.',
+      title: t("Datenschutz"),
+      text: t("Gesendet werden nur Datenblatt-Seiten und Ihre Eingaben. Bibliothek, Bauteile und Dateien bleiben auf diesem Rechner."),
     },
     {
       icon: <Wallet />,
-      title: 'Abrechnung',
-      text: 'Über Ihr Konto in der Claude Console. Jeder Import zeigt Modell, Dauer und Kosten im Protokoll.',
+      title: t("Abrechnung"),
+      text: t("Über Ihr Konto in der Claude Console. Jeder Import zeigt Modell, Dauer und Kosten im Protokoll."),
     },
   ]
   return (
     <div className="@container -mx-5 border-t border-line bg-surface-2/35 px-5 py-4">
-      <div className="micro-label mb-3">So nutzt PartForge die KI</div>
+      <div className="micro-label mb-3">{t("So nutzt PartForge die KI")}</div>
       <ul className="grid grid-cols-1 gap-x-6 gap-y-3 @[34rem]:grid-cols-2">
         {notes.map((n) => (
           <li key={n.title} className="flex gap-2.5">
@@ -1077,12 +1092,13 @@ function StatusTile({
 
 /** Kopf der Altium-Karte: läuft / nicht gestartet / nicht gefunden (Live-Status, sonst Pfad-Erkennung) */
 function AltiumBadge({ found }: { found: boolean }) {
+  const { t } = useI18n()
   const status = useAltiumStatus()
   const running = status.data?.altium_running
   if (running) {
     return (
       <Badge variant="success" size="md" dot>
-        Läuft{status.data?.version ? ` · ${status.data.version}` : ''}
+        {t("Läuft")}{status.data?.version ? ` · ${status.data.version}` : ''}
       </Badge>
     )
   }
@@ -1090,12 +1106,13 @@ function AltiumBadge({ found }: { found: boolean }) {
   return (
     <Badge variant={exe ? 'neutral' : 'warning'} size="md">
       {exe ? <CircleCheck /> : <TriangleAlert />}
-      {exe ? 'Gefunden · nicht gestartet' : 'Nicht gefunden'}
+      {exe ? t("Gefunden · nicht gestartet") : t("Nicht gefunden")}
     </Badge>
   )
 }
 
 function AltiumStatusStrip({ onSetupWriter }: { onSetupWriter: () => void }) {
+  const { t } = useI18n()
   const workspace = useWorkspace()
   const status = useAltiumStatus()
   if (status.isPending) {
@@ -1112,11 +1129,10 @@ function AltiumStatusStrip({ onSetupWriter }: { onSetupWriter: () => void }) {
       <Row>
         <Callout
           tone="warning"
-          title="Altium-Status nicht verfügbar"
+          title={t("Altium-Status nicht verfügbar")}
           actions={
             <Button size="sm" variant="secondary" leftIcon={<RefreshCw />} onClick={() => void status.refetch()}>
-              Erneut prüfen
-            </Button>
+              {t("Erneut prüfen")}</Button>
           }
         >
           {errorMessage(status.error)}
@@ -1152,6 +1168,7 @@ function AltiumStatusTiles({
   /** Fokus ins Feld „Bibliotheks-Writer“ (diese Seite) */
   onSetupWriter: () => void
 }) {
+  const { t } = useI18n()
   const navigate = useNavigate()
   const rust = data.backends.find((b) => b.name === 'rust')
   const viaAltium = data.backends.find((b) => b.name === 'altium')
@@ -1160,7 +1177,7 @@ function AltiumStatusTiles({
   const dblib = data.dblib
   const refresh = data.refresh
   const refreshed = refresh.last_refresh ? formatRelativeTime(refresh.last_refresh * 1000) : null
-  const wedged = data.bridge_wedged ? 'Die Altium-Brücke reagiert nicht – in Altium Strg+F3 drücken oder Altium neu starten.' : null
+  const wedged = data.bridge_wedged ? t("Die Altium-Brücke reagiert nicht – in Altium Strg+F3 drücken oder Altium neu starten.") : null
   return (
     <div className="@container py-4">
       <div className="grid grid-cols-1 gap-2 @[36rem]:grid-cols-3">
@@ -1168,55 +1185,54 @@ function AltiumStatusTiles({
           // Nicht gestartet ist nur dann „in Ordnung“ (grau), wenn der Bibliotheks-Writer ohne Altium schreiben kann
           level={wedged ? 'error' : data.altium_running ? 'ok' : data.altium_exe && writerReady ? 'off' : 'warn'}
           title="Altium Designer"
-          value={data.altium_running ? `Läuft${data.version ? ` · ${data.version}` : ''}` : data.altium_exe ? 'Nicht gestartet' : 'Nicht gefunden'}
+          value={data.altium_running ? t("Läuft{0}", { "0": data.version ? ` · ${data.version}` : '' }) : data.altium_exe ? t("Nicht gestartet") : t("Nicht gefunden")}
           detail={
             wedged ??
             (data.altium_running
               ? refreshed
-                ? `Zuletzt aktualisiert ${refreshed}`
-                : 'Bauteiländerungen erscheinen automatisch'
+                ? t("Zuletzt aktualisiert {0}", { "0": refreshed })
+                : t("Bauteiländerungen erscheinen automatisch")
               : !writerReady
-                ? 'Ohne Bibliotheks-Writer entstehen keine Bibliotheksdateien – Pfad eintragen oder Altium starten'
+                ? t("Ohne Bibliotheks-Writer entstehen keine Bibliotheksdateien – Pfad eintragen oder Altium starten")
                 : data.altium_exe
-                  ? 'Bibliotheken entstehen trotzdem – ohne Altium'
-                  : 'X2.EXE unten angeben')
+                  ? t("Bibliotheken entstehen trotzdem – ohne Altium")
+                  : t("X2.EXE unten angeben"))
           }
         />
         <StatusTile
           level={writerReady ? 'ok' : anyWriter ? 'off' : 'warn'}
-          title="Bibliotheks-Writer"
+          title={t("Bibliotheks-Writer")}
           value={
             writerReady
-              ? `Bereit${rust?.version ? ` · ${rust.version}` : ''}`
+              ? t("Bereit{0}", { "0": rust?.version ? ` · ${rust.version}` : '' })
               : viaAltium?.available
-                ? 'Über Altium'
-                : 'Nicht gefunden'
+                ? t("Über Altium")
+                : t("Nicht gefunden")
           }
           detail={
             writerReady
-              ? 'Schreibt SchLib und PcbLib – ohne Altium'
+              ? t("Schreibt SchLib und PcbLib – ohne Altium")
               : viaAltium?.available
-                ? 'altium-designer-mcp.exe fehlt – Altium Designer schreibt die Bibliotheken'
-                : 'altium-designer-mcp.exe fehlt – Pfad unten unter „Bibliotheks-Writer“ eintragen'
+                ? t("altium-designer-mcp.exe fehlt – Altium Designer schreibt die Bibliotheken")
+                : t("altium-designer-mcp.exe fehlt – Pfad unten unter „Bibliotheks-Writer“ eintragen")
           }
           action={
             writerReady ? undefined : (
               <Button variant="link" size="xs" rightIcon={<ArrowRight />} onClick={onSetupWriter}>
-                Pfad eintragen
-              </Button>
+                {t("Pfad eintragen")}</Button>
             )
           }
         />
         <StatusTile
           level={!hasWorkspace || !dblib ? 'off' : !dblib.exists ? 'warn' : dblib.up_to_date ? 'ok' : 'warn'}
           title="DbLib"
-          value={!hasWorkspace || !dblib ? 'Keine Bibliothek' : !dblib.exists ? 'Fehlt' : dblib.up_to_date ? 'Aktuell' : 'Veraltet'}
+          value={!hasWorkspace || !dblib ? t("Keine Bibliothek") : !dblib.exists ? t("Fehlt") : dblib.up_to_date ? t("Aktuell") : t("Veraltet")}
           detail={
             dblib
               ? dblib.installed_in_altium === true
-                ? 'In Altium installiert'
+                ? t("In Altium installiert")
                 : dblib.installed_in_altium === false
-                  ? 'In Altium nicht installiert'
+                  ? t("In Altium nicht installiert")
                   : dblib.file_name
               : undefined
           }
@@ -1225,17 +1241,16 @@ function AltiumStatusTiles({
       <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-2xs text-fg-subtle">
         <span className="flex items-center gap-1.5">
           <span aria-hidden className={cn('size-1.5 rounded-full', refresh.auto_refresh ? 'bg-success' : 'bg-fg-subtle/60')} />
-          Automatisch aktualisieren {refresh.auto_refresh ? 'an' : 'aus'}
-          {refresh.pending ? ' · Änderungen warten' : ''}
-          {refresh.last_error ? ` · letzter Fehler: ${refresh.last_error}` : ''}
+          {t("Automatisch aktualisieren")} {refresh.auto_refresh ? t("an") : t("aus")}
+          {refresh.pending ? t(" · Änderungen warten") : ''}
+          {refresh.last_error ? t(" · letzter Fehler: {0}", { "0": localizeMessage(refresh.last_error) }) : ''}
         </span>
-        <span aria-live="polite">Stand {formatRelativeTime(checkedAt)}</span>
+        <span aria-live="polite">{t("Stand")} {formatRelativeTime(checkedAt)}</span>
         <span className="ml-auto flex items-center gap-1">
-          <IconButton size="xs" label="Status jetzt prüfen" icon={<RefreshCw className={cn(refreshing && 'animate-spin')} />} onClick={onRefresh} />
+          <IconButton size="xs" label={t("Status jetzt prüfen")} icon={<RefreshCw className={cn(refreshing && 'animate-spin')} />} onClick={onRefresh} />
           {hasWorkspace && (
             <Button variant="link" size="xs" rightIcon={<ArrowRight />} onClick={() => void navigate('/altium')}>
-              Altium-Seite
-            </Button>
+              {t("Altium-Seite")}</Button>
           )}
         </span>
       </div>
@@ -1257,10 +1272,11 @@ function ApiKeyDialog({
   /** Neuer Schlüssel gespeichert (ein früherer Verbindungstest gilt nicht mehr) */
   onSaved: () => void
 }) {
+  const { t } = useI18n()
   const [key, setKey] = useState('')
   const saveKey = useSaveApiKey()
   const trimmed = key.trim()
-  const formatHint = trimmed && !trimmed.startsWith('sk-') ? 'Claude-API-Schlüssel beginnen mit „sk-“.' : null
+  const formatHint = trimmed && !trimmed.startsWith('sk-') ? t("Claude-API-Schlüssel beginnen mit „sk-“.") : null
 
   const close = (o: boolean) => {
     onOpenChange(o)
@@ -1277,7 +1293,7 @@ function ApiKeyDialog({
     saveKey.mutate(trimmed, {
       onSuccess: () => {
         onSaved()
-        toast.success('Claude-API-Schlüssel gespeichert', { description: 'Verschlüsselt für diesen Windows-Benutzer.' })
+        toast.success(t("Claude-API-Schlüssel gespeichert"), { description: t("Verschlüsselt für diesen Windows-Benutzer.") })
         close(false)
       },
     })
@@ -1290,11 +1306,11 @@ function ApiKeyDialog({
           <DialogHeader
             tone="spark"
             icon={<KeyRound />}
-            title={replacing ? 'Schlüssel ersetzen' : 'Claude-API-Schlüssel eingeben'}
-            description="Der Schlüssel wird mit Windows (DPAPI) verschlüsselt gespeichert, nur für Ihren Benutzer lesbar und nie wieder angezeigt."
+            title={replacing ? t("Schlüssel ersetzen") : t("Claude-API-Schlüssel eingeben")}
+            description={t("Der Schlüssel wird mit Windows (DPAPI) verschlüsselt gespeichert, nur für Ihren Benutzer lesbar und nie wieder angezeigt.")}
           />
           <DialogBody className="flex flex-col gap-4">
-            <Field label="Schlüssel" required error={formatHint ?? (saveKey.error ? errorMessage(saveKey.error) : undefined)}>
+            <Field label={t("Schlüssel")} required error={formatHint ?? (saveKey.error ? errorMessage(saveKey.error) : undefined)}>
               <Input
                 type="password"
                 mono
@@ -1306,17 +1322,13 @@ function ApiKeyDialog({
               />
             </Field>
             <Callout tone="neutral">
-              Datenblätter werden nur beim Datenblatt-Import an die Claude-API gesendet. Bibliotheken und Bauteile bleiben auf
-              Ihrem Rechner.
-            </Callout>
+              {t("Datenblätter werden nur beim Datenblatt-Import an die Claude-API gesendet. Bibliotheken und Bauteile bleiben auf Ihrem Rechner.")}</Callout>
           </DialogBody>
           <DialogFooter>
             <Button variant="ghost" onClick={() => close(false)}>
-              Abbrechen
-            </Button>
+              {t("Abbrechen")}</Button>
             <Button type="submit" variant="primary" loading={saveKey.isPending} disabled={!trimmed || Boolean(formatHint)}>
-              Speichern
-            </Button>
+              {t("Speichern")}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

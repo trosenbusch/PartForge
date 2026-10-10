@@ -1,9 +1,11 @@
+import { useI18n } from '@/lib/i18n'
 import { Toolbar as ToolbarPrimitive } from 'radix-ui'
 import type { ComponentProps } from 'react'
 import { cn } from '@/lib/cn'
 
 /** Werkzeugleiste mit Pfeiltasten-Navigation (Radix Toolbar). */
 export function Toolbar({ className, ...props }: ComponentProps<typeof ToolbarPrimitive.Root>) {
+  useI18n()
   return (
     <ToolbarPrimitive.Root
       className={cn(
@@ -22,13 +24,16 @@ export const ToolbarToggleGroup = ToolbarPrimitive.ToggleGroup
 export const ToolbarToggleItem = ToolbarPrimitive.ToggleItem
 
 export function ToolbarSeparator({ className, ...props }: ComponentProps<typeof ToolbarPrimitive.Separator>) {
+  useI18n()
   return <ToolbarPrimitive.Separator className={cn('mx-1 h-5 w-px bg-line-strong', className)} {...props} />
 }
 
 export function ToolbarGroup({ className, ...props }: ComponentProps<'div'>) {
+  useI18n()
   return <div className={cn('flex items-center gap-1', className)} {...props} />
 }
 
 export function ToolbarSpacer() {
+  useI18n()
   return <div className="flex-1" />
 }

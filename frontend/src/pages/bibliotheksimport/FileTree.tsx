@@ -1,17 +1,4 @@
-/**
- * Dateien der Quelle als Baum: Gruppen (Symbol- bzw. Footprint-Bibliotheken) → Dateien (auswählbar) → Bauteile.
- * Virtualisiert mit gemessenen Zeilenhöhen (TanStack Virtual) – eine Quelle kann Tausende Dateien enthalten, eine
- * einzelne Datei Tausende Bauteile (ganze Herstellerbibliotheken).
- *
- * Ein Bedienelement (`role="tree"`, Fokus auf der Liste, aktive Zeile über `aria-activedescendant`):
- * ↑/↓ Zeile · → aufklappen bzw. hinein · ← zuklappen bzw. zur übergeordneten Zeile · Leertaste wählt die Datei (Gruppe:
- * alle) · Enter klappt auf bzw. zeigt das Bauteil in der Vorschau · Pos1/Ende · Bild↑/↓ · Strg+A wählt alle
- * angezeigten Dateien. Maus: das Kästchen wählt, die Zeile klappt auf, ein Bauteil zeigt die Vorschau (beim Überfahren
- * vorübergehend). Strg+F springt in die Suche.
- *
- * Filter: Suche in Datei- und Bauteilnamen (Treffer in Bauteilnamen klappen die Datei auf), Zustände der Namen, Art.
- * „Alle auswählen“/„Keine“ und das Kästchen einer Gruppe wirken auf die angezeigten Dateien.
- */
+import { t, useI18n } from '@/lib/i18n'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { ChevronRight, Search, X } from 'lucide-react'
 import {
@@ -114,6 +101,7 @@ export function FileTree({
   onPreview,
   side,
 }: FileTreeProps) {
+  useI18n()
   const uid = useId().replace(/:/g, '')
   const [search, setSearch] = useState('')
   const needle = useDeferredValue(search.trim().toLowerCase())
@@ -325,10 +313,10 @@ export function FileTree({
   const countFor = (state: ImportComponentState) =>
     LIB_KINDS.filter((k) => kind === 'all' || kind === k).reduce((n, k) => n + index.stateCounts[k][state], 0)
   const chipOptions: ChipOption<StateChip>[] = [
-    { value: ALL, label: 'Alle' },
+    { value: ALL, label: t("Alle") },
     ...COMPONENT_STATES.map((s): ChipOption<StateChip> => {
       const count = countFor(s)
-      return { value: s, label: STATE_LABELS[s], meta: formatNumber(count), disabled: count === 0 && !states.includes(s) }
+      return { value: s, label: t(STATE_LABELS[s]), meta: formatNumber(count), disabled: count === 0 && !states.includes(s) }
     }),
   ]
   const chipValue: StateChip[] = states.length ? states : [ALL]
@@ -366,7 +354,7 @@ export function FileTree({
       const comps = row.group.files.reduce((n, f) => n + f.view.file.components.length, 0)
       const text = KIND_TEXT[row.group.kind]
       return {
-        label: `${text.group}: ${plural(row.group.files.length, 'Datei', 'Dateien')}, ${plural(comps, text.one, text.many)}`,
+        label: `${text.group}: ${plural(row.group.files.length, t("Datei"), t("Dateien"))}, ${plural(comps, text.one, text.many)}`,
         expanded: row.expanded,
         checked: checked === 'indeterminate' ? 'mixed' : checked,
         className: 'bg-surface-2/70 hover:bg-surface-3/60',
@@ -380,7 +368,7 @@ export function FileTree({
             <KindIcon kind={row.group.kind} />
             <span className="text-xs font-semibold text-fg">{text.group}</span>
             <span className="min-w-0 truncate text-xs text-fg-subtle">
-              {plural(row.group.files.length, 'Datei', 'Dateien')} · {plural(comps, text.one, text.many)}
+              {plural(row.group.files.length, t("Datei"), t("Dateien"))} · {plural(comps, text.one, text.many)}
             </span>
           </div>
         ),
@@ -422,32 +410,31 @@ export function FileTree({
                   <>
                     <span>
                       {filtered && shown > 0 && shown !== total
-                        ? `${formatNumber(shown)} von ${plural(total, text.one, text.many)}`
+                        ? t("{0} von {1}", { "0": String(formatNumber(shown)), "1": String(plural(total, text.one, text.many)) })
                         : total
                           ? plural(total, text.one, text.many)
-                          : `keine ${text.many} – leer`}
+                          : t("keine {0} – leer", { "0": String(text.many) })}
                     </span>
                     {COMPONENT_STATES.filter((s) => view.counts[s] > 0).map((s) => (
                       <StateBadge key={s} state={s} count={view.counts[s]} />
                     ))}
-                    {!retargeted && file.exists === 'same' && <Badge variant="neutral">schon importiert, unverändert</Badge>}
+                    {!retargeted && file.exists === 'same' && <Badge variant="neutral">{t("schon importiert, unverändert")}</Badge>}
                     {!retargeted && file.exists === 'different' && (
                       <>
                         <Badge variant="warning" dot>
-                          schon importiert, geändert
-                        </Badge>
+                          {t("schon importiert, geändert")}</Badge>
                         <span className={replace ? 'text-fg-muted' : 'text-warning-text'}>
-                          {replace ? 'wird ersetzt' : 'wird nur mit „Ersetzen“ überschrieben'}
+                          {replace ? t("wird ersetzt") : t("wird nur mit „Ersetzen“ überschrieben")}
                         </span>
                       </>
                     )}
-                    {outcome === 'no-names' && <Badge variant="outline">wird übersprungen – kein Name übernehmbar</Badge>}
+                    {outcome === 'no-names' && <Badge variant="outline">{t("wird übersprungen – kein Name übernehmbar")}</Badge>}
                   </>
                 )}
               </div>
               {target && (
                 <p className="mt-1 text-2xs text-fg-subtle">
-                  Ziel: <RelPath rel={target} className="text-2xs" />
+                  {t("Ziel: ")}<RelPath rel={target} className="text-2xs" />
                 </p>
               )}
             </div>
@@ -460,7 +447,7 @@ export function FileTree({
     const text = KIND_TEXT[row.view.file.kind]
     const pinned = previewKey === componentKey(row.view.file.rel, c.name)
     return {
-      label: `${c.name} – ${STATE_LABELS[c.state]}${c.description ? ` – ${c.description}` : ''}`,
+      label: `${c.name} – ${t(STATE_LABELS[c.state])}${c.description ? ` – ${c.description}` : ''}`,
       current: pinned || undefined,
       className: cn('border-line/40', pinned ? 'bg-accent-soft/60' : 'hover:bg-surface-2/60'),
       onMouseEnter: () => hover(previewOf(row)),
@@ -479,18 +466,18 @@ export function FileTree({
               </div>
               {c.state === 'taken' && c.registered_library && (
                 <p className="mt-0.5 text-2xs text-warning-text">
-                  registriert in <RelPath rel={c.registered_library} className="text-2xs" />
+                  {t("registriert in ")}<RelPath rel={c.registered_library} className="text-2xs" />
                 </p>
               )}
               {c.state === 'duplicate' && c.registered_library && (
                 <p className="mt-0.5 text-2xs text-fg-subtle">
-                  zuerst in <RelPath rel={c.registered_library} className="text-2xs" />
+                  {t("zuerst in ")}<RelPath rel={c.registered_library} className="text-2xs" />
                 </p>
               )}
             </div>
             {c.count != null && <span className="mono shrink-0 pt-px text-2xs text-fg-muted">{plural(c.count, text.countOne, text.countMany)}</span>}
             {c.has_3d === true && (
-              <Badge variant="outline" title="Eingebettetes 3D-Modell">
+              <Badge variant="outline" title={t("Eingebettetes 3D-Modell")}>
                 3D
               </Badge>
             )}
@@ -506,8 +493,7 @@ export function FileTree({
   return (
     <section aria-labelledby={`${uid}-titel`} className="flex min-w-0 flex-col overflow-hidden rounded-card border border-line bg-surface shadow-card">
       <h2 id={`${uid}-titel`} className="sr-only">
-        Dateien der Quelle
-      </h2>
+        {t("Dateien der Quelle")}</h2>
       {/* Filter */}
       <div className="flex flex-wrap items-center gap-2 border-b border-line px-3 py-2.5">
         <Input
@@ -522,21 +508,21 @@ export function FileTree({
               setSearch('')
             }
           }}
-          placeholder="Datei oder Name suchen …"
-          aria-label="Dateien und Namen durchsuchen"
+          placeholder={t("Datei oder Name suchen …")}
+          aria-label={t("Dateien und Namen durchsuchen")}
           aria-keyshortcuts="Control+F"
           prefix={<Search />}
-          suffix={search ? <IconButton size="xs" label="Suche leeren" icon={<X />} onClick={() => setSearch('')} tooltip={false} /> : undefined}
+          suffix={search ? <IconButton size="xs" label={t("Suche leeren")} icon={<X />} onClick={() => setSearch('')} tooltip={false} /> : undefined}
           containerClassName="w-60 max-w-full"
         />
         <SegmentedControl<KindFilter>
           size="sm"
-          aria-label="Art der Bibliotheken"
+          aria-label={t("Art der Bibliotheken")}
           value={kind}
           onValueChange={setKind}
           options={[
-            { value: 'all', label: <FilterLabel label="Alle" count={index.views.length} /> },
-            { value: 'schlib', label: <FilterLabel label="Symbole" count={index.byKind.schlib.length} />, disabled: !index.byKind.schlib.length },
+            { value: 'all', label: <FilterLabel label={t("Alle")} count={index.views.length} /> },
+            { value: 'schlib', label: <FilterLabel label={t("Symbole")} count={index.byKind.schlib.length} />, disabled: !index.byKind.schlib.length },
             {
               value: 'pcblib',
               label: <FilterLabel label="Footprints" count={index.byKind.pcblib.length} />,
@@ -544,21 +530,20 @@ export function FileTree({
             },
           ]}
         />
-        <ChipGroup<StateChip> size="sm" aria-label="Zustand der Namen" value={chipValue} onValueChange={onChips} options={chipOptions} className="basis-full" />
+        <ChipGroup<StateChip> size="sm" aria-label={t("Zustand der Namen")} value={chipValue} onValueChange={onChips} options={chipOptions} className="basis-full" />
       </div>
       {/* Auswahl */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line bg-surface-2/40 px-3 py-1.5">
         <p className="min-w-0 flex-1 text-xs text-fg-muted" aria-live="polite">
-          <span className="font-medium text-fg">{formatNumber(plan.selected)}</span> von {plural(index.views.length, 'Datei', 'Dateien')}{' '}
-          ausgewählt
-          {filtered && ` · ${formatNumber(visibleViews.length)} angezeigt`}
+          <span className="font-medium text-fg">{formatNumber(plan.selected)}</span> {t(" von ")}{plural(index.views.length, t("Datei"), t("Dateien"))}{' '}
+          {t("ausgewählt")}{filtered && t(" · {0} angezeigt", { "0": String(formatNumber(visibleViews.length)) })}
         </p>
         <div className="flex items-center gap-1">
           <Button size="xs" variant="ghost" disabled={!visibleViews.length} onClick={() => setMany(visibleViews, true)}>
-            {filtered ? 'Angezeigte auswählen' : 'Alle auswählen'}
+            {filtered ? t("Angezeigte auswählen") : t("Alle auswählen")}
           </Button>
           <Button size="xs" variant="ghost" disabled={!visibleViews.length} onClick={() => setMany(visibleViews, false)}>
-            {filtered ? 'Angezeigte abwählen' : 'Keine'}
+            {filtered ? t("Angezeigte abwählen") : t("Keine")}
           </Button>
         </div>
       </div>
@@ -569,13 +554,12 @@ export function FileTree({
             <EmptyState
               size="sm"
               illustration="search-empty"
-              title="Keine Treffer"
+              title={t("Keine Treffer")}
               titleAs="h3"
-              description={needle ? `Keine Datei und kein Name passt zu „${search.trim()}“.` : 'Kein Name passt zu diesen Filtern.'}
+              description={needle ? t("Keine Datei und kein Name passt zu „{0}“.", { "0": String(search.trim()) }) : t("Kein Name passt zu diesen Filtern.")}
               actions={
                 <Button size="sm" onClick={resetFilters}>
-                  Filter zurücksetzen
-                </Button>
+                  {t("Filter zurücksetzen")}</Button>
               }
             />
           </div>
@@ -583,7 +567,7 @@ export function FileTree({
           <div
             ref={scrollRef}
             role="tree"
-            aria-label="Dateien und Bauteile der Quelle"
+            aria-label={t("Dateien und Bauteile der Quelle")}
             aria-describedby={hintId}
             aria-activedescendant={activeIndex >= 0 ? rowId(activeIndex) : undefined}
             tabIndex={0}
@@ -635,27 +619,22 @@ export function FileTree({
       </div>
       <p id={hintId} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line px-3 py-1.5 text-2xs text-fg-subtle">
         <span aria-hidden className="flex items-center gap-1">
-          <Kbd keys={['↑', '↓']} size="xs" /> Zeile
-        </span>
+          <Kbd keys={['↑', '↓']} size="xs" /> {t(" Zeile")}</span>
         <span aria-hidden className="flex items-center gap-1">
-          <Kbd keys={['←', '→']} size="xs" /> zu-/aufklappen
-        </span>
+          <Kbd keys={['←', '→']} size="xs" /> {t(" zu-/aufklappen")}</span>
         <span aria-hidden className="flex items-center gap-1">
-          <Kbd keys={['Leertaste']} size="xs" /> auswählen
-        </span>
+          <Kbd keys={[t("Leertaste")]} size="xs" /> {t(" auswählen")}</span>
         <span aria-hidden className="flex items-center gap-1">
-          <Kbd keys={['Enter']} size="xs" /> Vorschau
-        </span>
+          <Kbd keys={['Enter']} size="xs" /> {t(" Vorschau")}</span>
         <span className="sr-only">
-          Pfeiltasten wechseln die Zeile, rechts und links klappen auf und zu, die Leertaste wählt eine Datei aus oder ab, Enter zeigt
-          ein Bauteil in der Vorschau, Strg+A wählt alle angezeigten Dateien.
-        </span>
+          {t("Pfeiltasten wechseln die Zeile, rechts und links klappen auf und zu, die Leertaste wählt eine Datei aus oder ab, Enter zeigt ein Bauteil in der Vorschau, Strg+A wählt alle angezeigten Dateien.")}</span>
       </p>
     </section>
   )
 }
 
 function Chevron({ open, hidden }: { open: boolean; hidden?: boolean }) {
+  useI18n()
   return (
     <ChevronRight
       aria-hidden
@@ -666,6 +645,7 @@ function Chevron({ open, hidden }: { open: boolean; hidden?: boolean }) {
 
 /** Beschriftung eines Filtersegments mit Zähler */
 function FilterLabel({ label, count }: { label: string; count: number }) {
+  useI18n()
   return (
     <span className="flex items-center gap-1.5">
       {label}
