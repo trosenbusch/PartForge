@@ -4916,7 +4916,7 @@
           "libraries"
         ],
         "summary": "Footprint Step Model",
-        "description": "Serve only a currently registered model; no caller-supplied file paths are accepted.",
+        "description": "Serve only a currently registered model; no caller-supplied file paths are accepted.\n\nThe manifest's resolution is reused while record, library and model file are unchanged;\notherwise (e.g. after a restart) the models are resolved again.",
         "operationId": "footprint_step_model_api_libraries_footprints__name__step_models__model_id__get",
         "parameters": [
           {
@@ -4964,7 +4964,7 @@
           "libraries"
         ],
         "summary": "Download Step",
-        "description": "The footprint's STEP model (file in the 3D folder, or generated from its 3D bodies).",
+        "description": "The footprint's STEP model (its model file, also one embedded in the source library, or generated\nfrom its 3D bodies). Unlike the preview, any file size is served.",
         "operationId": "download_step_api_libraries_footprints__name__step_get",
         "parameters": [
           {

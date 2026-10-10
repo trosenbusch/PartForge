@@ -441,6 +441,20 @@ def test_rust_to_footprint_maps_aliases_bodies_and_paste():
     assert any("Mechanical 1" in n for n in notes) and any("Durchkontaktierung" in n for n in notes)
 
 
+def test_board_rotation_of_an_imported_model_survives_rewriting():
+    """MODEL.2D.ROTATION has no field in the written body: it is folded into the Z rotation."""
+    data = {"name": "TURNED", "pads": [], "component_bodies": [
+        {"embedded": True, "model_id": "{ID}", "model_name": "turned.step", "rotation_x": 90, "rotation_z": 300,
+         "model_2d_rotation": 90, "model_2d_x": 1.5, "overall_height": 1.0, "outline": [[0, 0], [1, 0], [1, 1]]},
+    ]}
+    spec = rust_to_footprint(data)
+    assert spec.step is not None and spec.step.rotation == (90.0, 0.0, 30.0)
+    assert spec.step.offset == (1.5, 0.0, 0.0)  # board-plane offsets are not rotated again
+    body = step_body(spec, LayerMap(), "{ID}", "turned.step")
+    assert (body["rotation_x"], body["rotation_z"], body["model_2d_x"]) == (90.0, 30.0, 1.5)
+    assert "model_2d_rotation" not in body
+
+
 def test_footprint_roundtrip_through_conversions_only():
     for spec in (chip_0603(), soic8(), header_tht(), qfn16()):
         payload = footprint_to_rust(spec)

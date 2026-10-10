@@ -51,7 +51,7 @@ from typing import Any, Literal
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import Response
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field
 
 from ..altium import layersets, stackup, sync
@@ -796,8 +796,11 @@ def list_footprints(
 
 
 def _step_path(ws: Workspace, rec: FootprintRecord) -> Path | None:
-    file = rec.spec.step.file if rec.spec is not None and rec.spec.step is not None else rec.step_file
-    return ws.abs(file) if file else None
+    """The registered STEP file as the preview and the download find it (also a link next to the source
+    library or a copy in the 3D folder); ``None`` if it does not exist."""
+    from ..altium.step_preview import saved_model_path
+
+    return saved_model_path(ws, rec)
 
 
 @router.get("/libraries/footprints/{name:path}/step-models", response_model=FootprintStepModels)
@@ -807,13 +810,14 @@ def footprint_step_models(name: str, response: Response, ws: Workspace = Depends
     Import-time extraction is not required. Original library bytes and registry records
     are preserved. Generated STEP copies of existing prisms are omitted from the preview.
     """
-    from ..altium.step_preview import resolve_models
+    from ..altium.step_preview import remember_models, resolve_models
 
     with _direct_write(ws):
         rec = registry.get_footprint(name, with_usage=False)
         if rec is None:
             raise HTTPException(status_code=404, detail=f"Footprint „{name}“ ist nicht registriert.")
         models, warnings = resolve_models(ws, rec)
+        remember_models(ws, rec, models)
         response.headers["Cache-Control"] = "private, no-cache"
         return FootprintStepModels(models=[FootprintStepModel(
             id=model.id, name=model.name,
@@ -827,8 +831,12 @@ def footprint_step_models(name: str, response: Response, ws: Workspace = Depends
     responses={200: {"content": {"model/step": {}}, "description": "STEP model at the requested revision"}},
 )
 def footprint_step_model(name: str, model_id: str, ws: Workspace = Depends(require_workspace)) -> Response:
-    """Serve only a currently registered model; no caller-supplied file paths are accepted."""
-    from ..altium.step_preview import resolve_models
+    """Serve only a currently registered model; no caller-supplied file paths are accepted.
+
+    The manifest's resolution is reused while record, library and model file are unchanged;
+    otherwise (e.g. after a restart) the models are resolved again.
+    """
+    from ..altium.step_preview import cached_model, remember_models, resolve_models
 
     with _direct_write(ws):
         if len(model_id) != 64 or any(char not in "0123456789abcdef" for char in model_id):
@@ -836,8 +844,11 @@ def footprint_step_model(name: str, model_id: str, ws: Workspace = Depends(requi
         rec = registry.get_footprint(name, with_usage=False)
         if rec is None:
             raise HTTPException(status_code=404, detail=f"Footprint „{name}“ ist nicht registriert.")
-        models, _ = resolve_models(ws, rec)
-        model = next((item for item in models if item.id == model_id), None)
+        model = cached_model(ws, rec, model_id)
+        if model is None:
+            models, _ = resolve_models(ws, rec)
+            remember_models(ws, rec, models)
+            model = next((item for item in models if item.id == model_id), None)
         if model is None:
             raise HTTPException(status_code=404, detail="Das STEP-Modell wurde geändert oder ist nicht mehr verfügbar. Bitte die Vorschau neu laden.")
         try:
@@ -858,23 +869,17 @@ def footprint_step_model(name: str, model_id: str, ws: Workspace = Depends(requi
     responses={200: {"content": {"model/step": {}}, "description": "STEP-Modell des Footprints"}},
 )
 def download_step(name: str, ws: Workspace = Depends(require_workspace)) -> Response:
-    """The footprint's STEP model (file in the 3D folder, or generated from its 3D bodies)."""
+    """The footprint's STEP model (its model file, also one embedded in the source library, or generated
+    from its 3D bodies). Unlike the preview, any file size is served."""
     from ..altium.step_preview import resolve_models
 
     with _direct_write(ws):
         rec = registry.get_footprint(name)
         if rec is None:
             raise HTTPException(status_code=404, detail=f"Footprint „{name}“ ist nicht registriert.")
-        models, _ = resolve_models(ws, rec)
+        models, warnings = resolve_models(ws, rec, limits=False)
         if models:
-            model = models[0]
-            try:
-                data = model.read()
-            except (OSError, ValueError) as exc:
-                raise HTTPException(status_code=409, detail=str(exc)) from exc
-            return Response(content=data, media_type="model/step", headers={
-                "Content-Disposition": f"attachment; filename*=UTF-8''{quote(model.name, safe='')}",
-            })
+            return FileResponse(models[0].path, media_type="model/step", filename=models[0].name)
         if rec.spec is not None and rec.spec.bodies:
             from ..footprints import step_text
 
@@ -887,7 +892,8 @@ def download_step(name: str, ws: Workspace = Depends(require_workspace)) -> Resp
                 media_type="model/step",
                 headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quote(rec.name + '.step', safe='')}"},
             )
-        raise HTTPException(status_code=404, detail=f"Footprint „{rec.name}“ hat kein 3D-Modell.")
+        # a referenced model that cannot be served says why (missing link, no STEP data …)
+        raise HTTPException(status_code=404, detail=warnings[0] if warnings else f"Footprint „{rec.name}“ hat kein 3D-Modell.")
 
 
 @router.get("/libraries/footprints/{name:path}/thumbnail.svg", response_class=Response, responses=_THUMBNAIL_RESPONSES)
@@ -939,7 +945,7 @@ def get_footprint(
     step = _step_path(ws, rec)
     file = rec.spec.step.file if rec.spec is not None and rec.spec.step is not None else rec.step_file
     if file:
-        detail.step = FootprintStepInfo(file=file, path=str(step) if step else None, exists=bool(step and step.is_file()))
+        detail.step = FootprintStepInfo(file=file, path=str(step or ws.abs(file)), exists=step is not None)
     return detail
 
 

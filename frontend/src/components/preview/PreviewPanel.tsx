@@ -22,7 +22,7 @@ import {
   Square,
   Component as SymbolIcon,
 } from 'lucide-react'
-import { useRef, useState, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import type { StepSource } from '@/api/stepModels'
 import {
   Dialog,
@@ -215,6 +215,13 @@ export function PreviewPanel({
     )
   }, [hideEmptyTabs, symbol, footprint, stepSource, loading])
 
+  // A footprint known only by its STEP models: a stable placeholder, so re-renders (hover, auto-rotation)
+  // do not rebuild the 3D scene and reset its camera.
+  const stepName = stepSource?.name
+  const threeSpec = useMemo<FootprintSpec | null>(() => footprint ?? (stepName ? {
+    name: stepName, description: '', family: '', pads: [], tracks: [], arcs: [], regions: [], texts: [], bodies: [],
+  } : null), [footprint, stepName])
+
   const [innerTab, setInnerTab] = useState<PreviewTab>(defaultTab ?? (symbol ? 'symbol' : footprint ? 'footprint' : 'symbol'))
   const tab = available.includes(tabProp ?? innerTab) ? (tabProp ?? innerTab) : (available[0] ?? 'symbol')
   const setTab = (t: PreviewTab) => {
@@ -294,9 +301,6 @@ export function PreviewPanel({
     </div>
   )
 
-  const threeSpec: FootprintSpec | null = footprint ?? (stepSource ? {
-    name: stepSource.name, description: '', family: '', pads: [], tracks: [], arcs: [], regions: [], texts: [], bodies: [],
-  } : null)
   const threeView = () => (
     <div className="relative size-full">
       {threeSpec && (

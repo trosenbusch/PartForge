@@ -18,11 +18,15 @@ import type { FootprintSpec } from '@/lib/geometry'
 import { localizeMessage } from '@/lib/i18n'
 import { StepImportError } from '@/lib/stepTypes'
 import { IsoFallback } from './IsoFallback'
+import type { StepSceneModel } from './stepScene'
 import type { CanvasHandle } from './types'
 import { useStepModels } from './useStepModels'
 import { isWebGLAvailable } from './webgl'
 
 const Package3DScene = lazy(() => import('./Package3DScene'))
+
+/** Stable while nothing is loaded: a new array would rebuild the scene on every render. */
+const NO_STEP_MODELS: readonly StepSceneModel[] = []
 
 export interface Package3DProps {
   spec: FootprintSpec | null | undefined
@@ -119,7 +123,7 @@ export function Package3D({ spec, stepSource, className, ...props }: Package3DPr
   const sceneKey = `${stepSource?.name ?? spec?.name}:${stepSource?.revision ?? ''}:${step.dataUpdatedAt}`
   const [failure, setFailure] = useState<{ key: string; message: string } | null>(null)
   const sceneFailure = failure?.key === sceneKey ? failure.message : null
-  const models = step.data?.models ?? []
+  const models = step.data?.models ?? NO_STEP_MODELS
   const files = step.data?.files ?? []
   const bodies = (spec?.bodies ?? []).length
   const loading = Boolean(stepSource && step.isFetching)

@@ -169,7 +169,9 @@ function DetailContent({
   const generator = spec?.generator && typeof spec.generator === 'object' ? (spec.generator as Record<string, unknown>) : null
   const meta = statusMeta(rec.status)
   const canRegenerate = Boolean(family && generator && generator.params)
-  const hasStep = Boolean(detail.step || (detail.bodies ?? []).length || rec.source === 'imported' || rec.source === 'external')
+  // An imported model need not be extracted yet: the download reads it from the source library.
+  const hasStep = Boolean(detail.step?.exists || (detail.bodies ?? []).length
+    || (detail.step && (rec.source === 'imported' || rec.source === 'external')))
   const external = rec.source === 'external'
 
   const categories = useCategories()

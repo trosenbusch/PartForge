@@ -1527,6 +1527,9 @@ export interface paths {
         /**
          * Footprint Step Model
          * @description Serve only a currently registered model; no caller-supplied file paths are accepted.
+         *
+         *     The manifest's resolution is reused while record, library and model file are unchanged;
+         *     otherwise (e.g. after a restart) the models are resolved again.
          */
         get: operations["footprint_step_model_api_libraries_footprints__name__step_models__model_id__get"];
         put?: never;
@@ -1546,7 +1549,8 @@ export interface paths {
         };
         /**
          * Download Step
-         * @description The footprint's STEP model (file in the 3D folder, or generated from its 3D bodies).
+         * @description The footprint's STEP model (its model file, also one embedded in the source library, or generated
+         *     from its 3D bodies). Unlike the preview, any file size is served.
          */
         get: operations["download_step_api_libraries_footprints__name__step_get"];
         put?: never;

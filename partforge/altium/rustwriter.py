@@ -2832,12 +2832,19 @@ def rust_to_footprint(
             if step is not None:
                 extra_models += 1
             else:
+                # MODEL.2D.ROTATION turns the oriented model in the board plane, after ROTX/Y/Z
+                # (step_preview._body_rotation). step_body() writes no board rotation, so it is
+                # folded into the Z rotation; otherwise rewriting the footprint would lose it.
+                rotation_z = _num(body.get("rotation_z"))
+                board_rotation = _num(body.get("model_2d_rotation"))
+                if board_rotation:
+                    rotation_z = (rotation_z + board_rotation) % 360
                 step = StepModel(
                     file=model_name.strip() or "model.step",
                     rotation=(
                         _r(_num(body.get("rotation_x")), 4),
                         _r(_num(body.get("rotation_y")), 4),
-                        _r(_num(body.get("rotation_z")), 4),
+                        _r(rotation_z, 4),
                     ),
                     offset=(
                         _r(_num(body.get("model_2d_x"))),

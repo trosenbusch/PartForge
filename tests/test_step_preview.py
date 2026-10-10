@@ -395,3 +395,68 @@ def test_preview_requests_cannot_use_a_workspace_that_has_been_closed(workspace,
         close_database()
         open_database(workspace)
         set_current(workspace)
+
+
+def test_model_files_reuse_the_manifest_until_library_or_model_change(client, workspace, monkeypatch, tmp_path):
+    _register(workspace, "CACHED")
+    model_file = _step(tmp_path / "cache" / "body.step", "Body")
+    library, _ = _raw_models(monkeypatch, workspace, [
+        {"model_id": "a-id", "model_name": "a.step", "embedded": True},
+        {"model_id": "b-id", "model_name": "b.step", "embedded": True, "model_2d_x": 2},
+    ], {"a-id": model_file, "b-id": model_file})
+    reads: list[str] = []
+    component = RustLibraryOps._get_component
+
+    def counted(self, path, name, kind):
+        reads.append(name)
+        return component(self, path, name, kind)
+
+    monkeypatch.setattr(RustLibraryOps, "_get_component", counted)
+    models = client.get(_url("CACHED")).json()["models"]
+    assert len(models) == 2 and len(reads) == 1
+    # Every file of the manifest is served without reading the library again.
+    assert [client.get(model["url"]).status_code for model in models] == [200, 200]
+    assert len(reads) == 1
+    # A changed library is resolved again; unchanged models keep their IDs.
+    library.write_bytes(b"vendor library, saved again in Altium")
+    assert client.get(models[0]["url"]).content == model_file.read_bytes()
+    assert len(reads) == 2
+    # A changed model file is a new revision: the old URL is no longer served.
+    model_file.write_text(model_file.read_text(encoding="ascii") + "\n", encoding="ascii")
+    assert client.get(models[1]["url"]).status_code == 404
+    assert len(reads) == 3
+
+
+def test_download_serves_the_model_file_beyond_the_preview_limit(client, workspace, monkeypatch):
+    from partforge.altium import step_preview
+
+    monkeypatch.setattr(step_preview, "MAX_STEP_BYTES", 4096)
+    path = _step(workspace.models_dir / "large vendor.step")
+    assert path.stat().st_size > 4096
+    spec = generate(FootprintRequest(family="chip", params={"preset": "R-0603"}))
+    spec = spec.model_copy(update={"name": "LARGE", "step": StepModel(file="3D\\large vendor.step")})
+    assert spec.bodies  # the prisms must not replace the vendor model
+    _register(workspace, "LARGE", spec=spec, source="generated")
+    preview = client.get(_url("LARGE")).json()
+    assert preview["models"] == [] and any("64 MB" in warning for warning in preview["warnings"])
+    downloaded = client.get(_url("LARGE", "/step"))
+    assert downloaded.status_code == 200, downloaded.text
+    assert downloaded.content == path.read_bytes()
+    assert "large%20vendor.step" in downloaded.headers["content-disposition"]
+
+
+def test_download_reports_why_a_referenced_model_is_unavailable(client, workspace):
+    _register(workspace, "MISSING", step=StepModel(file="3D\\gone.step"), source="generated")
+    response = client.get(_url("MISSING", "/step"))
+    assert response.status_code == 404
+    assert "gone.step" in response.json()["detail"] and "nicht gefunden" in response.json()["detail"]
+
+
+def test_detail_finds_a_model_linked_next_to_the_source_library(client, workspace):
+    path = _step(workspace.footprints_dir / "Models" / "linked.step")
+    _register(workspace, "LINKED DETAIL", step=StepModel(file="Models\\linked.step"), source="external")
+    step = client.get(_url("LINKED DETAIL", "")).json()["step"]
+    assert step["exists"] is True and Path(step["path"]) == path
+    missing = _register(workspace, "UNLINKED", step=StepModel(file="Models\\absent.step"), source="external")
+    step = client.get(_url(missing.name, "")).json()["step"]
+    assert step["exists"] is False and Path(step["path"]) == workspace.root / "Models" / "absent.step"

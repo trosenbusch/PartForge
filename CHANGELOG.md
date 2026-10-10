@@ -4,6 +4,9 @@
 
 ### Neu
 
+- **STEP-Modelle in der 3D-Vorschau**: die Vorschau zeigt die STEP-Modelle eines Footprints mit ihrer
+  Altium-Platzierung, auch eingebettete Modelle importierter Bibliotheken, die beim Import nicht abgelegt wurden;
+  jedes Modell lässt sich herunterladen.
 - **Bibliotheksimport** (neue Seite, Alt+9): Symbole und Footprints vorhandener Altium-Bibliotheken übernehmen – aus
   einem Ordner (rekursiv), einer SchLib/PcbLib, einer integrierten Bibliothek (IntLib), einem Bibliothekspaket
   (LibPkg) oder einem ZIP-Archiv. Vorschau je Bauteil, Zustand je Name (neu, schon importiert, Name vergeben,

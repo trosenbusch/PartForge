@@ -625,7 +625,13 @@ SVG-/3D-Vorschau, STEP); das Frontend spiegelt ihn über OpenAPI.
   halten den Workspace während des Zugriffs. Modell-IDs binden Bibliothek, Footprint, Inhalt und Platzierung;
   der Client kann keine beliebigen Dateipfade anfordern. Eingebettete Modelle werden bei Bedarf über den
   vorhandenen Extraktionscache gelesen; gespeicherte STEP-Dateien funktionieren auch ohne Writer.
+  Die Dateiabrufe einer Vorschau verwenden die Auflösung ihres Modellverzeichnisses wieder
+  (`remember_models`/`cached_model`), solange Datensatz, PcbLib und Modelldatei unverändert sind – sonst wird neu
+  aufgelöst. Die Vorschau begrenzt Größe (64 MB je Modell, 128 MB gesamt) und Anzahl (128); der Download
+  `…/step` (`resolve_models(limits=False)`) liefert jede Modelldatei unabhängig von der Größe.
   Automatisch aus `Body3D` erzeugte STEP-Dateien werden nicht zusätzlich über dieselben Prismen gezeichnet.
+  Beim Import wird `MODEL.2D.ROTATION` in die Z-Drehung der `StepModel` eingerechnet (der Writer schreibt keine
+  2D-Drehung), damit ein neu geschriebener Footprint sein Modell gleich ausrichtet.
   Die Tessellierung erfolgt offline im Frontend-Web-Worker mit `occt-import-js`, siehe `FRONTEND.md`.
 * Texte: `FpText.font` (`stroke` | `truetype`) und `font_name` (TrueType-Schrift). Die Standardwerte zählen nicht
   zum Fingerabdruck und zur Identität (`geometry.model.compat_text_dump`) – ältere Footprints gelten dadurch nicht

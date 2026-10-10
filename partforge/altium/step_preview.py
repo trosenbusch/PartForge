@@ -4,12 +4,19 @@ The editable footprint spec represents one STEP reference. A PcbLib may contain 
 previewing reads their original placements without replacing or rewriting the saved spec.
 Embedded bytes use the writer's existing extraction cache, never the workspace's 3D folder.
 Callers hold the workspace for the complete resolve/read operation.
+
+A preview first loads the manifest (:func:`resolve_models`), then each model file. The file
+requests reuse the manifest's resolution (:func:`remember_models`, :func:`cached_model`) while
+the record, its library and the model file are unchanged – resolving reads the library and
+hashes every model, which per file would grow quadratically with the number of models.
 """
 from __future__ import annotations
 
 import hashlib
 import json
 import math
+import threading
+from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -22,8 +29,11 @@ from .rustwriter import RustLibraryOps, RustWriterError
 MAX_STEP_BYTES = 64 * 1024 * 1024
 MAX_TOTAL_STEP_BYTES = 128 * 1024 * 1024
 MAX_STEP_MODELS = 128
+#: Resolved models kept for the file requests of recent previews
+CACHE_SIZE = 256
 Vector = tuple[float, float, float]
 ZERO: Vector = (0.0, 0.0, 0.0)
+FileState = tuple[int, int]
 
 
 @dataclass(frozen=True)
@@ -75,12 +85,29 @@ def _linked_path(ws: Workspace, library: Path | None, file: str) -> Path | None:
     return next((candidate for candidate in candidates if candidate.is_file()), None)
 
 
+def _saved_file(rec: FootprintRecord) -> str | None:
+    spec = rec.spec
+    return spec.step.file if spec is not None and spec.step is not None else rec.step_file
+
+
+def saved_model_path(ws: Workspace, rec: FootprintRecord) -> Path | None:
+    """The registered primary model file, also when it is linked next to the source library or
+    lies in the 3D folder; ``None`` if it cannot be found."""
+    file = _saved_file(rec)
+    if not file:
+        return None
+    path = ws.abs(file)
+    if path is not None and path.is_file():
+        return path
+    return _linked_path(ws, ws.abs(rec.library), file)
+
+
 def _model(ws: Workspace, rec: FootprintRecord, path: Path, name: str,
-           rotation: Vector, offset: Vector, key: str) -> PreviewModel:
-    """Hash bounded STEP bytes: an ID is valid for one workspace, model, and placement."""
+           rotation: Vector, offset: Vector, key: str, *, limit: int | None = MAX_STEP_BYTES) -> PreviewModel:
+    """Hash STEP bytes (at most ``limit``): an ID is valid for one workspace, model, and placement."""
     if path.suffix.lower() not in (".step", ".stp"):
         raise ValueError("Die Modelldatei ist keine STEP-Datei (.step oder .stp).")
-    if path.stat().st_size > MAX_STEP_BYTES:
+    if limit is not None and path.stat().st_size > limit:
         raise ValueError("Die STEP-Datei ist größer als 64 MB und kann nicht angezeigt werden.")
     digest = hashlib.sha256()
     size = 0
@@ -92,7 +119,7 @@ def _model(ws: Workspace, rec: FootprintRecord, path: Path, name: str,
         size += len(head)
         while chunk := stream.read(1024 * 1024):
             size += len(chunk)
-            if size > MAX_STEP_BYTES:
+            if limit is not None and size > limit:
                 raise ValueError("Die STEP-Datei ist größer als 64 MB und kann nicht angezeigt werden.")
             digest.update(chunk)
     content = digest.hexdigest()
@@ -111,22 +138,26 @@ def _automatic_step(path: Path | None, rec: FootprintRecord, rotation: Vector, o
         return False
 
 
-def resolve_models(ws: Workspace, rec: FootprintRecord) -> tuple[list[PreviewModel], list[str]]:
+def resolve_models(ws: Workspace, rec: FootprintRecord, *, limits: bool = True) -> tuple[list[PreviewModel], list[str]]:
     """All readable registered models and actionable warnings; no registry/library writes.
 
     Saved model files work without a library writer. For imports the original PcbLib is
     additionally consulted to recover every body, even when import-time extraction was off.
     A saved primary model is retained when the original library or reader is unavailable.
+    ``limits=False`` drops the preview's size and count limits (downloading a model file).
     """
+    models, warnings = _resolve(ws, rec, limits)
+    return models, list(dict.fromkeys(warnings))
+
+
+def _resolve(ws: Workspace, rec: FootprintRecord, limits: bool) -> tuple[list[PreviewModel], list[str]]:
     warnings: list[str] = []
     models: list[PreviewModel] = []
     total_bytes = 0
     spec = rec.spec
     library = ws.abs(rec.library)
-    saved_file = spec.step.file if spec is not None and spec.step is not None else rec.step_file
-    saved_path = ws.abs(saved_file)
-    if saved_path is not None and not saved_path.is_file():
-        saved_path = _linked_path(ws, library, saved_file) if saved_file else None
+    saved_file = _saved_file(rec)
+    saved_path = saved_model_path(ws, rec)
     rotation = spec.step.rotation if spec is not None and spec.step is not None else ZERO
     offset = spec.step.offset if spec is not None and spec.step is not None else ZERO
 
@@ -140,11 +171,12 @@ def resolve_models(ws: Workspace, rec: FootprintRecord) -> tuple[list[PreviewMod
             return True
         try:
             size = path.stat().st_size
-            if total_bytes + size > MAX_TOTAL_STEP_BYTES:
+            if limits and total_bytes + size > MAX_TOTAL_STEP_BYTES:
                 warnings.append("Die STEP-Modelle überschreiten zusammen 128 MB. Weitere Modelle werden nicht angezeigt.")
                 return False
-            model = _model(ws, rec, path, Path(name.replace("\\", "/")).name, rot, off, key)
-            if total_bytes + model.byte_size > MAX_TOTAL_STEP_BYTES:
+            model = _model(ws, rec, path, Path(name.replace("\\", "/")).name, rot, off, key,
+                           limit=MAX_STEP_BYTES if limits else None)
+            if limits and total_bytes + model.byte_size > MAX_TOTAL_STEP_BYTES:
                 warnings.append("Die STEP-Modelle überschreiten zusammen 128 MB. Weitere Modelle werden nicht angezeigt.")
                 return False
             models.append(model)
@@ -192,7 +224,7 @@ def resolve_models(ws: Workspace, rec: FootprintRecord) -> tuple[list[PreviewMod
         else:
             saved()
         return models, warnings
-    if len(bodies) > MAX_STEP_MODELS:
+    if limits and len(bodies) > MAX_STEP_MODELS:
         warnings.append("Der Footprint enthält mehr als 128 STEP-Modelle. Die Vorschau zeigt die ersten 128 Modelle.")
         bodies = bodies[:MAX_STEP_MODELS]
 
@@ -220,4 +252,48 @@ def resolve_models(ws: Workspace, rec: FootprintRecord) -> tuple[list[PreviewMod
         if path is None and index == 0:
             path = saved_path
         add(path, name, rot, off, str(index))
-    return models, list(dict.fromkeys(warnings))
+    return models, warnings
+
+
+# --------------------------------------------------------------------------- manifest cache
+
+_cache: OrderedDict[str, tuple[tuple[object, ...], FileState | None, PreviewModel]] = OrderedDict()
+_cache_lock = threading.Lock()
+
+
+def _file_state(path: Path | None) -> FileState | None:
+    try:
+        stat = path.stat() if path is not None else None
+    except OSError:
+        return None
+    return (stat.st_mtime_ns, stat.st_size) if stat is not None else None
+
+
+def _record_state(ws: Workspace, rec: FootprintRecord) -> tuple[object, ...]:
+    """Everything a resolution depends on apart from the model files themselves."""
+    spec = hashlib.sha256(rec.spec.model_dump_json().encode()).hexdigest() if rec.spec is not None else ""
+    return (str(ws.root.resolve()), rec.name, rec.source, rec.library, rec.step_file, spec,
+            _file_state(ws.abs(rec.library)))
+
+
+def remember_models(ws: Workspace, rec: FootprintRecord, models: list[PreviewModel]) -> None:
+    """Keep a manifest's models for the file requests that follow it."""
+    state = _record_state(ws, rec)
+    with _cache_lock:
+        for model in models:
+            _cache[model.id] = (state, _file_state(model.path), model)
+            _cache.move_to_end(model.id)
+        while len(_cache) > CACHE_SIZE:
+            _cache.popitem(last=False)
+
+
+def cached_model(ws: Workspace, rec: FootprintRecord, model_id: str) -> PreviewModel | None:
+    """The remembered model ``model_id`` if neither the record, its library nor the model file changed."""
+    with _cache_lock:
+        entry = _cache.get(model_id)
+    if entry is None:
+        return None
+    state, file_state, model = entry
+    if file_state is None or file_state != _file_state(model.path) or state != _record_state(ws, rec):
+        return None
+    return model
