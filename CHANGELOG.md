@@ -4,11 +4,11 @@ English · [Deutsch](CHANGELOG.de.md)
 
 ## Unreleased
 
-No changes after preparation of the first public beta.
+No changes yet.
 
 ## 1.0.0b1 – 2026-10-11
 
-Prepared for the first public beta (GitHub tag: `v1.0.0-beta.1`); publication is pending.
+First public beta (GitHub tag: `v1.0.0-beta.1`).
 PartForge was developed largely through vibe coding with AI assistance and is in an early beta stage.
 Review generated parts, symbols and footprints before use, and back up your libraries regularly.
 
