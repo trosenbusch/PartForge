@@ -10,6 +10,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 README = ROOT / "README.md"
+README_DE = ROOT / "README.de.md"
 MANUAL = ROOT / "docs" / "handbuch" / "README.md"
 USER_MANUAL = ROOT / "docs" / "handbuch" / "BEDIENUNG.md"
 NOTICES = ROOT / "THIRD_PARTY_NOTICES.md"
@@ -27,7 +28,7 @@ def _anchors(text: str) -> set[str]:
     return {_slug(m.group(1)) for m in re.finditer(r"^#{1,6}\s+(.+)$", text, re.MULTILINE)}
 
 
-@pytest.mark.parametrize("doc", [README, MANUAL, USER_MANUAL, NOTICES, CHANGELOG],
+@pytest.mark.parametrize("doc", [README, README_DE, MANUAL, USER_MANUAL, NOTICES, CHANGELOG],
                          ids=lambda p: p.name if p != MANUAL else "handbuch")
 def test_relative_links_and_images_resolve(doc: Path) -> None:
     """PKG-08: no broken image (docs/screenshots/readme/…) or dead link."""
@@ -57,10 +58,11 @@ def test_package_manual_has_no_repository_links() -> None:
     assert "https://github.com/embedded-society/altium-designer-mcp/releases" in text
 
 
-def test_readme_has_a_handbook_section() -> None:
-    """The repository README links both manuals in its section „Handbuch“ and names the package file."""
-    text = README.read_text(encoding="utf-8")
-    section = text.split("\n## Handbuch\n", 1)[1].split("\n## ", 1)[0]
+@pytest.mark.parametrize("doc, heading", [(README, "Manuals"), (README_DE, "Handbuch")])
+def test_readme_has_a_handbook_section(doc: Path, heading: str) -> None:
+    """Both repository READMEs link the manuals and name the packaged HTML file."""
+    text = doc.read_text(encoding="utf-8")
+    section = text.split(f"\n## {heading}\n", 1)[1].split("\n## ", 1)[0]
     assert "](docs/handbuch/BEDIENUNG.md)" in section and "](docs/handbuch/README.md)" in section
     assert "Handbuch\\Bedienung.html" in section
 
@@ -103,34 +105,37 @@ def test_readme_export_formats_match_the_api() -> None:
 
     allowed = set(typing.get_args(typing.get_type_hints(routes_parts.export_download)["format"]))
     assert allowed and "ods" not in allowed
-    for doc in (README, MANUAL):
+    for doc in (README, README_DE, MANUAL):
         text = doc.read_text(encoding="utf-8")
         assert not re.search(r"Export[^|\n]*ODS", text), doc
 
 
-def test_readme_documents_postgres_as_source_only() -> None:
-    text = README.read_text(encoding="utf-8")
+@pytest.mark.parametrize("doc", [README, README_DE])
+def test_readme_documents_postgres_as_source_only(doc: Path) -> None:
+    text = doc.read_text(encoding="utf-8")
     assert "für Teams PostgreSQL verwenden" not in text
     assert "pip install -e .[postgres]" in text and '"kind": "postgres"' in text
 
 
-def test_readme_development_commands_install_test_and_build_tools() -> None:
-    text = README.read_text(encoding="utf-8")
+@pytest.mark.parametrize("doc", [README, README_DE])
+def test_readme_development_commands_install_test_and_build_tools(doc: Path) -> None:
+    text = doc.read_text(encoding="utf-8")
     assert "pip install -e .[test,build]" in text
     assert "~4300 Tests" not in text
 
 
-@pytest.mark.parametrize("doc", [README, MANUAL], ids=["README", "handbuch"])
-def test_uninstall_and_data_locations_are_documented(doc: Path) -> None:
+@pytest.mark.parametrize("doc, heading", [(README, "Uninstall"), (README_DE, "Deinstallieren"),
+                                         (MANUAL, "Deinstallieren")])
+def test_uninstall_and_data_locations_are_documented(doc: Path, heading: str) -> None:
     """PKG-09: where PartForge stores what, and how to remove it completely."""
     text = doc.read_text(encoding="utf-8")
-    assert "## Deinstallieren" in text
+    assert f"## {heading}" in text
     assert "Aus Altium deinstallieren" in text
     for location in ("%APPDATA%\\PartForge", "%LOCALAPPDATA%\\PartForge"):
         assert location in text
 
 
-@pytest.mark.parametrize("doc", [README, MANUAL], ids=["README", "handbuch"])
+@pytest.mark.parametrize("doc", [README, README_DE, MANUAL], ids=["README", "README.de", "handbuch"])
 def test_database_lock_after_uninstall_is_explained(doc: Path) -> None:
     """F3: after "Aus Altium deinstallieren" Altium keeps the database open for a while – the troubleshooting table
     quotes both hints of the uninstall job (``routes_altium._database_release``) and says what to do."""
@@ -139,8 +144,15 @@ def test_database_lock_after_uninstall_is_explained(doc: Path) -> None:
     for hint in ("Ordner erst in etwa einer Minute verschiebbar – Altium hält die Datenbank noch offen",
                  "Ordner erst nach dem Schließen von "):
         assert hint in source  # the quoted text is what the program shows
-        assert hint.strip() in text
-    assert "Altium neu starten" in text or "Altium beenden" in text
+        if doc != README:
+            assert hint.strip() in text
+    if doc == README:
+        assert "wait about a minute" in text
+        assert "Altium may still hold the database open" in text
+        assert "another program holding the file, close that program" in text
+        assert "restart or close Altium" in text
+    else:
+        assert "Altium neu starten" in text or "Altium beenden" in text
 
 
 def test_notices_name_the_bundled_components() -> None:
