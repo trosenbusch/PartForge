@@ -190,6 +190,8 @@ def _family_params(family: str, pkg: PackageData) -> dict[str, Any]:
         params["pins"] = str(pkg.pin_count) if specs["pins"].kind == "enum" else pkg.pin_count
     if family == "nolead" and pkg.exposed_pad and pkg.exposed_pad_number and "ep_name" in specs:
         params["ep_name"] = pkg.exposed_pad_number
+    if family == "nolead" and not pkg.exposed_pad and pkg.dim("E2", "D2", "EP") is None and "E2" in specs:
+        params["E2"] = 0  # no exposed pad – never the generator's default one (or a preset's)
     if pkg.layout is not None:  # terminal arrangement entered in the review (irregular QFN/QFP)
         params.update({k: v for k, v in pkg.layout.generator_params().items() if k in specs})
     return params

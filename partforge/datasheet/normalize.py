@@ -12,7 +12,9 @@ tables; :class:`~.schema.AiGeometry` – package drawings) into the normalised :
 * enum answers compared case-insensitively (casing is not guaranteed), units other than mm converted,
 * category guess -> a category table of the open library, parameter values normalised with the field
   definitions (``partforge.db.values.normalize_cell``),
-* package family -> footprint family key (from the package name first, Claude's guess second).
+* package family -> footprint family key (from the package name first, Claude's guess second),
+* terminal arrangement of four-sided packages (counted from pin 1) -> :class:`~.models.TerminalLayout` in the
+  generator's terms, only when it differs from the even distribution and fits the pin count.
 
 :func:`validate_extraction` adds German :class:`~.models.Issue` entries; issues with ``vision=True`` trigger
 the high-resolution verification pass (pin count vs. package, missing or inconsistent dimensions, …).
@@ -46,7 +48,7 @@ from .models import (
     VariantData,
 )
 from .pages import to_real_pages
-from .schema import AiGeometry, AiIdentity, AiPackage, AiPackageRef, AiPin, family_keys
+from .schema import AiGeometry, AiIdentity, AiPackage, AiPackageRef, AiPin, AiTerminalLayout, family_keys
 
 log = logging.getLogger(__name__)
 
@@ -81,7 +83,8 @@ ELECTRICAL_TYPES: dict[str, ElectricalType] = {
 # issue codes a re-check of the identity pass (pin tables) or of the geometry pass (drawings) may resolve
 IDENTITY_ISSUES = frozenset({"pin_count", "pin_duplicate", "no_pins", "no_device", "exposed_pad"})
 GEOMETRY_ISSUES = frozenset({"dims_missing", "dim_order", "dim_negative", "inch_values", "lead_width", "span_body",
-                             "land_pattern_incomplete", "land_pattern_overlap", "pitch_mismatch"})
+                             "land_pattern_incomplete", "land_pattern_overlap", "pitch_mismatch", "layout_missing"})
+_QUAD_FAMILIES = frozenset({"nolead", "qfp"})  # footprint families with a terminal layout (QFN/QFP: four sides)
 _MAX_NAME = 60
 _MAX_FUNCTION = 200
 _NC_NAMES = {"NC", "N/C", "N.C.", "N.C", "NO CONNECT", "NOCONNECT"}
@@ -359,6 +362,46 @@ def _scaled(value: float | None, factor: float) -> float | None:
     return round(value * factor, 6) if value is not None and factor != 1.0 else value
 
 
+_BODY_AXIS = re.compile(r"H?([DE])\d?")  # D, D1, HD -> D (left/right sides of the generator), E… -> E (top/bottom)
+
+
+def _layout(raw: AiTerminalLayout, dims: Sequence[DimValue], pin_count: int | None, label: str,
+            notes: list[str] | None) -> TerminalLayout | None:
+    """Claude's terminal arrangement (counted from pin 1) in the generator's terms (:class:`~.models.TerminalLayout`:
+    ``pins_y`` on the left/right sides along D, ``pins_x`` on the top/bottom sides along E). None for packages with
+    terminals on fewer than four sides, for an evenly distributed one and for an arrangement that contradicts the
+    pin count or the body dimensions (noted)."""
+    first, other = raw.pin1_side_positions, raw.adjacent_side_positions
+    if not 1 <= first <= _MAX_SIDE or not 1 <= other <= _MAX_SIDE:
+        return None
+    top = bool(raw.pin1_last_on_side)  # pin 1 at the left end of the top side (TI RGY), else top of the left side
+    missing = sorted({n for n in raw.missing_positions if 1 <= n <= 2 * (first + other)})
+    if pin_count is not None and 2 * (first + other) != pin_count + len(missing):
+        if notes is not None:
+            notes.append(f"{label}: Anschlussanordnung ({first} und {other} Positionen je Seite) passt nicht zu "
+                         f"{pin_count} Anschlüssen – nicht übernommen.")
+        return None
+    axis = _BODY_AXIS.fullmatch(_text(raw.pin1_side_dimension, 12).upper())
+    if axis is not None and axis.group(1) != ("E" if top else "D"):
+        if notes is not None:
+            notes.append(f"{label}: Anschlussanordnung nicht übernommen – laut Zeichnung misst "
+                         f"{_text(raw.pin1_side_dimension, 12)} die Seite mit Pin 1, der Footprint-Generator erwartet "
+                         f"dort {'E' if top else 'D'}. Bitte Körpermaße und Anordnung prüfen.")
+        return None
+    pitch = next((d.value() for d in dims if d.symbol == "e" and d.unit == "mm" and d.value()), None)
+    rows_x = _positive(_num(raw.pin1_side_pitch if top else raw.adjacent_side_pitch), 10.0)
+    rows_y = _positive(_num(raw.adjacent_side_pitch if top else raw.pin1_side_pitch), 10.0)
+    if rows_y is not None and pitch is not None and abs(rows_y - pitch) > 0.005 and notes is not None:
+        notes.append(f"{label}: Raster der Anschlüsse auf der Seite mit {other if top else first} Positionen "
+                     f"({rows_y:g} mm) weicht vom Raster e ({pitch:g} mm) ab – bitte prüfen.")
+    layout = TerminalLayout(pins_x=first if top else other, pins_y=other if top else first,
+                            pitch_x=rows_x if rows_x is not None and (pitch is None or abs(rows_x - pitch) > 0.005)
+                            else None, pin1="top" if top else "left", missing=missing)
+    if layout.pins_x == layout.pins_y and layout.pitch_x is None and layout.pin1 == "left" and not layout.missing:
+        return None  # evenly distributed: what the generator does anyway
+    return layout
+
+
 def _package(pkg: AiPackage, selection: Sequence[int], used: set[str], notes: list[str] | None = None) -> PackageData:
     name = _text(pkg.package_name, 80)
     code = _text(pkg.package_code, 40) or name or "PKG"
@@ -386,12 +429,14 @@ def _package(pkg: AiPackage, selection: Sequence[int], used: set[str], notes: li
         solder_mask_expansion=_num(lp.solder_mask_expansion), notes=_text(lp.notes, 300),
     )
     pin_count = int(pkg.pin_count) if isinstance(pkg.pin_count, int) and pkg.pin_count > 0 else None
+    family = resolve_family(name, code, pkg.family)
+    layout = _layout(pkg.terminal_layout, dims, pin_count, name or code, notes) if family in _QUAD_FAMILIES else None
     return PackageData(
-        code=unique, name=name, family=resolve_family(name, code, pkg.family), family_raw=_text(pkg.family, 40),
+        code=unique, name=name, family=family, family_raw=_text(pkg.family, 40),
         pin_count=pin_count, mounting=canonical_mounting(pkg.mounting),
         outline_reference=_text(pkg.outline_reference, 60), exposed_pad=bool(pkg.exposed_pad),
         exposed_pad_number=_text(pkg.exposed_pad_number, 10).replace(" ", ""),
-        pages=_real_pages(pkg.source_pages, selection), dimensions=dims, land_pattern=land,
+        pages=_real_pages(pkg.source_pages, selection), dimensions=dims, land_pattern=land, layout=layout,
     )
 
 
@@ -656,6 +701,27 @@ def _check_dims(pkg: PackageData, issues: list[Issue]) -> None:
                    package=pkg.code, vision=True)
 
 
+def _four_sided(pkg: PackageData) -> bool:
+    """Whether the footprint generator places the terminals on four sides (QFP; QFN, its default no-lead variant)."""
+    from ..footprints.packages import resolve_package
+
+    if pkg.family != "nolead":
+        return pkg.family == "qfp"
+    try:
+        key, implied = resolve_package(pkg.name)  # the generator is chosen by the name first (proposal)
+    except ValueError:
+        return True
+    return key == "qfp" or (key == "nolead" and implied.get("variant", "QFN") == "QFN")
+
+
+def _check_layout(pkg: PackageData, issues: list[Issue]) -> None:
+    if pkg.layout is not None or not pkg.pin_count or pkg.pin_count % 4 == 0 or not _four_sided(pkg):
+        return
+    _issue(issues, "warning", "layout_missing",
+           f"{pkg.label}: {pkg.pin_count} Anschlüsse lassen sich nicht gleichmäßig auf vier Seiten verteilen – "
+           "bitte die Anschlussanordnung (Anschlüsse je Seite) angeben.", package=pkg.code, vision=True)
+
+
 def _check_pins(dev: DeviceData, table: PinTableData, pkg: PackageData | None, issues: list[Issue]) -> None:
     label = pkg.label if pkg is not None else table.package
     numbers: dict[str, int] = {}
@@ -722,6 +788,7 @@ def validate_extraction(data: ExtractionData) -> list[Issue]:
                    f"{pkg.label}: Gehäuse keiner Footprint-Familie zugeordnet – bitte Familie wählen oder einen "
                    "vorhandenen Footprint verwenden.", package=pkg.code)
         _check_dims(pkg, issues)
+        _check_layout(pkg, issues)
     return issues
 
 

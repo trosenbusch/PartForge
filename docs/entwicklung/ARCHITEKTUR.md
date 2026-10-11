@@ -1568,9 +1568,16 @@ Gründlichkeit, Beträge). Seitenbilder und Textebenen liegen im lokalen App-Cac
   (`store_edited_extraction` unter `meta_lock` des Ziels, `edited`); eine neue Analyse ersetzt sie. Ein übernommenes
   Gehäuse ist nie selbst Quelle. Kandidaten nach Passung (gleiche Anschlusszahl, Code-Präfix `RGY` → `RGY0019B`,
   Name, Familie, Exposed Pad, Hersteller, Gehäusezeichnung bzw. fehlende Maße) mit deutschen `matches`/`problems`.
-* **Anschlussanordnung** (`PackageData.layout` = `TerminalLayout {pins_x, pins_y, pitch_x, pin1, missing}`, in der
-  Prüfansicht eingetragen): `proposal._family_params` gibt sie als `pins_x`/`pins_y`/`e_x`/`pin1`/`missing` an den
-  Generator (§6), soweit die Familie sie kennt. `LandPatternData.row_spacing_y` = Reihenabstand oben/unten der
+* **Anschlussanordnung** (`PackageData.layout` = `TerminalLayout {pins_x, pins_y, pitch_x, pin1, missing}`, von
+  Claude gelesen oder in der Prüfansicht eingetragen): `proposal._family_params` gibt sie als
+  `pins_x`/`pins_y`/`e_x`/`pin1`/`missing` an den Generator (§6), soweit die Familie sie kennt. Claude antwortet im
+  Geometrie-Durchgang ab Pin 1 (`AiPackage.terminal_layout`: Positionen auf der Pin-1-Seite und den Nachbarseiten,
+  Maßbuchstabe der Pin-1-Seite, Pin 1 am Seitenende, Raster je Seite, fehlende Positionen); `normalize._layout` rechnet
+  das in die Generator-Lage um (links/rechts entlang D, oben/unten entlang E) und übernimmt es nur, wenn es von der
+  gleichmäßigen Verteilung abweicht, zur Anschlusszahl passt und die Pin-1-Seite zur Generator-Lage passt (sonst ein
+  Hinweis in `warnings`). Ein QFN/QFP ohne Anordnung, dessen Anschlusszahl nicht durch 4 teilbar ist, erhält das
+  Issue `layout_missing` (Geometrie, Seitenbilder-Kontrolle); die Kontrolle verliert eine vorhandene Anordnung nie
+  (`merge._merge_package`). Ohne Exposed Pad und ohne D2/E2 bekommt `nolead` `E2 = 0` (kein Standard-EP). `LandPatternData.row_spacing_y` = Reihenabstand oben/unten der
   Herstellerempfehlung (`row_spacing_y_mm`).
 * **Fortschritt** (`job.detail` der Jobs `datasheet`): `step` (stabile Kennungen `download` (URL-Import), `read`,
   `select_pages`, `identity`, `geometry`, `check`, `save`), `step_label` (deutsch), `steps` (Schritte dieses Jobs),

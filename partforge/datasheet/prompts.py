@@ -45,6 +45,9 @@ number (channel A = 1, B = 2 ...) and shared supply pins part 0.
 Map stacked values to max (upper) and min (lower) as drawn; put nominal, typical and basic (BSC) values into nom. \
 Angles use unit "deg". Keep the dimension letters of the drawing and describe what each one measures.
 - Exposed pads: set exposed_pad and give the exposed pad dimensions as their own dimensions (usually D2/E2).
+- Terminal layout of packages with terminals on four sides (QFN, QFP): count the terminal positions on the side \
+with pin 1 and on the sides next to it in the outline or land-pattern drawing, also when the terminals are evenly \
+distributed. Empty positions (a terminal left out of a row) count as positions and are listed as missing.
 - Land patterns: take pad size, pitch and row spacing only from a recommended land pattern / example board \
 layout drawing. State in row_spacing_reference which features the row-spacing dimension connects (pad centre \
 lines, inner pad edges, outer pad edges, or the centre of one pad to the centre of the component, which is half \

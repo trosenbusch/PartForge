@@ -278,8 +278,10 @@ Gehäusezeichnung als eigenes PDF (z. B. „RGY0019B“ zum LM25190-Q1). So ents
    Zeichnung, wählen eine andere oder heben die Übernahme wieder auf.
 
 **Unregelmäßige QFN.** Sind die Anschlüsse nicht gleichmäßig auf vier Seiten verteilt (TI RGY: Pin 1 und 19 an der
-oberen Stirnseite im Abstand 1,5 mm, rechts eine Position frei), tragen Sie unter **Gehäuse › Anschlussanordnung**
-ein: Anschlüsse oben/unten und links/rechts je Seite, das Raster oben/unten, die Lage von Pin 1 und die fehlenden
+oberen Stirnseite im Abstand 1,5 mm, rechts eine Position frei; TI RSW0010A: 2 Anschlüsse links/rechts, 3 oben/unten),
+liest Claude die Anordnung bei der Analyse mit und trägt sie unter **Gehäuse › Anschlussanordnung** ein – prüfen Sie
+sie dort anhand der Zeichnung. Fehlt sie (etwa bei einer Analyse aus einer älteren Version) oder stimmt sie nicht,
+tragen Sie selbst ein: Anschlüsse oben/unten und links/rechts je Seite, das Raster oben/unten, die Lage von Pin 1 und die fehlenden
 Positionen – gezählt ab Pin 1 gegen den Uhrzeigersinn, als wären alle bestückt. Für RGY0019B: 2 und 8 je Seite,
 1,5 mm, Pin 1 „Obere Seite, links“, fehlend 14. Für die Herstellerempfehlung braucht ein rechteckiges QFN zusätzlich
 den **Reihenabstand oben/unten**. Dieselben Angaben gibt es im Footprint-Generator (Familie QFN/DFN).

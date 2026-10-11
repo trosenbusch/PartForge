@@ -7,9 +7,10 @@ and an answer with fewer items even has fewer plausibility errors. The merge the
 * **in scope** (the packages/devices with issues, or everything when the issues name none) – the verified item
   replaces the original one when it is not worse (pin tables: deviation from the package's pin count plus duplicate
   numbers; on a tie only if no pin number is lost); a verified package that lacks dimensions of the original is
-  merged dimension by dimension; items the verification does not mention stay as they were,
+  merged dimension by dimension and keeps a more complete land pattern and the terminal layout of the original;
+  items the verification does not mention stay as they were,
 * **out of scope** – the verified item is taken only when it keeps everything of the original (all pin numbers,
-  all dimension letters, an equally complete land pattern), otherwise the original stays,
+  all dimension letters, an equally complete land pattern, the terminal layout), otherwise the original stays,
 * devices, variants and parameters always come from the first answer (they are not what the check is about);
   the verification only fills what the first answer left empty,
 * warnings of both answers are kept,
@@ -227,6 +228,11 @@ def _land_values(land: AiLandPattern) -> int:
     return 1 + sum(1 for v in values if abs(v - _NA) > 1e-9)
 
 
+def _has_layout(package: AiPackage) -> bool:
+    layout = package.terminal_layout
+    return layout.pin1_side_positions > 0 and layout.adjacent_side_positions > 0
+
+
 def _match_package(package: AiPackage, verified: Sequence[AiPackage]) -> AiPackage | None:
     code, name = _fold(package.package_code), _fold(package.package_name)
     match = next((p for p in verified if _fold(p.package_code) == code), None)
@@ -257,7 +263,8 @@ def _merge_package(original: AiPackage, verified: AiPackage, in_scope: bool) -> 
     """The package to keep (``None`` = keep the original unchanged)."""
     covers = _symbols(verified) >= _symbols(original)
     land_ok = _land_values(verified.land_pattern) >= _land_values(original.land_pattern)
-    if covers and land_ok:
+    layout_ok = _has_layout(verified) or not _has_layout(original)
+    if covers and land_ok and layout_ok:
         return verified.model_copy(deep=True)
     if not in_scope:
         return None
@@ -266,6 +273,8 @@ def _merge_package(original: AiPackage, verified: AiPackage, in_scope: bool) -> 
         merged.dimensions = _merge_dimensions(original, verified)
     if not land_ok:
         merged.land_pattern = original.land_pattern.model_copy(deep=True)
+    if not layout_ok:
+        merged.terminal_layout = original.terminal_layout.model_copy(deep=True)
     if merged.pin_count <= 0 < original.pin_count:
         merged.pin_count = original.pin_count
     if not merged.source_pages:

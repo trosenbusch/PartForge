@@ -11,6 +11,8 @@ Rules learned in the research (docs/entwicklung/recherche/claude-api.md §4) and
   (:class:`AiGeometry`) compile separately. The geometry pass gets the package list of the identity pass.
 * Every field is required (Pydantic fields without defaults); required properties are generated in
   schema order (identity first, geometry last).
+* Fields added later stay required in the schema; answers recorded before them (replay fixtures) are completed by
+  a before-validator (``AiPackage.terminal_layout`` -> :data:`NO_LAYOUT`).
 * No "reasoning" fields (they can trigger ``reasoning_extraction`` refusals).
 * A schema is part of the cached prompt prefix: each one is built once per process and serialised
   deterministically (property order = generation order).
@@ -29,7 +31,7 @@ import hashlib
 import json
 from typing import Annotated, Any
 
-from pydantic import BaseModel, Field, WithJsonSchema
+from pydantic import BaseModel, Field, WithJsonSchema, model_validator
 
 from .models import ROW_REFERENCES
 
@@ -44,9 +46,11 @@ __all__ = [
     "AiParameter",
     "AiPin",
     "AiPinTable",
+    "AiTerminalLayout",
     "AiVariant",
     "ELECTRICAL_TYPES",
     "MOUNTINGS",
+    "NO_LAYOUT",
     "PAD_SHAPES",
     "PageVote",
     "TRIAGE_CATEGORIES",
@@ -189,6 +193,30 @@ class AiLandPattern(BaseModel):
     notes: str
 
 
+class AiTerminalLayout(BaseModel):
+    pin1_side_positions: int = Field(description="Packages with terminals on four sides (QFN, QFP ...): terminal "
+                                                  "positions on the side with pin 1, empty positions included; -1 for "
+                                                  "packages with terminals on fewer than four sides.")
+    adjacent_side_positions: int = Field(description="Terminal positions on each of the two sides next to the pin-1 "
+                                                     "side, counted the same way; -1 as above.")
+    pin1_side_dimension: str = Field(description="Symbol of the body dimension measured along the side with pin 1, as "
+                                                 "used in dimensions (e.g. 'D'); '' if unclear.")
+    pin1_last_on_side: bool = Field(description="True only if pin 1 is the last position of its side and pin 2 is on "
+                                                "the next side (e.g. TI RGY); false if pin 2 follows on the same side.")
+    pin1_side_pitch: float = Field(description="Terminal pitch on the pin-1 side, mm, only if it differs from e; "
+                                               "else -1.")
+    adjacent_side_pitch: float = Field(description="Terminal pitch on the adjacent sides, mm, only if it differs from "
+                                                   "e; else -1.")
+    missing_positions: list[int] = Field(description="Positions without terminal, numbered from pin 1 like the pins "
+                                                     "as if every position had one; [] if none.")
+
+
+NO_LAYOUT: dict[str, Any] = {
+    "pin1_side_positions": -1, "adjacent_side_positions": -1, "pin1_side_dimension": "", "pin1_last_on_side": False,
+    "pin1_side_pitch": -1, "adjacent_side_pitch": -1, "missing_positions": [],
+}
+
+
 class AiPackage(BaseModel):
     package_code: str = Field(description="The package code from the instructions (or the manufacturer designator).")
     package_name: str = Field(description="Common name with pin count, e.g. 'SOIC-8', 'SOT-23-5', 'VQFN-32 5x5'.")
@@ -202,6 +230,15 @@ class AiPackage(BaseModel):
     dimensions: list[AiDimension] = Field(description="All outline dimensions in mm (use the mm values of "
                                                       "'inch (mm)' drawings).")
     land_pattern: AiLandPattern
+    terminal_layout: AiTerminalLayout
+
+    @model_validator(mode="before")
+    @classmethod
+    def _older_answers(cls, data: Any) -> Any:
+        """Answers recorded before the terminal layout was asked for: no layout (the schema still requires it)."""
+        if isinstance(data, dict) and "terminal_layout" not in data:
+            return {**data, "terminal_layout": dict(NO_LAYOUT)}
+        return data
 
 
 class AiGeometry(BaseModel):

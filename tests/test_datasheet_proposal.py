@@ -379,6 +379,43 @@ def test_passive_series_with_values_per_part_number(workspace, fake_sync):
     assert parts.get_part("Resistors", "CRCW060310K0FKEA")["Resistance"] == "10kΩ"
 
 
+def test_a_qfn_with_unequal_sides_is_built_from_the_answer(workspace):
+    """TI RSW0010A (UQFN-10 1.4×1.8, package drawing): pins 1–2 left, 3–5 bottom, 6–7 right, 8–10 top – 10
+    terminals cannot be spread evenly. The first answer lacks the layout, the check with page renders adds it."""
+    def dim(symbol: str, lo: float, nom: float, hi: float) -> dict[str, Any]:
+        return {"symbol": symbol, "description": "", "unit": "mm", "min": lo, "nom": nom, "max": hi}
+
+    rsw = {"package_code": "RSW0010A", "package_name": "UQFN-10 1.4x1.8", "family": "nolead", "pin_count": 10,
+           "mounting": "SMD", "outline_reference": "", "exposed_pad": False, "exposed_pad_number": "",
+           "source_pages": [1],
+           "dimensions": [dim("E", 1.35, -1, 1.45), dim("D", 1.75, -1, 1.85), dim("A", 0.45, -1, 0.55),
+                          dim("A1", 0, -1, 0.05), dim("e", -1, 0.4, -1), dim("b", 0.15, -1, 0.25),
+                          dim("L", 0.35, -1, 0.45)],
+           "land_pattern": {"present": False, "source_pages": [], "pad_shape": "unknown", "pad_width": -1,
+                            "pad_length": -1, "pitch": -1, "row_spacing": -1, "row_spacing_reference": "not_applicable",
+                            "thermal_pad_width": -1, "thermal_pad_length": -1, "solder_mask_expansion": -1,
+                            "notes": ""}}
+    layout = {"pin1_side_positions": 2, "adjacent_side_positions": 3, "pin1_side_dimension": "D",
+              "pin1_last_on_side": False, "pin1_side_pitch": -1, "adjacent_side_pitch": -1, "missing_positions": []}
+    identity = {"manufacturer": "Texas Instruments", "document_id": "4224897/A", "document_title": "RSW0010A UQFN",
+                "document_date": "", "devices": [], "warnings": [],
+                "packages": [{"package_code": "RSW0010A", "package_name": "UQFN-10 1.4x1.8", "pin_count": 10,
+                              "exposed_pad": False}]}
+    client = ReplayLlmClient([{"kind": "identity", "message": _message(identity)},
+                              {"kind": "geometry", "message": _message({"packages": [rsw], "warnings": []})},
+                              {"kind": "verify_geometry", "message": _message(
+                                  {"packages": [{**rsw, "terminal_layout": layout}], "warnings": []})}])
+    rec, _ = store.ingest_bytes((PDFS / "ADG736.pdf").read_bytes(), "ADG736.pdf", ws=workspace)
+    run_extraction(None, rec.id, ExtractOptions(triage="off"), ws=workspace, settings=AppSettings(), client=client)
+    assert [r.kind for r in client.requests] == ["identity", "geometry", "verify_geometry"] and not client.remaining
+    footprint = build_proposal(rec.id, ws=workspace, svg=False).footprints[0]
+    assert footprint.valid and footprint.pad_count == 10, footprint.warnings  # no exposed pad: the drawing has none
+    pads = {p.designator: (p.x, p.y) for p in footprint.spec.pads}
+    assert pads["1"][0] < 0 < pads["6"][0] and pads["3"][1] < 0 < pads["8"][1]
+    assert [pads[n][1] for n in ("1", "2", "6", "7")] == [0.2, -0.2, -0.2, 0.2]  # two on the long sides (D)
+    assert [pads[n][0] for n in ("3", "4", "5", "8", "9", "10")] == [-0.4, 0.0, 0.4, 0.4, 0.0, -0.4]
+
+
 def test_pin_pad_warnings():
     fp = FootprintSpec(name="F", pads=[Pad(designator=d, x=0, y=0, width=1, height=1, thermal=d == "9")
                                        for d in ("1", "2", "3", "9")])

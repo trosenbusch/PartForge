@@ -19,6 +19,7 @@ const SECTION_CODES: Partial<Record<DataSection, readonly string[]>> = {
     'row_reference',
     'row_reference_half',
     'land_pattern_overlap',
+    'layout_missing',
     'unknown_family',
   ],
 }

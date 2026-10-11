@@ -46,6 +46,11 @@
   **Pin 1 an der oberen Seite** und **fehlenden Anschlüssen** (z. B. TI VQFN-19 RGY); im Datenblatt-Import als
   „Anschlussanordnung“ am Gehäuse.
 - Herstellerempfehlung mit eigenem **Reihenabstand oben/unten** für rechteckige QFN/QFP.
+- Datenblatt-Import: Claude liest die **Anschlussanordnung** von QFN/QFP mit – Anschlüsse auf der Seite von Pin 1
+  und den Nachbarseiten, Lage von Pin 1, abweichendes Raster, fehlende Positionen. Gehäuse wie TI UQFN-10 RSW0010A
+  (2 Anschlüsse links/rechts, 3 oben/unten) entstehen damit ohne Nacharbeit; fehlt die Anordnung bei einer nicht
+  durch 4 teilbaren Anschlusszahl, prüft Claude die Zeichnung mit Seitenbildern nach. Für ältere Analysen gilt
+  weiterhin: Anordnung im Review eintragen oder neu analysieren.
 
 ### Geändert
 
@@ -62,6 +67,8 @@
   auf den falschen Abstand zu setzen.
 - Die Übernahmeleiste zeigt ungültige Symbole/Footprints als „ungültig“ statt „vorhanden“; Gründe nennen den
   Gehäusenamen nicht mehr doppelt.
+- Datenblatt-Import: ein QFN/DFN ohne Exposed Pad bekommt keines mehr – bisher setzte der Generator sein
+  Standard-Exposed-Pad ein (bei kleinen Gehäusen wie UQFN-10 1,4×1,8 scheiterte daran die Padberechnung).
 
 ## 1.0.0 – 2026-10-09
 

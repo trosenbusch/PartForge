@@ -131,6 +131,10 @@ describe('message interpolation', () => {
   test('reported backend messages are English, including counts and short label templates', () => {
     assert.equal(i18n.localizeMessage('UQFN-10 1.4x1.8 (RSW0010A): Bei gleichmäßiger Verteilung muss die Anschlusszahl durch 4 teilbar sein (sonst Anschlüsse je Seite angeben).'),
       'UQFN-10 1.4x1.8 (RSW0010A): With even distribution, the lead count must be divisible by 4 (otherwise specify the leads per side).')
+    assert.equal(i18n.localizeMessage('UQFN-10 1.4x1.8 (RSW0010A): 10 Anschlüsse lassen sich nicht gleichmäßig auf vier Seiten verteilen – bitte die Anschlussanordnung (Anschlüsse je Seite) angeben.'),
+      'UQFN-10 1.4x1.8 (RSW0010A): 10 terminals cannot be distributed evenly over four sides – please specify the terminal layout (terminals per side).')
+    assert.equal(i18n.localizeMessage('UQFN-10 1.4x1.8: Anschlussanordnung (3 und 3 Positionen je Seite) passt nicht zu 10 Anschlüssen – nicht übernommen.'),
+      'UQFN-10 1.4x1.8: terminal layout (3 and 3 positions per side) does not match 10 terminals – not applied.')
     assert.equal(i18n.localizeMessage('Die DbLib war veraltet (Kategorien oder Felder geändert) und wurde neu geschrieben.'),
       'The DbLib was outdated (categories or fields changed) and has been rewritten.')
     assert.equal(i18n.localizeMessage('12 Bauteile'), '12 parts')

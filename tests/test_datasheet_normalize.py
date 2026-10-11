@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 
-from partforge.datasheet.models import DimValue, ExtractionData, LandPatternData, PackageData
+from partforge.datasheet.models import DimValue, ExtractionData, LandPatternData, PackageData, TerminalLayout
 from partforge.datasheet.normalize import (
     GEOMETRY_ISSUES,
     IDENTITY_ISSUES,
@@ -53,7 +53,8 @@ def package(code: str = "D", name: str = "SOIC-8", family: str = "gullwing", pin
             "mounting": kw.pop("mounting", "SMD"), "outline_reference": kw.pop("outline_reference", ""),
             "exposed_pad": kw.pop("exposed_pad", False), "exposed_pad_number": kw.pop("exposed_pad_number", ""),
             "source_pages": kw.pop("source_pages", [3]), "dimensions": kw.pop("dimensions", SOIC_DIMS),
-            "land_pattern": kw.pop("land_pattern", land())}
+            "land_pattern": kw.pop("land_pattern", land()),
+            **({"terminal_layout": kw.pop("terminal_layout")} if "terminal_layout" in kw else {})}
 
 
 def identity(*, devices: list[dict] | None = None, packages: list[dict] | None = None, **kw: Any) -> AiIdentity:
@@ -277,6 +278,94 @@ def test_unique_codes_for_duplicates():
             AiPackageRef(package_code="D", package_name="SOIC-14", pin_count=14, exposed_pad=False)]
     merged, _ = merge_packages(refs, [])
     assert [p.code for p in merged] == ["D", "D-2"]
+
+
+# --------------------------------------------------------------------------- terminal layout
+
+
+def layout(first: int = NA, other: int = NA, side: str = "", *, last: bool = False, pitch1: float = NA,
+           pitch2: float = NA, missing: list[int] | None = None) -> dict[str, Any]:
+    return {"pin1_side_positions": first, "adjacent_side_positions": other, "pin1_side_dimension": side,
+            "pin1_last_on_side": last, "pin1_side_pitch": pitch1, "adjacent_side_pitch": pitch2,
+            "missing_positions": missing or []}
+
+
+RSW_DIMS = [dim("E", 1.35, NA, 1.45), dim("D", 1.75, NA, 1.85), dim("A", 0.45, NA, 0.55), dim("A1", 0, NA, 0.05),
+            dim("e", NA, 0.4, NA), dim("b", 0.15, NA, 0.25), dim("L", 0.35, NA, 0.45)]
+
+
+def rsw(**kw: Any) -> dict[str, Any]:
+    """TI RSW0010A (UQFN-10 1.4×1.8, drawing mpqf206c): pins 1–2 left, 3–5 bottom, 6–7 right, 8–10 top."""
+    return package(code="RSW0010A", name="UQFN-10 1.4x1.8", family="nolead", pins=10, dimensions=RSW_DIMS, **kw)
+
+
+def drawing(*packages: dict[str, Any]) -> ExtractionData:
+    """A package drawing without device (TI's own package PDFs)."""
+    return normalize_extraction(identity(devices=[], packages=[]), geometry(*packages), pages=[1])
+
+
+def test_the_terminal_layout_counted_from_pin_1_becomes_the_generator_layout():
+    data = drawing(rsw(terminal_layout=layout(2, 3, "D")))
+    assert data.packages[0].layout == TerminalLayout(pins_x=3, pins_y=2)  # three on the short sides (along E)
+    assert "layout_missing" not in _issues(data)
+    # TI RGY0019B: pin 1 at the end of the short top side, 1.5 mm pitch there, position 14 empty
+    rgy = package(code="RGY0019B", name="VQFN-19 3.5x4.5", family="nolead", pins=19, exposed_pad=True,
+                  dimensions=[dim("D", 4.4, NA, 4.6), dim("E", 3.4, NA, 3.6), dim("e", NA, 0.5, NA)],
+                  terminal_layout=layout(2, 8, "E", last=True, pitch1=1.5, pitch2=0.5, missing=[14, 14]))
+    assert drawing(rgy).packages[0].layout == TerminalLayout(pins_x=2, pins_y=8, pitch_x=1.5, pin1="top", missing=[14])
+    # a pitch of the left/right rows other than e cannot be placed – kept, but pointed out
+    data = drawing(rsw(terminal_layout=layout(2, 3, "", pitch1=0.5)))
+    assert data.packages[0].layout == TerminalLayout(pins_x=3, pins_y=2)
+    assert any("(0.5 mm) weicht vom Raster e (0.4 mm) ab" in w for w in data.warnings)
+
+
+def test_terminal_layouts_that_are_not_taken():
+    qfn = package(code="RGE", name="VQFN-24 4x4", family="nolead", pins=24, dimensions=RSW_DIMS,
+                  terminal_layout=layout(6, 6, "D", pitch2=0.4))
+    soic = package(terminal_layout=layout(2, 2, "D"))  # leads on two sides: no layout whatever the answer says
+    son = package(code="DRV", name="WSON-6", family="nolead", pins=6, dimensions=RSW_DIMS, terminal_layout=layout())
+    assert [p.layout for p in drawing(qfn, soic, son).packages] == [None, None, None]  # evenly distributed: nothing new
+    data = drawing(rsw(terminal_layout=layout(3, 3, "D")))
+    assert data.packages[0].layout is None
+    assert any("(3 und 3 Positionen je Seite) passt nicht zu 10 Anschlüssen" in w for w in data.warnings)
+    data = drawing(rsw(terminal_layout=layout(2, 3, "E1")))  # pin 1 on the side the generator places along E
+    assert data.packages[0].layout is None and any("misst E1 die Seite mit Pin 1" in w for w in data.warnings)
+    assert "layout_missing" in _issues(data)
+
+
+def test_a_qfn_that_cannot_be_spread_evenly_asks_for_its_layout():
+    data = drawing(rsw())  # an answer recorded before the layout was asked for
+    issues = [i for i in data.issues if i.code == "layout_missing"]
+    assert len(issues) == 1 and issues[0].vision and issues[0].package == "RSW0010A"
+    assert "10 Anschlüsse lassen sich nicht gleichmäßig auf vier Seiten verteilen" in issues[0].message
+    assert "layout_missing" in GEOMETRY_ISSUES
+    data.packages[0].layout = TerminalLayout(pins_x=3, pins_y=2)  # entered in the review
+    assert "layout_missing" not in _issues(data)
+    for name, pins in (("WSON-10", 10), ("DFN-6", 6), ("VQFN-16 3x3", 16), ("SOIC-14", 14)):
+        data = drawing(package(code="X", name=name, family="nolead", pins=pins, dimensions=RSW_DIMS))
+        assert "layout_missing" not in _issues(data), name
+    data = drawing(package(code="PM", name="LQFP-50", family="qfp", pins=50, dimensions=RSW_DIMS))
+    assert "layout_missing" in _issues(data)
+
+
+def test_a_verification_without_terminal_layout_keeps_the_first_one():
+    from partforge.datasheet.merge import Scope, merge_geometry
+
+    first = geometry(rsw(terminal_layout=layout(2, 3, "D")))
+    for scope in (Scope(), Scope(everything=True)):
+        merged, _ = merge_geometry(first, geometry(rsw()), scope)
+        assert merged.packages[0].terminal_layout == first.packages[0].terminal_layout
+    corrected = geometry(rsw(terminal_layout=layout(2, 3, "D")))  # a verified layout replaces the first one
+    merged, _ = merge_geometry(geometry(rsw(terminal_layout=layout(3, 2, "D"))), corrected, Scope(everything=True))
+    assert merged.packages[0].terminal_layout == corrected.packages[0].terminal_layout
+
+
+def test_the_geometry_schema_requires_the_terminal_layout():
+    from partforge.datasheet.schema import geometry_schema
+
+    defs = geometry_schema()["$defs"]
+    assert defs["AiPackage"]["required"][-1] == "terminal_layout"
+    assert set(defs["AiTerminalLayout"]["required"]) == set(layout())
 
 
 # --------------------------------------------------------------------------- validation
