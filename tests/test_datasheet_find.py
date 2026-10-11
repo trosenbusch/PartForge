@@ -10,6 +10,7 @@ from typing import Any
 
 import httpx
 import pytest
+from pdf_support import synthetic_pdf
 
 from partforge.config import AppSettings, load_settings
 from partforge.datasheet import find, labels, llm, search_costs, store
@@ -20,7 +21,6 @@ from partforge.datasheet.models import RunInfo
 from partforge.jobs import JobManager
 
 DATA = Path(__file__).parent / "data"
-PDFS = DATA / "corpus" / "pdfs"
 FIND_FIXTURES = DATA / "ai_fixtures" / "find"
 
 TI_PDF = "https://www.ti.com/lit/ds/symlink/opa656.pdf"
@@ -453,7 +453,7 @@ def test_api_import_of_a_found_link_carries_the_search_costs(client, ai, monkeyp
     llm.set_client_factory(lambda: ReplayLlmClient([call(message(answer(cand(TI_PDF))))]))
     found = wait(client, client.post("/api/datasheets/find", json={"query": "OPA656"}).json()["job"])
     search_cost = found["result"]["cost_usd"]
-    data = (PDFS / "opa656.pdf").read_bytes()
+    data = synthetic_pdf(["Synthetic download for search-cost tracking"])
     monkeypatch.setattr(store, "download_pdf", lambda url, **kw: (data, "opa656.pdf", url))
     body = {"url": TI_PDF, "search_job_id": found["id"]}
     imported = wait(client, client.post("/api/datasheets/from-url", json=body).json()["job"])
@@ -569,7 +569,7 @@ def test_api_search_costs_survive_a_restart(client, ai, monkeypatch):
             return getattr(real_jobs, name)
 
     monkeypatch.setattr(routes_datasheets, "jobs", Restarted())
-    data = (PDFS / "opa656.pdf").read_bytes()
+    data = synthetic_pdf(["Synthetic download for persisted search costs"])
     monkeypatch.setattr(store, "download_pdf", lambda url, **kw: (data, "opa656.pdf", url))
     body = {"url": TI_PDF, "search_job_id": found["id"]}
     imported = wait(client, client.post("/api/datasheets/from-url", json=body).json()["job"])
@@ -592,7 +592,7 @@ def test_api_an_unusable_ledger_never_stops_the_import(client, ai, monkeypatch):
         raise PermissionError("gesperrt")
 
     monkeypatch.setattr(search_costs, "claim", broken)
-    data = (PDFS / "opa656.pdf").read_bytes()
+    data = synthetic_pdf(["Synthetic download with an unusable cost ledger"])
     monkeypatch.setattr(store, "download_pdf", lambda url, **kw: (data, "opa656.pdf", url))
     imported = wait(client, client.post("/api/datasheets/from-url",
                                         json={"url": TI_PDF, "search_job_id": found["id"]}).json()["job"])
