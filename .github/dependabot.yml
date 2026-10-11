@@ -2,6 +2,10 @@ version: 2
 updates:
   - package-ecosystem: pip
     directory: /
+    # Pydantic pins its compatible core version; update the pair together
+    # and regenerate the constraints instead of updating core independently.
+    ignore:
+      - dependency-name: "pydantic-core"
     schedule:
       interval: weekly
       day: monday
@@ -14,6 +18,14 @@ updates:
         update-types: [minor, patch]
   - package-ecosystem: npm
     directory: /frontend
+    # Upgrade Node.js and its types together; CI currently uses Node.js 24.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      # TypeScript 7 lacks the JavaScript compiler API required by openapi-typescript.
+      # Revisit when the generator supports it or after a reviewed compiler migration.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
     schedule:
       interval: weekly
       day: monday
