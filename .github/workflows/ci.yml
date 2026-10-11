@@ -1,0 +1,136 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUTF8: "1"
+  PARTFORGE_TEST_AI: "0"
+  PARTFORGE_TEST_ALTIUM: "0"
+  PARTFORGE_TEST_RUST: "0"
+  PARTFORGE_ALLOW_REAL_AI: "0"
+  PARTFORGE_NO_ALTIUM: "1"
+  ANTHROPIC_API_KEY: ""
+  PARTFORGE_HOME: ${{ github.workspace }}/tests/_tmp/ci-home
+
+jobs:
+  secrets:
+    name: Secrets / full history
+    runs-on: windows-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      GITLEAKS_VERSION: "8.30.1"
+      # Official release checksum: https://github.com/gitleaks/gitleaks/releases/tag/v8.30.1
+      GITLEAKS_SHA256: d29144deff3a68aa93ced33dddf84b7fdc26070add4aa0f4513094c8332afc4e
+    steps:
+      - name: Check out complete history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install verified Gitleaks release
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP "gitleaks.zip"
+          $destination = Join-Path $env:RUNNER_TEMP "gitleaks"
+          $url = "https://github.com/gitleaks/gitleaks/releases/download/v$env:GITLEAKS_VERSION/gitleaks_$($env:GITLEAKS_VERSION)_windows_x64.zip"
+          Invoke-WebRequest -Uri $url -OutFile $archive
+          $actualHash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
+          if ($actualHash -ne $env:GITLEAKS_SHA256) { throw "Gitleaks release checksum mismatch." }
+          Expand-Archive -LiteralPath $archive -DestinationPath $destination
+          $destination | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Scan all fetched commits
+        run: gitleaks git --redact=100 --no-banner --log-opts="--all" --max-decode-depth=3 .
+      - name: Scan current files and nested archives
+        run: gitleaks dir --redact=100 --no-banner --max-archive-depth=3 --max-decode-depth=3 .
+
+  python:
+    name: Python ${{ matrix.python }} / Windows
+    runs-on: windows-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.13"]
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            constraints.txt
+      - name: Install Python dependencies
+        run: |
+          python -m venv .venv
+          .venv/Scripts/python.exe -m pip install -e ".[test,build]" -c constraints.txt
+      - name: Check installed dependencies
+        run: .venv/Scripts/python.exe -m pip check
+      - name: Run offline Python tests
+        run: .venv/Scripts/python.exe -m pytest -q -m "not ai and not altium and not rustwriter"
+
+  frontend:
+    name: Frontend / Windows
+    runs-on: windows-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: frontend
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            constraints.txt
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install backend for OpenAPI checks
+        working-directory: .
+        run: |
+          python -m venv .venv
+          .venv/Scripts/python.exe -m pip install -e . -c constraints.txt
+          .venv/Scripts/python.exe -m pip check
+      - name: Install frontend dependencies
+        run: npm.cmd ci
+      - name: Check generated API types
+        run: |
+          npm.cmd run gen:api:types
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          git diff --exit-code -- src/api/schema.d.ts
+      - name: Build frontend and check API schema
+        run: npm.cmd run build
+      - name: Lint frontend
+        run: npm.cmd run lint
+      - name: Run frontend unit tests
+        run: npm.cmd test

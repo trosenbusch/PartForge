@@ -57,7 +57,7 @@ ALTIUM_TYPES = "Altium pin electrical types used: Input, IO, Output, OpenCollect
 entries = []
 
 # ---------------------------------------------------------------- OPA656
-e = fileinfo("pdfs/opa656.pdf", "C:/PartForge-Examples/ExampleProject/opa656.pdf", "ic")
+e = fileinfo("pdfs/opa656.pdf", "local-datasheet-source/opa656.pdf", "ic")
 e.update({
     "manufacturer": "Texas Instruments",
     "document": {"id": "SBOS196G", "title": "Wideband, Unity-Gain Stable, FET-Input Operational Amplifier", "revision": "G (Nov 2008); addendum 26-May-2010; pack materials 17-Dec-2011"},
@@ -138,7 +138,7 @@ e.update({
 entries.append(e)
 
 # ---------------------------------------------------------------- LTC6244
-e = fileinfo("pdfs/LTC6244.pdf", "C:/PartForge-Examples/ExampleProject/LTC6244.pdf", "ic")
+e = fileinfo("pdfs/LTC6244.pdf", "local-datasheet-source/LTC6244.pdf", "ic")
 e.update({
     "manufacturer": "Linear Technology (now Analog Devices)",
     "document": {"id": "6244fb", "title": "LTC6244 - Dual 50MHz, Low Noise, Rail-to-Rail, CMOS Op Amp", "revision": "B"},
@@ -217,7 +217,7 @@ e["devices"][0]["pin_tables"]["DFN-8 3x3 (DD)"] = e["devices"][0]["pin_tables"][
 entries.append(e)
 
 # ---------------------------------------------------------------- 6N137 family
-e = fileinfo("pdfs/6N137.pdf", "C:/PartForge-Examples/ExampleProject/6N137.pdf", "ic")
+e = fileinfo("pdfs/6N137.pdf", "local-datasheet-source/6N137.pdf", "ic")
 single = [
     pin(1, "N/C", "No connection", "Passive"), pin(2, "VF+", "LED anode (+)", "Passive"), pin(3, "VF-", "LED cathode (-)", "Passive"),
     pin(4, "N/C", "No connection", "Passive"), pin(5, "GND", "Ground", "Power"), pin(6, "VO", "Open-collector output", "OpenCollector"),
@@ -292,7 +292,7 @@ e.update({
 entries.append(e)
 
 # ---------------------------------------------------------------- 25AA02E48
-e = fileinfo("pdfs/25AA02E48.pdf", "C:/PartForge-Examples/ExampleProject/doc/datasheets/25AA02E48.pdf", "ic")
+e = fileinfo("pdfs/25AA02E48.pdf", "local-datasheet-source/25AA02E48.pdf", "ic")
 e.update({
     "manufacturer": "Microchip Technology",
     "document": {"id": "DS22123B", "title": "2K SPI Bus Serial EEPROM with EUI-48 Node Identity", "date": "2010"},
@@ -350,7 +350,7 @@ e.update({
 entries.append(e)
 
 # ---------------------------------------------------------------- AD7983
-e = fileinfo("pdfs/AD7983.pdf", "C:/PartForge-Examples/ExampleProject/doc/datasheets/AD7983.pdf", "ic")
+e = fileinfo("pdfs/AD7983.pdf", "local-datasheet-source/AD7983.pdf", "ic")
 ad7983_pins = [
     pin(1, "REF", "Reference input voltage (2.9 V to 5.1 V), decouple with 10 uF", "Input", ds_type="AI"),
     pin(2, "VDD", "Power supply", "Power", ds_type="P"), pin(3, "IN+", "Analog input", "Input", ds_type="AI"),
@@ -405,7 +405,7 @@ e.update({
 entries.append(e)
 
 # ---------------------------------------------------------------- SN65LV1023A / SN65LV1224B
-e = fileinfo("pdfs/sn65lv1023a.pdf", "C:/PartForge-Examples/ExampleProject/doc/datasheets/sn65lv1023a.pdf", "ic")
+e = fileinfo("pdfs/sn65lv1023a.pdf", "local-datasheet-source/sn65lv1023a.pdf", "ic")
 db = ["SYNC1", "SYNC2"] + [f"DIN{i}" for i in range(10)] + ["TCLK_R/F", "TCLK", "DGND", "DGND", "AVCC", "AGND", "DEN", "AGND", "DO-", "DO+", "AGND", "PWRDN", "AGND", "AVCC", "DVCC", "DVCC"]
 rhb = [f"DIN{i}" for i in range(1, 10)] + ["TCLK_R/F", "TCLK", "DGND", "DGND", "DGND", "DGND", "AVCC", "AGND", "DEN", "AGND", "DO-", "DO+", "AGND", "PWRDN", "AGND", "AVCC", "DVCC", "DVCC", "DVCC", "DVCC", "SYNC1", "SYNC2", "DIN0"]
 FUNC = {"SYNC1": ("SYNC pattern request input (ORed with SYNC2)", "Input"), "SYNC2": ("SYNC pattern request input (ORed with SYNC1)", "Input"),
@@ -509,7 +509,7 @@ e.update({
 entries.append(e)
 
 # ---------------------------------------------------------------- ADG736
-e = fileinfo("pdfs/ADG736.pdf", "C:/PartForge-Examples/ExampleProject/ExampleProject/Dokumentation/ADG736.pdf", "ic")
+e = fileinfo("pdfs/ADG736.pdf", "local-datasheet-source/ADG736.pdf", "ic")
 e.update({
     "manufacturer": "Analog Devices",
     "document": {"id": "D00046-0-2/12(D)", "title": "CMOS Low Voltage 2.5 Ω Dual SPDT Switch", "revision": "D"},
@@ -550,7 +550,7 @@ e.update({
 entries.append(e)
 
 # ---------------------------------------------------------------- AD5235
-e = fileinfo("pdfs/AD5235.pdf", "C:/PartForge-Examples/ExampleProject/ExampleProject/Dokumentation/AD5235.pdf", "ic")
+e = fileinfo("pdfs/AD5235.pdf", "local-datasheet-source/AD5235.pdf", "ic")
 e.update({
     "manufacturer": "Analog Devices",
     "document": {"id": "D02816-0-6/12(F)", "title": "Nonvolatile Memory, Dual 1024-Position Digital Potentiometer", "revision": "F"},

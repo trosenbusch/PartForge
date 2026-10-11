@@ -6,14 +6,14 @@
   pattern altium-mcp's pcb_utils.pas uses on String variables).
   Table indexes are alphabetical (VERIFIED): 0 AllPassives, 1 Capacitors, 2 Inductors,
   3 Resistors, 4 Resistors_0603.  Entry format: tableIndex|key|raw [Footprint Path] value. }
-S1 := 'C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\PF_Test_abs.DbLib';
+S1 := 'C:\PartForge-Examples\scratchpad\altium-live\PF_Test_abs.DbLib';
 IntMan := IntegratedLibraryManager;
 IntMan.InstallLibrary(S1);
 DbDoc := IntMan.GetAvailableDBLibDocAtPath(S1);
 If DbDoc = Nil Then Begin SandboxLog('dbdoc nil'); IntMan.UninstallLibrary(S1); Exit; End;
 List1 := TStringList.Create;
 List1.Add('3|RES-0001|libs\PF_Test.PcbLib');
-List1.Add('3|RES-0002|C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\libs\PF_Test.PcbLib');
+List1.Add('3|RES-0002|C:\PartForge-Examples\scratchpad\altium-live\libs\PF_Test.PcbLib');
 List1.Add('3|RES-0003|PF_Test.PcbLib');
 List1.Add('3|RES-0004|');
 List1.Add('3|RES-0005|libs/PF_Test.PcbLib');
@@ -23,7 +23,7 @@ List1.Add('1|CAP-0001|libs\PF_Test.PcbLib');
 List1.Add('1|CAP-0002|libs\PF_Test.PcbLib');
 List1.Add('1|CAP-0003|libs\PF_Test.PcbLib');
 List1.Add('2|IND-0001|libs\PF_Test.PcbLib');
-List1.Add('4|RES-0002|C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\libs\PF_Test.PcbLib');
+List1.Add('4|RES-0002|C:\PartForge-Examples\scratchpad\altium-live\libs\PF_Test.PcbLib');
 List1.Add('0|CAP-0002|libs\PF_Test.PcbLib');
 For I2 := 0 To List1.Count - 1 Do
 Begin

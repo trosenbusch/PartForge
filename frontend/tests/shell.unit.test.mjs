@@ -119,7 +119,7 @@ describe('cleanErrorText (F11: keine Python-Darstellungen in Meldungen)', () => 
     assert.ok(!clean.includes('[Errno'), clean)
     assert.ok(!clean.includes('Permission denied'), clean)
     assert.ok(!clean.includes('\\\\'), clean)
-    assert.ok(clean.includes('C:\\PartForge-Examples\\Tools\\Lib\\Footprints\\PF_CHIP.PcbLib'), clean)
+    assert.ok(clean.includes('C:\\Projekte\\Tools\\Lib\\Footprints\\PF_CHIP.PcbLib'), clean)
     assert.ok(clean.includes('Zugriff verweigert'), clean)
     assert.ok(clean.endsWith('Der Vorgang wurde zurückgesetzt.'), clean)
   })

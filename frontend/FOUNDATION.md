@@ -37,13 +37,14 @@ frontend/
 | `npm run gen:api` | OpenAPI exportieren + `src/api/schema.d.ts` neu erzeugen – **nach jeder Backend-API-Änderung** |
 | `npm run gen:api:check` | Bricht ab, wenn `openapi.json` nicht mehr zum Backend passt („Bitte `npm run gen:api` ausführen“) |
 
-Testen gegen das echte Backend (eigene Einstellungen bleiben unberührt):
+Testen gegen das echte Backend, jeweils vom Repository-Hauptordner aus (eigene Einstellungen bleiben unberührt):
 
 ```powershell
-npm run build
-$env:PARTFORGE_HOME='C:/PartForge-Examples/Tools/PartForge/tests/_tmp/fe-home'
-& 'C:/PartForge-Examples/Tools/PartForge/.venv/Scripts/python.exe' -m partforge --server-only --port 8799
-& 'C:/PartForge-Examples/Tools/PartForge/.venv/Scripts/python.exe' scripts/screenshot.py --url http://127.0.0.1:8799 `
+npm.cmd --prefix frontend run build
+$env:PARTFORGE_HOME = Join-Path $PWD.Path 'tests/_tmp/fe-home'
+.\.venv\Scripts\python.exe -m partforge --server-only --port 8799
+# In einer zweiten PowerShell, ebenfalls vom Repository-Hauptordner aus:
+.\.venv\Scripts\python.exe scripts\screenshot.py --url http://127.0.0.1:8799 `
     --out docs/screenshots/<modul> --pages "/bauteile" --themes dark,light
 ```
 

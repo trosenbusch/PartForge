@@ -175,7 +175,7 @@ export function toMillis(value: number | string | Date): number {
   return value < 1e12 ? value * 1000 : value
 }
 
-/** Langer Windows-Pfad → „C:\PartForge-Examples\…\PartForge“ (Mitte gekürzt) */
+/** Langer Windows-Pfad → „C:\Projekte\…\PartForge“ (Mitte gekürzt) */
 export function shortenPath(path: string, max = 42): string {
   if (path.length <= max) return path
   const sep = path.includes('\\') ? '\\' : '/'

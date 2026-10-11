@@ -1,4 +1,4 @@
-ConnectionString: Provider=MSDASQL.1;Persist Security Info=False;Extended Properties="DRIVER=SQLite3 ODBC Driver;Database=C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\partforge_test.db;NoCreat=1;"
+ConnectionString: Provider=MSDASQL.1;Persist Security Info=False;Extended Properties="DRIVER=SQLite3 ODBC Driver;Database=C:\PartForge-Examples\scratchpad\altium-live\partforge_test.db;NoCreat=1;"
 Provider: MSDASQL.1  Version: 10.0
 SCHEMA TABLE: Resistors  TYPE=TABLE
 SCHEMA TABLE: Capacitors  TYPE=TABLE

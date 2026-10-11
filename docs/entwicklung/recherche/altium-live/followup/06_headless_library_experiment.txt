@@ -3,8 +3,8 @@
   listed in the skill's type-library dump: SchServer.CreateSchLibrary, ISch_Lib.SaveToFile,
   PCBServer.CreatePCBLibrary, IPCB_Library.LibraryLoaderSaver_Create / SaveToFile.
   If it works, PartForge's bridge would not steal the user's editor focus. }
-S1 := 'C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\libs\PF_Headless.SchLib';
-S2 := 'C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\libs\PF_Headless.PcbLib';
+S1 := 'C:\PartForge-Examples\scratchpad\altium-live\libs\PF_Headless.SchLib';
+S2 := 'C:\PartForge-Examples\scratchpad\altium-live\libs\PF_Headless.PcbLib';
 SandboxLog('sch: CreateSchLibrary');
 Obj1 := SchServer.CreateSchLibrary;
 If Obj1 = Nil Then SandboxLog('CreateSchLibrary NIL')

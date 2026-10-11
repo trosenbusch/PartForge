@@ -2,7 +2,7 @@
 
 Agent: Altium-access agent (exclusive use of the running Altium) · 2026-10-07 23:30 – 2026-10-08 00:20
 Altium: `C:\Program Files\Altium\AD22\X2.EXE`, **26.10.1.5**. Driver: 64-bit "SQLite3 ODBC Driver" 0.99991 (SQLite 3.43.2) via MSDASQL.
-Working folder `RF` = `C:/Users/Example/AppData/Local/Temp/claude/c--Projekte-Tools/c2f879a0-18cd-4140-bad7-eb46f08463d7/scratchpad/altium-refresh/`
+Working folder `RF` = `<scratchpad>/altium-refresh/`
 (`kit/` tools, `scripts/` every Altium script body that was run, `logs/` results and probes, `exp/eNN_*` one fresh DB + DbLib per experiment).
 
 Every statement is tagged **[VERIFIED]** (observed in this Altium session or measured) or **[UNVERIFIED]** (inference, not testable here).

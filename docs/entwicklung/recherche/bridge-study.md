@@ -1,6 +1,6 @@
 # altium-mcp bridge study (UNDERSTAND phase, for PartForge)
 
-Subject: `C:/PartForge-Examples/Tools/altium-mcp` at commit `f2902b5` (2026-07-30, "Confirm update processes are no-ops on a real database-linked part", origin `github.com/coffeenmusic/altium-mcp`). Working tree: only `server/SandboxScript/Sandbox.pas` is modified, because `run_altium_script` rewrites it on every call. The other agent is using the live MCP server right now: `server/altium_mcp.log` shows `run_altium_script` calls on 2026-10-07.
+Subject: `<altium-mcp-checkout>` at commit `f2902b5` (2026-07-30, "Confirm update processes are no-ops on a real database-linked part", origin `github.com/coffeenmusic/altium-mcp`). Working tree: only `server/SandboxScript/Sandbox.pas` is modified, because `run_altium_script` rewrites it on every call. The other agent is using the live MCP server right now: `server/altium_mcp.log` shows `run_altium_script` calls on 2026-10-07.
 
 Method: I read all code in `server/main.py`, `server/AltiumScript/*.pas`, `server/SandboxScript/*` and `dev/*`, plus the on-disk evidence this bridge produced on this PC (log, `C:\Users\Public\altium_mcp\*`). I also ran a few local, Altium-free tests in my scratchpad. I did not run Altium and called no `mcp__altium__*` tools.
 
@@ -67,7 +67,7 @@ process = subprocess.Popen(command, shell=True)
 
 As logged on this PC (`server/altium_mcp.log:134`):
 ```
-"C:\Program Files\Altium\AD22\X2.EXE" -RScriptingSystem:RunScript(ProjectName="C:\PartForge-Examples\Tools\altium-mcp\server\AltiumScript\Altium_API.PrjScr"^|ProcName="Altium_API>Run")
+"C:\Program Files\Altium\AD22\X2.EXE" -RScriptingSystem:RunScript(ProjectName="<altium-mcp-checkout>\server\AltiumScript\Altium_API.PrjScr"^|ProcName="Altium_API>Run")
 ```
 
 How the syntax works:

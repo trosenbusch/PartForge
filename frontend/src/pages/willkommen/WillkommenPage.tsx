@@ -124,7 +124,7 @@ export default function WillkommenPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease, delay: 0.05 }}
           >
-            {tr("Bauteile ")}<span className="text-gradient-forge">schmieden</span>,
+            <span className="text-gradient-forge">{tr("Bauteile schmieden")}</span>,
             <br />
             {tr("nicht abtippen.")}</motion.h1>
 

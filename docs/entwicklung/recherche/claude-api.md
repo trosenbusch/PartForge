@@ -6,7 +6,7 @@ Research agent, UNDERSTAND phase, 2026-10-07. Every claim is tagged:
 - **INFERRED**: derived from measurements, not documented.
 - **UNVERIFIED**: an assumption or a proposal that has not been tested.
 
-Work folder: `C:/Users/Example/AppData/Local/Temp/claude/c--Projekte-Tools/c2f879a0-18cd-4140-bad7-eb46f08463d7/scratchpad/claude-api/`
+Work folder: `<scratchpad>/claude-api/`
 (`scripts/` holds all code, `out/` holds the JSON results and metrics, and `.venv/` is the environment.)
 
 Environment (**VERIFIED**): Python 3.13.5, anthropic **1.12.0** (runs on `httpx2` 2.13.1), pydantic 2.13.5, pypdf 6.19.0, pypdfium2 5.14.0, Pillow 12.3.0 (needed for `bitmap.to_pil()`), jiter 0.17.0 (an SDK dependency, used here for partial JSON parsing).
@@ -33,7 +33,7 @@ Total API spend for every test in this report: about **$0.76** (usage × list pr
 
 ## 1. Key handling and first call
 
-- Key file: `C:/PartForge-Examples/Tools/ExampleProject/.secret/.claude-api-key.txt` (108 bytes). It is read only inside Python and passed as `anthropic.Anthropic(api_key=Path(...).read_text(encoding="utf-8").strip())`. It was never printed, and a grep of all my files for `sk-ant` finds nothing (**VERIFIED**). The same folder also contains `.claude-admin-key.txt`, which I did not touch.
+- The research calls used an explicitly configured local key file, read only inside Python and passed as `anthropic.Anthropic(api_key=Path(...).read_text(encoding="utf-8").strip())`. Its contents were never printed. PartForge itself requires explicit key configuration and does not search other projects for credentials.
 - Tiny call (**VERIFIED**): `claude-haiku-5-5`, `max_tokens=32`, `thinking={"type":"disabled"}`, prompt "Reply with exactly: OK". It returned `'OK'`, `stop_reason=end_turn`, 16 input and 4 output tokens, **0.86 s**, $0.000004, and `usage.output_tokens_details.thinking_tokens=0`.
 - Models API (free, **VERIFIED**). The key sees `claude-haiku-5-5`, `claude-sonnet-5-5`, `claude-opus-5-5`, `claude-fable-5-1`, `claude-opus-5`, `claude-sonnet-5`, `claude-fable-5`, `claude-opus-4-8`, `claude-opus-4-7`, `claude-sonnet-4-6`, `claude-opus-4-6`, `claude-opus-4-5-20251101`, `claude-haiku-4-5-20251001` and `claude-sonnet-4-5-20250929`. In SDK 1.12.0, `model.capabilities` is a **typed `ModelCapabilities` object**, not the dict the skill describes. Read it with `m.capabilities.model_dump()`. All three candidates report `pdf_input`, `image_input`, `structured_outputs`, `citations` and `batch` as supported, plus effort `low` through `max`. Thinking support differs:
   - `claude-opus-5-5` and `claude-sonnet-5-5`: `adaptive` true, `disabled` false, `enabled` false.
@@ -59,7 +59,7 @@ Total API spend for every test in this report: about **$0.76** (usage × list pr
 - All three models share the new tokenizer and the high-resolution vision tier. They return identical token counts for the same input (**VERIFIED** with count_tokens, §3.2).
 - The skill text (cached 2026-09-25) does not yet list Haiku 5.5. The live docs say "Released October 7, 2026" and list "classification, routing, extraction" as its main uses (DOC).
 
-### 2.2 Measured runs on `C:/PartForge-Examples/ExampleProject/opa656.pdf` (VERIFIED)
+### 2.2 Measured runs on `<datasheet-source>/opa656.pdf` (VERIFIED)
 
 Input was the same for every run: 7-page subset [1, 2, 17, 21, 22, 23, 24], the system prompt, and the full `DatasheetExtraction` schema (§4.3). That is 19,809 prompt tokens, of which 19,716 were cached at the document breakpoint. Streaming was on, `max_tokens=32000`, and `fallbacks="default"` was set on the Opus and Sonnet runs. Costs below include the 1.25× cache write on the first run per model.
 
@@ -492,6 +492,7 @@ usage: python minimal_extract.py <datasheet.pdf> [model]
 """
 import base64
 import io
+import os
 import re
 import sys
 from pathlib import Path
@@ -501,7 +502,7 @@ import anthropic
 from pydantic import BaseModel, Field
 from pypdf import PdfReader, PdfWriter
 
-KEY_FILE = Path(r"C:/PartForge-Examples/Tools/ExampleProject/.secret/.claude-api-key.txt")
+KEY_FILE = Path(os.environ["PARTFORGE_RESEARCH_KEY_FILE"])  # explicitly supplied local research key file
 MODEL = sys.argv[2] if len(sys.argv) > 2 else "claude-opus-5-5"
 NA = "-1 if the datasheet does not give this value"
 

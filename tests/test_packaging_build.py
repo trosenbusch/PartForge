@@ -107,7 +107,7 @@ def test_check_build_environment_rejects_a_foreign_partforge(monkeypatch: pytest
 
 
 @pytest.mark.parametrize(("version", "expected"), [
-    ("1.0.0", (1, 0, 0, 0)), ("2.3", (2, 3, 0, 0)), ("1.0.0rc1", (1, 0, 0, 0)), ("4.5.6.7", (4, 5, 6, 7)),
+    ("1.0.0", (1, 0, 0, 0)), ("1.0.0b1", (1, 0, 0, 0)), ("2.3", (2, 3, 0, 0)), ("1.0.0rc1", (1, 0, 0, 0)), ("4.5.6.7", (4, 5, 6, 7)),
 ])
 def test_version_tuple(version: str, expected: tuple[int, ...]) -> None:
     assert build.version_tuple(version) == expected
@@ -121,10 +121,26 @@ def test_version_file_is_valid_for_pyinstaller(tmp_path: Path) -> None:
     info = versioninfo.load_version_info_from_text_file(str(path))
     assert (info.ffi.fileVersionMS, info.ffi.fileVersionLS) == ((1 << 16) | 2, 3 << 16)
     text = str(info)
-    for expected in ("'ProductName', 'PartForge'", "'FileVersion', '1.2.3.0'", "'ProductVersion', '1.2.3.0'",
+    for expected in ("'ProductName', 'PartForge'", "'FileVersion', '1.2.3'", "'ProductVersion', '1.2.3'",
                      "'OriginalFilename', 'PartForge.exe'", "'CompanyName', 'Tobias Rosenbusch'",
                      "PartForge – Altium-Datenbankbibliotheken", "© 2026 Tobias Rosenbusch"):
         assert expected in text
+
+
+@pytest.mark.parametrize(("version", "flags"), [
+    ("1.0.0b1", 0x2), ("1.0.0rc1", 0x2), ("1.0.0.dev1", 0x2), ("1.0.0", 0x0),
+])
+def test_version_resource_preserves_prerelease_and_windows_flag(tmp_path: Path, version: str, flags: int) -> None:
+    """Explorer and the package smoke test see the beta label, while the fixed resource remains numeric."""
+    versioninfo = pytest.importorskip("PyInstaller.utils.win32.versioninfo")
+    path = tmp_path / "version_info.txt"
+    path.write_text(build.version_file_text(version), encoding="utf-8")
+    info = versioninfo.load_version_info_from_text_file(str(path))
+    assert (info.ffi.fileVersionMS, info.ffi.fileVersionLS) == (1 << 16, 0)
+    assert info.ffi.fileFlags == flags
+    text = str(info)
+    assert f"'FileVersion', '{version}'" in text
+    assert f"'ProductVersion', '{version}'" in text
 
 
 def test_copy_package_files_ships_the_package_manual(tmp_path: Path) -> None:
@@ -135,7 +151,7 @@ def test_copy_package_files_ships_the_package_manual(tmp_path: Path) -> None:
     readme = (tmp_path / "README.md").read_text(encoding="utf-8")
     assert "](BEDIENUNG.md)" in source
     assert readme == source.replace("](BEDIENUNG.md)", "](Handbuch/Bedienung.html)")
-    for name in ("LICENSE", "THIRD_PARTY_NOTICES.md", "CHANGELOG.md", "Start-PartForge.cmd"):
+    for name in ("LICENSE", "THIRD_PARTY_NOTICES.md", "CHANGELOG.md", "CHANGELOG.de.md", "Start-PartForge.cmd"):
         assert (tmp_path / name).is_file()
     assert (tmp_path / "Start-PartForge.cmd").read_bytes() == (ROOT / "Start-PartForge.cmd").read_bytes()
     relative = [t for t in re.findall(r"!?\[[^\]]*\]\(([^)\s]+)\)", readme) if not t.startswith(("http", "mailto:"))]

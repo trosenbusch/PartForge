@@ -1,8 +1,15 @@
 .secret/
+# Local inputs, release preparation and private history backups
+tmp/
+.private/
+.env
+.env.*
+!.env.example
 .venv/
 __pycache__/
 *.pyc
 .pytest_cache/
+.pytest-*/
 .mypy_cache/
 .ruff_cache/
 build/
@@ -14,7 +21,6 @@ frontend/dist/
 partforge/web/*
 !partforge/web/.gitkeep
 tests/_tmp/
-.secret/
 tests/data/corpus/pdfs/
 # Generierte Screenshots aus Tests/E2E (~800 MB); nur das README-Bild bleibt versioniert
 docs/screenshots/*

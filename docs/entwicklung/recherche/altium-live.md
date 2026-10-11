@@ -1,7 +1,7 @@
 # Altium live research for PartForge (UNDERSTAND phase)
 
 Agent: altium-live research agent · Date: 2026-10-07 · Working folder:
-`C:/Users/Example/AppData/Local/Temp/claude/c--Projekte-Tools/c2f879a0-18cd-4140-bad7-eb46f08463d7/scratchpad/altium-live/`
+`<scratchpad>/altium-live/`
 
 Every claim is tagged **VERIFIED** (I ran or read it) or **UNVERIFIED** (inference, untested, or a ready-made script that was never run).
 
@@ -36,7 +36,7 @@ footprint-path resolution, placing on a schematic, and the 50-footprint timing. 
 |---|---|
 | Altium | `C:\Program Files\Altium\AD22\X2.EXE`, version 26.10.1.5, process started 07.10.2026 11:18 |
 | Altium CWD (`GetCurrentDir` in script) | `C:\Program Files\Altium\AD22` (relevant for relative ODBC paths) |
-| `SpecialFolder_MyDesigns` | `C:\Users\Example\Documents\My Designs` |
+| `SpecialFolder_MyDesigns` | `<documents>\My Designs` |
 | PCBServer / SchServer | both running |
 | Open projects at start | Free Documents (0 docs), two user `.PrjPcb` projects, `altium-mcp\server\SandboxScript\Sandbox.PrjScr` |
 | Installed libraries at start | 20 (IntLibs); available 23 |
@@ -45,7 +45,7 @@ footprint-path resolution, placing on a schematic, and the 50-footprint timing. 
 | Python | `C:\Python313\python.exe` 3.13.5, `sqlite3` module = SQLite 3.49.1 (newer than the driver's 3.43.2, so avoid newer SQL features in the DB file) |
 | Document kinds (`Client.GetDocumentKindFromDocumentPath`) | `.SchLib`→`SCHLIB`, `.PcbLib`→`PCBLIB`, `.DbLib`→`DATABASELIB`, `.SchDoc`→`SCH`, `.DbLink`→`DATABASELINK`, `.IntLib`→`IntLibrary` |
 
-How the altium-mcp sandbox works (VERIFIED by reading `C:\PartForge-Examples\Tools\altium-mcp\server\main.py`): the tool splices the body into
+How the altium-mcp sandbox works (VERIFIED by reading `<altium-mcp-checkout>\server\main.py`): the tool splices the body into
 `SandboxScript\Sandbox.pas` between `// === BEGIN EXPERIMENT` and `// === END EXPERIMENT`. It then launches
 `"X2.EXE" -RScriptingSystem:RunScript(ProjectName="…\Sandbox.PrjScr"^|ProcName="Sandbox>Run")` through `cmd` and polls
 `C:\Users\Public\altium_mcp\sandbox_result.json` every 0.5 s. After 6 s it starts closing `#32770` and `TMessageForm` dialogs. Only the scratch variables
@@ -98,7 +98,7 @@ Provider=MSDASQL.1;Persist Security Info=False;Extended Properties="DRIVER=SQLit
 [OutputDatabaseLinkFile]
 Version=1.1
 [DatabaseLinks]
-ConnectionString=Provider=MSDASQL.1;Persist Security Info=False;Extended Properties="DRIVER=SQLite3 ODBC Driver;Database=C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\partforge_test.db;NoCreat=1;"
+ConnectionString=Provider=MSDASQL.1;Persist Security Info=False;Extended Properties="DRIVER=SQLite3 ODBC Driver;Database=<scratchpad>\altium-live\partforge_test.db;NoCreat=1;"
 AddMode=3
 RemoveMode=1
 UpdateMode=2
@@ -130,7 +130,7 @@ Options=FieldName=Resistors.Part Number|TableNameOnly=Resistors|FieldNameOnly=Pa
 Options=FieldName=Resistors.Library Ref|TableNameOnly=Resistors|FieldNameOnly=Library Ref|FieldType=1|ParameterName=[Library Ref]|VisibleOnAdd=False|AddMode=0|RemoveMode=0|UpdateMode=0
 … FieldType=1 / ParameterName=[<field>] for Library Path, Footprint Ref, Footprint Path, Description, for each of the 5 tables (30 FieldMaps in total) …
 ```
-I took the format from existing DbLib files on disk (`C:\PartForge-Examples\Capacitor.DbLib` and `C:\PartForge-Examples\Altium_Libs\…\electronpowered.dblib`, read-only).
+I took the format from existing DbLib files on disk (`C:\PartForge-Examples\Capacitor.DbLib` and `C:\PartForge-Examples\libraries\…\electronpowered.dblib`, read-only).
 - UNVERIFIED: that `FieldType=0` marks the key field. Every test table had `Part Number` as its first column, so a "first column is the key" default would behave the same way.
 - File encoding written: ASCII with CRLF.
 
@@ -205,7 +205,7 @@ IntMan.UninstallLibrary(DbLibPath);                                  // VERIFIED
 
 ### 3.1 New SchLib with 2 symbols (pins, description, designator prefix, comment, parameter, footprint link), saved to a path (run 4, VERIFIED)
 ```pascal
-S1 := 'C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\libs\PF_Test.SchLib';
+S1 := '<scratchpad>\altium-live\libs\PF_Test.SchLib';
 I3 := GetTickCount;
 SandboxLog('create free SCHLIB');
 Obj1 := CreateNewFreeDocumentFromDocumentKind('SCHLIB', True);
@@ -323,7 +323,7 @@ Observed log:
 ### 3.2 New PcbLib with pads, tracks and an extruded 3D body (runs 5 and 6, VERIFIED)
 Run 5 (document plus the full PF_R0603):
 ```pascal
-S1 := 'C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\libs\PF_Test.PcbLib';
+S1 := '<scratchpad>\altium-live\libs\PF_Test.PcbLib';
 I3 := GetTickCount;
 SandboxLog('create free PCBLIB');
 Obj1 := CreateNewFreeDocumentFromDocumentKind('PCBLIB', True);

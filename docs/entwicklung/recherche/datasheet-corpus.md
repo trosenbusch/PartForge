@@ -3,7 +3,7 @@
 Research agent report (UNDERSTAND phase), 2026-10-07.
 Status tags: **VERIFIED** = read from the PDF by me (rendered page image and/or text layer) or tested by running code; **DERIVED** = computed from verified values / naming rules; **UNVERIFIED** = assumption, not checked.
 
-Scratchpad root (abbreviated `SP` below): `C:/Users/Example/AppData/Local/Temp/claude/c--Projekte-Tools/c2f879a0-18cd-4140-bad7-eb46f08463d7/scratchpad`
+Scratchpad root (abbreviated `SP` below): `<scratchpad>`
 
 ---
 
@@ -50,7 +50,7 @@ Note for other agents (VERIFIED): the `Read` tool cannot render PDF pages here (
 | 10 | `kemet_C1002_X7R_SMD.pdf` | KEMET (YAGEO Group) | C1002_X7R 2026-09-01 | 28 | yes | MLCC series, sparse availability matrix, superscript footnotes, "C" = half pitch |
 | 11 | `bourns_SRR1260.pdf` | Bourns | SRR1260, REV 03/26 | 4 | yes | inductor series, Ω→"W" font glitch, off-page hidden text, no ordering legend |
 
-SHA-256 of every file is in `manifest.json` (`sha256`). Local sources (read-only, copied with `cp -p`): `C:/PartForge-Examples/ExampleProject/{opa656,LTC6244}.pdf`, `C:/PartForge-Examples/ExampleProject/6N137.pdf`, `C:/PartForge-Examples/ExampleProject/doc/datasheets/{25AA02E48,AD7983,sn65lv1023a}.pdf`, `C:/PartForge-Examples/ExampleProject/ExampleProject/Dokumentation/{ADG736,AD5235}.pdf`.
+SHA-256 of every file is in `manifest.json` (`sha256`). Local sources (read-only, copied with `cp -p`; source directories anonymized): `<datasheet-source>/{opa656,LTC6244}.pdf`, `<datasheet-source>/6N137.pdf`, `<datasheet-source>/{25AA02E48,AD7983,sn65lv1023a}.pdf`, `<datasheet-source>/{ADG736,AD5235}.pdf`.
 
 ### 2.1 Downloads (VERIFIED, `curl -L`, 2026-10-07)
 

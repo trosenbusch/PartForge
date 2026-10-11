@@ -4,8 +4,8 @@
   DoFileSave('') + Client.CloseDocument (for SCHLIB/PCBLIB), LoadComponentFromDatabaseLibrary.
   New/unverified: kind 'SCH', RegisterSchObjectInContainer of a DB-loaded component,
   GetState_DatabaseLibraryKeys. }
-S1 := 'C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\PF_Test_abs.DbLib';
-S2 := 'C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\PF_Place_Test.SchDoc';
+S1 := 'C:\PartForge-Examples\scratchpad\altium-live\PF_Test_abs.DbLib';
+S2 := 'C:\PartForge-Examples\scratchpad\altium-live\PF_Place_Test.SchDoc';
 IntMan := IntegratedLibraryManager;
 IntMan.InstallLibrary(S1);
 Obj1 := CreateNewFreeDocumentFromDocumentKind('SCH', True);

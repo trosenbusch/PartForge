@@ -86,8 +86,8 @@ pywebview (WebView2, js_api) ──HTTP──> FastAPI (127.0.0.1:48765, Sitzung
   **Keine Entwickler-Pfade als Standard**: `AISettings.api_key_file` ist `None`; der Rust-Writer kommt aus
   `rust_writer_path` – ein eingetragener, aber fehlender Pfad ergibt `None` (die Statusanzeige nennt ihn), nie
   stillschweigend einen anderen Writer – sonst aus `config.detect_rust_writer()`: `PARTFORGE_RUST_WRITER`,
-  `%LOCALAPPDATA%\Programs\altium-designer-mcp\`, neben `PartForge.exe` (auch Unterordner `altium-designer-mcp`),
-  nur aus dem Quellbaum zusätzlich `config.DEV_RUST_WRITER`. `default_library_parent()` = `<Dokumente>\PartForge`.
+  `%LOCALAPPDATA%\Programs\altium-designer-mcp\`, neben `PartForge.exe` (auch Unterordner `altium-designer-mcp`).
+  `default_library_parent()` = `<Dokumente>\PartForge`.
   `AppSettings`: `workspace`, `recent_workspaces`, `theme`, `author`, `ai` (`AISettings`: `enabled`,
   `api_key_file`, `model`, `effort`, `fast_model`, `use_fallbacks`, `max_cost_per_import_usd`) und `altium`
   (`AltiumSettings`: `x2_path`, `library_backend` = `auto|rust|altium`, `rust_writer_path`,
@@ -182,8 +182,8 @@ Rahmenverbot, die SPA-Auslieferung (`render_index`) prüft zusätzlich, woher di
   Anthropic-Schlüssel ist (`sk-ant-` + Schlüsselzeichen, `config.looks_like_anthropic_key`, `config._file_key`);
   andere Dateiinhalte gehen nie an die API. `GET /api/settings` und `/api/ai/status` melden über
   `ai_key_file_problem`/`key_file_problem`, wenn eine konfigurierte Schlüsseldatei keinen gültigen Schlüssel liefert
-  („… enthält keinen gültigen Claude-Schlüssel“). Die alte Standard-Schlüsseldatei (`config.LEGACY_KEY_FILE`) gilt
-  unverändert: sie wird nur gelesen, wenn sie eingetragen ist, und nie in isolierten Läufen (`PARTFORGE_HOME`).
+  („… enthält keinen gültigen Claude-Schlüssel“). Schlüsseldateien werden ausschließlich nach expliziter
+  Konfiguration gelesen; ein erster Start sucht keine Schlüsseldateien in anderen Projekten.
 * **CSV/XLSX-Export (Formel-Injektion).** Jeder CSV-Export ist standardmäßig Excel-sicher (`excel_safe=True` in
   `spreadsheet.render_export`, `GET /api/export/{table}`, `POST /api/export/{table}` und dem Export-Job; das Frontend
   sendet `excel_safe=true`): ein Wert (auch ein Spaltenname), den Excel als Formel ausführen würde (`= + @`, Tab, CR,
@@ -1701,7 +1701,7 @@ Gründlichkeit, Beträge). Seitenbilder und Textebenen liegen im lokalen App-Cac
 * Datenblatt-Tests: `tests/test_datasheet_find.py` (Suche, PDF-Prüfung mit `httpx.MockTransport` und falschem DNS),
   `test_datasheet_replay.py`, `test_datasheet_guard.py` (Wechsel während einer bezahlten Analyse, gesicherte
   Ergebnisse), `test_datasheet_progress.py` (`detail`, Schlussmeldungen, Namen, Kostenschätzung).
-* Tests schreiben nur unter `tmp_path` oder `tests/_tmp`; nie Benutzerdaten unter `C:\PartForge-Examples\Altium_Libs` oder
+* Tests schreiben nur unter `tmp_path` oder `tests/_tmp`; nie in persönliche Bibliotheken oder
   die echten Einstellungen. Netzwerk nur in Tests mit Marker `ai`.
 
 ## 12. Code-Stil

@@ -1,7 +1,7 @@
 { FOLLOW-UP 04 (UNVERIFIED as a whole; every API call in it was VERIFIED in this run).
   Creates 50 simple footprints (2 round-rect pads, 4 courtyard tracks on Mech15,
   1 extruded 3D body on Mech13) in a new free PcbLib, saves it, closes it, logs ticks. }
-S1 := 'C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\libs\PF_Timing50.PcbLib';
+S1 := 'C:\PartForge-Examples\scratchpad\altium-live\libs\PF_Timing50.PcbLib';
 I3 := GetTickCount;
 Obj1 := CreateNewFreeDocumentFromDocumentKind('PCBLIB', True);
 SandboxLog('doc ms=' + IntToStr(GetTickCount - I3) + ' name=' + Obj1.FileName);

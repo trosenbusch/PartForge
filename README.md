@@ -13,11 +13,13 @@ symbol and footprint. New components become available in Altium without restarti
 > assistance and is in an early beta stage. Expect bugs and changes. Check generated components,
 > symbols and footprints before use, and back up your libraries regularly.
 
+Current version: **1.0.0b1**, corresponding to the GitHub prerelease tag **v1.0.0-beta.1**.
+
 The interface supports **English (default)** and **German**. Select and save your language under
 *Settings → General → Language*. The selection persists across restarts.
-The detailed manuals and changelog are currently in German.
+The detailed manuals are currently in German; the changelog is available in both languages.
 
-![PartForge overview — German interface, dark theme](docs/screenshots/readme/uebersicht-dark.png)
+![PartForge overview — English interface, dark theme](docs/screenshots/readme/overview-dark.png)
 
 ## Features
 
@@ -144,8 +146,8 @@ For a source installation:
   PDF pages or search request are sent to the Claude API.
 - The API key is not returned to the frontend. Stored keys use Windows DPAPI under
   `%APPDATA%\PartForge\secret`, tied to the current Windows account. An optional key file must be local,
-  small and contain a Claude API key. On first start, this beta also checks a legacy ExampleProject
-  key-file location defined in `partforge/config.py`; any selected file can be changed or removed in settings.
+  small and contain a Claude API key. A fresh installation starts without a configured key file.
+  Keys must be supplied explicitly through settings or `ANTHROPIC_API_KEY`.
 - PartForge listens on `127.0.0.1` and accepts only local connections. Requests from other websites are
   rejected. Each session has a new access token that is excluded from application logs.
 - Open the interface through the desktop window, a directly entered address or a bookmark. Navigation
@@ -212,6 +214,7 @@ Use `npm.cmd` on Windows if PowerShell's execution policy blocks `npm.ps1`.
 Frontend checks are `npm.cmd run build`, `npm.cmd run lint` and `npm.cmd test`.
 Tests requiring Altium, the Rust writer or the Claude API are gated by the environment variables
 `PARTFORGE_TEST_ALTIUM`, `PARTFORGE_TEST_RUST` and `PARTFORGE_TEST_AI` in `tests/conftest.py`.
+The Windows CI runs Python 3.11 and 3.13 and the frontend checks without external Altium or AI services.
 
 From the repository root:
 
@@ -226,12 +229,30 @@ isolated smoke test. Build warnings, missing modules, log errors or leftover fil
 Signing is optional via `--sign`, the Windows certificate store, `PARTFORGE_SIGN_CERT_SHA1` or
 `PARTFORGE_SIGN_PFX`. Update `constraints.txt` after dependency updates.
 
-Further documentation (currently in German):
+Further documentation:
 
 - [Architecture and module contracts](docs/entwicklung/ARCHITEKTUR.md)
 - [Frontend design system](docs/entwicklung/FRONTEND.md)
 - [Research and Altium verification notes](docs/entwicklung/recherche/)
 - [Changelog and known limitations](CHANGELOG.md)
+
+## Known beta limitations
+
+- Large XLSX exports and updates to large existing PcbLib files can take several seconds.
+- Automatic backups are not compressed and require additional disk space.
+- Murata GRM ordering-code data has not been fully checked against manufacturer documentation;
+  verify part numbers before ordering.
+- Altium's Components panel and the *Update Parameters From Database* dialog have not been covered
+  by automated UI tests. DbLib generation, ODBC access and component resolution are tested separately.
+- Unsigned local builds may show a Windows SmartScreen warning.
+- The GPL-licensed Rust library writer and SQLite ODBC driver must be installed separately.
+
+## Contributing and support
+
+Bug reports and feature requests are welcome through [GitHub Issues](https://github.com/trosenbusch/PartForge/issues).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, checks and contribution guidance.
+Report security vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
+Remove API keys, private library files and personal paths from reports, logs and screenshots.
 
 ## License
 

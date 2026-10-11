@@ -127,7 +127,7 @@ export default function UiKitPage() {
   const [model, setModel] = useState('claude-opus-5-5')
   const [budget, setBudget] = useState<number | null>(2)
   const [resistance, setResistance] = useState<number | null>(4700)
-  const [path, setPath] = useState('C:\\PartForge-Examples\\Altium_Libs\\PartForge\\Footprints\\PF_CHIP.PcbLib')
+  const [path, setPath] = useState('C:\\Projekte\\Altium_Libs\\PartForge\\Footprints\\PF_CHIP.PcbLib')
   const [sizes, setSizes] = useState<string[]>(['0402', '0603'])
   const [pkg, setPkg] = useState<string | null>('0603')
   const [checked, setChecked] = useState<boolean | 'indeterminate'>(true)

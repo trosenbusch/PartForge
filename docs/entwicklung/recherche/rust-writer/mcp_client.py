@@ -12,6 +12,7 @@ Usage as a library::
 
 Usage from the command line::
 
+    # Set PARTFORGE_RUST_WRITER to the local altium-designer-mcp.exe first.
     python mcp_client.py tools                  # dump tools/list (names)
     python mcp_client.py schema write_pcblib    # print one tool's inputSchema
     python mcp_client.py call <tool> '<json>'   # call a tool (or @file.json)
@@ -27,7 +28,6 @@ import threading
 import time
 from typing import Any
 
-DEFAULT_EXE = "C:/PartForge-Examples/MCP/altium-designer-mcp-windows-x86_64/altium-designer-mcp.exe"
 HERE = os.path.dirname(os.path.abspath(__file__)).replace("\\", "/")
 DEFAULT_CONFIG = HERE + "/config.json"
 OUT = HERE + "/out"
@@ -54,13 +54,16 @@ class ToolError(Exception):
 class McpClient:
     def __init__(
         self,
-        exe: str = DEFAULT_EXE,
+        exe: str | None = None,
         config: str | None = DEFAULT_CONFIG,
         verbose: int = 0,
         timeout: float = 300.0,
         auto_init: bool = True,
         protocol_version: str = "2025-06-18",
     ):
+        exe = exe or os.environ.get("PARTFORGE_RUST_WRITER")
+        if not exe:
+            raise ValueError("Pass exe=... or set PARTFORGE_RUST_WRITER to your local writer executable.")
         args = [exe]
         if verbose:
             args.append("-" + "v" * verbose)

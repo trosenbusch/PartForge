@@ -44,7 +44,7 @@ begin
 
     try
         // === BEGIN EXPERIMENT (rewritten by the run_altium_script tool) ===
-        S1 := 'C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\PF_Test_abs.DbLib';
+        S1 := 'C:\PartForge-Examples\scratchpad\altium-live\PF_Test_abs.DbLib';
         IntMan := IntegratedLibraryManager;
         IntMan.InstallLibrary(S1);
         SandboxLog('installed');

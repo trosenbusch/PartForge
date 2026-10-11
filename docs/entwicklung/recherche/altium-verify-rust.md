@@ -3,7 +3,7 @@
 Research agent, UNDERSTAND phase, 2026-10-07, 21:40–22:15.
 Every claim is tagged **[VERIFIED]** (I ran it or read the bytes) or **[UNVERIFIED]**.
 
-Working folder: `C:/Users/Example/AppData/Local/Temp/claude/c--Projekte-Tools/c2f879a0-18cd-4140-bad7-eb46f08463d7/scratchpad/altium-verify-rust`
+Working folder: `<scratchpad>/altium-verify-rust`
 (abbreviated as `AV` below).
 
 ---
@@ -29,7 +29,7 @@ Working folder: `C:/Users/Example/AppData/Local/Temp/claude/c--Projekte-Tools/c2
    4. Then run `altium-live/followup/00_cleanup_uninstall.txt`. `PF_Test_abs.DbLib` from the altium-live agent is still installed.
 4. **Nothing else was touched [VERIFIED]:**
    * I opened no file in Altium and did not touch any user document or project.
-   * The `run_altium_script` tool rewrote `C:/PartForge-Examples/Tools/altium-mcp/server/SandboxScript/Sandbox.pas` with my 2-line probe body. That is the tool's normal mechanism; lines 46–49 now hold the probe.
+   * The `run_altium_script` tool rewrote `<altium-mcp-checkout>/server/SandboxScript/Sandbox.pas` with my 2-line probe body. That is the tool's normal mechanism; lines 46–49 now hold the probe.
    * The Rust agent's `out/` files are unchanged. sha256 of the originals still equals my copies (§1).
 5. **What I did instead** (all outside Altium):
    * **(a)** An acceptance test of every library through Windows' own compound-file implementation (ole32).
@@ -310,7 +310,7 @@ These are UTF-8 bytes in both keys, shown here as Latin-1. The kit reads them ba
 ### 3.9 Footprint links [VERIFIED bytes]
 
 * `RES_0603_10K` (final state) has three `RECORD=45` links:
-  * `RESC1608X55N`: `IsCurrent=T|ModelDatafile0=C:/Users/Example/AppData/Local/Temp/claude/c--Projekte-Tools/c2f879a0-18cd-4140-bad7-eb46f08463d7/scratchpad/rust-writer/out/PartForge_Test.PcbLib`
+  * `RESC1608X55N`: `IsCurrent=T|ModelDatafile0=<scratchpad>/rust-writer/out/PartForge_Test.PcbLib`
   * `RESC3216X70N`: no `ModelDatafile0`.
   * `RESC1005X40N`: the same absolute forward-slash path.
 * RESC3216X70N and RESC1005X40N **do not exist** in that PcbLib. They are expected not to resolve in Altium; this is not a writer bug.
@@ -385,7 +385,7 @@ MiniPC (2017) has no kinds.
   * `-ListOnly` detects modal dialogs (`TMessageForm`/`#32770`) after each open.
   * `-Hwnd` captures one window.
 
-### 5.2 Run order (use backslash paths `C:\Users\Example\...\altium-verify-rust\libs\<file>`)
+### 5.2 Run order (use backslash paths `<scratchpad>\altium-verify-rust\libs\<file>`)
 
 1. **Probe.** `run_altium_script(kit/00_probe.txt, timeout_seconds=5)`.
    * If it returns "never started", poll `C:/Users/Public/altium_mcp/sandbox_result.json` for 20 s yourself before concluding anything.

@@ -4,6 +4,6 @@
   measures launch -> ping-file latency with 10 ms polling. }
 List1 := TStringList.Create;
 List1.Add(FormatDateTime('hh:nn:ss.zzz', Now));
-List1.SaveToFile('C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\followup\ping.txt');
+List1.SaveToFile('C:\PartForge-Examples\scratchpad\altium-live\followup\ping.txt');
 List1.Free;
 ResultText := 'ping';

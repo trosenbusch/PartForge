@@ -1,7 +1,7 @@
 # Altium database library files (.DbLib, also .SvnDbLib and .DbLink): reference for PartForge
 
 Research date: 2026-10-07. Author: research agent (UNDERSTAND phase).
-Working folder (scripts, test databases, downloaded docs): `C:/Users/Example/AppData/Local/Temp/claude/c--Projekte-Tools/c2f879a0-18cd-4140-bad7-eb46f08463d7/scratchpad/dblib-research/`
+Working folder (scripts, test databases, downloaded docs): `<scratchpad>/dblib-research/`
 
 ## Evidence tags used in this report
 
@@ -11,7 +11,7 @@ Working folder (scripts, test databases, downloaded docs): `C:/Users/Example/App
 | **[FILE]** | Read in real DbLib files: `C:/PartForge-Examples/Capacitor.DbLib`, `electronpowered.dblib`, the two Celestial `*.DbLib`, or the Celestial SQLite snapshot. |
 | **[BIN]** | Taken from strings or RTTI in the installed Altium binaries (`System/WorkspaceManager.dll`, `System/AdvSch.dll`). |
 | **[DOC]** | Verbatim from Altium documentation fetched on 2026-10-07 (the pages are the current "Altium Designer" docs). |
-| **[PRIOR]** | From earlier local work in `C:/PartForge-Examples/Tools/altium-mcp/dev/DBLIB_FINDINGS.md`. That work was tested against live Altium with a production Access DbLib. I did not re-test it. |
+| **[PRIOR]** | From earlier local work in `<altium-mcp-checkout>/dev/DBLIB_FINDINGS.md`. That work was tested against live Altium with a production Access DbLib. I did not re-test it. |
 | **[INFERRED]** | My conclusion, drawn from the evidence listed with it. |
 | **[UNVERIFIED]** | Not verified. Must be tested in Altium before anyone relies on it (see section 13). |
 
@@ -23,7 +23,7 @@ Working folder (scripts, test databases, downloaded docs): `C:/Users/Example/App
 
 - The file is an INI file with sections `[OutputDatabaseLinkFile]`, `[DatabaseLinks]`, `[Table1]…[TableN]` and `[FieldMap1]…[FieldMapM]`. **[FILE]**
 - All four sample files are plain ASCII with CRLF line endings and no BOM. **[FILE]**
-- Altium writes its other INI-style files (`*.PrjPcb`, `*.OutJob`) in ANSI cp1252 with no BOM. Example: `Butterh\xe4rte` (ä = 0xE4) in `C:/PartForge-Examples/**/BHP_Basisboard.PrjPcb`, which is not valid UTF-8. **[FILE]** The DbLib is therefore very likely ANSI too **[INFERRED]**.
+- Altium writes its other INI-style files (`*.PrjPcb`, `*.OutJob`) in ANSI cp1252 with no BOM. Example: `Butterh\xe4rte` (ä = 0xE4) in `C:/PartForge-Examples/**/Example.PrjPcb`, which is not valid UTF-8. **[FILE]** The DbLib is therefore very likely ANSI too **[INFERRED]**.
   - **Rule:** write DbLib files in cp1252 with no BOM and CRLF line endings.
   - Keep table names, column names and paths ASCII-only where you can.
   - Hint (weak evidence): `Capacitor.DbLib` contains a column written as `?Part Number`, which looks like a character that ANSI could not represent.
@@ -666,5 +666,5 @@ dblib.write_bytes(new.encode("cp1252"))
 - psqlODBC configuration options, https://odbc.postgresql.org/docs/config-opt.html
 - PDXpert application note (Altium + SQLite/LocalDB views), https://www.buyplm.com/application-notes/pdxpert-plm-integration-altium-designer.aspx
 - Celestial offline DB issue #83, https://hub.allspice.io/AllSpice-Demos/Altium-Celestial-library/issues/83 ; snapshot https://github.com/issus/altium-library/files/5696845/celestial-2020-12-15.sqlite3.zip (extracted copy: `celestial_x/celestial.sqlite3` in the working folder)
-- Local files (read-only): `C:/PartForge-Examples/Capacitor.DbLib`, `C:/PartForge-Examples/Altium_Libs/altium-library-master/electronpowered.dblib` + README, `C:/PartForge-Examples/Altium_Libs/Celestial_Altium_Library/*.DbLib` + README + BOM template, `C:/PartForge-Examples/Tools/altium-mcp/dev/DBLIB_FINDINGS.md`, `make_part_spec.py`
+- Local files (read-only): `C:/PartForge-Examples/Capacitor.DbLib`, `C:/PartForge-Examples/libraries/altium-library-master/electronpowered.dblib` + README, `C:/PartForge-Examples/libraries/Celestial_Altium_Library/*.DbLib` + README + BOM template, `<altium-mcp-checkout>/dev/DBLIB_FINDINGS.md`, `make_part_spec.py`
 - Altium binaries: `C:/Program Files/Altium/AD22/System/WorkspaceManager.dll` and `AdvSch.dll` (AD 26.10.1.5). String dumps are in `out/*.strings.txt` in the working folder.

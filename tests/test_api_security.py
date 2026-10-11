@@ -425,18 +425,35 @@ def test_key_file_only_used_when_it_looks_like_an_anthropic_key(monkeypatch, tmp
     assert config.read_api_key(s) == "sk-ant-abc123" and config.key_file_status(s) is None
 
 
-def test_first_start_enters_the_developer_key_file_only_outside_isolated_runs(monkeypatch, tmp_path) -> None:
-    """The user allowed the ExampleProject key file: a first start on that PC enters it (never in isolated runs)."""
-    key = tmp_path / ".claude-api-key.txt"
-    key.write_text("sk-ant-abc123", encoding="utf-8")
-    monkeypatch.setattr(config, "LEGACY_KEY_FILE", str(key))
+@pytest.mark.parametrize("isolated", [False, True])
+def test_first_start_does_not_discover_key_files(monkeypatch, tmp_path, isolated) -> None:
+    """A fresh settings file never picks up a key file from another project or the working directory."""
+    secret = tmp_path / ".secret" / "claude-api-key.txt"
+    secret.parent.mkdir()
+    secret.write_text("sk-ant-abc123", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(config, "settings_path", lambda: tmp_path / "settings.json")
+    monkeypatch.setattr(config, "_cached", None)
+    monkeypatch.setattr(config, "_cached_stamp", None)
     monkeypatch.delenv("PARTFORGE_NO_AI_KEY", raising=False)
-    monkeypatch.setenv("PARTFORGE_HOME", str(tmp_path / "home"))
-    assert config._first_start_settings().ai.api_key_file is None  # isolated run
-    monkeypatch.delenv("PARTFORGE_HOME")
-    assert config._first_start_settings().ai.api_key_file == str(key)
-    key.unlink()
-    assert config._first_start_settings().ai.api_key_file is None  # any other PC: no such file
+    if isolated:
+        monkeypatch.setenv("PARTFORGE_HOME", str(tmp_path / "home"))
+    else:
+        monkeypatch.delenv("PARTFORGE_HOME")
+    assert config.load_settings(reload=True).ai.api_key_file is None
+
+
+def test_explicit_key_file_is_preserved_after_settings_reload(monkeypatch, tmp_path) -> None:
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("PARTFORGE_NO_AI_KEY", raising=False)
+    monkeypatch.setattr(config, "_read_stored_key", lambda: None)
+    key = tmp_path / "chosen-key.txt"
+    key.write_text("sk-ant-abc123\n", encoding="utf-8")
+    config.save_settings(AppSettings(ai={"api_key_file": str(key)}))
+    settings = config.load_settings(reload=True)
+    assert settings.ai.api_key_file == str(key)
+    assert config.read_api_key(settings) == "sk-ant-abc123"
+    assert config.api_key_source(settings) == "file"
 
 
 def test_ai_status_says_the_key_file_holds_no_key(bare_client, monkeypatch, tmp_path) -> None:

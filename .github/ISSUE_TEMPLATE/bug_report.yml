@@ -1,0 +1,66 @@
+name: Bug report
+description: Report a reproducible problem in PartForge.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        PartForge is an early beta. Search existing issues before reporting a problem.
+        For security vulnerabilities, use [private reporting](https://github.com/trosenbusch/PartForge/security/advisories/new) and read [SECURITY.md](https://github.com/trosenbusch/PartForge/blob/main/SECURITY.md).
+        Remove API keys, session tokens, private paths and proprietary library data from logs, screenshots and attachments.
+  - type: input
+    id: version
+    attributes:
+      label: PartForge version or commit
+      description: Find the version on the welcome page, or include the commit from a source checkout.
+      placeholder: 1.0.0b1 / commit hash
+    validations:
+      required: true
+  - type: dropdown
+    id: installation
+    attributes:
+      label: Installation
+      options:
+        - Source checkout
+        - Packaged Windows build
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Windows version; Python and Node.js versions for source installations; Altium and library-writer versions when relevant.
+      placeholder: Windows 11, Python 3.13, Node.js 24, Altium Designer 26.10
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include the smallest example you have permission to share.
+      placeholder: |
+        1. Create a new example library.
+        2. Open ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include error messages and screenshots if useful.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Optional. Logs are under %LOCALAPPDATA%\PartForge\logs\partforge.log. Review and redact them before sharing.
+      render: text

@@ -581,6 +581,7 @@ const messages: Record<string, string> = {
   "Direkt in Altium": "Directly in Altium",
   "Als Datenbankbibliothek (DbLib) sofort nutzbar.": "Ready to use as a database library (DbLib).",
   "Datenbankbibliotheken für": "Database libraries for",
+  "Bauteile schmieden": "Forge parts",
   "nicht abtippen.": "skip the typing.",
   "PartForge legt komplette Bauteilserien an, liest Datenblätter per KI und liefert Symbole, Footprints und 3D‑Modelle direkt als Altium‑Datenbankbibliothek – sauber, einheitlich und in Minuten statt Tagen.": "PartForge creates complete part series, reads datasheets using AI and delivers symbols, footprints and 3D models as an Altium database library — consistent and ready in minutes instead of days.",
   "Geöffnet": "Open",

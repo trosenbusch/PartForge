@@ -7,11 +7,11 @@ Legend: **[V]** = VERIFIED (read from the files / reproduced in this session), *
 
 ## 0. Scope, method, evidence
 
-* Libraries (read-only): `C:/PartForge-Examples/Altium_Libs/Local/SchLib/*.SchLib` (18 + 3 `.bak`), `PcbLib/*.PcbLib` (21 + 4 `.bak`), 16 `TR_*.LibPkg`.
+* Libraries (read-only): `C:/PartForge-Examples/libraries/Local/SchLib/*.SchLib` (18 + 3 `.bak`), `PcbLib/*.PcbLib` (21 + 4 `.bak`), 16 `TR_*.LibPkg`.
 * Primary reader: `altium-designer-mcp.exe` v0.1.0 (stdio JSON-RPC, newline-delimited), driven by my stdlib client
   `scratchpad/user-lib-style/mcp_client.py`. That client has a whitelist of the 8 read tools: `read_schlib`, `read_pcblib`, `list_components`,
   `extract_style`, `render_symbol`, `render_footprint`, `search_components`, `get_component`. Its own `config.json` has
-  `"allowed_paths": ["C:/PartForge-Examples/Altium_Libs/Local"]`. Handshake used: `initialize` (protocolVersion `2024-11-05`) →
+  `"allowed_paths": ["C:/PartForge-Examples/libraries/Local"]`. Handshake used: `initialize` (protocolVersion `2024-11-05`) →
   `notifications/initialized` → `tools/call`. The server lists 34 tools [V].
 * Cross-check: my own olefile parsers of the raw OLE streams (`pcblib_raw.py`, `pcblib_header.py`, `schlib_raw.py`, venv in my folder, run with `python -I`).
 * **Read-only proof [V]:** I recorded SHA-256, size and mtime of all 62 SchLib/PcbLib/LibPkg files before the first read and again after all reads. They are identical (`hash_before.txt`, `stat_before.txt`).
@@ -486,7 +486,7 @@ There is **no** `.Designator` (or `.Comment`) on Top Overlay in any house footpr
 * **Footprint reference** = the exact PcbLib footprint name. Symbol links carry no library path.
 * **Description templates already used by the user:**
   * `Info` formulas `RES <Value> <Tolerance> <Power> <Footprint>` and `CAP CER<Value> <Voltage> <Dielectric> <Footprint>`.
-  * The user's spreadsheets `C:/PartForge-Examples/Altium_Libs/{Capacitors*,240213_Capacitors_*,Resistor_Calc*}.ods` (2024-02) are Altium-365 workspace component exports. They contain item IDs (`CMP-428-000063`, `PCC-432-000016-1`, `SYM-CAP-000002-3`, `SIM-432-000293-1`) and descriptions such as `CAP CER 68pF 50V ±5% NP0 1210` and `RES SMD 360 OHM 1% 1W 2512`. Row 1 is data, i.e. there is no header row [V, first rows only].
+  * The user's spreadsheets `C:/PartForge-Examples/libraries/{Capacitors*,240213_Capacitors_*,Resistor_Calc*}.ods` (2024-02) are Altium-365 workspace component exports. They contain item IDs (`CMP-428-000063`, `PCC-432-000016-1`, `SYM-CAP-000002-3`, `SIM-432-000293-1`) and descriptions such as `CAP CER 68pF 50V ±5% NP0 1210` and `RES SMD 360 OHM 1% 1W 2512`. Row 1 is data, i.e. there is no header row [V, first rows only].
 * Third-party DbLibs exist outside `Local` (`Celestial_Altium_Library/*.DbLib`, `altium-library-master/electronpowered.dblib`). They were not analysed.
 * **Recommendation [U]:**
   * DB columns: `Comment` (shown), `Value`, `Description`, `Manufacturer`, `Manufacturer Part Number`, `Supplier 1`, `Supplier Part Number 1`, `Library Ref`, `Library Path`, `Footprint Ref` (+ `Footprint Ref 2..n` for density/height variants), `Footprint Path`, `ComponentLink1URL` (datasheet), plus category-specific columns.

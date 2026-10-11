@@ -3,7 +3,7 @@
   Altium's CWD is C:\Program Files\Altium\AD22 (VERIFIED), so the ODBC driver most likely
   resolves the bare file name there and fails (NoCreat=1 prevents creating an empty DB).
   Expectation: tablecount=0 (or an error dialog that run_altium_script dismisses). }
-S1 := 'C:\Users\Example\AppData\Local\Temp\claude\c--Projekte-Tools\c2f879a0-18cd-4140-bad7-eb46f08463d7\scratchpad\altium-live\PF_Test_rel.DbLib';
+S1 := 'C:\PartForge-Examples\scratchpad\altium-live\PF_Test_rel.DbLib';
 IntMan := IntegratedLibraryManager;
 IntMan.InstallLibrary(S1);
 SandboxLog('installed');

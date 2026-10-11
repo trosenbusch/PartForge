@@ -4,7 +4,7 @@ Agent: Altium E2E agent (exclusive use of the running Altium) · 2026-10-08, 04:
 Altium: `C:\Program Files\Altium\AD22\X2.EXE`, **26.10.1.5**. Rust writer `altium-designer-mcp.exe` 0.1.0.
 ODBC: 64-bit "SQLite3 ODBC Driver" 0.99991 (SQLite 3.43.2) through MSDASQL.
 
-Working folder `E2E` = `C:\PartForge-Examples\Tools\PartForge\tests\_tmp\e2e-wave2\`:
+Working folder `E2E` = `<checkout>\tests\_tmp\e2e-wave2\`:
 
 | Path | Content |
 | --- | --- |
@@ -367,7 +367,7 @@ by an order of magnitude. Needs a live check like every bridge command.
 ## 10. Welle 3: footprint heights, batch verification, the chain after the db fixes
 
 Agent: Altium fixes agent (exclusive use of the running Altium) · 2026-10-08, 11:30–13:00. Same Altium 26.10.1.5,
-Rust writer 0.1.0, SQLite3 ODBC 0.99991. Working folder `E2E3` = `C:\PartForge-Examples\Tools\PartForge\tests\_tmp\e2e-wave3\`:
+Rust writer 0.1.0, SQLite3 ODBC 0.99991. Working folder `E2E3` = `<checkout>\tests\_tmp\e2e-wave3\`:
 
 | Path | Content |
 | --- | --- |

@@ -1,151 +1,164 @@
-# Änderungen
+# Changelog
 
-## Unveröffentlicht
+English · [Deutsch](CHANGELOG.de.md)
 
-### Neu
+## Unreleased
 
-- **In Altium bearbeiten** (Detailansicht eines Symbols oder Footprints): öffnet die SchLib/PcbLib in Altium
-  Designer und zeigt das Bauteil dort. Nach dem Speichern in Altium übernimmt PartForge die Änderungen automatisch –
-  Vorschau, Pins/Pads, Bauhöhe und 3D-Modell stammen dann aus der gespeicherten Datei, die Herkunft heißt „In Altium
-  bearbeitet“. Auch andere in derselben Datei geänderte, umbenannte oder neue Bauteile werden erkannt; ein reines
-  Neuspeichern ohne Änderung nicht. „Bearbeiten“ und „Neu generieren“ ersetzen eine solche Fassung nur nach
-  Rückfrage. Die Beobachtung übersteht einen Neustart und endet mit „Bearbeitung beenden“, wenn Altium beendet
-  wird oder nach 12 Stunden ohne Speichern.
-- **Englisch und Deutsch** (*Einstellungen › Allgemein › Profil und Darstellung › Sprache*): Oberfläche,
-  Desktop-Dialoge, Meldungen und Zahlenformate in der gewählten Sprache. Standard ist Englisch – auch bestehende
-  Installationen zeigen nach dem Update Englisch, bis „Deutsch“ gewählt und gespeichert ist.
-- **STEP-Modelle in der 3D-Vorschau**: die Vorschau zeigt die STEP-Modelle eines Footprints mit ihrer
-  Altium-Platzierung, auch eingebettete Modelle importierter Bibliotheken, die beim Import nicht abgelegt wurden;
-  jedes Modell lässt sich herunterladen.
-- **Bibliotheksimport** (neue Seite, Alt+9): Symbole und Footprints vorhandener Altium-Bibliotheken übernehmen – aus
-  einem Ordner (rekursiv), einer SchLib/PcbLib, einer integrierten Bibliothek (IntLib), einem Bibliothekspaket
-  (LibPkg) oder einem ZIP-Archiv. Vorschau je Bauteil, Zustand je Name (neu, schon importiert, Name vergeben,
-  doppelt), Zielordner unter `Symbols\Import` / `Footprints\Import`, Dateien werden unverändert kopiert. Aus den
-  importierten Symbolen entsteht auf Wunsch eine Tabelle für den Tabellenimport („Bauteile anlegen …“).
-- **Stapelbearbeitung** (neue Seite, Alt+0): importierte Symbole und Footprints an den Hausstil angleichen –
-  Schriften, Pinlänge von IC-Symbolen, Bezeichner-Präfixe, Farben, Lagen nach der Lagenzuordnung (Rollen der fremden
-  Mechanik-Lagen werden erkannt und lassen sich umstellen), Linienbreiten, `.Designator`/`.Comment` in Hausschrift,
-  fehlende Texte und Bauteilmitte, Lagen-Kopf. Erst prüfen, dann anwenden; verlustfrei auf Datensatzebene, jede Datei
-  wird gesichert, die letzte Stapelbearbeitung lässt sich rückgängig machen.
-- **Hausstil aus Beispielbibliothek** (*Einstellungen › Hausstil*): Schriften, Pinlängen, Farben, Lagen,
-  Linienbreiten und Texte aus einer Bibliothek übernehmen, die so aussieht, wie alle Bauteile aussehen sollen
-  (SchLib, PcbLib, IntLib, ZIP oder Ordner).
-- **Lagensatz** (*Einstellungen › Hausstil › Lagen*): jede Footprint-Bibliothek erhält einen eigenen Altium-Lagensatz –
-  „Component Layers“ aus der Lagenzuordnung oder ein Satz aus einer `.layerset`-Datei, auf Wunsch beim Öffnen aktiv.
-- Hausstil: TrueType-Schrift für `.Designator`/`.Comment` der Footprints; Hausschrift auch für Pinnamen und
-  -nummern der Symbole (Altium „Custom Font“), eingetragen in die Schrifttabelle der SchLib.
+No changes after preparation of the first public beta.
 
-- Datenblatt-Import: **Einzeln speichern** – nur das Symbol (SchLib) oder nur den Footprint (PcbLib) eines Vorschlags
-  speichern, ohne Bauteil; etwa das Symbol eines Datenblatts, dessen Gehäusezeichnung fehlt.
-- Datenblatt-Import: **Gehäuse aus anderem Datenblatt übernehmen** – Maße, Herstellerempfehlung, Exposed-Pad-Nummer
-  und Anschlussanordnung aus einer eigenen Gehäusezeichnung des Herstellers (z. B. TI „RGY0019B“) in das Datenblatt
-  des Bauteils holen; passende Zeichnungen werden vorgeschlagen, die Herkunft angezeigt, die Übernahme lässt sich
-  aufheben. Auch aus der Gehäusezeichnung heraus („Einem Bauteil geben …“) und in der Datenblattliste.
-- Gehäusezeichnungen ohne Bauteil werden als solche erkannt: eigene Prüfansicht mit **Footprint speichern**.
-- Footprint-Generator QFN/DFN: unregelmäßige Gehäuse mit **Anschlüssen je Seite**, eigenem **Raster oben/unten**,
-  **Pin 1 an der oberen Seite** und **fehlenden Anschlüssen** (z. B. TI VQFN-19 RGY); im Datenblatt-Import als
-  „Anschlussanordnung“ am Gehäuse.
-- Herstellerempfehlung mit eigenem **Reihenabstand oben/unten** für rechteckige QFN/QFP.
-- Datenblatt-Import: Claude liest die **Anschlussanordnung** von QFN/QFP mit – Anschlüsse auf der Seite von Pin 1
-  und den Nachbarseiten, Lage von Pin 1, abweichendes Raster, fehlende Positionen. Gehäuse wie TI UQFN-10 RSW0010A
-  (2 Anschlüsse links/rechts, 3 oben/unten) entstehen damit ohne Nacharbeit; fehlt die Anordnung bei einer nicht
-  durch 4 teilbaren Anschlusszahl, prüft Claude die Zeichnung mit Seitenbildern nach. Für ältere Analysen gilt
-  weiterhin: Anordnung im Review eintragen oder neu analysieren.
+## 1.0.0b1 – 2026-10-11
 
-### Geändert
+Prepared for the first public beta (GitHub tag: `v1.0.0-beta.1`); publication is pending.
+PartForge was developed largely through vibe coding with AI assistance and is in an early beta stage.
+Review generated parts, symbols and footprints before use, and back up your libraries regularly.
 
-- „Durchsuchen …“ öffnet den Dateidialog jetzt auch dort, wo bisher nichts geschah: externe Bibliotheken, `.stackup`,
-  `X2.EXE` (der Dateifilter enthielt Zeichen, die das Programmfenster ablehnte).
-- Schreibt PartForge in eine Bibliothek, bleiben alle anderen Bauteile darin Byte für Byte erhalten – auch in Altium
-  gespeicherte mit TrueType-Texten, Mechanical 17–32, eingebetteten Schriften und Pinschriften (bisher setzte der
-  Bibliotheks-Writer sie auf seinen eigenen Stand zurück).
-- Footprints auf Mechanical 17–32 werden mit ihrer richtigen Lage gelesen (bisher „Mechanical 16“); TrueType-Texte
-  bleiben beim Lesen und Zurückschreiben erhalten.
-- Ein Dokument ohne Bauteil, aber mit Gehäusezeichnung ist kein Fehler mehr: keine bezahlte Nachkontrolle, und Claude
-  erfindet kein Platzhalter-Bauteil.
-- Ein rechteckiger QFN mit Herstellerempfehlung ohne Reihenabstand oben/unten wird abgelehnt, statt die Stirnseiten-Pins
-  auf den falschen Abstand zu setzen.
-- Die Übernahmeleiste zeigt ungültige Symbole/Footprints als „ungültig“ statt „vorhanden“; Gründe nennen den
-  Gehäusenamen nicht mehr doppelt.
-- Datenblatt-Import: ein QFN/DFN ohne Exposed Pad bekommt keines mehr – bisher setzte der Generator sein
-  Standard-Exposed-Pad ein (bei kleinen Gehäusen wie UQFN-10 1,4×1,8 scheiterte daran die Padberechnung).
+### Added
 
-## 1.0.0 – 2026-10-09
+- **Edit in Altium** (symbol or footprint detail view): opens the SchLib/PcbLib in Altium Designer and shows the
+  component there. Saving in Altium updates PartForge automatically: the preview, pins/pads, component height and
+  3D model come from the saved file, with the source shown as “Edited in Altium”. Changes to other components in
+  the same file, renamed components and new components are detected too; saving without changes is ignored.
+  “Edit” and “Regenerate” ask before replacing an Altium-edited version. Monitoring survives a restart and ends
+  when “Stop editing” is selected, when Altium exits, or after 12 hours without a save.
+- **English and German** (*Settings › General › Profile and appearance › Language*): the interface, desktop
+  dialogs, messages and number formats use the selected language. English is the default, including for existing
+  installations after updating, until German is selected and saved.
+- **STEP models in the 3D preview**: shows a footprint's STEP models with their Altium placement, including
+  embedded models in imported libraries that were not extracted during import. Each model can be downloaded.
+- **Library import** (new page, Alt+9): import symbols and footprints from existing Altium libraries, including
+  recursive folders, SchLib/PcbLib files, integrated libraries (IntLib), library packages (LibPkg) and ZIP archives.
+  Each component has a preview and a name status (new, already imported, name taken or duplicate). Files are
+  copied unchanged into folders under `Symbols\Import` / `Footprints\Import`. Imported symbols can also produce
+  a table for the table import (“Create parts…”).
+- **Batch editing** (new page, Alt+0): apply a house style to imported symbols and footprints, including fonts,
+  IC symbol pin lengths, designator prefixes, colors, layer mapping, line widths, `.Designator`/`.Comment`
+  fonts, missing text, component center and layer headers. Roles of external mechanical layers are detected and
+  can be reassigned. Preview before applying; records outside the selected changes are retained, every file is
+  backed up, and the most recent batch edit can be undone.
+- **House style from an example library** (*Settings › House style*): copy fonts, pin lengths, colors, layers,
+  line widths and text from a reference SchLib, PcbLib, IntLib, ZIP archive or folder.
+- **Layer set** (*Settings › House style › Layers*): each footprint library receives its own Altium layer set,
+  from the mapped “Component Layers” or a `.layerset` file; it can be activated automatically on opening.
+- House style: TrueType fonts for footprint `.Designator`/`.Comment` text and symbol pin names/numbers
+  (Altium “Custom Font”), registered in the SchLib font table.
+- Datasheet import: **Save individually** saves only a proposed symbol (SchLib) or footprint (PcbLib), without a
+  part record, such as the symbol of a datasheet with no package drawing.
+- Datasheet import: **Use package from another datasheet** imports dimensions, recommended land patterns,
+  exposed-pad numbers and terminal arrangements from a separate manufacturer package drawing (for example,
+  TI “RGY0019B”). Matching drawings are suggested, the source is shown and the selection can be cleared.
+  This also works from the package drawing (“Give to a part…”) and the datasheet list.
+- Documents containing only a package drawing are recognized and have a review view with **Save footprint**.
+- QFN/DFN footprint generator: irregular packages with **leads per side**, a separate **top/bottom pitch**,
+  **pin 1 on the top side** and **missing leads** (for example, TI VQFN-19 RGY). Datasheet import exposes these
+  settings as the package's “Terminal layout”.
+- Manufacturer recommendations with a separate **top/bottom row spacing** for rectangular QFN/QFP packages.
+- Datasheet import: Claude reads QFN/QFP **terminal layouts**, including lead counts on the pin-1 side and adjacent
+  sides, pin-1 position, differing pitches and missing positions. Packages such as TI UQFN-10 RSW0010A
+  (two leads on the left/right and three on the top/bottom) can be generated without manual correction.
+  If the terminal layout is missing for a lead count not divisible by four, Claude checks rendered drawing
+  pages. Older analyses still need the layout entered in the review view or a new analysis.
 
-Erste Version von PartForge: datenbankbasierte Bauteilbibliotheken (DbLib) für Altium Designer anlegen, pflegen und
-prüfen. Windows 10/11, getestet mit Altium Designer 26.10.
+### Changed
 
-### Was PartForge kann
+- “Browse…” now opens file dialogs for external libraries, `.stackup` files and `X2.EXE`, where the file filter
+  previously contained characters rejected by the desktop window.
+- Writing to a library preserves all other components byte for byte, including Altium-saved components with
+  TrueType text, Mechanical 17–32 layers, embedded fonts and pin fonts. Previously the writer replaced those
+  records with its own representation.
+- Footprints on Mechanical 17–32 are read with their correct layer (previously “Mechanical 16”). TrueType text
+  is retained when reading and writing.
+- A document with a package drawing but no part is no longer an error: it incurs no paid follow-up check, and
+  Claude does not invent a placeholder part.
+- A rectangular QFN manufacturer recommendation without top/bottom row spacing is rejected instead of placing
+  the end-side leads at the wrong spacing.
+- The acceptance bar labels invalid symbols/footprints as “invalid” rather than “present”; reasons no longer
+  repeat the package name.
+- Datasheet import no longer adds a default exposed pad to QFN/DFN packages without one. Previously this could
+  also make pad calculation fail for small packages such as the 1.4 × 1.8 mm UQFN-10.
 
-#### Bibliothek
+### Known limitations
 
-- Eine Bibliothek ist ein in sich geschlossener, verschiebbarer Ordner: SQLite-Datenbank, DbLib-Datei, SchLib/PcbLib,
-  3D-Modelle (STEP), Datenblätter und Sicherungen. Auf Wunsch mit 19 Beispielbauteilen samt Symbolen und Footprints.
-- 19 Kategorien (Widerstände, Kondensatoren, Dioden, ICs …) als eigene Tabellen mit Feldern, Einheiten und Vorlagen
-  für Wert, Kommentar und Beschreibung; eigene Kategorien und Felder, eigenes Teilenummern-Schema.
-- Eine Bibliothek ist immer nur in einem PartForge geöffnet – auch über Rechner hinweg.
-- Mehrbenutzerbetrieb mit PostgreSQL (nur mit der Quellcode-Installation).
+- This is an early beta developed largely through vibe coding. Generated electrical and mechanical data need
+  review against manufacturer documentation before use. Back up existing libraries before importing or editing.
+- Windows 10/11 is the supported desktop platform. Altium integration has been tested with Altium Designer 26.10;
+  other versions and configurations may behave differently.
+- AI datasheet extraction can miss or misinterpret values. It requires the user's Claude API key and can incur
+  charges; sending a datasheet for AI analysis sends it to the Claude API.
+- XLSX export of very large tables is slow (about 6.5 seconds for 20,000 rows); CSV is much faster.
+- Saving to very large existing PcbLib files can take several seconds, as every change rewrites the complete file.
+- Automatic backups are not compressed; each occupies approximately as much space as the database.
+- The Murata GRM series catalog has not been checked against manufacturer data. Verify part numbers before ordering.
+- Altium's Components panel and “Update Parameters From Database” dialog are not covered by automated tests.
+  DbLib generation, ODBC access and component resolution via “Check in Altium” are covered.
+- Packaged `PartForge.exe` builds are not signed; Windows SmartScreen may show a warning on first launch.
+- The altium-designer-mcp library writer (GPL-3.0) is a separate dependency and is not bundled.
+- PostgreSQL multi-user operation is available only with a source installation.
+- The full user manual is currently in German. The main README, release notes and application interface are
+  available in English; English and German interface translations may still have gaps.
 
-#### Bauteile
+## Initial development snapshot – 2026-10-09
 
-- Tabelle mit Suche, die Werte versteht („4k7“, „50V“), Filtern mit Größenvergleich, gespeicherten Ansichten und
-  Bearbeitung direkt in der Tabelle; Detailbereich mit Vorschau von Symbol, Footprint und 3D sowie dem Verlauf jeder
-  Änderung.
-- Neues Bauteil mit Smart-Eingabe (`220n 50V X7R 0603 10%`); Massenänderungen und „Texte neu erzeugen“ mit
-  Rückgängig; Löschen mit Rückgängig und Wiederherstellen aus dem Verlauf.
-- Import aus CSV, TSV, Excel (XLSX) und ODS mit automatischer Spaltenzuordnung und Probelauf; Export als CSV
-  (Excel-sicher) und XLSX.
-- Bereichswerte mit ± in einer Grenze bleiben erhalten (symmetrische Versorgung: „2.8V to ±5.25V“ → „2.8V … ±5.25V“).
+The first internal PartForge development snapshot: create, maintain and check database component libraries
+(DbLib) for Altium Designer. Windows 10/11, tested with Altium Designer 26.10. This was not a public stable release.
 
-#### Serien-Assistent
+### Features
 
-- Ganze E-Reihen (E3–E192) einer Hersteller-Serie auf einmal: Vishay CRCW, Yageo RC, Panasonic ERJ, KOA, Stackpole,
-  UniOhm, Bourns, KEMET, Yageo CC, Samsung CL, Murata GRM, Bourns SRR … mit den Teilenummern-Mustern und Codetabellen
-  der Hersteller, 0-Ω-Brücken, passenden Footprints und Symbol. Eigene Serienvorlagen.
+#### Libraries
 
-#### Datenblatt-Import mit Claude
+- A library is a self-contained, movable folder containing a SQLite database, DbLib file, SchLib/PcbLib files,
+  STEP models, datasheets and backups. It can include 19 example parts with symbols and footprints.
+- 19 categories (resistors, capacitors, diodes, ICs, etc.) with their own tables, fields, units and value/comment/
+  description templates; custom categories, fields and part-number schemes.
+- A library can be open in only one PartForge instance at a time, including across computers.
+- PostgreSQL multi-user operation with a source installation.
 
-- PDF ins Fenster ziehen, von einer Adresse laden oder „Datenblatt suchen“ (Websuche nach dem Hersteller-PDF).
-- Claude liest Hersteller, Bestellvarianten, Parameter, Pinbelegung, Gehäusemaße und Land Pattern. Die Prüfansicht
-  zeigt jede Angabe mit Fundstelle; der Vorschlag bringt Symbol, Footprint (IPC-7351B, Herstellerempfehlung oder ein
-  vorhandener) und 3D-Körper mit; ein Klick legt alles an.
-- Kostenschätzung vor der Analyse, Kostenlimit je Import (Standard 2,00 $); jede bezahlte Anfrage wird gespeichert,
-  auch bei Abbruch.
+#### Parts
 
-#### Footprints und Symbole
+- A table with value-aware search (“4k7”, “50V”), numeric comparison filters, saved views and inline editing.
+  The detail panel previews the symbol, footprint and 3D model and shows the change history.
+- Create parts using smart input (`220n 50V X7R 0603 10%`); bulk editing and text regeneration with undo,
+  deletion with undo, and restoration from history.
+- Import CSV, TSV, Excel (XLSX) and ODS files with automatic column mapping and a dry run; export CSV
+  (safe for Excel) and XLSX.
+- Range bounds containing ± are preserved (“2.8V to ±5.25V” → “2.8V … ±5.25V”).
 
-- Footprint-Generator nach IPC-7351B (Dichte L/N/M) für 21 Gehäusefamilien mit 189 Vorlagen von 01005 bis BGA und
-  THT, mit Berechnungsnachweis, 3D-Körper und STEP-Export; mechanische Lagen nach der eigenen `.stackup`-Vorlage.
-- Rund 40 Standardsymbole im Hausstil, IC-Symbole aus Pinlisten mit automatischer Pin-Anordnung und Mehrteil-Symbolen.
-- SchLib/PcbLib schreibt der Bibliotheks-Writer altium-designer-mcp – Altium muss dafür nicht laufen.
+#### Series wizard
+
+- Generate entire manufacturer series in E3–E192 ranges: Vishay CRCW, Yageo RC, Panasonic ERJ, KOA, Stackpole,
+  UniOhm, Bourns, KEMET, Yageo CC, Samsung CL, Murata GRM, Bourns SRR and more. Includes manufacturer
+  part-number patterns and code tables, 0 Ω jumpers, matching footprints and a symbol. Custom series templates.
+
+#### Datasheet import with Claude
+
+- Drop a PDF into the window, download it from a URL or use “Find datasheet” to search for a manufacturer PDF.
+- Claude reads manufacturer information, orderable variants, parameters, pin assignments, package dimensions
+  and land patterns. The review view shows each value with its source; the proposal includes a symbol,
+  a footprint (IPC-7351B, manufacturer recommendation or an existing one) and a 3D body.
+- Cost estimate before analysis, per-import spending limit (default $2.00), and storage of every paid request,
+  including when an import is cancelled.
+
+#### Footprints and symbols
+
+- IPC-7351B footprint generation (density L/N/M) for 21 package families and 189 templates, from 01005 to BGA
+  and through-hole packages. Includes calculation reports, 3D bodies and STEP export; mechanical layers follow
+  a custom `.stackup` template.
+- About 40 standard symbols in the house style; IC symbols from pin lists with automatic arrangement and
+  multi-part symbols.
+- SchLib/PcbLib writing through the separately installed altium-designer-mcp library writer, without running Altium.
 
 #### Altium
 
-- DbLib erzeugen und aktuell halten, in Altium installieren und deinstallieren; ein laufendes Altium sieht Änderungen
-  nach wenigen Sekunden, geöffnete und unveränderte Bibliotheken werden neu geladen.
-- Prüfbericht (Pflichtfelder, Symbole, Footprints, Datenblätter, doppelte Teilenummern) und „In Altium prüfen“: Altium
-  löst jedes Bauteil auf wie beim Platzieren.
-- ODBC-Test und Vorschau der DbLib.
+- Generate and maintain a DbLib, install/uninstall it in Altium, and refresh a running Altium instance within
+  a few seconds. Open, unmodified libraries are reloaded.
+- Validation report for required fields, symbols, footprints, datasheets and duplicate part numbers.
+  “Check in Altium” resolves each component as Altium would when placing it.
+- ODBC test and DbLib preview.
 
-#### Bedienung und Sicherheit
+#### Interface and safeguards
 
-- Deutsche Oberfläche in Dunkel und Hell, Befehlspalette (Strg+K) und Tastenkürzel; Bedienungsanleitung mit Bildern
-  (`Handbuch\Bedienung.html` im Programmordner).
-- Automatische Sicherungen vor riskanten Aktionen, Sicherungsstände je Bibliotheksdatei, Wiederherstellen.
-- PartForge nimmt nur Verbindungen von diesem Rechner an (127.0.0.1, Sitzungstoken, Schutz vor fremden Websites und
-  vor dem Einbetten); der Claude-Schlüssel wird mit Windows-DPAPI verschlüsselt gespeichert und nie an die Oberfläche
-  gegeben.
-- Programmpaket ohne Python und Node.js, mit den Lizenztexten aller mitgelieferten Komponenten.
-
-### Bekannte Einschränkungen
-
-- Der XLSX-Export sehr großer Tabellen ist langsam (etwa 6,5 s für 20 000 Zeilen); CSV ist deutlich schneller.
-- Das Speichern in sehr große vorhandene PcbLib-Dateien dauert mehrere Sekunden – jede Änderung schreibt die ganze
-  Datei.
-- Automatische Sicherungen werden nicht komprimiert; jede belegt etwa so viel Platz wie die Datenbank.
-- Der Murata-GRM-Katalog des Serien-Assistenten ist nicht gegen die Herstellerdaten geprüft – Teilenummern vor der
-  Bestellung kontrollieren.
-- Das Components-Panel und der Dialog „Update Parameters From Database“ in Altium sind nicht automatisch getestet
-  (geprüft sind DbLib, ODBC-Zugriff und das Auflösen jedes Bauteils über „In Altium prüfen“).
-- `PartForge.exe` ist nicht signiert; Windows SmartScreen kann beim ersten Start warnen.
-- Der Bibliotheks-Writer altium-designer-mcp (GPL-3.0) wird nicht mitgeliefert und muss separat installiert werden.
+- German interface with dark/light themes, command palette (Ctrl+K) and keyboard shortcuts; illustrated user
+  manual (`Handbuch\Bedienung.html` in the program folder).
+- Automatic backups before risky operations, library-file backup history and restoration.
+- PartForge accepts connections only from the local computer (127.0.0.1), with a session token, protection from
+  foreign websites and embedding. Claude API keys are encrypted using Windows DPAPI and never sent to the interface.
+- A packaged application requiring no separate Python or Node.js installation, with license texts for bundled components.

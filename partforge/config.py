@@ -42,11 +42,6 @@ KEY_FILE_MAX_BYTES = 4096
 #: A key file's content is only used when it looks like an Anthropic key.
 ANTHROPIC_KEY_PREFIX = "sk-ant-"
 
-# Key file of the developer PC (shared with ExampleProject): entered on the first start if it exists
-# (_first_start_settings); an isolated run (PARTFORGE_HOME) never reads this one.
-LEGACY_KEY_FILE = r"C:\PartForge-Examples\Tools\ExampleProject\.secret\.claude-api-key.txt"
-# Rust writer of the developer PC: only probed when running from the source tree, never by PartForge.exe.
-DEV_RUST_WRITER = r"C:\PartForge-Examples\MCP\altium-designer-mcp-windows-x86_64\altium-designer-mcp.exe"
 DEFAULT_LIBRARY_NAME = "PartForge-Bibliothek"
 
 
@@ -97,8 +92,7 @@ def detect_altium_exe() -> str | None:
 def rust_writer_candidates() -> list[str]:
     """Where PartForge looks for ``altium-designer-mcp.exe`` when no path is configured (in this order):
     ``PARTFORGE_RUST_WRITER``, ``%LOCALAPPDATA%\\Programs\\altium-designer-mcp\\``, next to ``PartForge.exe``
-    (also in a subfolder ``altium-designer-mcp``) – and, only when running from the source tree, the
-    developer's folder."""
+    (also in a subfolder ``altium-designer-mcp``)."""
     out: list[str] = []
     env = os.environ.get("PARTFORGE_RUST_WRITER")
     if env:
@@ -109,8 +103,6 @@ def rust_writer_candidates() -> list[str]:
     if getattr(sys, "frozen", False):
         exe_dir = Path(sys.executable).resolve().parent
         out += [str(exe_dir / RUST_WRITER_EXE), str(exe_dir / "altium-designer-mcp" / RUST_WRITER_EXE)]
-    else:
-        out.append(DEV_RUST_WRITER)
     return out
 
 
@@ -331,20 +323,9 @@ def load_settings(reload: bool = False) -> AppSettings:
                 _cached = AppSettings()
                 stamp = None
         else:
-            _cached = _first_start_settings()
+            _cached = AppSettings()
         _cached_stamp = stamp
         return _cached
-
-
-def _first_start_settings() -> AppSettings:
-    """Settings before the first save. On the developer PC the Claude key file shared with ExampleProject
-    (:data:`LEGACY_KEY_FILE`) is entered if it exists – never in isolated runs (``PARTFORGE_HOME``); the
-    entry can be changed or removed under Einstellungen › KI like any other key file."""
-    settings = AppSettings()
-    if not os.environ.get("PARTFORGE_HOME") and os.environ.get("PARTFORGE_NO_AI_KEY") != "1" \
-            and Path(LEGACY_KEY_FILE).is_file():
-        settings.ai.api_key_file = LEGACY_KEY_FILE
-    return settings
 
 
 def save_settings(settings: AppSettings) -> None:
@@ -403,7 +384,7 @@ def _read_stored_key() -> str | None:
 
 def _real_key_allowed() -> bool:
     """Isolated runs (PARTFORGE_HOME set: tests, test servers, smoke tests) never pick up the
-    machine's real key by accident – neither ANTHROPIC_API_KEY nor the shared default key file –
+    machine's ANTHROPIC_API_KEY by accident –
     so they cannot spend money unnoticed. Opt in with PARTFORGE_ALLOW_REAL_AI=1 (or
     PARTFORGE_TEST_AI=1 for the ``ai`` tests). PARTFORGE_NO_AI_KEY=1 disables every source."""
     if os.environ.get("PARTFORGE_NO_AI_KEY") == "1":
@@ -414,16 +395,13 @@ def _real_key_allowed() -> bool:
 
 
 def _key_file(settings: AppSettings) -> Path | None:
-    """The configured key file path if it is a local existing file (legacy default honoured as before);
+    """The explicitly configured key file path if it is a local existing file;
     ``None`` otherwise. Does **not** read or validate the content – see :func:`_file_key`."""
     if not settings.ai.api_key_file:
         return None
     if key_file_path_problem(settings.ai.api_key_file) is not None:  # UNC/device path: never read it
         return None
     path = Path(settings.ai.api_key_file)
-    is_legacy = os.path.normcase(os.path.abspath(path)) == os.path.normcase(os.path.abspath(LEGACY_KEY_FILE))
-    if is_legacy and not _real_key_allowed():
-        return None
     return path if path.is_file() else None
 
 

@@ -3,7 +3,7 @@
   "info": {
     "title": "PartForge API",
     "description": "Datenbankbasierte Bauteilbibliotheken für Altium Designer",
-    "version": "1.0.0"
+    "version": "1.0.0b1"
   },
   "paths": {
     "/api/health": {

@@ -1,6 +1,7 @@
 """Altium .stackup parsing, the built-in standard stack and the LayerMap suggestions."""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
@@ -20,7 +21,6 @@ from partforge.altium.stackup import (
 )
 from partforge.workspace import LayerMap, Workspace
 
-USER_STACK = Path(r"C:\PartForge-Examples\Altium_Templates\Mechanical_Stackup_Standard\mechanical_layer.stackup")
 BASE = 0x01020000
 
 
@@ -115,9 +115,11 @@ def test_parse_stackup_file_cp1252(tmp_path: Path):
     assert stack.layers[9].name == "Bestückung oben" and stack.name == "eigen"
 
 
-@pytest.mark.skipif(not USER_STACK.is_file(), reason="Standard-Lagenaufbau des Benutzers nicht vorhanden")
 def test_builtin_default_equals_the_users_standard_file():
-    parsed = parse_stackup(USER_STACK)  # read-only
+    source = os.environ.get("PARTFORGE_TEST_STACKUP")
+    if not source:
+        pytest.skip("Set PARTFORGE_TEST_STACKUP to opt in with a local standard .stackup file.")
+    parsed = parse_stackup(Path(source))  # read-only, explicitly supplied
     builtin = default_stack()
     assert parsed.layers == builtin.layers
     assert parsed.pairs == builtin.pairs

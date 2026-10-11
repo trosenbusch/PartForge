@@ -1,0 +1,34 @@
+name: Feature request
+description: Suggest an improvement to PartForge.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search existing issues first. Describe the component-library workflow that would benefit from this change.
+        Share only examples, screenshots and files you have permission to publish.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What are you trying to accomplish, and where does the current workflow fall short?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed improvement
+      description: Describe the behavior you would like to see.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Optional. Include existing workarounds or other approaches.
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Optional. Include package families, manufacturer series or Altium versions when relevant.

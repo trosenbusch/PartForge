@@ -51,7 +51,7 @@ wording „nicht lesbar“.
 | UI | the production build served by that server (`partforge/web`, untouched); Playwright Chrome headless, 1480×940, `de-DE` |
 | Libraries | A = `tests\_tmp\ws-e2e-live` („E2E Live“, J1–J10), B = `tests\_tmp\ws-e2e-live-b` („E2E Live B“, J10), B moved to `tests\_tmp\ws-e2e-live-moved\E2E Live B verschoben` |
 | Bridge | PartForge's default exchange directory `%LOCALAPPDATA%\PartForge\bridge` – its script project was already loaded in Altium at the baseline, so no project was added to the user's Projects panel |
-| Not touched | `%APPDATA%\PartForge` (no settings file written there), `C:\PartForge-Examples\Altium_Libs`, any key file, git |
+| Not touched | `%APPDATA%\PartForge` (no settings file written there), `C:\PartForge-Examples\libraries`, any key file, git |
 
 Evidence (session scratchpad `…\scratchpad\qa\e2e-live\`): `evidence\001…074_*.json` (API snapshots and job results in
 run order), `altium-logs\00…99_*` (Altium read-backs), `altium-scripts\*.pas`, `kit\*.py` (Playwright journeys `j1…j10`,
@@ -81,7 +81,7 @@ run order), `altium-logs\00…99_*` (Altium read-backs), `altium-scripts\*.pas`,
 ### J1 First run – PASS [VERIFIED]
 
 Screenshots `J1_01…07`. `/` redirects to `/willkommen`; „Neue Bibliothek anlegen“ opens the dialog with the default
-folder `C:\PartForge-Examples\Altium_Libs\PartForge` (the folder follows the name until it is touched: „E2E Live“ →
+folder `C:\PartForge-Examples\libraries\PartForge` (the folder follows the name until it is touched: „E2E Live“ →
 `…\Altium_Libs\E2E_Live`); the isolated folder was typed into „Ordner“, „Beispielinhalte anlegen“ was on.
 
 * „Bibliothek anlegen“ → success view after 1.85 s; „Bibliotheken schreiben“ (job 3.57 s) ends with „15 Symbole und

@@ -13,6 +13,8 @@ und Footprint. Altium sieht neue Bauteile sofort – ohne Neustart.
 > entstanden und befindet sich in einem frühen Beta-Stadium. Fehler und Änderungen sind zu erwarten.
 > Bitte erzeugte Bauteile, Symbole und Footprints vor dem Einsatz prüfen und Bibliotheken regelmäßig sichern.
 
+Aktuelle Version: **1.0.0b1**, GitHub-Prerelease-Tag **v1.0.0-beta.1**.
+
 Die Oberfläche unterstützt **Englisch (Standard)** und **Deutsch**. Die Sprache lässt sich unter
 *Settings → General → Language* bzw. *Einstellungen → Allgemein → Sprache* wählen und speichern;
 die Auswahl bleibt auch nach einem Neustart erhalten.
@@ -129,9 +131,8 @@ stellt das nicht ein, und das Programmpaket enthält keinen PostgreSQL-Treiber. 
   (`%APPDATA%\PartForge\secret`), nur für das eigene Windows-Konto lesbar. Eine optionale Schlüsseldatei
   muss lokal liegen, klein sein und einen Claude-Schlüssel (`sk-ant-…`) enthalten – andere Dateiinhalte
   werden nie verschickt.
-  Gibt es beim ersten Start die Schlüsseldatei von ExampleProject
-  (`C:\PartForge-Examples\Tools\ExampleProject\.secret\.claude-api-key.txt`), trägt PartForge sie unter
-  *Einstellungen › Allgemein › KI-Funktionen* ein; dort lässt sie sich ändern oder entfernen.
+  Eine neue Installation startet ohne voreingestellte Schlüsseldatei. Schlüssel werden ausdrücklich
+  unter *Einstellungen › Allgemein › KI-Funktionen* oder über `ANTHROPIC_API_KEY` hinterlegt.
 - PartForge läuft als lokaler Server auf `127.0.0.1` und nimmt nur Verbindungen von diesem Rechner an
   (`127.0.0.1`/`localhost`); Anfragen fremder Webseiten werden abgewiesen. Der Zugriff ist zusätzlich durch
   ein Sitzungstoken geschützt, das PartForge bei jedem Start neu vergibt und das nie in Protokolldateien steht.
@@ -208,3 +209,10 @@ Handbuch des Programmpakets: [docs/handbuch/README.md](docs/handbuch/README.md),
 Bedienungsanleitung: [docs/handbuch/BEDIENUNG.md](docs/handbuch/BEDIENUNG.md),
 Änderungen je Version: [CHANGELOG.md](CHANGELOG.md),
 Lizenzen: [LICENSE](LICENSE) (MIT), [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+## Beiträge und Support
+
+Fehler und Vorschläge können über [GitHub Issues](https://github.com/trosenbusch/PartForge/issues) gemeldet werden.
+Hinweise für Mitwirkende stehen in [CONTRIBUTING.md](CONTRIBUTING.md), der vertrauliche Meldeweg für
+Sicherheitslücken in [SECURITY.md](SECURITY.md). API-Schlüssel, interne Bibliotheksdateien und persönliche
+Pfade vor dem Teilen aus Protokollen und Bildschirmfotos entfernen.

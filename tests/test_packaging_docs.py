@@ -3,6 +3,7 @@ package manual has no repository links, and the claims match the program."""
 from __future__ import annotations
 
 import re
+import tomllib
 import typing
 from pathlib import Path
 
@@ -15,6 +16,8 @@ MANUAL = ROOT / "docs" / "handbuch" / "README.md"
 USER_MANUAL = ROOT / "docs" / "handbuch" / "BEDIENUNG.md"
 NOTICES = ROOT / "THIRD_PARTY_NOTICES.md"
 CHANGELOG = ROOT / "CHANGELOG.md"
+CHANGELOG_DE = ROOT / "CHANGELOG.de.md"
+RELEASE_NOTES = ROOT / "docs" / "releases" / "v1.0.0-beta.1.md"
 LINK = re.compile(r"!?\[[^\]]*\]\(([^)\s]+)\)")
 
 
@@ -28,7 +31,7 @@ def _anchors(text: str) -> set[str]:
     return {_slug(m.group(1)) for m in re.finditer(r"^#{1,6}\s+(.+)$", text, re.MULTILINE)}
 
 
-@pytest.mark.parametrize("doc", [README, README_DE, MANUAL, USER_MANUAL, NOTICES, CHANGELOG],
+@pytest.mark.parametrize("doc", [README, README_DE, MANUAL, USER_MANUAL, NOTICES, CHANGELOG, CHANGELOG_DE, RELEASE_NOTES],
                          ids=lambda p: p.name if p != MANUAL else "handbuch")
 def test_relative_links_and_images_resolve(doc: Path) -> None:
     """PKG-08: no broken image (docs/screenshots/readme/…) or dead link."""
@@ -81,10 +84,32 @@ def test_changelog_names_this_version_and_the_known_limitations() -> None:
 
     text = CHANGELOG.read_text(encoding="utf-8")
     assert re.search(rf"^## {re.escape(__version__)} – \d{{4}}-\d{{2}}-\d{{2}}$", text, re.MULTILINE)
-    assert "### Bekannte Einschränkungen" in text
-    for limitation in ("XLSX-Export", "PcbLib", "nicht komprimiert", "Murata", "Components-Panel"):
+    assert "### Known limitations" in text
+    for limitation in ("XLSX export", "PcbLib", "not compressed", "Murata", "Components panel", "early beta", "vibe coding"):
         assert limitation in text, limitation
-    assert not [t for t in LINK.findall(text) if not t.startswith(("http://", "https://"))]  # shipped in the package
+    # Both language editions are shipped together; their language links work in the package too.
+    assert [t for t in LINK.findall(text) if not t.startswith(("http://", "https://"))] == ["CHANGELOG.de.md"]
+    german = CHANGELOG_DE.read_text(encoding="utf-8")
+    assert re.search(rf"^## {re.escape(__version__)} – \d{{4}}-\d{{2}}-\d{{2}}$", german, re.MULTILINE)
+    assert "### Bekannte Einschränkungen" in german
+    assert [t for t in LINK.findall(german) if not t.startswith(("http://", "https://"))] == ["CHANGELOG.md"]
+
+
+def test_beta_package_and_release_versions_agree() -> None:
+    from packaging.version import Version
+    from partforge import __version__
+
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
+    assert project["version"] == __version__
+    assert "Development Status :: 4 - Beta" in project["classifiers"]
+    version = Version(__version__)
+    assert version.is_prerelease and version.pre[0] == "b"
+    release_tag = f"v{version.base_version}-beta.{version.pre[1]}"
+    notes = RELEASE_NOTES.read_text(encoding="utf-8")
+    assert f"`{__version__}`" in notes and f"`{release_tag}`" in notes
+    assert "publication is pending" in CHANGELOG.read_text(encoding="utf-8")
+    for limitation in ("Known limitations", "vibe coding", "Murata", "not compressed", "unsigned", "German"):
+        assert limitation in notes, limitation
 
 
 def test_rust_writer_install_path_is_where_partforge_looks(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

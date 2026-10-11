@@ -2,9 +2,9 @@
 
 Research agent, UNDERSTAND phase, 2026-10-07. Every claim is tagged **[VERIFIED]** (I ran it or read the bytes)
 or **[UNVERIFIED]** (documentation, inference, or something that still needs Altium). I did not use Altium itself,
-the `mcp__altium__*` tools, or `C:/PartForge-Examples/Altium_Libs`.
+the `mcp__altium__*` tools, or `C:/PartForge-Examples/libraries`.
 
-Root of all my work: `C:/Users/Example/AppData/Local/Temp/claude/c--Projekte-Tools/c2f879a0-18cd-4140-bad7-eb46f08463d7/scratchpad/rust-writer`
+Root of all my work: `<scratchpad>/rust-writer`
 (abbreviated below as `RW`).
 
 ---
@@ -42,12 +42,12 @@ Root of all my work: `C:/Users/Example/AppData/Local/Temp/claude/c--Projekte-Too
 
 | File | Content |
 |---|---|
-| `C:/Users/Example/AppData/Local/Temp/claude/c--Projekte-Tools/c2f879a0-18cd-4140-bad7-eb46f08463d7/scratchpad/rust-writer/out/PartForge_Test.PcbLib` | **Main footprint library (5 footprints).** `RESC1608X55N` (0603), `SOIC127P600X175-8N` (pad 1 later widened to 2.0 mm and first silk track set to 0.15 mm by `update_pad`/`update_primitive`), `PINHDR_1X02_P2.54MM` (THT, drilled), `CAPC2012X125N` (embedded STEP box), `RESC2012X60N` (appended, then updated). |
-| `C:/Users/Example/AppData/Local/Temp/claude/c--Projekte-Tools/c2f879a0-18cd-4140-bad7-eb46f08463d7/scratchpad/rust-writer/out/PartForge_Test.SchLib` | **Main symbol library (4 symbols).** `RES_0603_10K` (Value later 22k via param ops), `NE555DR` (8-pin box, overbar RESET with dot), `LM358DR` (3 parts: A, B, power), `CAP_0603_100N` (appended). |
-| `C:/Users/Example/AppData/Local/Temp/claude/c--Projekte-Tools/c2f879a0-18cd-4140-bad7-eb46f08463d7/scratchpad/rust-writer/out/PartForge_Test.LibPkg` | LibPkg that references the two files above |
-| `C:/Users/Example/AppData/Local/Temp/claude/c--Projekte-Tools/c2f879a0-18cd-4140-bad7-eb46f08463d7/scratchpad/rust-writer/out/PartForge_Features.PcbLib` | `QFN50P300X300X80-17N` (EP, 4 tented vias, 4 paste windowpane regions, TrueType/inverted/mirrored text, fill, arcs), `DCJACK_SLOT_TEST` (slot holes, square hole, non-plated hole, top/mid/bottom stack, keep-out track), `EXT_STEP_REF` (shows that the external STEP reference is lost), `AUTO_BODY` (`auto_3d_body` placeholder) |
-| `C:/Users/Example/AppData/Local/Temp/claude/c--Projekte-Tools/c2f879a0-18cd-4140-bad7-eb46f08463d7/scratchpad/rust-writer/out/PartForge_Features.SchLib` | `GRAPHICS_TEST`: every graphic primitive, embedded PNG, pin decorations (clock/dot/open_collector), frac pin, hidden pin, swap group, display mode 2 |
-| `C:/Users/Example/AppData/Local/Temp/claude/c--Projekte-Tools/c2f879a0-18cd-4140-bad7-eb46f08463d7/scratchpad/rust-writer/out/CAPC2012X125N_box.step` | STEP AP214 box 2.0 × 1.25 × 1.25 mm that I generated (`RW/make_step_box.py`) |
+| `<scratchpad>/rust-writer/out/PartForge_Test.PcbLib` | **Main footprint library (5 footprints).** `RESC1608X55N` (0603), `SOIC127P600X175-8N` (pad 1 later widened to 2.0 mm and first silk track set to 0.15 mm by `update_pad`/`update_primitive`), `PINHDR_1X02_P2.54MM` (THT, drilled), `CAPC2012X125N` (embedded STEP box), `RESC2012X60N` (appended, then updated). |
+| `<scratchpad>/rust-writer/out/PartForge_Test.SchLib` | **Main symbol library (4 symbols).** `RES_0603_10K` (Value later 22k via param ops), `NE555DR` (8-pin box, overbar RESET with dot), `LM358DR` (3 parts: A, B, power), `CAP_0603_100N` (appended). |
+| `<scratchpad>/rust-writer/out/PartForge_Test.LibPkg` | LibPkg that references the two files above |
+| `<scratchpad>/rust-writer/out/PartForge_Features.PcbLib` | `QFN50P300X300X80-17N` (EP, 4 tented vias, 4 paste windowpane regions, TrueType/inverted/mirrored text, fill, arcs), `DCJACK_SLOT_TEST` (slot holes, square hole, non-plated hole, top/mid/bottom stack, keep-out track), `EXT_STEP_REF` (shows that the external STEP reference is lost), `AUTO_BODY` (`auto_3d_body` placeholder) |
+| `<scratchpad>/rust-writer/out/PartForge_Features.SchLib` | `GRAPHICS_TEST`: every graphic primitive, embedded PNG, pin decorations (clock/dot/open_collector), frac pin, hidden pin, swap group, display mode 2 |
+| `<scratchpad>/rust-writer/out/CAPC2012X125N_box.step` | STEP AP214 box 2.0 × 1.25 × 1.25 mm that I generated (`RW/make_step_box.py`) |
 | `.../rust-writer/out/errors.PcbLib`, `.../rust-writer/out/errors.SchLib` | Edge cases: 31-, 32- and 80-character names (SectionKeys), Unicode name `R_Ω_µ`, name `R 0603 (1608)`, empty footprints, duplicate pins, out-of-range `owner_part_id`, off-grid pins |
 | `.../rust-writer/out/perf_1000_onecall.PcbLib`, `.../rust-writer/out/perf_1000_onecall.SchLib` | 1000-part libraries (degenerate CFB directory tree, see §10) |
 | `.../rust-writer/out/probe_mech_layers.PcbLib` | One footprint per layer `Mechanical 1..32` plus the six aliases (layer-mapping check) |
@@ -75,7 +75,7 @@ The other files in `out/` are probe and benchmark by-products (`scale_*`, `perf_
 
 ## 2. Process, protocol and client
 
-* **Binary [VERIFIED]:** `C:/PartForge-Examples/MCP/altium-designer-mcp-windows-x86_64/altium-designer-mcp.exe`.
+* **Binary [VERIFIED]:** `C:/PartForge-Examples/altium-designer-mcp/altium-designer-mcp.exe`.
   * `--version` prints `altium-designer-mcp 0.1.0`. SHA-256 is `18df32a3130d69aa80f5098a068a213e6c40d631409e9b3f752a99eae18bfeeb`.
   * Usage is `altium-designer-mcp.exe [OPTIONS] [CONFIG_FILE]`, with options `-v/-vv/-vvv`, `-q`, `-h`, `-V`.
 * **License:** GPL-3.0-or-later.
@@ -108,12 +108,12 @@ The other files in `out/` are probe and benchmark by-products (`scale_*`, `perf_
    "rate_limit": {"max_burst": 120, "refill_per_sec": 30.0}}
   ```
   * The audit log is JSON Lines, e.g. `{"timestamp":"2026-10-07T21:08:37.542052600+02:00","operation":"write_pcblib","outcome":"success","filepath":"probe_layers.PcbLib"}` [VERIFIED].
-  * The user's own `C:/PartForge-Examples/MCP/altium-designer-mcp-windows-x86_64/config.json` points `allowed_paths` at
-    `C:/PartForge-Examples/Altium_Libs` [VERIFIED, read only].
+  * The user's own `C:/PartForge-Examples/altium-designer-mcp/config.json` points `allowed_paths` at
+    `C:/PartForge-Examples/libraries` [VERIFIED, read only].
 * **Minimal client usage (from `RW/mcp_client.py`) [VERIFIED]:**
   ```python
   from mcp_client import McpClient, ToolError
-  with McpClient(exe="C:/PartForge-Examples/MCP/altium-designer-mcp-windows-x86_64/altium-designer-mcp.exe",
+  with McpClient(exe="C:/PartForge-Examples/altium-designer-mcp/altium-designer-mcp.exe",
                  config="C:/.../rust-writer/config.json") as c:       # spawn + initialize + initialized
       tools = c.list_tools()
       res = c.call_tool("list_components", {"filepath": "C:/.../out/PartForge_Test.PcbLib"})  # parsed JSON
@@ -614,7 +614,7 @@ with only `filepath` redirected:
 Derivation: Z=2.50, G=0.70, X=0.95, giving pads 0.90 × 0.95 at C=1.60 and a courtyard of ±1.50 × ±0.75 (0.25 excess).
 The file was first written with ±0.70 and then corrected through `update_primitive`.
 ```json
-{"name":"write_pcblib","arguments":{"filepath":"C:/Users/Example/AppData/Local/Temp/claude/c--Projekte-Tools/c2f879a0-18cd-4140-bad7-eb46f08463d7/scratchpad/rust-writer/out/PartForge_Test.PcbLib","append":false,"footprints":[
+{"name":"write_pcblib","arguments":{"filepath":"<scratchpad>/rust-writer/out/PartForge_Test.PcbLib","append":false,"footprints":[
  {"name":"RESC1608X55N","description":"Chip resistor 0603 (1608 metric), IPC-7351B nominal",
   "pads":[{"designator":"1","x":-0.8,"y":0,"width":0.9,"height":0.95,"shape":"rounded_rectangle","corner_radius_percent":25,"layer":"Top Layer"},
           {"designator":"2","x":0.8,"y":0,"width":0.9,"height":0.95,"shape":"rounded_rectangle","corner_radius_percent":25,"layer":"Top Layer"}],
@@ -692,7 +692,7 @@ Derivation: Z=6.90, G=3.00, giving pads 1.95 × 0.60 at x=±2.475. Pin 1 is top-
          {"designator":"2","x":0.95,"y":0,"width":1.0,"height":1.45,"shape":"rounded_rectangle","corner_radius_percent":25,"layer":"Top Layer"}],
  "tracks":[ "... silk, assembly and courtyard as for 0603; see RW/logs/t03_write_pcblib_request.json ..." ],
  "text":[{"x":0,"y":0,"text":".Designator","height":0.5,"layer":"Top Assembly","justification":"middle_center","stroke_width":0.05}],
- "step_model":{"filepath":"C:/Users/Example/AppData/Local/Temp/claude/c--Projekte-Tools/c2f879a0-18cd-4140-bad7-eb46f08463d7/scratchpad/rust-writer/out/CAPC2012X125N_box.step",
+ "step_model":{"filepath":"<scratchpad>/rust-writer/out/CAPC2012X125N_box.step",
                "embed":true,"rotation":0,"x_offset":0,"y_offset":0,"z_offset":0}}
 ```
 The `tracks` placeholder above is abbreviated in this report only; the verbatim, complete request is in `RW/logs/t03_write_pcblib_request.json`.
@@ -710,7 +710,7 @@ Slot pad: `{"designator":"1","x":0,"y":0,"width":3.5,"height":1.8,"shape":"oval"
 ### 12.4 `write_schlib`: resistor, 8-pin IC, and 3-part op-amp
 
 ```json
-{"name":"write_schlib","arguments":{"filepath":"C:/Users/Example/AppData/Local/Temp/claude/c--Projekte-Tools/c2f879a0-18cd-4140-bad7-eb46f08463d7/scratchpad/rust-writer/out/PartForge_Test.SchLib","append":false,"symbols":[
+{"name":"write_schlib","arguments":{"filepath":"<scratchpad>/rust-writer/out/PartForge_Test.SchLib","append":false,"symbols":[
 {"name":"RES_0603_10K","description":"Thick film resistor 10 kOhm 1% 0.1 W 0603","designator_prefix":"R","component_type":"resistor","designator_x":-10,"designator_y":10,
  "pins":[{"designator":"1","name":"1","x":-20,"y":0,"length":10,"orientation":"left","electrical_type":"passive","show_name":false,"show_designator":false},
          {"designator":"2","name":"2","x":20,"y":0,"length":10,"orientation":"right","electrical_type":"passive","show_name":false,"show_designator":false}],
@@ -718,8 +718,8 @@ Slot pad: `{"designator":"1","x":0,"y":0,"width":3.5,"height":1.8,"shape":"oval"
  "parameters":[{"name":"Comment","value":"=Value","x":-10,"y":-15},{"name":"Value","value":"10k","x":10,"y":-15,"hidden":true},
    {"name":"Manufacturer","value":"Yageo","hidden":true},{"name":"Manufacturer Part Number","value":"RC0603FR-0710KL","hidden":true},
    {"name":"Tolerance","value":"\u00b11%","hidden":true},{"name":"Power","value":"0.1W","hidden":true},{"name":"Resistance","value":"10k\u03a9","hidden":true,"param_type":0}],
- "footprints":[{"name":"RESC1608X55N","library_path":"C:/Users/Example/AppData/Local/Temp/claude/c--Projekte-Tools/c2f879a0-18cd-4140-bad7-eb46f08463d7/scratchpad/rust-writer/out/PartForge_Test.PcbLib","description":"0603 IPC-7351B nominal"},
-               {"name":"RESC2012X60N","library_path":"C:/Users/Example/AppData/Local/Temp/claude/c--Projekte-Tools/c2f879a0-18cd-4140-bad7-eb46f08463d7/scratchpad/rust-writer/out/PartForge_Test.PcbLib","description":"0805 alternative"}]},
+ "footprints":[{"name":"RESC1608X55N","library_path":"<scratchpad>/rust-writer/out/PartForge_Test.PcbLib","description":"0603 IPC-7351B nominal"},
+               {"name":"RESC2012X60N","library_path":"<scratchpad>/rust-writer/out/PartForge_Test.PcbLib","description":"0805 alternative"}]},
 {"name":"NE555DR","description":"Single precision timer, SOIC-8","designator_prefix":"U","designator_x":-40,"designator_y":55,
  "pins":[{"designator":"2","name":"TRIG","x":-40,"y":30,"length":20,"orientation":"left","electrical_type":"input"},
   {"designator":"6","name":"THR","x":-40,"y":10,"length":20,"orientation":"left","electrical_type":"input"},
@@ -732,7 +732,7 @@ Slot pad: `{"designator":"1","x":0,"y":0,"width":3.5,"height":1.8,"shape":"oval"
  "rectangles":[{"x1":-40,"y1":-50,"x2":40,"y2":50}],
  "parameters":[{"name":"Comment","value":"NE555DR","x":-40,"y":-60},{"name":"Manufacturer","value":"Texas Instruments","hidden":true},
    {"name":"Manufacturer Part Number","value":"NE555DR","hidden":true},{"name":"Datasheet","value":"https://www.ti.com/lit/ds/symlink/ne555.pdf","hidden":true}],
- "footprints":[{"name":"SOIC127P600X175-8N","library_path":"C:/Users/Example/AppData/Local/Temp/claude/c--Projekte-Tools/c2f879a0-18cd-4140-bad7-eb46f08463d7/scratchpad/rust-writer/out/PartForge_Test.PcbLib"}]},
+ "footprints":[{"name":"SOIC127P600X175-8N","library_path":"<scratchpad>/rust-writer/out/PartForge_Test.PcbLib"}]},
 {"name":"LM358DR","description":"Dual operational amplifier, SOIC-8 (multi-part: A, B, power)","designator_prefix":"U","part_count":3,
  "pins":[{"designator":"2","name":"-","x":-20,"y":10,"length":20,"orientation":"left","electrical_type":"input","owner_part_id":1,"show_name":true},
   {"designator":"3","name":"+","x":-20,"y":-10,"length":20,"orientation":"left","electrical_type":"input","owner_part_id":1,"show_name":true},
@@ -746,7 +746,7 @@ Slot pad: `{"designator":"1","x":0,"y":0,"width":3.5,"height":1.8,"shape":"oval"
              {"points":[{"x":-20,"y":30},{"x":-20,"y":-30},{"x":30,"y":0}],"owner_part_id":2}],
  "rectangles":[{"x1":-10,"y1":-20,"x2":10,"y2":20,"owner_part_id":3}],
  "parameters":[{"name":"Comment","value":"LM358DR"},{"name":"Manufacturer Part Number","value":"LM358DR","hidden":true}],
- "footprints":[{"name":"SOIC127P600X175-8N","library_path":"C:/Users/Example/AppData/Local/Temp/claude/c--Projekte-Tools/c2f879a0-18cd-4140-bad7-eb46f08463d7/scratchpad/rust-writer/out/PartForge_Test.PcbLib"}]}]}}
+ "footprints":[{"name":"SOIC127P600X175-8N","library_path":"<scratchpad>/rust-writer/out/PartForge_Test.PcbLib"}]}]}}
 ```
 Response geometry echo for pin 1 of the resistor: `{"body_end":{"x":-20,"y":0},"designator":"1","name":"1","orientation":"left","tip":{"x":-30,"y":0}}`.
 Bounding box: `{"max_x":30,"max_y":4,"min_x":-30,"min_y":-4}`.

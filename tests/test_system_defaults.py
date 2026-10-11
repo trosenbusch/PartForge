@@ -66,15 +66,34 @@ def test_configured_writer_path_is_never_replaced_silently(tmp_path: Path, monke
     assert settings.resolved_rust_writer() == str(exe)
 
 
-def test_frozen_program_never_probes_the_developer_folder(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+@pytest.mark.parametrize("frozen", [False, True])
+def test_writer_detection_uses_only_neutral_install_locations(monkeypatch: pytest.MonkeyPatch,
+                                                            tmp_path: Path, frozen: bool) -> None:
     monkeypatch.delenv("PARTFORGE_RUST_WRITER", raising=False)
     monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
-    monkeypatch.setattr(config.sys, "frozen", True, raising=False)
+    monkeypatch.setattr(config.sys, "frozen", frozen, raising=False)
     monkeypatch.setattr(config.sys, "executable", str(tmp_path / "PartForge" / "PartForge.exe"))
-    candidates = config.rust_writer_candidates()
-    assert config.DEV_RUST_WRITER not in candidates
-    assert candidates[0] == str(tmp_path / "Programs" / "altium-designer-mcp" / "altium-designer-mcp.exe")
-    assert str(tmp_path / "PartForge" / "altium-designer-mcp.exe") in candidates
+    expected = [str(tmp_path / "Programs" / "altium-designer-mcp" / "altium-designer-mcp.exe")]
+    if frozen:
+        expected += [str(tmp_path / "PartForge" / "altium-designer-mcp.exe"),
+                     str(tmp_path / "PartForge" / "altium-designer-mcp" / "altium-designer-mcp.exe")]
+    assert config.rust_writer_candidates() == expected
+
+
+def test_writer_environment_override_precedes_the_user_install(monkeypatch: pytest.MonkeyPatch,
+                                                             tmp_path: Path) -> None:
+    installed = tmp_path / "Programs" / "altium-designer-mcp" / "altium-designer-mcp.exe"
+    installed.parent.mkdir(parents=True)
+    installed.write_bytes(b"MZ")
+    override = tmp_path / "custom" / "altium-designer-mcp.exe"
+    override.parent.mkdir()
+    override.write_bytes(b"MZ")
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+    monkeypatch.setenv("PARTFORGE_RUST_WRITER", str(override))
+    monkeypatch.setattr(config.sys, "frozen", False, raising=False)
+    assert config.detect_rust_writer() == str(override)
+    monkeypatch.delenv("PARTFORGE_RUST_WRITER")
+    assert config.detect_rust_writer() == str(installed)
 
 
 def test_settings_reload_when_the_file_changes() -> None:

@@ -2,7 +2,7 @@
 
 Agent: Altium-access agent (exclusive use of the running Altium) · 2026-10-07, 22:17–23:20
 Altium: `C:\Program Files\Altium\AD22\X2.EXE`, **26.10.1.5**.
-Working folder: `C:/Users/Example/AppData/Local/Temp/claude/c--Projekte-Tools/c2f879a0-18cd-4140-bad7-eb46f08463d7/scratchpad/altium-verify2/` (abbreviated `V2`).
+Working folder: `<scratchpad>/altium-verify2/` (abbreviated `V2`).
 Kit used: `.../scratchpad/altium-verify-rust/` (`AV`).
 
 Every statement is tagged **[VERIFIED]** (observed in Altium 26.10 or measured in this run) or **[UNVERIFIED]** (inference, or not testable in this session).

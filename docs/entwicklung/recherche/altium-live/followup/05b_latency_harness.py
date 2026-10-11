@@ -1,6 +1,6 @@
 """FOLLOW-UP 05b (UNVERIFIED): measure DelphiScript launch latency.
 
-Precondition: Sandbox.pas currently holds the ping body from 05_latency_ping_body.txt
+Precondition: ALTIUM_MCP_CHECKOUT points to the local altium-mcp checkout; Sandbox.pas holds the ping body from 05_latency_ping_body.txt
 (run it once via mcp__altium__run_altium_script). This harness does NOT modify Sandbox.pas;
 it only re-launches the sandbox script project the same way altium-mcp does.
 """
@@ -10,7 +10,7 @@ import sys
 import time
 
 X2 = r"C:\Program Files\Altium\AD22\X2.EXE"
-PRJ = r"C:\PartForge-Examples\Tools\altium-mcp\server\SandboxScript\Sandbox.PrjScr"
+PRJ = os.path.join(os.environ["ALTIUM_MCP_CHECKOUT"], "server", "SandboxScript", "Sandbox.PrjScr")
 PING = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ping.txt")
 N = int(sys.argv[1]) if len(sys.argv) > 1 else 5
 

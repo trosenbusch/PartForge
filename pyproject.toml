@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "partforge"
-version = "1.0.0"
-description = "PartForge – datenbankbasierte Bauteilbibliotheken (DbLib) für Altium Designer erstellen und pflegen"
+version = "1.0.0b1"
+description = "Create and maintain database component libraries (DbLib) for Altium Designer"
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
@@ -29,10 +29,16 @@ dependencies = [
     "rapidfuzz>=3.10",
 ]
 classifiers = [
+    "Development Status :: 4 - Beta",
     "Programming Language :: Python :: 3",
     "Operating System :: Microsoft :: Windows",
     "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
 ]
+
+[project.urls]
+Repository = "https://github.com/trosenbusch/PartForge"
+Issues = "https://github.com/trosenbusch/PartForge/issues"
+Changelog = "https://github.com/trosenbusch/PartForge/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 postgres = ["psycopg[binary]>=3.2"]
@@ -52,4 +58,5 @@ partforge = ["web/**/*", "altium/bridge/scripts/*", "assets/**/*", "data/**/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+norecursedirs = ["_tmp", ".venv", "node_modules"]
 addopts = "-ra"
