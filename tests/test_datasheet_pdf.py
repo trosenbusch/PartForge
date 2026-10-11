@@ -11,6 +11,7 @@ import threading
 from pathlib import Path
 
 import pytest
+from pdf_support import synthetic_pdf
 
 from partforge.datasheet import pdf as pdfio
 from partforge.datasheet.errors import InvalidPdf
@@ -28,19 +29,20 @@ from partforge.datasheet.pages import (
 )
 
 CORPUS = Path(__file__).parent / "data" / "corpus"
-PDFS = CORPUS / "pdfs"
 SECTIONS = ("ordering", "pinout", "package_outline", "land_pattern")
-
-pytestmark = pytest.mark.skipif(not (CORPUS / "manifest.json").is_file(), reason="Datenblatt-Korpus fehlt")
-
 
 @pytest.fixture(scope="module")
 def manifest() -> dict:
+    if not (CORPUS / "manifest.json").is_file():
+        pytest.skip("Optional manufacturer PDF corpus manifest is unavailable.")
     return json.loads((CORPUS / "manifest.json").read_text(encoding="utf-8"))
 
 
 @pytest.fixture(scope="module")
 def corpus_texts(manifest) -> dict[str, pdfio.PdfInfo]:
+    missing = [e["file"] for e in manifest["entries"] if not (CORPUS / e["file"]).is_file()]
+    if missing:
+        pytest.skip("Optional manufacturer PDF corpus is not distributed; missing: " + ", ".join(missing))
     return {Path(e["file"]).name: pdfio.read_page_texts(CORPUS / e["file"]) for e in manifest["entries"]}
 
 
@@ -97,6 +99,17 @@ def test_glyph_helpers():
     assert pdfio.decode_glyph_text("plain text") == "plain text"
 
 
+def test_synthetic_text_blank_and_glyph_pages():
+    info = pdfio.read_page_texts(synthetic_pdf(["PIN CONFIGURATION AND FUNCTIONS", "", "/g54/g50/g44/g38"]))
+    assert info.page_count == 3 and not info.encrypted
+    assert info.pages[0].text == "PIN CONFIGURATION AND FUNCTIONS"
+    assert (info.pages[0].width_pt, info.pages[0].height_pt) == (612, 792)
+    assert info.pages[1].text == "" and info.pages[1].content_bytes == 0
+    assert info.pages[2].glyph and info.pages[2].text == "SOIC"
+    infos = page_infos(info.pages)
+    assert "pins" in infos[0].categories and infos[1].quality == "empty"
+
+
 def test_content_size_separates_drawings_from_blank_pages(corpus_texts):
     opa = corpus_texts["opa656.pdf"].pages
     assert all(opa[p - 1].content_bytes > 100_000 for p in (21, 22, 23, 24))
@@ -112,8 +125,8 @@ def test_pdf_info_and_invalid_input(tmp_path):
         pdfio.pdf_info(b"%PDF-1.4 garbage")
     with pytest.raises(InvalidPdf, match="Passwort"):
         pdfio.pdf_info(_blank_pdf(1, password="geheim"))
-    owner_only = pdfio.pdf_info((PDFS / "25AA02E48.pdf").read_bytes())
-    assert owner_only.encrypted and owner_only.page_count == 26
+    owner_only = pdfio.pdf_info(synthetic_pdf(["Owner protected example"] * 3, owner_password="owner"))
+    assert owner_only.encrypted and owner_only.page_count == 3
 
 
 # --------------------------------------------------------------------------- subsets and renders
@@ -122,38 +135,41 @@ def test_pdf_info_and_invalid_input(tmp_path):
 def test_subset_is_unencrypted_and_ordered():
     from pypdf import PdfReader
 
-    data = pdfio.subset_pdf(PDFS / "25AA02E48.pdf", [16, 1, 19])
+    original = synthetic_pdf([f"Synthetic page {p}" for p in range(1, 5)], owner_password="owner")
+    data = pdfio.subset_pdf(original, [3, 1, 4])
     reader = PdfReader(io.BytesIO(data))
     assert not reader.is_encrypted
     assert len(reader.pages) == 3
-    assert "25AA02E48" in (reader.pages[1].extract_text() or "")
+    assert [p.extract_text() for p in reader.pages] == ["Synthetic page 3", "Synthetic page 1", "Synthetic page 4"]
     with pytest.raises(InvalidPdf, match="Seite 99"):
-        pdfio.subset_pdf(PDFS / "25AA02E48.pdf", [99])
+        pdfio.subset_pdf(original, [99])
 
 
 def test_render_sizes_and_vision_limits():
-    png, size = pdfio.render_page(PDFS / "opa656.pdf", 21, dpi=72)
+    original = synthetic_pdf(["Synthetic drawing", "Second page"])
+    png, size = pdfio.render_page(original, 2, dpi=72)
     assert png.startswith(b"\x89PNG") and size == (612, 792)
-    png, size = pdfio.render_page(PDFS / "opa656.pdf", 21, dpi=200, mode="gray", max_edge=pdfio.VISION_MAX_EDGE,
+    png, size = pdfio.render_page(original, 2, dpi=200, mode="gray", max_edge=pdfio.VISION_MAX_EDGE,
                                   max_visual_tokens=pdfio.VISION_MAX_TOKENS)
     assert max(size) <= pdfio.VISION_MAX_EDGE
     assert pdfio.visual_tokens(size) <= pdfio.VISION_MAX_TOKENS
-    _png, capped = pdfio.render_page(PDFS / "opa656.pdf", 1, dpi=300, max_edge=1000)
+    _png, capped = pdfio.render_page(original, 1, dpi=300, max_edge=1000)
     assert max(capped) <= 1000
-    with pytest.raises(InvalidPdf, match="Seite 26"):
-        pdfio.render_page(PDFS / "opa656.pdf", 26)
+    with pytest.raises(InvalidPdf, match="Seite 3"):
+        pdfio.render_page(original, 3)
     with pytest.raises(ValueError):
-        pdfio.render_page(PDFS / "opa656.pdf", 1, dpi=0)
+        pdfio.render_page(original, 1, dpi=0)
     with pytest.raises(InvalidPdf):
         pdfio.render_page(b"not a pdf", 1)
 
 
 def test_renders_are_thread_safe():
     errors: list[Exception] = []
+    original = synthetic_pdf([f"Concurrent page {p}" for p in range(1, 13)])
 
     def work(page: int) -> None:
         try:
-            png, _ = pdfio.render_page(PDFS / "LTC6244.pdf", page, dpi=40)
+            png, _ = pdfio.render_page(original, page, dpi=40)
             assert png.startswith(b"\x89PNG")
         except Exception as exc:  # noqa: BLE001
             errors.append(exc)

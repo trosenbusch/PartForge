@@ -4,11 +4,11 @@
 
 ## Unveröffentlicht
 
-Noch keine Änderungen nach der ersten öffentlichen Beta-Vorbereitung.
+Noch keine Änderungen.
 
 ## 1.0.0b1 – 2026-10-11
 
-Vorbereitung der ersten öffentlichen Beta (GitHub-Tag: `v1.0.0-beta.1`), noch keine Veröffentlichung.
+Erste öffentliche Beta (GitHub-Tag: `v1.0.0-beta.1`).
 PartForge ist größtenteils durch Vibe Coding mit KI-Unterstützung entstanden und befindet sich in einem frühen Beta-Stadium.
 Erzeugte Bauteile, Symbole und Footprints vor dem Einsatz prüfen und Bibliotheken regelmäßig sichern.
 

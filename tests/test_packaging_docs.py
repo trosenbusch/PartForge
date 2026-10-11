@@ -107,7 +107,7 @@ def test_beta_package_and_release_versions_agree() -> None:
     release_tag = f"v{version.base_version}-beta.{version.pre[1]}"
     notes = RELEASE_NOTES.read_text(encoding="utf-8")
     assert f"`{__version__}`" in notes and f"`{release_tag}`" in notes
-    assert "publication is pending" in CHANGELOG.read_text(encoding="utf-8")
+    assert "First public beta" in CHANGELOG.read_text(encoding="utf-8")
     for limitation in ("Known limitations", "vibe coding", "Murata", "not compressed", "unsigned", "German"):
         assert limitation in notes, limitation
 

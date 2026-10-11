@@ -62,6 +62,13 @@ Pytest isolates application settings in a temporary `PARTFORGE_HOME`. Live tests
 the environment variables documented in `tests/conftest.py`; run them only with your own test
 libraries and credentials. The CI workflow never enables live tests or supplies API keys.
 
+Manufacturer PDFs under `tests/data/corpus/pdfs/` are optional local test data and are not distributed.
+Generic PDF, import and replay tests create synthetic PDFs. Tests that inspect the manufacturer
+corpus run when all PDFs listed in `tests/data/corpus/manifest.json` are supplied locally; otherwise,
+those tests are explicitly skipped. See the [corpus notes](docs/entwicklung/recherche/datasheet-corpus.md)
+for the documents and local workflow. ODBC integration checks also skip when the 64-bit SQLite ODBC
+driver is not installed; independent ODBC validation tests still run.
+
 When API models change, run `npm.cmd run gen:api` from `frontend` and commit `openapi.json` and
 `src/api/schema.d.ts`. The frontend build checks that the committed schema matches the backend.
 When dependencies change, update the frontend lockfile or the tested Python constraints, install

@@ -37,6 +37,9 @@ die Auswahl bleibt auch nach einem Neustart erhalten.
 
 ## Installation und Start
 
+Das Windows-Archiv aus dem [Beta-1-Release](https://github.com/trosenbusch/PartForge/releases/tag/v1.0.0-beta.1)
+herunterladen und vollständig entpacken. SHA-256-Prüfsummen liegen dem Release bei.
+
 **Programmpaket (empfohlen):** Den Ordner `PartForge` vollständig an einen festen Ort kopieren, z. B.
 `%LOCALAPPDATA%\Programs\PartForge`, und `PartForge.exe` starten – Python und Node.js sind nicht nötig.
 Das Paket enthält ein eigenes Handbuch (`README.md`), die [Bedienungsanleitung](#handbuch) als
