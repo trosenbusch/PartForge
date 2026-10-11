@@ -7,6 +7,10 @@ IPC-7351B-Footprints und 3D-Modellen. Komplette Bauteilserien entstehen mit weni
 Datenblätter werden per Drag & Drop von Claude ausgewertet und zu fertigen Bauteilen mit Symbol
 und Footprint. Altium sieht neue Bauteile sofort – ohne Neustart.
 
+> **Frühe Beta · Vibe Coding:** PartForge ist größtenteils durch Vibe Coding mit KI-Unterstützung
+> entstanden und befindet sich in einem frühen Beta-Stadium. Fehler und Änderungen sind zu erwarten.
+> Bitte erzeugte Bauteile, Symbole und Footprints vor dem Einsatz prüfen und Bibliotheken regelmäßig sichern.
+
 Die Oberfläche unterstützt **Englisch (Standard)** und **Deutsch**. Die Sprache lässt sich unter
 *Settings → General → Language* bzw. *Einstellungen → Allgemein → Sprache* wählen und speichern;
 die Auswahl bleibt auch nach einem Neustart erhalten.

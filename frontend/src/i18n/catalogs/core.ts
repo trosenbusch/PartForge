@@ -584,6 +584,8 @@ const messages: Record<string, string> = {
   "nicht abtippen.": "skip the typing.",
   "PartForge legt komplette Bauteilserien an, liest Datenblätter per KI und liefert Symbole, Footprints und 3D‑Modelle direkt als Altium‑Datenbankbibliothek – sauber, einheitlich und in Minuten statt Tagen.": "PartForge creates complete part series, reads datasheets using AI and delivers symbols, footprints and 3D models as an Altium database library — consistent and ready in minutes instead of days.",
   "Geöffnet": "Open",
+  "Frühe Beta · Vibe Coding": "Early beta · Vibe coding",
+  "PartForge ist größtenteils durch Vibe Coding mit KI-Unterstützung entstanden und befindet sich in einem frühen Beta-Stadium. Fehler und Änderungen sind zu erwarten. Bitte prüfen Sie erzeugte Bauteile, Symbole und Footprints vor dem Einsatz und sichern Sie Ihre Bibliotheken regelmäßig.": "PartForge was developed largely through vibe coding with AI assistance and is in an early beta stage. Expect bugs and changes. Please check generated parts, symbols and footprints before use and back up your libraries regularly.",
   "Andere Bibliothek öffnen …": "Open another library …",
   "Weitere Bibliotheken": "More libraries",
   "Läuft lokal – Ihre Bibliotheken bleiben auf Ihrem Rechner. Datenblätter gehen nur beim KI‑Import an die Claude‑API.": "Runs locally — your libraries stay on your computer. Datasheets are sent to the Claude API only during AI import.",

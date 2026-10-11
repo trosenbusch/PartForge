@@ -22,7 +22,7 @@ import { useHealth, useOpenWorkspace, useRecentWorkspaces, useWorkspace } from '
 import { ThemeMenu } from '@/app/shell/Topbar'
 import { useUi } from '@/app/stores'
 import { ForgeLogo, ForgeMark } from '@/components/brand/ForgeLogo'
-import { Badge, Button, Kbd, Spinner } from '@/components/ui'
+import { Badge, Button, Callout, Kbd, Spinner } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { baseName, shortenPath } from '@/lib/format'
 import { DEFAULT_LIBRARY_NAME, EXAMPLE_PART_COUNT } from '@/lib/libraryDefaults'
@@ -135,6 +135,10 @@ export default function WillkommenPage() {
             transition={{ duration: 0.6, ease, delay: 0.1 }}
           >
             {tr("PartForge legt komplette Bauteilserien an, liest Datenblätter per KI und liefert Symbole, Footprints und 3D‑Modelle direkt als Altium‑Datenbankbibliothek – sauber, einheitlich und in Minuten statt Tagen.")}</motion.p>
+
+          <Callout className="mt-5 max-w-[34rem]" tone="info" title={tr("Frühe Beta · Vibe Coding")}>
+            {tr("PartForge ist größtenteils durch Vibe Coding mit KI-Unterstützung entstanden und befindet sich in einem frühen Beta-Stadium. Fehler und Änderungen sind zu erwarten. Bitte prüfen Sie erzeugte Bauteile, Symbole und Footprints vor dem Einsatz und sichern Sie Ihre Bibliotheken regelmäßig.")}
+          </Callout>
 
           {workspace ? (
             // Bibliothek offen: „Zur Übersicht“ ist die eine Primäraktion
