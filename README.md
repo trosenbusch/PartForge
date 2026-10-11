@@ -42,6 +42,9 @@ A Claude API key is required only for AI features; API usage incurs charges on y
 
 ### Packaged build
 
+Download the Windows archive from the [Beta 1 release](https://github.com/trosenbusch/PartForge/releases/tag/v1.0.0-beta.1)
+and extract the entire folder. The release includes SHA-256 checksums for verification.
+
 If you have a packaged build, copy the entire `PartForge` folder to a permanent location, such as
 `%LOCALAPPDATA%\Programs\PartForge`, and run `PartForge.exe`. Python and Node.js are not required.
 Keep the accompanying files with the executable.

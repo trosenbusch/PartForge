@@ -121,10 +121,18 @@ def test_delete_journal_mode_is_an_error(tmp_path: Path):
     assert any("WAL" in i.message and i.severity == "error" for i in report.issues)
 
 
-def test_missing_database_file(tmp_path: Path):
+def test_missing_database_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    # This checks the missing-file guard, independently of the driver's registration on this machine.
+    monkeypatch.setattr(pyodbc, "drivers", lambda: [dblib.SQLITE_ODBC_DRIVER])
+
+    def unexpected_connection(*_args, **_kwargs):
+        pytest.fail("A missing SQLite file must be reported before attempting an ODBC connection.")
+
+    monkeypatch.setattr(pyodbc, "connect", unexpected_connection)
     ws = Workspace.create(tmp_path / "Ohne")
     report = odbc.run_odbc_test(ws, categories=[PARTS])
-    assert not report.connected and not report.ok
+    assert report.driver_installed and not report.connected and not report.ok
+    assert report.connect_seconds is None and not ws.sqlite_path.exists()
     assert any("existiert nicht" in i.message for i in report.issues)
 
 

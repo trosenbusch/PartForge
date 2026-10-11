@@ -3,12 +3,14 @@ sha256 or the search query, replayed PDF checks and downloads – never a networ
 everything that was not recorded, AI status "replay"."""
 from __future__ import annotations
 
+import hashlib
 import json
 import time
 from pathlib import Path
 from typing import Any
 
 import pytest
+from pdf_support import synthetic_pdf
 
 from partforge.config import load_settings
 from partforge.datasheet import find, llm, replay, store
@@ -17,8 +19,9 @@ from partforge.datasheet.llm import LlmRequest, ReplayLlmClient
 
 DATA = Path(__file__).parent / "data"
 FIXTURES = DATA / "ai_fixtures"
-PDFS = DATA / "corpus" / "pdfs"
-OPA656_ID = "e9e615f9f2ebf4dc"  # sha256[:16] of tests/data/corpus/pdfs/opa656.pdf
+OPA656_PDF = synthetic_pdf([f"Synthetic replay input page {p}" for p in range(1, 6)])
+OPA656_SHA = hashlib.sha256(OPA656_PDF).hexdigest()
+OPA656_ID = OPA656_SHA[:16]
 TI_PDF = "https://www.ti.com/lit/ds/symlink/opa656.pdf"
 
 pytestmark = pytest.mark.skipif(not (FIXTURES / "find" / "opa656.json").is_file(), reason="Testdaten fehlen")
@@ -29,9 +32,18 @@ def forbidden(*_args: Any, **_kwargs: Any) -> Any:
 
 
 @pytest.fixture
-def replay_mode(monkeypatch):
-    """Replay mode on – and every network path replaced by a tripwire."""
-    monkeypatch.setenv("PARTFORGE_AI_REPLAY_DIR", str(FIXTURES))
+def replay_mode(monkeypatch, tmp_path):
+    """Pair recorded responses with synthetic PDFs; every network path remains a tripwire."""
+    folder = tmp_path / "replay"
+    (folder / "find").mkdir(parents=True)
+    (folder / "opa656.pdf").write_bytes(OPA656_PDF)
+    analysis = json.loads((FIXTURES / "opa656.json").read_text(encoding="utf-8"))
+    analysis["sha256"] = OPA656_SHA
+    (folder / "opa656.json").write_text(json.dumps(analysis), encoding="utf-8")
+    search = json.loads((FIXTURES / "find" / "opa656.json").read_text(encoding="utf-8"))
+    search["downloads"] = {url: "../opa656.pdf" for url in search["downloads"]}
+    (folder / "find" / "opa656.json").write_text(json.dumps(search), encoding="utf-8")
+    monkeypatch.setenv("PARTFORGE_AI_REPLAY_DIR", str(folder))
     monkeypatch.delenv("PARTFORGE_AI_REPLAY_SPEED", raising=False)
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     settings = load_settings()
@@ -98,7 +110,7 @@ def test_recorded_probes_and_downloads(replay_mode):
     assert replay.probe(TI_PDF)["is_pdf"] and replay.probe("https://www.ti.com/product/OPA656/")["is_pdf"] is False
     assert replay.probe("https://example.com/x.pdf") is None
     data, name, url = replay.download(TI_PDF)
-    assert data == (PDFS / "opa656.pdf").read_bytes() and name == "opa656.pdf" and url == TI_PDF
+    assert data == OPA656_PDF and name == "opa656.pdf" and url == TI_PDF
     with pytest.raises(DatasheetError, match="Testmodus.*keine Datei hinterlegt"):
         replay.download("https://www.example.com/x.pdf")
     unchecked = find._default_probe("https://example.com/unbekannt.pdf")  # noqa: SLF001
@@ -119,8 +131,7 @@ def test_fixture_index_ignores_broken_files(tmp_path):
 
 
 def test_search_import_and_analysis_offline(client, replay_mode):
-    """The whole demo flow without network: status, connection test, search, import of the found link (the corpus
-    PDF), analysis replayed from its recording."""
+    """The full offline demo flow: status, connection test, search, synthetic PDF import and response replay."""
     status = client.get("/api/ai/status").json()
     assert status["key_configured"] and status["key_source"] == "replay"
     test = client.post("/api/ai/test")
@@ -146,7 +157,7 @@ def test_what_was_not_recorded_fails_clearly(client, replay_mode):
     unknown = wait(client, client.post("/api/datasheets/from-url", json={"url": "https://www.example.com/x.pdf"})
                    .json()["job"])
     assert unknown["status"] == "failed" and "Testmodus" in unknown["error"]
-    upload = client.post("/api/datasheets", files={"file": ("ADG736.pdf", (PDFS / "ADG736.pdf").read_bytes(),
+    upload = client.post("/api/datasheets", files={"file": ("unrecorded.pdf", synthetic_pdf(["No recording for this input"]),
                                                             "application/pdf")}, data={"extract": "true"})
     body = upload.json()
     assert upload.status_code == 201 and "Testmodus" in body["warning"] and "keine aufgezeichnete Analyse" in \
@@ -160,7 +171,7 @@ def test_what_was_not_recorded_fails_clearly(client, replay_mode):
 
 def test_slow_replay_can_be_watched_and_cancelled(client, replay_mode, monkeypatch):
     monkeypatch.setenv("PARTFORGE_AI_REPLAY_SPEED", "0.2")
-    data = (PDFS / "opa656.pdf").read_bytes()
+    data = OPA656_PDF
     upload = client.post("/api/datasheets", files={"file": ("opa656.pdf", data, "application/pdf")})
     wait(client, upload.json()["job"])
     started = client.post(f"/api/datasheets/{OPA656_ID}/extract", json={"vision": "off"}).json()["job"]

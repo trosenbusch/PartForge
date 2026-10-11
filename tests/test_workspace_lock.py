@@ -59,26 +59,48 @@ def test_second_process_is_refused_until_released(tmp_path: Path) -> None:
     assert _other_process(root)["locked"] is True  # released: the other process may open it (and exits)
 
 
-def test_api_open_refuses_a_library_held_by_another_process(bare_client: TestClient, tmp_path: Path) -> None:
+@pytest.mark.parametrize("release_mode", ["unlock", "exit"], ids=["explicit-unlock", "process-exit"])
+def test_api_open_refuses_a_library_held_by_another_process(
+    bare_client: TestClient, tmp_path: Path, release_mode: str,
+) -> None:
     ws = Workspace.create(tmp_path / "geteilt", name="Geteilt")
     blocker = subprocess.Popen(  # another PartForge holds the library
         [sys.executable, "-c", textwrap.dedent("""
-            import sys, time
+            import json, os, sys
             sys.path.insert(0, sys.argv[2])
-            from partforge.workspace import lock_library
+            from partforge.workspace import library_lock_holder, lock_library, unlock_library
             lock_library(sys.argv[1])
-            print("held", flush=True)
-            time.sleep(60)
-        """), str(ws.root), str(ROOT)], stdout=subprocess.PIPE)
+            holder = library_lock_holder(sys.argv[1])
+            assert holder["pid"] == os.getpid()
+            print(json.dumps(holder), flush=True)
+            if sys.stdin.readline().strip() == "unlock":
+                unlock_library(sys.argv[1])
+                print("released", flush=True)
+            else:
+                os._exit(0)  # no explicit unlock: Windows must release the dead owner's byte lock
+        """), str(ws.root), str(ROOT)], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+        env={**os.environ, "PYTHONIOENCODING": "utf-8"})
     try:
-        assert blocker.stdout is not None and blocker.stdout.readline().strip() == b"held"
+        assert blocker.stdout is not None
+        holder = json.loads(blocker.stdout.readline().decode("utf-8"))
+        assert holder == library_lock_holder(ws.root)
         r = bare_client.post("/api/workspace/open", json={"path": str(ws.root)})
         assert r.status_code == 409, r.text
-        assert "bereits in einem anderen PartForge geöffnet" in r.json()["detail"]
+        detail = r.json()["detail"]
+        assert "bereits in einem anderen PartForge geöffnet" in detail
+        assert f"„{ws.root}“" in detail
+        for field, label in (("host", "Rechner"), ("user", "Benutzer"), ("pid", "Prozess")):
+            assert holder[field] and f"{label} {holder[field]}" in detail
         assert bare_client.get("/api/workspace").json() is None  # nothing opened
+        assert not holds_library_lock(ws.root)
+        # A Windows venv python.exe can be a redirector: Popen.pid is not necessarily the lock owner's PID.
+        # Tell the actual interpreter to release/exit instead of killing only the redirector process.
+        out, _ = blocker.communicate(input=f"{release_mode}\n".encode(), timeout=10)
+        assert blocker.returncode == 0
+        assert out.strip() == (b"released" if release_mode == "unlock" else b"")
     finally:
-        blocker.kill()
-        blocker.wait(10)
+        if blocker.poll() is None:
+            blocker.communicate(input=b"exit\n", timeout=10)
     r = bare_client.post("/api/workspace/open", json={"path": str(ws.root)})
     assert r.status_code == 200, r.text
     assert holds_library_lock(ws.root) and (ws.root / LOCK_FILE).is_file()
