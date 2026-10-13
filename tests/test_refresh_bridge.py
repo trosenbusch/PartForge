@@ -43,6 +43,7 @@ def test_dblib_file_name_validation(tmp_path):
             dblib_file_name(bad)
 
 
+@pytest.mark.windows
 def test_install_state_parses_same_name_entries(tmp_path):
     ours = tmp_path / "Bib" / "PartForge.DbLib"
     ours.parent.mkdir()

@@ -310,6 +310,7 @@ def _raw_update(table: str, pn: str, **values: str) -> None:
         conn.execute(update(t).where(t.c["Part Number"] == pn).values(**values))
 
 
+@pytest.mark.windows
 def test_moved_library_moves_its_links(tmp_path: Path, closing: None,
                                        recorder: dict[str, list[Any]]) -> None:
     ws = _open(Workspace.create(tmp_path / "Alt" / "Bibliothek"))
@@ -394,6 +395,7 @@ def _forget_root() -> None:
         conn.execute(delete(pf_meta).where(pf_meta.c.key == meta.WORKSPACE_ROOT))
 
 
+@pytest.mark.windows
 def test_older_library_learns_its_former_folder_from_datasheet_links(tmp_path: Path, closing: None) -> None:
     """A library moved before PartForge recorded its folder: the datasheet import linked the stored PDF
     absolutely (<root>\\<pf_datasheets.file>), which tells the former folder."""
@@ -413,6 +415,7 @@ def test_older_library_learns_its_former_folder_from_datasheet_links(tmp_path: P
     assert meta.get_meta(meta.WORKSPACE_ROOT) == root
 
 
+@pytest.mark.windows
 def test_former_folder_is_not_guessed_when_ambiguous_or_current(tmp_path: Path, closing: None) -> None:
     ws = _open(Workspace.create(tmp_path / "Zweideutig"))
     registry.upsert_datasheet(DatasheetRecord(id="a" * 16, file=r"Datasheets\a_aaaaaaaa.pdf", original_name="a.pdf"))
@@ -434,6 +437,7 @@ def test_former_folder_is_not_guessed_when_ambiguous_or_current(tmp_path: Path, 
     assert parts.get_part("Resistors", "R-HERE")["PF Author"] != MIGRATION_AUTHOR  # type: ignore[index]
 
 
+@pytest.mark.windows
 def test_links_are_never_rewritten_for_postgres(workspace: Workspace) -> None:
     """A PostgreSQL database is shared by the library folders of several users."""
     parts.create_part("Resistors", res("R-1", "1k", ComponentLink1URL=r"C:\Anderer\Ordner\r.pdf"))
@@ -448,6 +452,7 @@ def test_links_are_never_rewritten_for_postgres(workspace: Workspace) -> None:
     assert parts.get_part("Resistors", "R-1")["ComponentLink1URL"] == str(workspace.root) + r"\r.pdf"  # type: ignore[index]
 
 
+@pytest.mark.windows
 def test_same_folder_in_other_spelling_is_not_a_move(workspace: Workspace) -> None:
     root = str(workspace.root)
     parts.create_part("Resistors", res("R-1", "1k", ComponentLink1URL=root + r"\Datasheets\r.pdf"))
@@ -459,6 +464,7 @@ def test_same_folder_in_other_spelling_is_not_a_move(workspace: Workspace) -> No
     assert stored and stored["ComponentLink1URL"] == root + r"\Datasheets\r.pdf" and stored["PF Author"] != MIGRATION_AUTHOR
 
 
+@pytest.mark.windows
 def test_audit_entries_of_the_migrations_are_valid(tmp_path: Path, closing: None) -> None:
     """The entries use the existing audit actions (the frontend knows exactly these)."""
     ws = _open(Workspace.create(tmp_path / "Audit"))

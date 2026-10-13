@@ -130,6 +130,7 @@ def test_footprint_height_rule():
 # --------------------------------------------------------------------------- patch (synthetic files)
 
 
+@pytest.mark.windows
 def test_patch_sets_parameters_and_table_of_contents(lib: Path):
     before = _tree(lib)
     assert patch_footprint_heights(lib, {"RESC1608X55N": 0.55, "SOIC-8": 1.75}) == []
@@ -146,6 +147,7 @@ def test_patch_sets_parameters_and_table_of_contents(lib: Path):
     assert [p.name for p in lib.parent.iterdir()] == [lib.name]  # no temporary copy left
 
 
+@pytest.mark.windows
 def test_patch_is_idempotent_and_ignores_unknown_names(lib: Path):
     assert patch_footprint_heights(lib, {"RESC1608X55N": 0.55}) == []
     digest = _sha(lib)
@@ -156,6 +158,7 @@ def test_patch_is_idempotent_and_ignores_unknown_names(lib: Path):
     assert _height_value(_params(lib)["SOIC-8"]) == b"0mil"  # not asked for: unchanged
 
 
+@pytest.mark.windows
 def test_patch_fixes_a_stale_table_of_contents_only(tmp_path: Path):
     path = synthetic_pcblib(tmp_path / "Stale.PcbLib", heights={"RESC1608X55N": "21.6535mil"}, toc=False)
     streams = {k: v for k, v in _tree(path).items() if v is not None}
@@ -167,6 +170,7 @@ def test_patch_fixes_a_stale_table_of_contents_only(tmp_path: Path):
     assert _toc(path) == {b"RESC1608X55N": b"21.6535", b"SOIC-8": b"0"}
 
 
+@pytest.mark.windows
 def test_without_table_of_contents_or_listing(tmp_path: Path):
     path = synthetic_pcblib(tmp_path / "NoToc.PcbLib", heights={}, toc=False)
     assert patch_footprint_heights(path, {"SOIC-8": 1.75}) == []
@@ -182,6 +186,7 @@ def test_without_table_of_contents_or_listing(tmp_path: Path):
     assert _toc(path) == {b"SOIC-8": b"68.8976"}
 
 
+@pytest.mark.windows
 def test_long_names_are_matched_by_pattern(tmp_path: Path):
     """Storage names are cut at 31 characters (SectionKeys); the full name lives in PATTERN."""
     name = "RESC1608X55N_YAGEO_RC0603FR-07100KL"
@@ -222,6 +227,7 @@ def test_long_names_are_matched_by_pattern(tmp_path: Path):
          "mehrfach im Inhaltsverzeichnis"),
     ],
 )
+@pytest.mark.windows
 def test_unexpected_structure_leaves_the_file_untouched(tmp_path: Path, streams: dict[str, bytes], reason: str | None):
     path = build_compound(tmp_path / "Odd.PcbLib", {"FileHeader": b"x", **streams})
     digest = _sha(path)
@@ -233,6 +239,7 @@ def test_unexpected_structure_leaves_the_file_untouched(tmp_path: Path, streams:
     assert [p.name for p in path.parent.iterdir()] == [path.name]
 
 
+@pytest.mark.windows
 def test_invalid_values_are_reported_and_the_rest_is_written(lib: Path):
     warnings = patch_footprint_heights(lib, {"RESC1608X55N": -1.0, "SOIC-8": 1.75, "Ω-Teil": 1.0})
     assert len(warnings) == 2 and "außerhalb" in warnings[0] and "nicht zuordnen" in warnings[1]
@@ -251,6 +258,7 @@ def test_other_files_and_missing_files(tmp_path: Path):
     assert patch_footprint_heights(text_file, {}) == []  # nothing asked: nothing read
 
 
+@pytest.mark.windows
 def test_failed_verify_or_write_leaves_the_file_untouched(lib: Path, monkeypatch):
     digest = _sha(lib)
 
@@ -272,6 +280,7 @@ def test_failed_verify_or_write_leaves_the_file_untouched(lib: Path, monkeypatch
     assert [p.name for p in lib.parent.iterdir()] == [lib.name]
 
 
+@pytest.mark.windows
 def test_copy_check_detects_foreign_changes(lib: Path, monkeypatch):
     original = compound.write_streams
 
@@ -285,6 +294,7 @@ def test_copy_check_detects_foreign_changes(lib: Path, monkeypatch):
     assert _sha(lib) == digest
 
 
+@pytest.mark.windows
 def test_self_check_rejects_a_wrong_plan(lib: Path, monkeypatch):
     monkeypatch.setattr(heights, "format_mil", lambda coord: "1")  # a formatting bug must never reach the file
     digest = _sha(lib)
@@ -292,6 +302,7 @@ def test_self_check_rejects_a_wrong_plan(lib: Path, monkeypatch):
     assert "Selbstprüfung" in warnings[0] and _sha(lib) == digest
 
 
+@pytest.mark.windows
 def test_layer_and_height_patches_combine(lib: Path):
     assert stackup.patch_pcblib_layers(lib, stackup.default_stack()) == []
     assert patch_footprint_heights(lib, {"RESC1608X55N": 0.55}) == []

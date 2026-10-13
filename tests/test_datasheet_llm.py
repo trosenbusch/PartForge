@@ -364,6 +364,7 @@ def test_recording_writes_responses_only(tmp_path):
 # --------------------------------------------------------------------------- client factory
 
 
+@pytest.mark.windows
 def test_get_client_respects_settings_and_never_exposes_the_key(tmp_path, monkeypatch):
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     settings = AppSettings()

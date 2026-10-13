@@ -375,6 +375,7 @@ def test_layer_stack_endpoints(client, workspace, tmp_path: Path):
     assert bad.status_code == 400 and "nicht gefunden" in bad.json()["detail"]
 
 
+@pytest.mark.windows
 def test_layer_stack_apply_job(client, workspace):
     path = synthetic_pcblib(workspace.footprints_dir / "PF_OLD.PcbLib")
     snap = wait_job(client, client.post("/api/libraries/layer-stack/apply").json()["job"])

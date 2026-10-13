@@ -246,6 +246,7 @@ def _wait_for(path: Path, timeout: float = 30.0) -> None:
         time.sleep(0.05)
 
 
+@pytest.mark.windows
 def test_library_lock_excludes_other_processes(tmp_path):
     lib = tmp_path / "Footprints" / "PF_CHIP.PcbLib"
     lib.parent.mkdir()

@@ -545,6 +545,7 @@ def test_layer_set_setting_is_stored_in_the_library_folder(tmp_path: Path) -> No
 # --------------------------------------------------------------------------- PcbLib header
 
 
+@pytest.mark.windows
 def test_patch_appends_the_builtin_set_as_the_current_one(tmp_path: Path, lib: Path) -> None:
     stack, notes = _stack(_workspace(tmp_path, mode="builtin"))
     assert notes == []
@@ -564,6 +565,7 @@ def test_patch_appends_the_builtin_set_as_the_current_one(tmp_path: Path, lib: P
     assert pcblib_layer_problems(lib, stack) == []
 
 
+@pytest.mark.windows
 def test_second_patch_changes_nothing(tmp_path: Path, lib: Path) -> None:
     stack, _notes = _stack(_workspace(tmp_path, mode="builtin"))
     assert patch_pcblib_layers(lib, stack) == []
@@ -573,6 +575,7 @@ def test_second_patch_changes_nothing(tmp_path: Path, lib: Path) -> None:
     assert _keys(_lib_text(lib))[b"LAYERSETSCOUNT"] == b"6"
 
 
+@pytest.mark.windows
 def test_set_that_is_not_current_leaves_the_current_set_alone(tmp_path: Path, lib: Path) -> None:
     stack, _notes = _stack(_workspace(tmp_path, mode="builtin", current=False))
     assert patch_pcblib_layers(lib, stack) == []
@@ -582,6 +585,7 @@ def test_set_that_is_not_current_leaves_the_current_set_alone(tmp_path: Path, li
     assert pcblib_layer_problems(lib, stack) == []
 
 
+@pytest.mark.windows
 def test_file_set_is_written_with_its_flags(tmp_path: Path, lib: Path) -> None:
     ws = _workspace(tmp_path, mode="file", file=str(tmp_path / "Component.layerset"), name="Component",
                     layers=COMPONENT_TOKENS, active_layer="BOTTOM", locked=True, flip_board=True)
@@ -593,6 +597,7 @@ def test_file_set_is_written_with_its_flags(tmp_path: Path, lib: Path) -> None:
     }
 
 
+@pytest.mark.windows
 def test_set_with_the_same_name_is_updated_instead_of_appended(tmp_path: Path) -> None:
     stale = set_segments(6, "component layers", ["TopLayer", "Mechanical9"], "BOTTOM", current=False, locked=True)
     lib = synthetic_pcblib(tmp_path / "PF_OLD.PcbLib", header=header_with_sets(stale))
@@ -605,6 +610,7 @@ def test_set_with_the_same_name_is_updated_instead_of_appended(tmp_path: Path) -
     assert pcblib_layer_problems(lib, stack) == []
 
 
+@pytest.mark.windows
 def test_missing_fields_of_an_existing_set_are_added(tmp_path: Path) -> None:
     partial = ["LAYERSET6NAME=Component Layers", "LAYERSET6LAYERS=TopLayer"]
     lib = synthetic_pcblib(tmp_path / "PF_PART.PcbLib", header=header_with_sets(partial))
@@ -618,6 +624,7 @@ def test_missing_fields_of_an_existing_set_are_added(tmp_path: Path) -> None:
                                       b"LAYERSET6FLIPBOARD"]
 
 
+@pytest.mark.windows
 def test_renamed_set_is_appended_and_the_old_one_stays(lib: Path) -> None:
     assert patch_pcblib_layers(lib, _stack_with(builtin_layer_set(LayerMap()))) == []
     renamed = builtin_layer_set(LayerMap()).model_copy(update={"name": "Bauteile"})
@@ -629,6 +636,7 @@ def test_renamed_set_is_appended_and_the_old_one_stays(lib: Path) -> None:
     assert sets[7] == {**BUILTIN_FIELDS, "NAME": "Bauteile"}
 
 
+@pytest.mark.windows
 def test_problems_report_a_set_that_differs(lib: Path) -> None:
     assert patch_pcblib_layers(lib, _stack_with(builtin_layer_set(LayerMap()))) == []
     moved = _stack_with(builtin_layer_set(LayerMap(assembly="Mechanical 5")))
@@ -639,6 +647,7 @@ def test_problems_report_a_set_that_differs(lib: Path) -> None:
     assert pcblib_layer_problems(lib, moved) == []
 
 
+@pytest.mark.windows
 def test_problems_report_a_set_that_is_not_the_current_one(tmp_path: Path) -> None:
     exact = set_segments(6, "Component Layers", BUILTIN_LAYERS, current=True)  # as wanted, but "&All Layers" current
     lib = synthetic_pcblib(tmp_path / "PF_TWO.PcbLib", header=header_with_sets(exact, current=1))
@@ -649,6 +658,7 @@ def test_problems_report_a_set_that_is_not_the_current_one(tmp_path: Path) -> No
     assert pcblib_layer_problems(lib, stack) == []
 
 
+@pytest.mark.windows
 def test_mode_none_leaves_existing_sets_untouched(tmp_path: Path) -> None:
     own = set_segments(6, "Component Layers", ["TopLayer", "Mechanical9"], current=True)
     lib = synthetic_pcblib(tmp_path / "PF_OWN.PcbLib", header=header_with_sets(own, current=None))
@@ -673,6 +683,7 @@ def test_mode_none_leaves_existing_sets_untouched(tmp_path: Path) -> None:
         (header_with_sets().replace(b"|LAYERSETSCOUNT=5", b""), "keine Lagensätze (LAYERSETSCOUNT) im Kopf"),
     ],
 )
+@pytest.mark.windows
 def test_unexpected_set_block_leaves_the_library_untouched(tmp_path: Path, header: bytes, fragment: str) -> None:
     lib = synthetic_pcblib(tmp_path / "PF_ODD.PcbLib", header=header)
     digest = _sha(lib)
@@ -696,6 +707,7 @@ def test_plan_library_data_appends_the_set_without_file_access() -> None:
         plan_library_data(library_data(rust_like_header()), EMPTY_KIND_MAPPING, stack)
 
 
+@pytest.mark.windows
 @pytest.mark.parametrize("source", ["typed name", "layerset file"])
 def test_set_name_outside_windows_1252_does_not_block_the_header_patch(tmp_path: Path, lib: Path, source: str) -> None:
     if source == "typed name":
@@ -848,6 +860,7 @@ def test_api_settings_with_an_unusable_layer_set(client: TestClient) -> None:
     assert stack["notes"] == ["Lagensatz nicht verwendet: Der Lagensatz „Leer“ enthält keine Lagen."]
 
 
+@pytest.mark.windows
 def test_api_layer_job_writes_the_set_from_the_settings(client: TestClient, workspace: Workspace,
                                                         monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(sync, "altium_bridge", lambda: None)

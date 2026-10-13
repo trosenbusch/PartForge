@@ -7,6 +7,8 @@
 * Tests that need Altium Designer, the Rust library writer or the Claude API are marked
   ``altium``, ``rustwriter`` or ``ai`` and are skipped unless enabled via environment:
   PARTFORGE_TEST_ALTIUM=1, PARTFORGE_TEST_RUST=1 (default: on if the exe exists), PARTFORGE_TEST_AI=1.
+* Tests that only work on Windows (pythoncom/COM, Windows file locks, Windows path spellings, .exe/.cmd/PowerShell)
+  are marked ``windows`` and are skipped on other platforms; on Windows they always run.
 * Creating a library never starts the background job "Bibliotheken schreiben" (which would write
   with the real library writer behind the test's back): ``routes_system.start_library_sync``
   returns a finished, skipped job – unless the test is marked ``library_job`` (every test of
@@ -16,6 +18,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import sys
 import tempfile
 from pathlib import Path
 
@@ -48,6 +51,9 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "ai: calls the Claude API (PARTFORGE_TEST_AI=1)")
     config.addinivalue_line("markers", "slow: long-running test")
     config.addinivalue_line(
+        "markers", "windows: needs Windows (pythoncom, Windows file locks or paths, .exe/.cmd); skipped elsewhere"
+    )
+    config.addinivalue_line(
         "markers",
         "library_job: creating a library starts the real background job 'Bibliotheken schreiben' "
         "(otherwise a finished, skipped stand-in)",
@@ -61,7 +67,10 @@ def pytest_collection_modifyitems(config, items):
     run_ai = os.environ.get("PARTFORGE_TEST_AI") == "1"
     rust_env = os.environ.get("PARTFORGE_TEST_RUST")
     run_rust = (rust_env == "1") or (rust_env is None and detect_rust_writer() is not None)
+    on_windows = sys.platform == "win32"
     for item in items:
+        if item.get_closest_marker("windows") is not None and not on_windows:
+            item.add_marker(pytest.mark.skip(reason="Nur unter Windows lauffähig"))
         if item.path.name in LIBRARY_JOB_MODULES:
             item.add_marker(pytest.mark.library_job)
         if "altium" in item.keywords and not run_altium:

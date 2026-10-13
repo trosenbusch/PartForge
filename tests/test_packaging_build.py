@@ -252,6 +252,7 @@ def test_frozen_sources_reads_every_toc(tmp_path: Path) -> None:
     assert {a, b} <= third_party.frozen_sources(tmp_path / "w")
 
 
+@pytest.mark.windows
 def test_python_components_cover_bundled_files(tmp_path: Path) -> None:
     """Every bundled file maps to a component with licence texts: distributions (certifi MPL-2.0, pywin32 without
     the texts of parts it does not bundle), CPython with OpenSSL & co. and the WebView2 SDK."""
@@ -275,6 +276,7 @@ def test_python_components_cover_bundled_files(tmp_path: Path) -> None:
         assert "Redistribution and use" in by_name["microsoft edge webview2 sdk"].texts[0][1]
 
 
+@pytest.mark.windows
 def test_python_components_report_files_of_unknown_origin(tmp_path: Path) -> None:
     stray = tmp_path / "fremd.dll"
     stray.write_bytes(b"MZ")
@@ -290,6 +292,7 @@ def test_bundled_distribution_without_any_text_fails(tmp_path: Path, monkeypatch
         third_party.python_components(tmp_path / "w")
 
 
+@pytest.mark.windows
 def test_fallback_texts_for_distributions_without_licence_file(tmp_path: Path) -> None:
     """odfpy (no licence file in the wheel) is used under Apache-2.0 – its statement plus the full Apache text."""
     _write_tocs(tmp_path / "w", [_site_file("odf")], [])

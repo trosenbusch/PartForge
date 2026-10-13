@@ -341,6 +341,7 @@ def test_custom_symbol_name_is_recorded_for_regeneration(client, workspace, writ
 # --------------------------------------------------------------------------- explicit target library (R7)
 
 
+@pytest.mark.windows
 def test_explicit_target_library(client, workspace, writer):
     spec = resistor_symbol("R_LIB")
     dry = client.put(url("symbols", "R_LIB"), params={"dry_run": True},

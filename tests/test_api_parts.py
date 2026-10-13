@@ -364,6 +364,7 @@ def test_excel_safe_csv_export_and_literal_xlsx(filled: TestClient) -> None:
     assert saved.status_code == 200 and saved.json()["rows"] == 1
 
 
+@pytest.mark.windows
 def test_export_as_job(filled: TestClient) -> None:
     client = filled
     started = client.post("/api/export/Resistors/job", json={"format": "xlsx", "columns": ["Part Number", "Resistance"]})
