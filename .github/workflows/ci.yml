@@ -82,6 +82,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m venv .venv
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           .venv/Scripts/python.exe -m pip install -e ".[test,build]" -c constraints.txt
       - name: Check installed dependencies
         run: .venv/Scripts/python.exe -m pip check
@@ -119,7 +120,9 @@ jobs:
         working-directory: .
         run: |
           python -m venv .venv
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           .venv/Scripts/python.exe -m pip install -e . -c constraints.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           .venv/Scripts/python.exe -m pip check
       - name: Install frontend dependencies
         run: npm.cmd ci
