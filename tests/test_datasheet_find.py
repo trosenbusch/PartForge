@@ -354,6 +354,7 @@ def test_probe_network_problems_are_not_blocking():
     assert "nicht erreichbar" in (find.probe_pdf(TI_PDF, transport=transport(broken), resolve=public).message or "")
 
 
+@pytest.mark.windows
 def test_probe_checks_the_connected_peer(monkeypatch):
     """DNS rebinding: the address actually connected must be public as well."""
     monkeypatch.setattr(find, "_peer", lambda response: "127.0.0.1")

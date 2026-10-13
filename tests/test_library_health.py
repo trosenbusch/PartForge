@@ -86,6 +86,7 @@ def by_check(report: dict, check: str) -> list:
 # --------------------------------------------------------------------------- check ids, aliases, affected parts
 
 
+@pytest.mark.windows
 def test_registry_status_findings_use_the_data_level_ids(workspace, writer):
     lib = workspace.symbols_dir / "PF_Passives.SchLib"
     writer.put(lib, [resistor_symbol("BROKEN")])
@@ -168,6 +169,7 @@ def _write_without_heights(workspace, writer, specs) -> None:
     assert all(r.status == "ok" for r in records), [r.status_message for r in records]
 
 
+@pytest.mark.windows
 def test_missing_heights_are_found_and_the_sync_alone_does_not_fix_them(workspace, writer):
     r0603, c0805 = chip("R-0603"), chip("C-0805")
     _write_without_heights(workspace, writer, [r0603, c0805])
@@ -193,6 +195,7 @@ def test_missing_heights_are_found_and_the_sync_alone_does_not_fix_them(workspac
     assert len(sync.footprint_height_problems()) == 2
 
 
+@pytest.mark.windows
 def test_repair_job_rewrites_the_footprints_through_the_sync(client, workspace, writer):
     r0603, c0805 = chip("R-0603"), chip("C-0805")
     _write_without_heights(workspace, writer, [r0603, c0805])
@@ -211,6 +214,7 @@ def test_repair_job_rewrites_the_footprints_through_the_sync(client, workspace, 
     assert again["message"] == "Alle Footprint-Höhen sind in den PcbLibs eingetragen – nichts zu tun."
 
 
+@pytest.mark.windows
 def test_repair_only_the_named_footprints(workspace, writer):
     r0603, c0805 = chip("R-0603"), chip("C-0805")
     _write_without_heights(workspace, writer, [r0603, c0805])
@@ -221,6 +225,7 @@ def test_repair_only_the_named_footprints(workspace, writer):
     assert r0603.name not in [p.name for p in sync.footprint_height_problems()]
 
 
+@pytest.mark.windows
 def test_a_library_changed_outside_partforge_is_not_rewritten(workspace, writer):
     spec = chip()
     _write_without_heights(workspace, writer, [spec])
@@ -241,6 +246,7 @@ def test_a_library_changed_outside_partforge_is_not_rewritten(workspace, writer)
     assert "übersprungen" in out["message"]
 
 
+@pytest.mark.windows
 def test_imported_footprints_and_unreadable_files_are_not_checked(workspace, writer, monkeypatch):
     spec = chip()
     _write_without_heights(workspace, writer, [spec])
@@ -344,6 +350,7 @@ def test_letter_code_nc_pads_and_exposed_pads(workspace, writer):
     assert "Exposed Pad 17" in hint[0].message
 
 
+@pytest.mark.windows
 def test_status_missing_and_not_in_the_file_is_one_finding(workspace, writer):
     """K1: a registry entry with status ``missing`` that is not in its file was reported twice (component_missing
     and registry_missing) – one finding, the error, with the registry id as alias."""

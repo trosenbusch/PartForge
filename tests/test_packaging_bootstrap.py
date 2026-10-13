@@ -328,6 +328,7 @@ def test_running_window_returns_at_once(bs: ModuleType, monkeypatch: pytest.Monk
     assert started == [[str(bs.PYTHONW), "-m", "partforge", "--workspace", "C:/Bib"]]
 
 
+@pytest.mark.windows
 def test_running_instance_needs_a_live_python(bs: ModuleType, tmp_path: Path,
                                               monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("PARTFORGE_HOME", str(tmp_path / "home"))
@@ -447,6 +448,7 @@ def _run_cmd(copy: Path, *, path_dirs: list[Path], extra_env: dict[str, str] | N
                           timeout=timeout, encoding="utf-8", errors="replace", check=False)
 
 
+@pytest.mark.windows
 @pytest.mark.slow
 def test_cmd_without_python_prints_german_help(tmp_path: Path) -> None:
     result = _run_cmd(_copy_repo(tmp_path), path_dirs=[])
@@ -457,6 +459,7 @@ def test_cmd_without_python_prints_german_help(tmp_path: Path) -> None:
     assert "Programmpaket" in out
 
 
+@pytest.mark.windows
 @pytest.mark.slow
 def test_cmd_skips_the_store_placeholder(tmp_path: Path, python_stub: Path) -> None:
     """S2 of PKG-04: the App Execution Alias (exit 9009) is no Python – German help instead of its English text."""
@@ -466,6 +469,7 @@ def test_cmd_skips_the_store_placeholder(tmp_path: Path, python_stub: Path) -> N
     assert "https://www.python.org/downloads/windows/" in result.stdout
 
 
+@pytest.mark.windows
 @pytest.mark.slow
 def test_cmd_names_a_too_old_python(tmp_path: Path, python_stub: Path) -> None:
     """S3 of PKG-04: only Python 3.10 – the check exits 1 – says so and gives the download hint."""
@@ -474,6 +478,7 @@ def test_cmd_names_a_too_old_python(tmp_path: Path, python_stub: Path) -> None:
     assert "zu alte Python-Version" in result.stdout and "https://www.python.org/downloads/windows/" in result.stdout
 
 
+@pytest.mark.windows
 @pytest.mark.slow
 def test_cmd_with_incomplete_venv_and_prebuilt_ui_goes_through_bootstrap(tmp_path: Path) -> None:
     """S4/S5 of PKG-03: .venv without packages (interrupted setup) plus a prebuilt UI used to start pythonw

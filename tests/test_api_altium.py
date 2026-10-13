@@ -378,6 +378,7 @@ def test_install_never_replaces_the_dblib_of_another_library(api, workspace, bri
     assert "anderen Bibliothek" in issue["message"] and status["install"]["duplicate_kinds"] == {foreign: "other_database"}
 
 
+@pytest.mark.windows
 def test_install_replaces_a_dead_entry_but_not_an_unreachable_one(api, workspace, bridge, tmp_path: Path):
     dead = str(tmp_path / "Verschoben" / "PartForge.DbLib")  # drive there, file gone
     bridge.installed = [dead]

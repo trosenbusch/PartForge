@@ -104,6 +104,7 @@ class Gate:
 # --------------------------------------------------------------------------- helpers
 
 
+@pytest.mark.windows
 def test_same_folder_and_current_for(workspace: Workspace, tmp_path: Path) -> None:
     root = workspace.root
     assert same_folder(root, str(root).upper() + "\\") and same_folder(root, str(root).replace("\\", "/"))

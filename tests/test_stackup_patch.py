@@ -60,6 +60,7 @@ def lib(tmp_path: Path) -> Path:
 # --------------------------------------------------------------------------- structure
 
 
+@pytest.mark.windows
 def test_patch_sets_every_representation(lib: Path):
     stack = default_stack()
     assert pcblib_layer_problems(lib, stack)  # Rust template: Mech 2-7 typed
@@ -91,6 +92,7 @@ def test_patch_sets_every_representation(lib: Path):
     }
 
 
+@pytest.mark.windows
 def test_patch_pairs_layer_sets_and_record_breaks(lib: Path):
     original = _text(lib)
     patch_pcblib_layers(lib, default_stack())
@@ -109,6 +111,7 @@ def test_patch_pairs_layer_sets_and_record_breaks(lib: Path):
     assert original.count(b"\r") == text.count(b"\r")
 
 
+@pytest.mark.windows
 def test_layer_sets_follow_enabled_high_layers(lib: Path):
     stack = LayerStack(
         layers={
@@ -160,6 +163,7 @@ def test_layer_sets_match_a_native_altium_library():
     assert plan.replace == {}  # identical to what Altium wrote (incl. Mech 17-32 after DrillDrawing)
 
 
+@pytest.mark.windows
 def test_patch_is_idempotent(lib: Path):
     assert patch_pcblib_layers(lib, default_stack()) == []
     digest = _sha(lib)
@@ -167,6 +171,7 @@ def test_patch_is_idempotent(lib: Path):
     assert _sha(lib) == digest  # nothing rewritten
 
 
+@pytest.mark.windows
 def test_component_list_trailer_is_kept(lib: Path):
     data = read_library_data(lib)
     (length,) = struct.unpack_from("<I", data, 0)
@@ -178,6 +183,7 @@ def test_component_list_trailer_is_kept(lib: Path):
     assert new_length != length
 
 
+@pytest.mark.windows
 def test_patch_with_custom_stack_removes_kinds(lib: Path):
     stack = LayerStack(
         layers={
@@ -198,6 +204,7 @@ def test_patch_with_custom_stack_removes_kinds(lib: Path):
     assert pcblib_layer_problems(lib, stack) == []
 
 
+@pytest.mark.windows
 def test_record_break_after_removed_pairs(lib: Path):
     stack = LayerStack(layers={9: MechLayer(number=9, name="A", kind="AssemblyTop")}, pairs=[])
     text_before = _text(lib)
@@ -210,6 +217,7 @@ def test_record_break_after_removed_pairs(lib: Path):
 # --------------------------------------------------------------------------- refusals
 
 
+@pytest.mark.windows
 def test_altium_kind_table_is_left_untouched(tmp_path: Path):
     path = synthetic_pcblib(tmp_path / "Native.PcbLib", mapping=NATIVE_KIND_MAPPING)
     digest = _sha(path)
@@ -218,6 +226,7 @@ def test_altium_kind_table_is_left_untouched(tmp_path: Path):
     assert _sha(path) == digest
 
 
+@pytest.mark.windows
 def test_file_without_kind_table_is_patched(tmp_path: Path):
     path = synthetic_pcblib(tmp_path / "Old.PcbLib", mapping=None)
     assert patch_pcblib_layers(path, default_stack()) == []
@@ -235,6 +244,7 @@ def test_file_without_kind_table_is_patched(tmp_path: Path):
          "stehen nicht zusammen"),
     ],
 )
+@pytest.mark.windows
 def test_unexpected_structure_leaves_file_untouched(tmp_path: Path, mutate, fragment):
     path = synthetic_pcblib(tmp_path / "Odd.PcbLib", header=mutate(rust_like_header()))
     digest = _sha(path)
@@ -243,6 +253,7 @@ def test_unexpected_structure_leaves_file_untouched(tmp_path: Path, mutate, frag
     assert _sha(path) == digest
 
 
+@pytest.mark.windows
 def test_missing_pairs_block_is_unexpected(tmp_path: Path):
     path = synthetic_pcblib(tmp_path / "NoPairs.PcbLib", header=rust_like_header(pairs=False))
     digest = _sha(path)
@@ -252,6 +263,7 @@ def test_missing_pairs_block_is_unexpected(tmp_path: Path):
     assert patch_pcblib_layers(path, LayerStack(layers={9: MechLayer(number=9, name="A")})) == []
 
 
+@pytest.mark.windows
 def test_damaged_header_and_wrong_files(tmp_path: Path):
     bad = tmp_path / "Bad.PcbLib"
     from test_sync_support import build_compound
@@ -268,6 +280,7 @@ def test_damaged_header_and_wrong_files(tmp_path: Path):
     assert text_file.read_text(encoding="ascii") == "no compound file"
 
 
+@pytest.mark.windows
 def test_invalid_kind_in_stack_is_reported(lib: Path):
     digest = _sha(lib)
     stack = LayerStack(layers={9: MechLayer(number=9, name="A", kind="Assembly Top")})
@@ -276,6 +289,7 @@ def test_invalid_kind_in_stack_is_reported(lib: Path):
     assert _sha(lib) == digest
 
 
+@pytest.mark.windows
 def test_failed_verify_or_write_leaves_file_untouched(lib: Path, monkeypatch):
     digest = _sha(lib)
 
@@ -296,6 +310,7 @@ def test_failed_verify_or_write_leaves_file_untouched(lib: Path, monkeypatch):
     assert [p.name for p in lib.parent.iterdir()] == [lib.name]
 
 
+@pytest.mark.windows
 def test_copy_check_detects_foreign_changes(lib: Path, monkeypatch):
     """The re-read of the copy must find every other stream unchanged."""
     original = stackup._write_library_data
@@ -310,6 +325,7 @@ def test_copy_check_detects_foreign_changes(lib: Path, monkeypatch):
     assert _sha(lib) == digest
 
 
+@pytest.mark.windows
 def test_verify_receives_a_patched_copy(lib: Path):
     seen: list[Path] = []
 
@@ -322,6 +338,7 @@ def test_verify_receives_a_patched_copy(lib: Path):
     assert len(seen) == 1 and not seen[0].exists()
 
 
+@pytest.mark.windows
 def test_problems_report_contradicting_representations(tmp_path: Path):
     header = rust_like_header().replace(b"LAYER_V8_19NAME=Mechanical 9", b"LAYER_V8_19NAME=Other")
     path = synthetic_pcblib(tmp_path / "Mixed.PcbLib", header=header)

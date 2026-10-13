@@ -6,6 +6,8 @@ import os
 import subprocess
 import sys
 
+import pytest
+
 from partforge import config
 from partforge.altium import rustwriter
 
@@ -32,6 +34,7 @@ def test_audit_log_is_rotated(monkeypatch, tmp_path):
     assert log.read_bytes() == b"{}\n"  # small logs stay
 
 
+@pytest.mark.windows
 def test_configs_of_dead_processes_are_removed(tmp_path):
     dead = subprocess.run([sys.executable, "-c", "import os; print(os.getpid())"], capture_output=True, text=True)
     dead_pid = int(dead.stdout.strip())

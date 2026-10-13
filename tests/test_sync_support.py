@@ -382,6 +382,7 @@ def test_fake_writer_round_trip(tmp_path: Path):
     assert result.deleted == ["B"] and "C: nicht in der Bibliothek vorhanden." in result.warnings
 
 
+@pytest.mark.windows
 def test_synthetic_pcblib_is_a_compound_file(tmp_path: Path):
     from partforge.altium.stackup import read_library_data, read_pcblib_layers
 

@@ -41,6 +41,7 @@ def _other_process(root: Path) -> dict[str, object]:
     return json.loads(out.stdout.decode("utf-8").strip().splitlines()[-1])
 
 
+@pytest.mark.windows
 def test_second_process_is_refused_until_released(tmp_path: Path) -> None:
     root = tmp_path / "lib"
     root.mkdir()
@@ -59,6 +60,7 @@ def test_second_process_is_refused_until_released(tmp_path: Path) -> None:
     assert _other_process(root)["locked"] is True  # released: the other process may open it (and exits)
 
 
+@pytest.mark.windows
 @pytest.mark.parametrize("release_mode", ["unlock", "exit"], ids=["explicit-unlock", "process-exit"])
 def test_api_open_refuses_a_library_held_by_another_process(
     bare_client: TestClient, tmp_path: Path, release_mode: str,

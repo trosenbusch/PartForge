@@ -251,6 +251,7 @@ def create_resistors(client: TestClient, *pns: str) -> None:
         assert client.post("/api/parts/Resistors", json={"values": values}).status_code == 201
 
 
+@pytest.mark.windows
 def test_export_job_ends_with_its_outcome(client: TestClient, workspace: Workspace) -> None:
     create_resistors(client, "R-A", "R-B")
     snap = wait_job(client.post("/api/export/Resistors/job", json={"format": "csv"}).json()["job"]["id"])

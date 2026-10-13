@@ -123,6 +123,7 @@ def test_editor_warns_about_changes_outside_partforge(fake: FakeWriter, workspac
     assert sync.component_warnings(external) == []
 
 
+@pytest.mark.windows
 def test_layer_stack_job_keeps_the_library_state(workspace, monkeypatch):
     from partforge.altium import stackup
 
@@ -514,6 +515,7 @@ def test_bridge_errors_of_any_kind_do_not_abort_writing(fake: FakeWriter, worksp
     assert sync.ensure_symbols([_sym("BBB")])[0].status == "ok"
 
 
+@pytest.mark.windows
 def test_write_is_slow_counts_embedded_step_models(fake: FakeWriter, workspace, monkeypatch, tmp_path):
     from partforge.config import AppSettings
 
