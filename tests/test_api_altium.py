@@ -1043,7 +1043,8 @@ def test_lifespan_starts_services_and_parts_changes_reach_them(workspace, bridge
         assert bridge.names() == ["install_state"]  # unknown install state: read-only check first
         response = c.post("/api/parts/Resistors", json={"values": {"Part Number": "R-LIVE", **PART}})
         assert response.status_code in (200, 201), response.text
-        assert wait_for(lambda: service.status().last_skip_reason is not None, 5)
+        # wait for this change's gate, not just any skip reason: the start-up announcement may have left one
+        assert service.wait_idle(5) and service.status().last_skip_reason is not None
         status = c.get("/api/altium/status").json()["refresh"]
         assert status["pending"] is False and "nicht installiert" in status["last_skip_reason"]
         assert bridge.names() == ["install_state"]  # known as not installed: no further script

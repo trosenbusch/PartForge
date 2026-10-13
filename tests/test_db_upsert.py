@@ -2,11 +2,14 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import Any
 
 import pytest
+from sqlalchemy import event
 
-from partforge.db import parts
+from partforge.db import core, parts
 from partforge.jobs import JobCancelled, JobManager
 from partforge.workspace import Workspace
 
@@ -14,6 +17,23 @@ from partforge.workspace import Workspace
 def res(pn: str, value: str, **kw: Any) -> dict[str, Any]:
     return {"Part Number": pn, "Manufacturer": "Vishay", "Manufacturer Part Number": pn, "Resistance": value,
             "Tolerance": "1", "Power": "0.1", "Size": "0603", "Library Ref": "RES", "Footprint Ref": "RESC1608X55N", **kw}
+
+
+@contextmanager
+def statements() -> Iterator[list[int]]:
+    """Counts the SQL statements sent to the database inside the block (``[count]``). Bulk paths are checked by
+    this count, not by wall-clock time: a statement per row is the regression, and a slow CI runner is none."""
+    count = [0]
+
+    def seen(*_args: Any, **_kwargs: Any) -> None:
+        count[0] += 1
+
+    engine = core.get_engine()
+    event.listen(engine, "before_cursor_execute", seen)
+    try:
+        yield count
+    finally:
+        event.remove(engine, "before_cursor_execute", seen)
 
 
 def test_modes_and_row_errors(workspace: Workspace) -> None:
@@ -95,20 +115,19 @@ def test_allow_incomplete(workspace: Workspace) -> None:
     assert result.created == ["INC-1"] and any("Pflichtfeld" in w for w in result.warnings["INC-1"])
 
 
-def test_upsert_5000_rows_is_fast(workspace: Workspace) -> None:
+def test_upsert_5000_rows_is_batched(workspace: Workspace) -> None:
     rows = [res(f"CRCW0603{i:05d}FKEA", f"{(i % 960) + 10}R{i % 10}", TCR="100") for i in range(5000)]
-    start = time.perf_counter()
-    result = parts.upsert_parts("Resistors", rows, mode="skip")
-    elapsed = time.perf_counter() - start
+    with statements() as sent:
+        result = parts.upsert_parts("Resistors", rows, mode="skip")
     assert len(result.created) == 5000 and not result.errors
-    assert elapsed < 5.0, f"5000 Zeilen dauerten {elapsed:.2f} s"
+    assert sent[0] < 5000 / 10, f"{sent[0]} SQL-Befehle für 5000 Zeilen"
     assert parts.query_parts("Resistors", limit=1)[1] == 5000
-    start = time.perf_counter()
-    again = parts.upsert_parts("Resistors", rows, mode="update")
-    assert len(again.unchanged) == 5000 and time.perf_counter() - start < 5.0
-    start = time.perf_counter()
-    rows_page, total = parts.query_parts("Resistors", search="100R", sort="-Resistance", limit=50)
-    assert total > 0 and time.perf_counter() - start < 2.0
+    with statements() as sent:
+        again = parts.upsert_parts("Resistors", rows, mode="update")
+    assert len(again.unchanged) == 5000 and sent[0] < 5000 / 10, f"{sent[0]} SQL-Befehle für 5000 Zeilen"
+    with statements() as sent:
+        rows_page, total = parts.query_parts("Resistors", search="100R", sort="-Resistance", limit=50)
+    assert total > 0 and sent[0] <= 10, f"{sent[0]} SQL-Befehle für eine Seite"
     assert rows_page[0]["Resistance"]
 
 
