@@ -70,6 +70,9 @@ def build(ctx: GenContext) -> FootprintSpec:
     ctx.finalize_land(land, pitch=e)
     tab = ctx.ipc_land(E, L, b1, table, label="Kühlfahne (Pin 4)", allow_override=False)
     ctx.finalize_land(tab, what="Kühlfahne")
+    if ctx.override is not None:  # the manufacturer pattern covers the leads only – never a silent hybrid
+        ctx.warn("Herstellerempfehlung: Die Kühlfahne (Pin 4) wird nach IPC-7351B berechnet – Größe und Lage bitte mit "
+                 "dem Datenblatt vergleichen.")
 
     b = ctx.builder()
     c_ = land.pad_center

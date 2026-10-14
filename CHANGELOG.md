@@ -16,6 +16,41 @@ English · [Deutsch](CHANGELOG.de.md)
 - The Altium bridge reads Altium's response files on Windows systems with the "Beta: Use Unicode UTF-8" code page,
   where Altium writes them with a UTF-8 byte-order mark. Previously every bridge call failed there with
   "unknown format".
+- Library files: a component of an imported library that was deleted in Altium is no longer written back from
+  PartForge's lossy read-back copy by "Synchronisieren"/"Bibliotheken prüfen"; it is reported as missing instead.
+  A library whose contents cannot be listed at the moment (writer timed out, damaged file) is no longer written
+  blindly – the change stays pending, so a foreign component of the same name is never replaced.
+- Backups of library files (`Backups\lib`) are kept per folder: same-named libraries in different import folders no
+  longer prune each other's backups, and "restore from backup" can no longer restore the wrong file. Re-importing
+  a changed vendor library with "replace" now keeps a backup of the replaced version, holds the library lock and
+  skips a file that is open with unsaved changes in Altium. Temporary copies left behind by a crash (house style,
+  undo, import, font and header patches) no longer appear as libraries.
+- Altium: paths handed to Altium keep the spelling the user opened the library with (drive letter, junction);
+  previously a library on a mapped network drive was resolved to its UNC path, so Altium did not recognise the
+  user's open documents – the "open with unsaved changes" check was bypassed and "Edit in Altium" opened a second
+  instance. While Altium runs but its document states cannot be read (script paused in the debugger, bridge busy),
+  library files are no longer written; long batch edits re-check the Altium states every 45 s; the "Edit in Altium"
+  watcher ends its session when the library file disappears; a stale "script hangs" marker is dropped after an
+  Altium restart; "Install and replace" fails instead of claiming the old copy was removed when Altium kept it; a
+  momentarily unreadable process list no longer aborts a running script as "Altium was closed".
+- Table import with the internal part-number scheme: rows without a part number now find the existing part by its
+  manufacturer part number instead of creating duplicates on every re-import; duplicates within the file are
+  rejected. Renaming a category keeps the user's series templates. Opening a library whose `partforge.json` was
+  edited by hand and is invalid answers a clear error instead of HTTP 500. A single invalid value in
+  `settings.json` (e.g. after a downgrade) no longer resets every setting.
+- Opening a library that another PartForge holds is refused before the running jobs of the current library are
+  cancelled; restoring a database backup stops the running library jobs first, and requests that meet the swapped
+  database during a switch or restore no longer send the interface to the start page. `/api/health` no longer
+  returns the library settings (PostgreSQL password). Backups in folders with `#` or `%` in the path can be
+  verified and restored. TCR values have one spelling ("±100ppm/K").
+- Datasheet import: HTTP 413 (request too large) and 422 answers of the Claude API are reported as such ("select
+  fewer pages") instead of "overloaded – try later".
+- Footprint generator: a manufacturer land pattern for SOT-223/DPAK now warns that the tab is still calculated per
+  IPC-7351B; QFN rows too long for their body get a specific message instead of a generic overlap error.
+- Interface: technical values in the parts table and detail view use the decimal separator of the selected
+  language (English: "4.7 kΩ"); the datasheet review shows translated field and category names; three untranslated
+  fragments (ODBC driver link, ODBC report, DbLib preview); the "new" marker survives creating a part from the
+  overview or another category; a failed review edit no longer leaves an undo step behind.
 
 ## 1.0.0b1 – 2026-10-11
 

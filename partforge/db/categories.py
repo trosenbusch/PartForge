@@ -30,7 +30,7 @@ from sqlalchemy.exc import DBAPIError
 from . import audit, core, schema
 from .errors import CategoryNotFound, ConflictError, DatabaseBusy, DbError, FieldNotFound, SchemaError, is_lock_error
 from .models import CategoryDef, FieldDef
-from .schema import PROTECTED_COLUMNS, pf_categories, pf_saved_views
+from .schema import PROTECTED_COLUMNS, pf_categories, pf_mpn_templates, pf_saved_views
 from .values import PART_NUMBER, template_columns, template_tokens
 
 log = logging.getLogger(__name__)
@@ -512,6 +512,8 @@ def update_category(table: str, patch: Mapping[str, Any] | BaseModel, *, author:
             except DBAPIError as exc:
                 raise _db_error(exc, f"Umbenennen der Tabelle „{current.table}“") from exc
             conn.execute(update(pf_saved_views).where(pf_saved_views.c.table_name == current.table).values(table_name=new_name))
+            # the user's series templates of the category follow the new name (else they vanish from its wizard)
+            conn.execute(update(pf_mpn_templates).where(pf_mpn_templates.c.category == current.table).values(category=new_name))
             changes["table"] = [current.table, new_name]
         if not changes:
             return get_category(current.table)

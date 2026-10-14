@@ -634,7 +634,7 @@ function OdbcDriverNote({ onTest }: { onTest: () => void }) {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 rounded-sm font-medium text-accent-text underline-offset-2 outline-none hover:underline focus-ring"
           >
-            {sqlite ? tr("SQLite-ODBC-Treiber") : tr("ODBC-Treiber")} herunterladen{host ? ` (${host})` : ''}
+            {sqlite ? tr("SQLite-ODBC-Treiber herunterladen") : tr("ODBC-Treiber herunterladen")}{host ? ` (${host})` : ''}
             <ExternalLink aria-hidden className="size-3" />
             <span className="sr-only"> {tr(" (öffnet im Browser)")}</span>
           </a>

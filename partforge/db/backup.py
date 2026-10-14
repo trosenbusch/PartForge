@@ -275,8 +275,11 @@ def _resolve_backup(ws: Workspace, name: str) -> Path:
 
 def _verify(path: Path) -> None:
     """Refuse unreadable files, foreign databases and backups of a newer PartForge."""
+    from urllib.parse import quote
+
     try:
-        conn = sqlite3.connect(f"file:{path.as_posix()}?mode=ro", uri=True)
+        # a URI: "#" (a folder "Projekt #12"), "?" and "%" in the path must be percent-encoded
+        conn = sqlite3.connect(f"file:{quote(path.as_posix(), safe='/:')}?mode=ro", uri=True)
         try:
             check = conn.execute("PRAGMA quick_check").fetchone()
             tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}

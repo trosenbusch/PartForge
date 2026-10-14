@@ -1,4 +1,5 @@
 /** Formatierung und Sortierung für Tabellenzellen (deutsch, technische Werte). */
+import { getLocale } from '@/lib/i18n'
 import { parseEngineering } from '@/lib/units'
 import type { BadgeVariantProps } from '@/components/ui'
 
@@ -7,9 +8,11 @@ import type { BadgeVariantProps } from '@/components/ui'
  * echtes Minuszeichen. „10kΩ“ → „10 kΩ“, „0.1W“ → „0,1 W“, „±1%“ → „±1 %“, „-55°C … 155°C“ → „−55 °C … 155 °C“.
  */
 export function formatQuantityText(text: string): string {
+  // Dezimaltrennzeichen der Oberflächensprache – wie `formatEngineering` und die Filter (Komma nur auf Deutsch)
+  const decimal = getLocale().startsWith('de') ? ',' : '.'
   return text.replace(/([+\-−±]?)(\d+(?:[.,]\d+)?)(\s*)([A-Za-zµμΩ°%‰][A-Za-z0-9µμΩ°%‰/·²³]*)?/g, (_m, sign, num, _sp, unit) => {
     const s = sign === '-' ? '−' : sign
-    const n = String(num).replace('.', ',')
+    const n = String(num).replace(/[.,]/, decimal)
     return unit ? `${s}${n} ${unit}` : `${s}${n}`
   })
 }
@@ -31,7 +34,7 @@ export function quantityValue(value: unknown): number | null {
 export function quantityComparator(a: unknown, b: unknown): number {
   const x = quantityValue(a)
   const y = quantityValue(b)
-  if (x === null && y === null) return String(a ?? '').localeCompare(String(b ?? ''), 'de')
+  if (x === null && y === null) return String(a ?? '').localeCompare(String(b ?? ''), getLocale())
   if (x === null) return 1
   if (y === null) return -1
   return x - y

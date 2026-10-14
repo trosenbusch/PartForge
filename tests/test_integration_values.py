@@ -68,7 +68,7 @@ def _decades(series: str, lo_exp: int, hi_exp: int) -> list[float]:
 def test_all_entry_paths_give_identical_text(unit: str, values: list[float]) -> None:
     field = _field(unit)
     for value in values:
-        canonical = format_field_quantity(value, unit, plus_minus=unit in ("%", "ppm"))
+        canonical = format_field_quantity(value, unit, plus_minus=unit in ("%", "ppm", "ppm/K"))
         assert normalize_cell(field, value).value == canonical, value  # float from a series/spreadsheet
         assert normalize_cell(field, canonical).value == canonical, value  # idempotent
         units_text = format_quantity(value, unit, digits=None)  # series assistant text

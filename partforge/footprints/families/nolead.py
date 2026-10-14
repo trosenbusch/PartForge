@@ -165,6 +165,17 @@ def build(ctx: GenContext) -> FootprintSpec:
         ctx.finalize_land(land_x, pitch=e, ep=ep_w)
         land_y = ctx.ipc_land(D, L, b_, table, axis="y", label="Anschlüsse oben/unten")
         ctx.finalize_land(land_y, pitch=e_x, ep=ep_l)
+        # The clamps look at pitch and exposed pad only: the corner pads of two adjacent rows can still overlap
+        # when the rows are long for the body (many pins on a small body, the wrong pitch) – say so instead of
+        # the validator's generic "pads overlap" (standard JEDEC bodies keep >= 0.15 mm here).
+        row_reach_y = (ny - 1) / 2 * e + land_x.x / 2  # left/right rows: outermost pad edge along y
+        row_reach_x = (nx - 1) / 2 * e_x + land_y.x / 2  # top/bottom rows: outermost pad edge along x
+        if ny > 0 and nx > 0 and (row_reach_y > land_y.pad_center - land_y.pad_length / 2 + 1e-6
+                                  and row_reach_x > land_x.pad_center - land_x.pad_length / 2 + 1e-6):
+            raise ParamError(f"{package}: die Eckpads benachbarter Reihen überlappen sich – die Reihen sind für das "
+                             f"Gehäuse {fmt_mm(nom(E))} × {fmt_mm(nom(D))} mm zu lang. Bitte Gehäusemaße, Raster und "
+                             "Anschlusszahl prüfen (bei weniger Anschlüssen je Seite pins_x/pins_y angeben).",
+                             params=("pins", "e", "E", "D"))
         pads = quad(b, land_x, land_y, nx, ny, e, pitch_x=e_x, first=first,  # type: ignore[arg-type]
                     omit=missing)
     else:

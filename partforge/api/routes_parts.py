@@ -31,7 +31,7 @@ from ..db.errors import FieldNotFound
 from ..db.models import AuditEntry, BackupInfo, HealthIssue, PartFilter, SavedView, SearchHit, SortSpec
 from ..domain.text import plural
 from ..importers import spreadsheet
-from ..jobs import JobContext, LibraryChanged, jobs, library_hold
+from ..jobs import LIBRARY_JOB_STOP_TIMEOUT_S, JobContext, LibraryBusy, LibraryChanged, jobs, library_hold, library_switch
 from ..workspace import Workspace
 from .deps import require_workspace
 from .routes_categories import db_errors
@@ -1004,8 +1004,13 @@ def restore_backup(name: str, ws: Workspace = Depends(require_workspace)) -> Bac
     the job ``job`` then compares them with the restored registry and writes what is missing (INT-06) – with the
     manifests taken before the restore, so files PartForge wrote after the backup stay its own."""
     previous_manifests = _manifest_snapshot()
-    with db_errors():
-        backup.restore_backup(name)
+    # like opening a library: the running library jobs stop first and nothing reads the database while it is
+    # swapped (a request in that moment answers 409 "wird gerade gewechselt", not "keine Bibliothek geöffnet")
+    try:
+        with library_switch(timeout=LIBRARY_JOB_STOP_TIMEOUT_S), db_errors():
+            backup.restore_backup(name)
+    except LibraryBusy as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     return BackupRestoreOut(ok=True, restored=name, job=start_sync_after_restore(ws, previous_manifests))
 
 

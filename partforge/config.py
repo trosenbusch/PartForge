@@ -306,9 +306,54 @@ def _stamp(path: Path) -> tuple[str, int, int] | None:
     return str(path), st.st_size, st.st_mtime_ns
 
 
+def _drop_setting(data: Any, loc: tuple[Any, ...]) -> bool:
+    """Remove the value at ``loc`` (a pydantic error location) from the parsed file; ``False`` if absent."""
+    node = data
+    for key in loc[:-1]:
+        if isinstance(node, dict) and key in node:
+            node = node[key]
+        elif isinstance(node, list) and isinstance(key, int) and 0 <= key < len(node):
+            node = node[key]
+        else:
+            return False
+    last = loc[-1]
+    if isinstance(node, dict) and last in node:
+        del node[last]
+        return True
+    if isinstance(node, list) and isinstance(last, int) and 0 <= last < len(node):
+        del node[last]
+        return True
+    return False
+
+
+def lenient_settings(data: Any) -> tuple[AppSettings, list[str]]:
+    """``AppSettings`` from the parsed ``settings.json``; single invalid values – an enum a newer version wrote
+    before a downgrade, a typo in a hand-edited file – are dropped (and named) instead of resetting every
+    setting: the library, the recent libraries and the Altium/writer paths stay."""
+    from pydantic import ValidationError
+
+    if not isinstance(data, dict):
+        raise ValueError("settings.json enthält kein JSON-Objekt")
+    dropped: list[str] = []
+    for _ in range(100):
+        try:
+            return AppSettings.model_validate(data), dropped
+        except ValidationError as exc:
+            removed = False
+            for error in exc.errors():
+                loc = tuple(error.get("loc") or ())
+                if loc and _drop_setting(data, loc):
+                    dropped.append(".".join(str(part) for part in loc))
+                    removed = True
+            if not removed:
+                raise
+    raise ValueError("settings.json enthält zu viele ungültige Einträge")
+
+
 def load_settings(reload: bool = False) -> AppSettings:
     """The app settings (cached; read again when ``settings.json`` changed on disk, e.g. written by another
-    PartForge process or edited by hand)."""
+    PartForge process or edited by hand). Invalid single values are skipped (:func:`lenient_settings`); only an
+    unreadable file is set aside as ``settings.corrupt.json``."""
     global _cached, _cached_stamp
     with _lock:
         path = settings_path()
@@ -317,7 +362,9 @@ def load_settings(reload: bool = False) -> AppSettings:
             return _cached
         if path.is_file():
             try:
-                _cached = AppSettings.model_validate_json(path.read_text(encoding="utf-8"))
+                _cached, dropped = lenient_settings(json.loads(path.read_text(encoding="utf-8")))
+                if dropped:
+                    log.warning("settings.json: ungültige Einträge übersprungen: %s", ", ".join(dropped))
             except Exception:  # corrupt file -> keep a copy and start fresh
                 path.replace(path.with_suffix(".corrupt.json"))
                 _cached = AppSettings()

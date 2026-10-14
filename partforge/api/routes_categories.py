@@ -23,12 +23,16 @@ from ..db.errors import (
     SchemaError,
     is_lock_error,
 )
-from ..workspace import WorkspaceNotOpen
+from ..workspace import WorkspaceNotOpen, current_or_none
 from ..db.models import CategoryDef, FieldDef
 from ..db.templates import FieldKind
 from .deps import require_workspace
 
 log = logging.getLogger(__name__)
+
+#: 409 while the open library's database is swapped (library switch, backup restore) – the client retries
+DB_SWITCHING_MESSAGE = ("Die Datenbank der Bibliothek wird gerade gewechselt oder wiederhergestellt – bitte in einigen "
+                        "Sekunden erneut versuchen.")
 
 router = APIRouter(tags=["categories"], dependencies=[Depends(require_workspace)])
 
@@ -47,7 +51,13 @@ def db_errors() -> Iterator[None]:
         yield
     except HTTPException:
         raise
-    except (DatabaseNotOpen, WorkspaceNotOpen) as exc:
+    except DatabaseNotOpen as exc:
+        if current_or_none() is not None:
+            # a library is open, only its database is swapped right now (switch, backup restore): the client
+            # retries instead of leaving the library (its "no workspace" detection looks at the code)
+            raise HTTPException(status_code=409, detail={"code": "db_switching", "message": DB_SWITCHING_MESSAGE}) from exc
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except WorkspaceNotOpen as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except NotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

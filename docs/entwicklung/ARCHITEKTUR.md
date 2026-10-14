@@ -591,7 +591,10 @@ build_examples(ws, *, tables=None) -> ExampleContent                  # rein, oh
   entfallen). Das Job-Log nennt Zeilen, Datei, Kategorie und Modus („2 Zeilen aus „liste.csv“ → Widerstände
   (Modus: vorhandene überspringen|aktualisieren|ablehnen)“), die Sicherung und die ersten 50 abgelehnten Zeilen.
   Der Import-Job (`import`) hält seine Bibliothek (`run_import(…, library=root)`, §8.4); die Bauteile entstehen
-  in einer Transaktion – ein abgebrochener Import hat nichts übernommen. Der Export-Job (`export`, `POST
+  in einer Transaktion – ein abgebrochener Import hat nichts übernommen. Im Schema `internal` finden Zeilen ohne
+  Teilenummer (Stücklisten, Distributor-Exporte) ihr Bauteil über die Hersteller-Teilenummer
+  (`parts._part_numbers_by_mpn`) und aktualisieren bzw. überspringen es; Dubletten einer Hersteller-Teilenummer
+  innerhalb der Datei werden abgelehnt. Der Export-Job (`export`, `POST
   /api/export/{table}/job`, Schlussmeldung „Export fertig: 4 Bauteile in Exports\…“) liest nur und hält nichts:
   `export_to_file(…, library=root)` liest, solange seine Bibliothek offen ist, und schreibt die Datei nur, wenn sie
   danach noch offen ist, in ihren `Exports`-Ordner – nach einem Wechsel endet er `cancelled` (`LibraryChanged`,
@@ -843,9 +846,14 @@ symbol_library_path(ws, spec, category=None) -> Path; footprint_library_path(ws,
   nie gelistet); erst wenn alles gelungen ist, ersetzt sie die Bibliothek mit **einem** `os.replace` – die Datei hat
   nie einen Zwischenstand (z. B. nur STEP-Träger), ein Absturz lässt die alte, vollständige Datei zurück. Bei einem
   Fehler wird die Kopie verworfen und jede Komponente des Aufrufs in `WriteResult.errors` gemeldet. Nach Erfolg liegt
-  der alte Stand als `Backups/lib/<lib>.<JJJJMMTT_hhmmss_mmm>.bak` (die neuesten 20 je Datei); die `.bak`-Dateien
-  des Writers werden gelöscht, Überbleibsel eines Absturzes (Arbeitskopien, `__PFSTEP_*`-Träger) beim nächsten
-  Schreiben entfernt. Ein Betriebssystemfehler (Datei gesperrt) ergibt „PF_CHIP.PcbLib wurde nicht geschrieben – die
+  der alte Stand als `Backups/lib/<lib>.<JJJJMMTT_hhmmss_mmm>.bak` (die neuesten 20 je Datei) – für Bibliotheken
+  direkt in `Symbols/`/`Footprints/`; Bibliotheken in Unterordnern (Importe: `Symbols/Import/Hersteller/X.SchLib`)
+  sichern nach `Backups/lib/<ihr Ordner relativ zur Bibliothek>/` (`rustwriter.library_backup_dir`), damit
+  gleichnamige Dateien verschiedener Ordner nie einen Pool teilen (sonst beschneiden sie einander die Sicherungen und
+  „Aus Sicherung wiederherstellen“ holt die falsche Datei zurück). Die `.bak`-Dateien des Writers werden gelöscht,
+  Überbleibsel eines Absturzes (`<stem>.pf<tag><hex8>.<ext>` aller Kopier-und-Ersetzen-Operationen – `pfwork`,
+  `pfhdr`, `pfhgt`, `pfstd`, `pfundo`, `pfimport`, `pffont`, Brückenaufbau `pf` –, `__PFSTEP_*`-Träger) beim
+  nächsten Schreiben entfernt; `libwriter.is_temp_library_file` kennt dieselben Namen. Ein Betriebssystemfehler (Datei gesperrt) ergibt „PF_CHIP.PcbLib wurde nicht geschrieben – die
   Bibliothek ist unverändert: Die Datei ist von einem anderen Programm geöffnet …“ (`rustwriter.file_access_message`).
 * **Wortwahl** (`altium/texts.py`): in Benutzertexten heißt das Programm immer „Bibliotheks-Writer“ (der Name
   `altium-designer-mcp.exe` nur in Hilfetexten), Einstellungsorte mit „›“ wie in der Oberfläche:
@@ -984,9 +992,13 @@ component_thumbnail(spec, theme="dark") -> str        # das eine Vorschaubild (R
   Geometrie werden aus ihren Hinweisen (Typ, Familie + IPC-Name) erzeugt oder als `missing` markiert. Es arbeitet
   Datei für Datei (nur deren Specs im Speicher); Registry-Listen ohne Specs, Specs nur der betroffenen Namen bzw.
   Dateien (`registry.list_*(names=…)`). Externe Bibliotheken werden nur gelesen. Eine unlesbare Datei wird nie
-  blind beschrieben.
+  blind beschrieben – auch nicht von `_write_library`: lässt sich eine vorhandene Datei gerade nicht auflisten
+  (Writer-Zeitüberschreitung, beschädigt), bleibt die Änderung `pending`, denn ohne die Namen liefe die
+  Besitzprüfung nicht und der Upsert ersetzte ein fremdes Bauteil gleichen Namens. `imported`-Einträge werden nie
+  aus ihrer Lesekopie geschrieben: Ein in Altium gelöschtes importiertes Bauteil wird `missing` (`_IMPORTED_GONE`),
+  nicht neu erzeugt (die Kopie ist verlustbehaftet; erneuter Import holt es zurück).
 * **Prüfen** (`scan_workspace`): registrierte, in der Datei fehlende Bauteile werden `pending` (die nächste
-  Synchronisierung schreibt sie), gefundene `missing`/`pending` werden `ok`, unbekannte auf Wunsch als `imported`
+  Synchronisierung schreibt sie; importierte stattdessen `missing`), gefundene `missing`/`pending` werden `ok`, unbekannte auf Wunsch als `imported`
   registriert (`register_unknown`), in einer anderen Datei registrierte Namen als `conflicts` gemeldet, verschwundene
   externe Bauteile `missing`. `changed_outside` listet die Dateien, die seit PartForges letztem Schreiben außerhalb
   geändert wurden (Manifest ≠ Datei, z. B. in Altium gespeichert; `LibraryFileInfo.external_changes`, auch in
@@ -1108,8 +1120,16 @@ schließt **niemals** Dialoge anderer Prozesse. Funktionen: Status, DbLib instal
 DbLib aktualisieren, Dokument öffnen/Zustand/neu laden, Bauteil zum Bearbeiten zeigen (`edit_component`, §8.9),
 Zustand vieler Dokumente in einem Lauf
 (`document_states`: je Pfad geöffnet/geändert, höchstens 200 Pfade je Skriptlauf – Import und Stapelbearbeitung
-fragen damit alle Zieldateien vorab ab, `_AltiumGuard.prefetch`), DB-Bauteil auflösen (Prüfung), SchLib/PcbLib
-schreiben.
+fragen damit alle Zieldateien vorab ab, `_AltiumGuard.prefetch`; nach `PREFETCH_TTL_S` = 45 s fragt `refusal` die
+Liste erneut ab, weil der Benutzer während einer langen Stapelbearbeitung eine Datei in Altium öffnen kann), DB-Bauteil
+auflösen (Prüfung), SchLib/PcbLib schreiben. **Pfade** gehen in der Schreibweise des Benutzers an Altium
+(`canonical_path`: absolut, jede vorhandene Komponente wie auf der Platte geschrieben, aber Laufwerksbuchstaben,
+Verknüpfungen und symbolische Links **unaufgelöst**; eine Bibliothek der offenen Workspace unterhalb von
+`Workspace.opened_as`): Altium vergleicht Dokumentpfade buchstäblich (altium-verify-2 §1), und ein `resolve()` machte
+aus `L:\…` den UNC-Pfad – Altium erkannte die offenen Dokumente nicht, die Prüfung „ungespeichert geöffnet“ griff
+nicht, `edit_component` öffnete eine zweite Instanz. **Unbekannter Zustand**: Läuft Altium, antwortet die Brücke aber
+nicht (Skript im Debugger, belegt, Protokollfehler), verweigert `_AltiumGuard.refusal` jedes Schreiben
+(`ALTIUM_UNKNOWN_MESSAGE`, 409) – nur ohne laufendes Altium geht es ohne Prüfung weiter.
 `refresh_document` (Neuladen nach dem Schreiben) lädt nur unveränderte Dokumente neu; ein verborgen geöffnetes
 bleibt verborgen (kein neuer Editor-Tab). `resolve_db_component` installiert eine nicht installierte DbLib nur
 vorübergehend und gibt danach ihr verstecktes Dokument samt Datenbankverbindung wieder frei

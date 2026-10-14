@@ -104,8 +104,9 @@ _FORMAT_CHAR_NAMES = {0x00AD: "weiches Trennzeichen", 0x200B: "Leerzeichen ohne 
                       0x200F: "Rechts-nach-links-Marke", 0x202E: "Richtungsumkehr", 0x2060: "Wortverbinder",
                       0xFEFF: "Byte-Order-Mark"}
 
-# Relative tolerances are always shown with "±".
-_PLUS_MINUS_UNITS = frozenset({"%", "ppm"})
+# Relative tolerances and temperature coefficients are always shown with "±" (one spelling: "±100ppm/K", whether
+# the user typed "100", "±100ppm" or "-100 … +100").
+_PLUS_MINUS_UNITS = frozenset({"%", "ppm", "ppm/K"})
 # "ppm" (ratio) and "ppm/K" (temperature coefficient) accept each other's spelling as input.
 _PPM_UNITS = frozenset({"ppm", "ppm/K"})
 #: Units of values relative to a nominal value (tolerances, TCR): they may be asymmetric bands.

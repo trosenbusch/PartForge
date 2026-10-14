@@ -37,7 +37,13 @@ export function useExtractionEditor(datasheetId: string): ExtractionEditor {
       setStack((s) => [...s.slice(-(MAX_UNDO - 1)), { label, data: current.extraction }])
       setCount((n) => n + 1)
       qc.setQueryData<ExtractionOut>(key, { ...current, extraction: next, edited: true })
-      mutate(next)
+      mutate(next, {
+        // nicht gespeichert (Toast über meta.errorTitle, Serverstand wird neu geladen): kein Rückgängig-Schritt dafür
+        onError: () => {
+          setStack((s) => s.slice(0, -1))
+          setCount((n) => Math.max(0, n - 1))
+        },
+      })
     },
     [qc, datasheetId, mutate],
   )

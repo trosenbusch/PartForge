@@ -30,6 +30,8 @@ import { NewPartDialog } from './dialogs/NewPartDialog'
 import { useBauteile, useTreeVisibility } from './model/store'
 import { AllCategoriesView } from './overview/AllCategoriesView'
 
+const EMPTY_PNS: ReadonlySet<string> = new Set()
+
 /** Vorbereitete Tabelle aus dem Router-State (`{ partsUpload: … }`) – geprüft, sonst `null` */
 function partsUploadFromState(state: unknown): ImportWizardUpload | null {
   if (!state || typeof state !== 'object') return null
@@ -64,7 +66,9 @@ export default function BauteilePage() {
   )
   const [newOpen, setNewOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
-  const [newPns, setNewPns] = useState<ReadonlySet<string>>(() => new Set())
+  // „neu“-Markierungen samt der Kategorie, für die sie gelten (ein Bauteil, das aus der Übersicht oder einer anderen
+  // Kategorie heraus angelegt wird, trägt sie nach dem Wechsel in seine Kategorie)
+  const [newPns, setNewPns] = useState<{ table?: string; pns: ReadonlySet<string> }>(() => ({ pns: new Set() }))
 
   // Vorbereitete Tabelle (Router-State, z. B. vom Bibliotheksimport): den Tabellen-Import damit öffnen – je Navigation
   // einmal; danach den State löschen, damit Neuladen und Zurück ihn nicht erneut öffnen
@@ -111,12 +115,8 @@ export default function BauteilePage() {
   useEffect(() => {
     if (category) setLastTable(category.table)
   }, [category, setLastTable])
-  // „neu“-Markierungen gelten je Kategorie (abgeleiteter Zustand)
-  const [shownTable, setShownTable] = useState(category?.table)
-  if (category?.table !== shownTable) {
-    setShownTable(category?.table)
-    setNewPns(new Set())
-  }
+  // „neu“-Markierungen gelten je Kategorie (abgeleiteter Zustand): in einer anderen Kategorie verfallen sie
+  if (newPns.table !== undefined && category?.table !== newPns.table) setNewPns({ pns: new Set() })
 
   // /bauteile?neu=1 (Befehl der Shell, Übersicht) öffnet den Dialog; beim Schließen verschwindet der Parameter
   const neu = params.get('neu') === '1'
@@ -145,7 +145,7 @@ export default function BauteilePage() {
   const onCreated = (table: string, result: PartWriteOut) => {
     const pn = String(result.part[PART_NUMBER] ?? '')
     invalidateParts(qc, table)
-    setNewPns((s) => new Set(s).add(pn))
+    setNewPns((s) => ({ table, pns: new Set(s.table === table ? [...s.pns, pn] : [pn]) }))
     toast.success(t("„{1}“ angelegt", { 1: pn }), {
       description: result.part.Description ?? undefined,
       action: { label: t("Weiteres anlegen"), onClick: () => setNewOpen(true) },
@@ -156,7 +156,7 @@ export default function BauteilePage() {
 
   const onImported = (table: string, result: ImportResult) => {
     invalidateParts(qc, table)
-    if (result.created_part_numbers.length) setNewPns(new Set(result.created_part_numbers.slice(0, 500)))
+    if (result.created_part_numbers.length) setNewPns({ table, pns: new Set(result.created_part_numbers.slice(0, 500)) })
     if (!category || category.table !== table) navigate(`/bauteile/${encodeURIComponent(table)}`)
   }
 
@@ -312,8 +312,8 @@ export default function BauteilePage() {
               <CategoryWorkspace
                 key={category.table}
                 category={category}
-                newPns={newPns}
-                onNewPns={(pns) => setNewPns((s) => new Set([...s, ...pns]))}
+                newPns={newPns.table === category.table ? newPns.pns : EMPTY_PNS}
+                onNewPns={(pns) => setNewPns((s) => ({ table: category.table, pns: new Set([...(s.table === category.table ? s.pns : []), ...pns]) }))}
                 onNewPart={() => setNewOpen(true)}
                 onImport={() => setImportOpen(true)}
               />

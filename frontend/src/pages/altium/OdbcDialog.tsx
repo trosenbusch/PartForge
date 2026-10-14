@@ -154,7 +154,7 @@ function Report({ report: r, summary, log }: { report: OdbcReport; summary: stri
           value: `${plural(r.tables.length, tr("Tabelle"), tr("Tabellen"))} · ${plural(rows, tr("Bauteil"), tr("Bauteile"))} in ${secs(r.total_seconds)}`,
           ok: failedTables.length === 0,
         }
-      : { label: tr("Gelesen"), value: 'nichts – keine Verbindung', ok: null },
+      : { label: tr("Gelesen"), value: tr("nichts – keine Verbindung"), ok: null },
   ]
   // Befunde, die der Ergebniskasten schon nennt („ODBC-Test fehlgeschlagen: <erster Fehler>“), nicht doppelt zeigen
   const issues = r.issues.filter((i) => !summary.includes(i.message))

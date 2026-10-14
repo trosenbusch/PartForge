@@ -346,6 +346,15 @@ def map_sdk_error(exc: Exception, model: str) -> Exception:
         failed = ExtractionFailed(f"Die Claude-API hat die Anfrage abgelehnt: {detail}")
         failed.api_status, failed.api_message = 400, detail
         return failed
+    if isinstance(exc, anthropic.RequestTooLargeError):  # retrying never helps: fewer pages do
+        failed = ExtractionFailed("Die Anfrage an die Claude-API ist zu groß (HTTP 413) – bitte weniger Seiten auswählen.")
+        failed.api_status, failed.api_message = 413, _short(str(getattr(exc, "message", "") or exc))
+        return failed
+    if isinstance(exc, anthropic.UnprocessableEntityError):
+        detail = _short(str(getattr(exc, "message", "") or exc))
+        failed = ExtractionFailed(f"Die Claude-API hat die Anfrage abgelehnt (HTTP 422): {detail}")
+        failed.api_status, failed.api_message = 422, detail
+        return failed
     if isinstance(exc, anthropic.APIStatusError):
         return AiUnavailable(f"Die Claude-API ist überlastet oder gestört (HTTP {exc.status_code}) – bitte später "
                              "erneut versuchen.", code="network")

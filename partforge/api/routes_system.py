@@ -96,8 +96,11 @@ _library_jobs_lock = library_guard.exclusive
 
 @router.get("/health")
 def health() -> dict:
+    """Liveness without a token: version and the open library's folder and name – never its settings (the
+    PostgreSQL connection string would hand the password to any local process)."""
     ws = current_or_none()
-    return {"ok": True, "version": __version__, "workspace": ws.info() if ws else None}
+    return {"ok": True, "version": __version__,
+            "workspace": {"root": str(ws.root), "name": ws.settings.name} if ws else None}
 
 
 # --------------------------------------------------------------------------- settings
@@ -280,8 +283,26 @@ def _announce_opened(ws: Workspace, previous: Workspace | None) -> dict:
 
 
 def _activate(ws: Workspace) -> dict:
-    with _library_switch():
-        previous = _open_locked(ws)
+    # A library another PartForge holds is refused *before* the switch, which cancels the running jobs of the open
+    # library: a refused switch must not cost the user a running import or sync.
+    previous = current_or_none()
+    early = False
+    if previous is not None and not same_folder(previous.root, ws.root):
+        try:
+            early = lock_library(ws.root)
+        except LibraryLocked as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except OSError as exc:
+            raise HTTPException(status_code=409, detail=f"Bibliothek kann nicht geöffnet werden: Die Sperrdatei "
+                                f"„{LOCK_FILE}“ im Ordner „{ws.root}“ lässt sich nicht anlegen ({exc.strerror or exc}).") from exc
+    try:
+        with _library_switch():
+            previous = _open_locked(ws)
+    except BaseException:
+        now = current_or_none()
+        if early and (now is None or not same_folder(now.root, ws.root)):
+            unlock_library(ws.root)
+        raise
     return _announce_opened(ws, previous)
 
 
@@ -319,7 +340,12 @@ def open_workspace(body: WorkspaceOpenIn) -> dict:
     path = Path(body.path)
     if not Workspace.is_workspace(path):
         raise HTTPException(status_code=404, detail=f"Kein PartForge-Bibliotheksordner: {path}")
-    return _activate(Workspace.open(path))
+    try:
+        ws = Workspace.open(path)
+    except (ValueError, OSError) as exc:  # hand-edited partforge.json (pydantic ValidationError is a ValueError)
+        raise HTTPException(status_code=400, detail=f"Die Bibliothek in „{path}“ kann nicht geöffnet werden – "
+                            f"„{WORKSPACE_FILE}“ ist ungültig: {exc}") from exc
+    return _activate(ws)
 
 
 # ---- job "Bibliotheken schreiben"

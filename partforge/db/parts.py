@@ -819,6 +819,26 @@ def _row_part_number(c: _Ctx, incoming: Mapping[str, Any]) -> str | None:
     return None
 
 
+def _row_mpn(incoming: Mapping[str, Any]) -> str | None:
+    values = {str(k).strip().casefold(): v for k, v in incoming.items()}
+    return to_text(values.get("manufacturer part number"))
+
+
+def _part_numbers_by_mpn(conn: Connection, c: _Ctx) -> dict[str, str]:
+    """``{mpn_key: stored part number}`` of the category (the first part per key). Rows of an import without a
+    part number – scheme ``internal``: a BOM or distributor export carries only manufacturer part numbers – find
+    the part they update through it instead of creating a second part with the next internal number."""
+    mpn_field = c.cat.field("Manufacturer Part Number")
+    if mpn_field is None:
+        return {}
+    out: dict[str, str] = {}
+    for pn, mpn in conn.execute(select(c.table.c[PART_NUMBER], c.table.c[mpn_field.column])):
+        key = mpn_key(mpn)
+        if key and pn is not None:
+            out.setdefault(key, str(pn))
+    return out
+
+
 def _progress(ctx: JobContext | None, fraction: float, message: str) -> None:
     if ctx is not None:
         ctx.progress(fraction, message)
@@ -881,6 +901,16 @@ def _plan_upsert(
     only ``pn_factory`` may reserve internal part numbers)."""
     total = len(items)
     pns = [_row_part_number(c, row) for row in items]
+    mpn_keys: list[str | None] = [None] * total  # of the rows without a part number (scheme internal)
+    if c.scheme == "internal" and any(p is None for p in pns):
+        by_mpn = _part_numbers_by_mpn(conn, c)
+        for i, (row, pn) in enumerate(zip(items, pns)):
+            if pn is None:
+                mkey = mpn_key(_row_mpn(row))
+                if mkey:
+                    mpn_keys[i] = mkey
+                    if mkey in by_mpn:  # the part exists: this row updates (or skips) it
+                        pns[i] = by_mpn[mkey]
     existing = _fetch_rows(conn, c.table, [p for p in pns if p])
     others = {
         key: hit
@@ -892,12 +922,19 @@ def _plan_upsert(
         c.pn_keys = _all_pn_keys(conn) | {pn_key(p) for p in pns if p}
     plans: list[RowPlan] = []
     seen: dict[str, int] = {}
+    seen_mpn: dict[str, int] = {}
     for i, (incoming, raw_pn) in enumerate(zip(items, pns)):
         if ctx is not None and i % 200 == 0:
             ctx.check_cancelled()
             _progress(ctx, 0.8 * i / max(total, 1), f"Zeile {i + 1} von {total} …")
         label = raw_pn or f"Zeile {i + 1}"
         key = pn_key(raw_pn) if raw_pn else None
+        if key is None and mpn_keys[i]:  # two new rows of one manufacturer part number would become two parts
+            if mpn_keys[i] in seen_mpn:
+                plans.append(_rejected(i, label, f"Hersteller-Teilenummer doppelt in den Daten (auch in Zeile "
+                                                 f"{seen_mpn[mpn_keys[i]] + 1})."))
+                continue
+            seen_mpn[mpn_keys[i]] = i
         if key is not None:
             if key in seen:
                 plans.append(_rejected(i, label, f"Teilenummer doppelt in den Daten (auch in Zeile {seen[key] + 1})."))

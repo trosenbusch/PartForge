@@ -1,4 +1,4 @@
-import { t, useI18n } from '@/lib/i18n'
+import { metadataLabel, t, useI18n } from '@/lib/i18n'
 import { Fingerprint, RotateCcw, Sparkles } from 'lucide-react'
 import { useId } from 'react'
 import { CategoryIcon } from '@/components/data'
@@ -103,7 +103,7 @@ export function IdentitySection() {
               onValueChange={(v) => setChoices((c) => ({ ...c, category: v }))}
               options={categories.map((c) => ({
                 value: c.table,
-                label: c.label,
+                label: metadataLabel(c.label),
                 description: c.table !== c.label ? c.table : undefined,
                 icon: <CategoryIcon name={c.icon} color={c.color ?? undefined} />,
                 badge:

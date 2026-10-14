@@ -11,7 +11,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Health */
+        /**
+         * Health
+         * @description Liveness without a token: version and the open library's folder and name – never its settings (the
+         *     PostgreSQL connection string would hand the password to any local process).
+         */
         get: operations["health_api_health_get"];
         put?: never;
         post?: never;

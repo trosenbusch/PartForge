@@ -1,4 +1,4 @@
-import { t, useI18n } from '@/lib/i18n'
+import { metadataLabel, t, useI18n } from '@/lib/i18n'
 import { ChevronDown, CircleAlert, ListTree, RotateCcw, SlidersHorizontal, TriangleAlert, Wand2 } from 'lucide-react'
 import { useState } from 'react'
 import type { FieldDef } from '@/api/library'
@@ -72,7 +72,7 @@ function FieldRow({ field }: { field: FieldDef }) {
   return (
     <div className="grid grid-cols-[minmax(0,9.5rem)_minmax(0,1fr)_auto] items-center gap-x-2 border-b border-line py-1.5 last:border-b-0 @[34rem]:grid-cols-[minmax(0,12rem)_minmax(0,1fr)_auto]">
       <label htmlFor={id} className="flex min-w-0 items-center gap-1 text-xs text-fg-muted">
-        <span className="line-clamp-2 leading-tight">{field.label}</span>
+        <span className="line-clamp-2 leading-tight">{metadataLabel(field.label)}</span>
         {field.unit && <span className="shrink-0 text-2xs text-fg-subtle">[{field.unit}]</span>}
       </label>
       <div className="flex min-w-0 items-center gap-1">
@@ -124,7 +124,7 @@ function FieldRow({ field }: { field: FieldDef }) {
             <Wand2 aria-hidden className="size-3.5" />
           </TipButton>
         ) : null}
-        <SourceChip pages={[source?.page]} what={field.label} />
+        <SourceChip pages={[source?.page]} what={metadataLabel(field.label)} />
       </div>
     </div>
   )
@@ -298,7 +298,7 @@ export function ParametersSection() {
         <div className="flex flex-col gap-3">
           {specific.length > 0 && (
             <div>
-              <h3 className="micro-label mb-1">{category.label}</h3>
+              <h3 className="micro-label mb-1">{metadataLabel(category.label)}</h3>
               <div className="rounded-card border border-line bg-surface px-3">
                 {specific.map((f) => (
                   <FieldRow key={f.column} field={f} />

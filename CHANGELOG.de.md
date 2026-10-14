@@ -16,6 +16,48 @@
 - Die Altium-Brücke liest Altiums Antwortdateien auch auf Windows-Systemen mit der Codepage „Beta: Unicode UTF-8“,
   auf denen Altium sie mit einer UTF-8-Byte-Order-Mark schreibt. Bisher scheiterte dort jeder Brückenaufruf mit
   „unbekanntes Format“.
+- Bibliotheksdateien: Ein Bauteil einer importierten Bibliothek, das in Altium gelöscht wurde, schreiben
+  „Synchronisieren“/„Bibliotheken prüfen“ nicht mehr aus der verlustbehafteten Lesekopie zurück; es wird als fehlend
+  gemeldet. Eine Bibliothek, deren Inhalt sich gerade nicht auflisten lässt (Writer-Zeitüberschreitung, beschädigte
+  Datei), wird nicht mehr blind geschrieben – die Änderung bleibt vorgemerkt, ein fremdes Bauteil gleichen Namens
+  wird nie ersetzt.
+- Sicherungen der Bibliotheksdateien (`Backups\lib`) liegen je Ordner: gleichnamige Bibliotheken in verschiedenen
+  Importordnern löschen sich nicht mehr gegenseitig die Sicherungen, „Aus Sicherung wiederherstellen“ kann nicht
+  mehr die falsche Datei zurückholen. Der erneute Import einer geänderten Herstellerbibliothek mit „ersetzen“
+  sichert jetzt die ersetzte Fassung, hält die Bibliothekssperre und überspringt eine in Altium ungespeichert
+  geöffnete Datei. Von einem Absturz übrig gebliebene Arbeitskopien (Hausstil, Rückgängig, Import, Schrift- und
+  Kopfzeilen-Patches) erscheinen nicht mehr als Bibliotheken.
+- Altium: An Altium übergebene Pfade behalten die Schreibweise, mit der die Bibliothek geöffnet wurde
+  (Laufwerksbuchstabe, Verknüpfung); bisher wurde eine Bibliothek auf einem verbundenen Netzlaufwerk in ihren
+  UNC-Pfad aufgelöst, sodass Altium die offenen Dokumente des Benutzers nicht wiedererkannte – die Prüfung „in
+  Altium ungespeichert geöffnet“ griff nicht, „In Altium bearbeiten“ öffnete eine zweite Instanz. Läuft Altium,
+  lässt sich der Dokumentzustand aber nicht lesen (Skript im Debugger, Brücke belegt), werden Bibliotheksdateien
+  nicht mehr geschrieben; lange Stapelbearbeitungen fragen den Altium-Zustand alle 45 s neu ab; die Überwachung
+  von „In Altium bearbeiten“ endet, wenn die Bibliotheksdatei verschwindet; eine veraltete „Skript hängt“-Meldung
+  verschwindet nach einem Altium-Neustart; „Ersetzen und installieren“ scheitert, statt die alte Installation als
+  entfernt zu melden, wenn Altium sie behält; eine kurzzeitig nicht lesbare Prozessliste bricht ein laufendes Skript
+  nicht mehr als „Altium beendet“ ab.
+- Tabellenimport mit internem Teilenummernschema: Zeilen ohne Teilenummer finden das vorhandene Bauteil jetzt über die
+  Hersteller-Teilenummer, statt bei jedem erneuten Import Duplikate anzulegen; Dubletten innerhalb der Datei werden
+  abgewiesen. Beim Umbenennen einer Kategorie bleiben die eigenen Serienvorlagen erhalten. Das Öffnen einer Bibliothek
+  mit von Hand bearbeiteter, ungültiger `partforge.json` meldet einen klaren Fehler statt HTTP 500. Ein einzelner
+  ungültiger Wert in `settings.json` (z. B. nach einem Downgrade) setzt nicht mehr alle Einstellungen zurück.
+- Das Öffnen einer Bibliothek, die ein anderes PartForge hält, wird abgelehnt, bevor die laufenden Jobs der aktuellen
+  Bibliothek abgebrochen werden; das Wiederherstellen einer Datenbanksicherung stoppt zuerst die laufenden
+  Bibliotheks-Jobs, und Anfragen, die während eines Wechsels oder einer Wiederherstellung auf die getauschte
+  Datenbank treffen, werfen die Oberfläche nicht mehr auf die Startseite. `/api/health` liefert die
+  Bibliothekseinstellungen (PostgreSQL-Kennwort) nicht mehr aus. Sicherungen in Ordnern mit `#` oder `%` im Pfad
+  lassen sich prüfen und wiederherstellen. TCR-Werte haben eine Schreibweise („±100ppm/K“).
+- Datenblatt-Import: Antworten HTTP 413 (Anfrage zu groß) und 422 der Claude-API werden als solche gemeldet („weniger
+  Seiten wählen“) statt als „überlastet – später erneut versuchen“.
+- Footprint-Generator: Eine Herstellerempfehlung für SOT-223/DPAK weist jetzt darauf hin, dass die Kühlfahne weiter
+  nach IPC-7351B berechnet wird; QFN-Reihen, die für ihr Gehäuse zu lang sind, bekommen eine eigene Meldung statt
+  des allgemeinen Überlappungsfehlers.
+- Oberfläche: Technische Werte in Bauteiltabelle und Detailansicht verwenden das Dezimaltrennzeichen der gewählten
+  Sprache (Englisch: „4.7 kΩ“); die Datenblatt-Prüfung zeigt übersetzte Feld- und Kategorienamen; drei unübersetzte
+  Textstellen (ODBC-Treiber-Link, ODBC-Bericht, DbLib-Vorschau); die „neu“-Markierung übersteht das Anlegen eines
+  Bauteils aus der Übersicht oder einer anderen Kategorie; eine gescheiterte Korrektur in der Prüfung hinterlässt
+  keinen Rückgängig-Schritt mehr.
 
 ## 1.0.0b1 – 2026-10-11
 

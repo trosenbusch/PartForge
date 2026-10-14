@@ -130,7 +130,7 @@ export function DblibPreviewDialog({ open, onOpenChange }: { open: boolean; onOp
           }
           description={
             data
-              ? tr("{0} – so schreibt PartForge die Datei.{1}", { "0": String(data.file_name), "1": String(masked ? ' Kennwörter sind hier maskiert; die gespeicherte Datei enthält sie, weil Altium sie braucht.' : '') })
+              ? tr("{0} – so schreibt PartForge die Datei.{1}", { "0": String(data.file_name), "1": masked ? tr(" Kennwörter sind hier maskiert; die gespeicherte Datei enthält sie, weil Altium sie braucht.") : '' })
               : tr("Wird geladen …")
           }
         />

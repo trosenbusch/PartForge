@@ -111,6 +111,9 @@ def build(ctx: GenContext) -> FootprintSpec:
     tab = ctx.ipc_land(H, T_tab, b_tab, "flat_lug", label="Kühlfahne", allow_override=False)
     if tab.z - tab.g <= 0.01:
         raise ValueError("Kühlfahne: keine sinnvolle Padlänge – bitte Laschenlänge prüfen.")
+    if ctx.override is not None:  # the manufacturer pattern covers the leads only – never a silent hybrid
+        ctx.warn("Herstellerempfehlung: Die Kühlfahne wird nach IPC-7351B berechnet – Größe und Lage bitte mit dem "
+                 "Datenblatt vergleichen.")
 
     b = ctx.builder()
     c_ = land.pad_center
