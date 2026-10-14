@@ -362,6 +362,17 @@ def test_install_replaces_an_old_copy_of_this_library(api, workspace, bridge, tm
     assert names.index("refresh_dblib") < names.index("uninstall_library") < names.index("install_library")
 
 
+def test_install_fails_when_the_old_copy_cannot_be_uninstalled(api, workspace, bridge, tmp_path: Path):
+    """Altium answered the uninstall with "still installed" (another path spelling): the job must not report
+    the old copy as replaced."""
+    old = copy_of_dblib(workspace, tmp_path / "Alter Ordner")
+    bridge.installed = [old]
+    bridge.uninstall_library = lambda path: False  # type: ignore[method-assign]
+    snap = run_job(api.post("/api/altium/install", json={"replace_others": True}))
+    assert snap["status"] == "failed" and "nicht deinstalliert" in snap["error"] and old in snap["error"]
+    assert bridge.installed == [old]
+
+
 def test_install_never_replaces_the_dblib_of_another_library(api, workspace, bridge, tmp_path: Path):
     """Regression: every library defaults to PartForge.DbLib – "Ersetzen" uninstalled another
     library's DbLib, whose placed parts then resolved to this database."""

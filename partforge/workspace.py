@@ -251,9 +251,63 @@ def pn_format_problem(fmt: str | None) -> str | None:
     return None
 
 
+def long_path_name(path: str) -> str:
+    """The absolute ``path`` with every existing component spelled as on disk (case, long instead of 8.3 names)
+    – without resolving junctions, symbolic links or mapped drives: each component is looked up with
+    ``FindFirstFileW`` (which reports a junction under its own name). Components that do not exist yet are
+    appended as given; outside Windows the path is returned unchanged."""
+    if os.name != "nt":
+        return path
+    import ctypes
+    from ctypes import wintypes
+
+    class WIN32_FIND_DATAW(ctypes.Structure):  # noqa: N801 - Windows structure name
+        _fields_ = [
+            ("dwFileAttributes", wintypes.DWORD),
+            ("ftCreationTime", wintypes.FILETIME),
+            ("ftLastAccessTime", wintypes.FILETIME),
+            ("ftLastWriteTime", wintypes.FILETIME),
+            ("nFileSizeHigh", wintypes.DWORD),
+            ("nFileSizeLow", wintypes.DWORD),
+            ("dwReserved0", wintypes.DWORD),
+            ("dwReserved1", wintypes.DWORD),
+            ("cFileName", ctypes.c_wchar * 260),
+            ("cAlternateFileName", ctypes.c_wchar * 14),
+        ]
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.FindFirstFileW.argtypes = [wintypes.LPCWSTR, ctypes.POINTER(WIN32_FIND_DATAW)]
+    kernel32.FindFirstFileW.restype = wintypes.HANDLE
+    kernel32.FindClose.argtypes = [wintypes.HANDLE]
+    kernel32.FindClose.restype = wintypes.BOOL
+    invalid = wintypes.HANDLE(-1).value
+
+    drive, rest = os.path.splitdrive(path.replace("/", "\\"))
+    if len(drive) == 2 and drive[1] == ":":
+        drive = drive.upper()
+    out = drive + "\\"
+    exists = True
+    for part in (p for p in rest.split("\\") if p):
+        if exists and part not in (".", ".."):
+            data = WIN32_FIND_DATAW()
+            handle = kernel32.FindFirstFileW(os.path.join(out, part), ctypes.byref(data))
+            if handle and handle != invalid:
+                kernel32.FindClose(handle)
+                part = data.cFileName or part
+            else:
+                exists = False
+        out = os.path.join(out, part)
+    return out
+
+
 class Workspace:
     def __init__(self, root: Path, settings: WorkspaceSettings):
         self.root = Path(root).resolve()
+        #: The folder as the user opened it – drive letters, junctions and symbolic links kept, only the spelling of
+        #: existing components normalised (:func:`long_path_name`). ``root`` resolves those for the comparisons inside
+        #: PartForge; paths handed to Altium use this spelling (``partforge.altium.bridge.core.canonical_path``), because
+        #: Altium compares document paths literally and the user opens documents through the drive they see.
+        self.opened_as = Path(long_path_name(os.path.abspath(os.fspath(root))))
         self.settings = settings
         #: German notes about this library for the user (DbLib path or name problems …, shown by the API)
         self.warnings: list[str] = []

@@ -50,7 +50,7 @@ from . import pcbrecords as R
 from . import schrecords as S
 from . import schstyle, stackup
 from .libwriter import RustLibraryWriter, WriterUnavailable, library_file_kind
-from .rustwriter import RustLibraryOps, RustWriterError, is_inside, store_backup
+from .rustwriter import RustLibraryOps, RustWriterError, is_inside, library_backup_dir, store_backup
 from .sync import (
     _file_state,
     _library_held,
@@ -551,8 +551,10 @@ def _verify(ops: RustLibraryOps | None, path: Path) -> Any:
     return verify
 
 
-def _undo_dir(ws: Workspace) -> Path:
-    return ws.backups_dir / "lib"
+def _undo_dir(ws: Workspace, library: Path) -> Path:
+    """Where the version before a batch edit (or before its undo) is kept – the library's backup folder, so
+    same-named libraries in different folders never prune each other's copies."""
+    return library_backup_dir(ws, library)
 
 
 def _updated_records(
@@ -654,7 +656,7 @@ def apply(selection: ConformSelection, rules: C.ConformRules, *, ctx: JobContext
         stack = _workspace_stack(ws)
         ops = _ops(session)
         session.altium.prefetch([t.path for t in targets])
-        backups = _undo_dir(ws)
+        backups = ws.backups_dir / "lib"  # the undo record; the libraries' own copies go to _undo_dir()
         try:
             for index, target in enumerate(targets):
                 session.check_cancelled()
@@ -682,7 +684,7 @@ def apply(selection: ConformSelection, rules: C.ConformRules, *, ctx: JobContext
                         continue
                     names = [c.name for c in plan.components if c.changes]
                     try:
-                        backup = store_backup(target.path, target.path, backups)
+                        backup = store_backup(target.path, target.path, _undo_dir(ws, target.path))
                         compound.replace_streams(target.path, plan.streams, verify=_verify(ops, target.path),
                                                  tag="pfstd", create=True)
                     except Exception as exc:  # noqa: BLE001 - COM, OS, verify: the library stays unchanged
@@ -807,7 +809,7 @@ def undo_last(*, ctx: JobContext | None = None) -> dict[str, Any]:
                         out["skipped"].append({"library": label, "message": refusal})
                         keep.append(entry)
                         continue
-                    store_backup(library, library, _undo_dir(ws))
+                    store_backup(library, library, _undo_dir(ws, library))
                     temp = library.with_name(f"{library.stem}.pfundo{uuid.uuid4().hex[:8]}{library.suffix}")
                     shutil.copyfile(backup, temp)
                     os.replace(temp, library)

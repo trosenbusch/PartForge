@@ -118,6 +118,7 @@ from .rustwriter import (
     RustWriterUnavailable,
     footprint_to_rust,
     is_inside,
+    library_backup_dir,
     library_backups,
     library_lock,
     symbol_to_rust,
@@ -184,6 +185,15 @@ __all__ = [
 ]
 
 ALTIUM_MODIFIED_MESSAGE = "In Altium geöffnet und ungespeichert – bitte speichern oder schließen"
+#: Altium runs, but whether it holds a library open and modified cannot be read (script paused in the debugger,
+#: bridge busy, protocol error): nothing is written, an open modified library could be overwritten (§1.4).
+ALTIUM_UNKNOWN_MESSAGE = (
+    "Der Zustand in Altium konnte nicht geprüft werden ({reason}) – nicht geschrieben, solange Altium Designer läuft. "
+    "Auf der Altium-Seite „Skript anhalten“ wählen oder Altium beenden und erneut versuchen"
+)
+#: Age after which prefetched Altium document states are asked for again before the next write: during a batch over
+#: hundreds of files the user may open one of them in Altium.
+PREFETCH_TTL_S = 45.0
 LIBRARY_SWITCHED_MESSAGE = (
     "Die Bibliothek wurde während des Vorgangs gewechselt oder geschlossen – abgebrochen. Nicht geschriebene Symbole "
     "und Footprints bleiben in ihrer Bibliothek vorgemerkt und werden beim nächsten Synchronisieren geschrieben."
@@ -314,6 +324,10 @@ class _AltiumGuard:
         self._resolved = False
         self.states: dict[str, Any] = {}
         self._prefetched: set[str] = set()
+        self._prefetch_list: list[Path] = []
+        self._prefetched_at = 0.0
+        #: Altium runs but its document states cannot be read: every write is refused with this reason
+        self.blocked: str | None = None
         self.notes: list[str] = []
 
     def _get(self) -> Any | None:
@@ -326,17 +340,28 @@ class _AltiumGuard:
                 self._bridge = None
         return self._bridge
 
-    def _disable(self, note: str) -> None:
-        self._bridge = None
-        self._resolved = True
-        if note not in self.notes:
-            self.notes.append(note)
+    def _fail(self, exc: BaseException) -> None:
+        """A document check failed (script paused in the debugger, bridge busy, protocol error). While Altium
+        runs nothing may be written – an open, modified library could be overwritten; without Altium nothing
+        can be open and writing goes on."""
+        running = False
+        try:
+            running = self._bridge is not None and bool(self._bridge.is_running())
+        except Exception:  # noqa: BLE001 - unknown counts as not running: the write proceeds as before
+            running = False
+        if running:
+            log.warning("Dokumentstatus in Altium nicht ermittelbar – Schreiben verweigert: %s", exc)
+            self.blocked = ALTIUM_UNKNOWN_MESSAGE.format(reason=str(exc).strip().rstrip(".") or type(exc).__name__)
+        else:
+            log.warning("Dokumentstatus in Altium nicht ermittelbar (Altium läuft nicht): %s", exc)
+            self._bridge = None
 
     def prefetch(self, libraries: Sequence[Path]) -> None:
         """Ask Altium once for the state of many libraries (bridge ``document_states``, one script run per 200
-        files); :meth:`refusal` then answers from it instead of one script run per library."""
+        files); :meth:`refusal` then answers from it instead of one script run per library – and asks again
+        after :data:`PREFETCH_TTL_S`."""
         existing = [p for p in libraries if p.exists()]
-        bridge = self._get() if existing else None
+        bridge = self._get() if existing and not self.blocked else None
         if bridge is None:
             return
         from .bridge.core import AltiumNotRunning
@@ -346,21 +371,28 @@ class _AltiumGuard:
         except AltiumNotRunning:
             self._bridge = None
             return
-        except Exception as exc:  # noqa: BLE001 - bridge, protocol and OS errors: writing goes on with a note
-            log.warning("Dokumentstatus in Altium nicht ermittelbar: %s", exc)
-            self._disable(
-                f"Der Zustand der Bibliotheken in Altium konnte nicht geprüft werden ({exc}). In Altium geöffnete "
-                "Bibliotheken bitte selbst neu laden."
-            )
+        except Exception as exc:  # noqa: BLE001 - bridge, protocol and OS errors
+            self._fail(exc)
             return
         self.states.update(states)
         self._prefetched.update(states)
+        self._prefetch_list = existing
+        self._prefetched_at = time.monotonic()
 
     def refusal(self, library: Path) -> str | None:
-        """``ALTIUM_MODIFIED_MESSAGE`` if Altium has the library open with unsaved changes."""
+        """Why ``library`` must not be written now: :data:`ALTIUM_MODIFIED_MESSAGE` if Altium has it open with
+        unsaved changes, :data:`ALTIUM_UNKNOWN_MESSAGE` if that cannot be read while Altium runs; ``None`` = go."""
         if not library.exists():
             return None
+        if self.blocked:
+            return self.blocked
         key = os.path.normcase(str(library))
+        if key in self._prefetched and time.monotonic() - self._prefetched_at > PREFETCH_TTL_S:
+            # a long batch: the user may have opened one of the files in Altium meanwhile – one script run
+            self._prefetched.clear()
+            self.prefetch(self._prefetch_list)
+            if self.blocked:
+                return self.blocked
         if key in self._prefetched:
             state = self.states.get(key)
             return ALTIUM_MODIFIED_MESSAGE if getattr(state, "open", False) and getattr(state, "modified", False) else None
@@ -374,13 +406,9 @@ class _AltiumGuard:
         except AltiumNotRunning:
             self._bridge = None
             return None
-        except Exception as exc:  # noqa: BLE001 - bridge, protocol and OS errors: writing goes on with a note
-            log.warning("Dokumentstatus von %s in Altium nicht ermittelbar: %s", library, exc)
-            self._disable(
-                f"Der Zustand der Bibliotheken in Altium konnte nicht geprüft werden ({exc}). In Altium geöffnete "
-                "Bibliotheken bitte selbst neu laden."
-            )
-            return None
+        except Exception as exc:  # noqa: BLE001 - bridge, protocol and OS errors
+            self._fail(exc)
+            return self.blocked
         self.states[os.path.normcase(str(library))] = state
         if getattr(state, "open", False) and getattr(state, "modified", False):
             return ALTIUM_MODIFIED_MESSAGE
@@ -1441,7 +1469,7 @@ def _write_library(
     Returns the library manifest to store together with ``persist`` (``None`` = unchanged).
     """
     rel = items[0].rel
-    file_names = session.names_in(library)
+    file_names, list_problem = session.list_names(library)
     unknown = [n for n in file_names or [] if n.casefold() not in records]
     if unknown:  # (registered meanwhile, or simply not loaded yet)
         records.update(_records_by_names(ops.kind, unknown))
@@ -1476,6 +1504,22 @@ def _write_library(
                 persist.append(_make_record(ops, item, "ok", item.existing.status_message))
     changed = [i for i in items if i.changed and not (i.transient or i.adopted or i.conflict)]
     if not changed:
+        return None
+    if exists and file_names is None and (list_problem is not None or session.is_rust()):
+        # The file exists but could not be listed (damaged, or the writer timed out / was busy): the ownership
+        # check above did not run, and the writer's upsert would replace a foreign component of the same name.
+        # Never write blindly – the change stays pending (the next sync lists the file again), and no ownership
+        # intent is recorded for it.
+        reason = list_problem or "der Bibliotheks-Writer konnte sie gerade nicht lesen"
+        message = (
+            f"{library.name} konnte nicht gelesen werden ({reason}) – nicht geschrieben, damit kein fremdes Bauteil "
+            "gleichen Namens überschrieben wird. Die Änderung ist gespeichert und wird beim nächsten Synchronisieren "
+            "geschrieben."
+        )
+        for item in changed:
+            item.status, item.message, item.http_status = "pending", message, 503
+            persist.append(_make_record(ops, item, "pending", message))
+        session.log(f"{library.name}: nicht geschrieben – nicht lesbar ({reason})", "warn")
         return None
     intent = _with_intent(rel, library, manifest, [i.name for i in changed])
     if intent is not None:  # ownership is recorded before the file changes (survives failures and aborts)
@@ -2239,10 +2283,18 @@ def sync_pending(ctx: JobContext | None = None) -> dict:
     return summary
 
 
+#: Status message of an imported component that vanished from its file (removed or renamed outside PartForge).
+_IMPORTED_GONE: Final = (
+    "Fehlt in {library} – außerhalb von PartForge entfernt oder umbenannt; wird nicht aus der Lesekopie neu "
+    "geschrieben (bei Bedarf die Datei erneut importieren)."
+)
+
+
 def _pending_work(session: _Session, ops: _KindOps) -> list[_Reg]:
     """The entries :func:`sync_pending` writes (without their specs): status ``pending``/``error`` – and ``ok``
     entries that are missing from their (readable) library file or whose file is gone, e.g. after a restored
-    database backup or a write lost in a crash (INT-06)."""
+    database backup or a write lost in a crash (INT-06). Imported components are never written from their
+    read-back spec: one that vanished from its file becomes ``missing`` instead."""
     regs = _registry_rows(ops.kind)
     records = [r for r in regs.values() if r.status in ("pending", "error") and r.source != "external"]
     by_file: dict[str, list[_Reg]] = {}
@@ -2263,9 +2315,18 @@ def _pending_work(session: _Session, ops: _KindOps) -> list[_Reg]:
             present = set()
         lost.extend(reg for reg in regs if reg.name.casefold() not in present)
     for reg in lost:
+        if reg.source == "imported":
+            # The file is the source of truth of an imported component; its registry spec is only a (lossy)
+            # read-back. A copy the user removed in Altium is therefore not resurrected from it – it is reported
+            # as missing (re-importing the file brings it back).
+            message = _IMPORTED_GONE.format(library=reg.library)
+            with session.bound():
+                _set_status(ops.kind, reg.name, "missing", message)
+            session.log(f"{ops.label} „{reg.name}“ {message[0].lower()}{message[1:]}", "warn")
+            continue
         records.append(reg)
         session.log(f"{ops.label} „{reg.name}“ fehlt in {reg.library} – wird neu geschrieben.", "warn")
-    return records
+    return [r for r in records if r.source != "imported"]
 
 
 def _relink_mismatched_parts(session: _Session) -> int:
@@ -2659,7 +2720,14 @@ def scan_workspace(ctx: JobContext | None = None, *, register: bool = False, wri
             missing = {n.casefold() for n in info.missing}
             for rec in recs:
                 if rec.name.casefold() in missing:
-                    if rec.status == "ok":
+                    if rec.source == "imported":
+                        if rec.status != "missing":  # the file decides: never rewritten from the read-back
+                            message = _IMPORTED_GONE.format(library=info.rel)
+                            with session.bound():
+                                _set_status(kind, rec.name, "missing", message)
+                            result["updated"].append({"kind": kind, "name": rec.name, "status": "missing",
+                                                      "message": message})
+                    elif rec.status == "ok":
                         message = f"Fehlt in {info.rel} – wird beim Synchronisieren neu geschrieben."
                         with session.bound():
                             _set_status(kind, rec.name, "pending", message)
@@ -3216,7 +3284,7 @@ def _readable_backup(session: _Session, library: Path) -> Path | None:
     ops = writer.ops if isinstance(writer, RustLibraryWriter) else getattr(writer, "reader", None)
     if not isinstance(ops, RustLibraryOps):
         return None
-    for backup in reversed(library_backups(library, session.ws.backups_dir / "lib")):
+    for backup in reversed(library_backups(library, library_backup_dir(session.ws, library))):
         if ops.backup_readable(backup, library):
             return backup
     return None

@@ -341,10 +341,11 @@ def footprint_library_path(ws: Workspace, spec: FootprintSpec) -> Path:
 
 LibraryKind = Literal["schlib", "pcblib"]
 
-#: Temporary files of the writers beside a library (bridge rebuild ``<stem>.pf<hex>.<ext>``,
-#: header patch ``<stem>.pfhdr<hex>.<ext>``, height patch ``<stem>.pfhgt<hex>.<ext>``, working copy of a
-#: Rust-writer operation ``<stem>.pfwork<hex>.<ext>``, Rust ``<lib>.<ext>.tmp``); never listed.
-_TEMP_NAME_RE: Final = re.compile(r"\.pf(?:hdr|hgt|work)?[0-9a-f]{8}\.(?:schlib|pcblib)$", re.IGNORECASE)
+#: Temporary files of the writers beside a library, ``<stem>.pf<tag><hex8>.<ext>`` (bridge rebuild ``pf``, header
+#: patch ``pfhdr``, height patch ``pfhgt``, Rust-writer working copy ``pfwork``, house style ``pfstd``/``pfundo``,
+#: library import ``pfimport``, font patch ``pffont``, stream restore ``pfkeep``; Rust ``<lib>.<ext>.tmp``); never
+#: listed – a crash leaves them behind and they must not surface as libraries (or be chosen as a save target).
+_TEMP_NAME_RE: Final = re.compile(r"\.pf[a-z]*[0-9a-f]{8}\.(?:schlib|pcblib)$", re.IGNORECASE)
 
 
 def library_file_kind(path: str | os.PathLike[str]) -> LibraryKind | None:
@@ -358,7 +359,7 @@ def library_file_kind(path: str | os.PathLike[str]) -> LibraryKind | None:
 
 
 def is_temp_library_file(path: str | os.PathLike[str]) -> bool:
-    """True for the writers' temporary files (bridge rebuilds, header and height patch copies)."""
+    """True for the writers' temporary files (working copies, bridge rebuilds, patch and import copies)."""
     return bool(_TEMP_NAME_RE.search(Path(path).name))
 
 

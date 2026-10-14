@@ -420,7 +420,10 @@ def _install_job(ctx: JobContext, bridge: AltiumBridge, ws: Workspace, replace_o
         ctx.progress(0.4, "Alte Installation mit demselben Dateinamen wird entfernt …")
         bridge.refresh_dblib(state.file_name, rebuild_index=False)  # release their databases first
         for duplicate in duplicates:
-            bridge.uninstall_library(Path(duplicate.path))
+            if not bridge.uninstall_library(Path(duplicate.path)):
+                raise BridgeCommandError(
+                    "uninstall_library", f"Altium hat die alte Installation {duplicate.path} nicht deinstalliert."
+                )
             removed.append(duplicate.path)
             ctx.log(f"Alte Installation deinstalliert: {duplicate.path}", "warn")
     if not state.installed:

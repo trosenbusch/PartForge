@@ -622,6 +622,7 @@ class _Tracker:
     failed_stat: tuple[int, int] | None = None  # gave up on this file version (until it changes again)
     final: bool = False  # end the session after the running take-over
     error: str | None = None
+    missing_polls: int = 0  # consecutive polls without the library file
 
 
 def _default_altium_running() -> Callable[[], bool] | None:
@@ -842,6 +843,14 @@ class AltiumEditService:
                         continue
                     tracker.job = None
                     self._after_job(tracker, job, stat, now)
+            if stat is None and session.baseline.stat() is not None:
+                # The library file is gone (deleted, or the sync removed its last component): nothing to watch.
+                # After a second look, so that Altium replacing the file during a save is not taken for a deletion.
+                tracker.missing_polls += 1
+                if tracker.missing_polls >= 2:
+                    self._end_quietly(ws, session.id, "Bibliotheksdatei nicht mehr vorhanden")
+                continue
+            tracker.missing_polls = 0
             if stat == session.baseline.stat():
                 tracker.seen, tracker.failed_stat = None, None
                 idle = now - self._idle_since.get(session.id, now)

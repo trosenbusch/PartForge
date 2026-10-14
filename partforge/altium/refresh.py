@@ -750,9 +750,11 @@ class AltiumRefreshService:
         if state is not None and state.installed and not self._install_state_stale(state):
             return state
         ctx.progress(0.03, "Installierte Bibliotheken in Altium werden gelesen …")
-        state = bridge.install_state(target.dblib)
-        remember_install_state(state, dblib=target.dblib)
-        return state
+        fresh = bridge.install_state(target.dblib)
+        if state is not None and state.duplicate_kinds:  # the classified duplicates survive the re-read (as in
+            fresh.duplicate_kinds = {p: k for p, k in state.duplicate_kinds.items() if p in fresh.duplicates}  # note_refresh_result)
+        remember_install_state(fresh, dblib=target.dblib)
+        return fresh
 
     def _run(self, ctx: JobContext, target: _Target, rebuild: bool, trigger: str, tables: list[str]) -> dict[str, Any]:
         failed = False

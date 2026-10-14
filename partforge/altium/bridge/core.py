@@ -43,10 +43,10 @@ from pydantic import BaseModel, Field
 
 from ...config import AppSettings, load_settings, local_data_dir
 from ...geometry.model import FootprintSpec, SymbolSpec
-from ...workspace import FootprintStyle, LayerMap, SymbolStyle
+from ...workspace import FootprintStyle, LayerMap, SymbolStyle, current_or_none, long_path_name
 from ..models import BackendStatus
 from .focus import allow_altium_foreground, bring_altium_to_front, keep_foreground
-from .process import X2_IMAGE, file_version, is_process_running
+from .process import X2_IMAGE, file_version, process_ids
 from .protocol import BridgeResponse, parse_response, render_request
 from .spec import RenderedSpec, render_pcblib_spec, render_schlib_spec
 
@@ -413,10 +413,23 @@ def _short_path(path: Path) -> str:
 
 
 def canonical_path(path: str | os.PathLike[str]) -> Path:
-    """One canonical spelling per file (absolute, resolved, real case) – Altium compares
-    document paths literally and opens a second hidden instance for another spelling
-    (VERIFIED, altium-verify-2 §1)."""
-    return Path(os.path.abspath(Path(path).resolve()))
+    """One spelling per file for Altium: absolute, every existing component spelled as on disk (case, long
+    instead of 8.3 names) – but drive letters, junctions and symbolic links **as given**.
+
+    Altium compares document paths literally (VERIFIED, altium-verify-2 §1: another spelling counts as "not
+    open" and gets a second hidden instance), and the user opens documents through the mapped drive they see.
+    Resolving the path (``Path.resolve`` turns ``L:\\…`` into ``\\\\server\\share\\…``) would therefore hide every
+    document the user has open from the modified-guard and make PartForge open a second instance of it. A
+    library of the open workspace is spelled below the folder the user opened it as
+    (:attr:`~partforge.workspace.Workspace.opened_as`), since ``Workspace.root`` is resolved for comparisons."""
+    text = os.path.abspath(os.fspath(path))
+    ws = current_or_none()
+    if ws is not None and ws.opened_as != ws.root:
+        try:
+            text = str(ws.opened_as / Path(text).relative_to(ws.root))
+        except ValueError:  # not below the (resolved) library root: the caller's spelling stays
+            pass
+    return Path(long_path_name(text))
 
 
 def altium_safe_path(path: str | os.PathLike[str]) -> str:
@@ -501,6 +514,17 @@ _launched: list[subprocess.Popen[bytes]] = []
 _launched_lock = threading.Lock()
 
 
+def _altium_process_ids() -> list[int]:
+    """Process ids of the running Altium instances (raises when the process list cannot be read)."""
+    return process_ids(X2_IMAGE)
+
+
+def is_process_running(image: str = X2_IMAGE) -> bool:
+    """The bridge's process check: Altium runs? Unlike :func:`~.process.is_process_running` it raises when the
+    process list cannot be read – :meth:`AltiumBridge._alive` treats that as unknown, not as "closed"."""
+    return bool(process_ids(image))
+
+
 def _default_launcher(command_line: str) -> None:
     """Start the helper X2.EXE process that hands the RunScript command to Altium."""
     flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
@@ -532,6 +556,7 @@ class AltiumBridge:
         lock_timeout_s: float = 600.0,
         launcher: Callable[[str], None] | None = None,
         process_check: Callable[[], bool] | None = None,
+        process_ids: Callable[[], Sequence[int]] | None = None,
         process_check_interval_s: float = 2.0,
         keep_logs: int = 30,
     ):
@@ -542,6 +567,8 @@ class AltiumBridge:
         self.poll_interval_s = float(poll_interval_s)
         self.lock_timeout_s = float(lock_timeout_s)
         self._launcher = launcher or _default_launcher
+        self._process_ids = process_ids or _altium_process_ids
+        # the module attribute is looked up at call time (tests patch core.is_process_running)
         self._process_check = process_check or (lambda: is_process_running(X2_IMAGE))
         self.process_check_interval_s = float(process_check_interval_s)
         self._keep_logs = keep_logs
@@ -553,12 +580,16 @@ class AltiumBridge:
         return cls(x2_path=settings.resolved_altium_exe(), timeout_s=settings.altium.script_timeout_s, **kwargs)
 
     # -- status ---------------------------------------------------------------------
-    def is_running(self) -> bool:
+    def _alive(self) -> bool | None:
+        """Whether Altium runs – ``None`` when the process list cannot be read (no evidence either way)."""
         try:
             return bool(self._process_check())
         except Exception as exc:  # noqa: BLE001 - a failing check must not break the UI
             log.warning("Altium-Prozessprüfung fehlgeschlagen: %s", exc)
-            return False
+            return None
+
+    def is_running(self) -> bool:
+        return bool(self._alive())
 
     def status(self) -> BackendStatus:
         if not self.x2_path:
@@ -709,23 +740,41 @@ class AltiumBridge:
                 )
             if now >= next_process_check:
                 next_process_check = now + self.process_check_interval_s
-                if not self.is_running():
+                # an unreadable process list is no evidence that Altium is gone: the script may still finish
+                if self._alive() is False:
                     raise AltiumNotRunning("Altium Designer wurde während des Vorgangs beendet.")
             time.sleep(self.poll_interval_s)
 
     def _mark_wedged(self, request_id: str, kind: str, last_step: str | None = None) -> None:
-        state = {"request_id": request_id, "kind": kind, "last_step": last_step, "time": time.time()}
+        try:
+            pids = [int(p) for p in self._process_ids()]
+        except Exception:  # noqa: BLE001 - unknown Altium processes: the marker is not bound to a session
+            pids = []
+        state = {"request_id": request_id, "kind": kind, "last_step": last_step, "time": time.time(), "altium_pids": pids}
         with contextlib.suppress(OSError):
             (self.exchange_dir / "wedged.json").write_text(json.dumps(state), encoding="utf-8")
         log.error("Altium-Brücke hängt (%s, Anfrage %s, letzter Schritt: %s)", kind, request_id, last_step)
 
     @property
     def last_wedge(self) -> dict[str, Any] | None:
-        """Information about the last detected wedge (cleared by the next successful call)."""
+        """Information about the last detected wedge – cleared by the next successful call, or dropped when
+        the Altium the paused script lived in is gone (a restarted Altium has no paused script)."""
         path = self.exchange_dir / "wedged.json"
         with contextlib.suppress(OSError, json.JSONDecodeError):
             data = json.loads(path.read_text(encoding="utf-8"))
-            return data if isinstance(data, dict) else None
+            if not isinstance(data, dict):
+                return None
+            pids = data.get("altium_pids")
+            if isinstance(pids, list) and pids:
+                try:
+                    alive = {int(p) for p in self._process_ids()}
+                except Exception:  # noqa: BLE001 - unknown: keep the marker
+                    return data
+                if not alive.intersection(p for p in pids if isinstance(p, int)):
+                    with contextlib.suppress(OSError):
+                        path.unlink()
+                    return None
+            return data
         return None
 
     def _cleanup(self, request_id: str, *, keep_log: bool) -> None:

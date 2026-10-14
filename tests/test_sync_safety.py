@@ -7,6 +7,7 @@ scenario with the real Rust writer.
 """
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
@@ -15,6 +16,7 @@ from test_writer_samples import chip_0603, resistor_symbol
 
 from partforge import events
 from partforge.altium import libwriter, sync
+from partforge.altium.bridge.core import BridgeWedgedError, DocumentState
 from partforge.altium.bridge.protocol import BridgeProtocolError
 from partforge.altium.libwriter import WriterUnavailable
 from partforge.altium.rustwriter import RustTimeoutError, RustWriterError
@@ -60,6 +62,142 @@ def _diode(order: str, description: str = "") -> SymbolSpec:
 
 def _passives(workspace: Workspace) -> Path:
     return workspace.symbols_dir / "PF_Passives.SchLib"
+
+
+# --------------------------------------------------------------------------- never written blindly
+
+
+def test_listing_failure_never_writes_blindly(fake: FakeWriter, workspace):
+    """The writer timed out while listing the file: without its names the ownership check cannot run, so the
+    write waits (pending) instead of replacing a foreign component of the same name – and no ownership intent
+    is recorded for it."""
+    lib = _passives(workspace)
+    generated = generate_symbol(SymbolRequest(kind="resistor"))
+    assert generated.name == "Resistor"
+    fake.put(lib, [generated.model_copy(update={"description": "vom Benutzer gezeichnet"})])
+    libwriter.forget_component_names()
+    original = fake.list_components
+    flaky = {"fail": True}
+
+    def list_components(library):
+        if flaky["fail"]:
+            flaky["fail"] = False
+            raise RustTimeoutError("Zeitüberschreitung beim Lesen")
+        return original(library)
+
+    fake.list_components = list_components  # type: ignore[method-assign]
+    rec = sync.ensure_symbols([generated])[0]
+    assert rec.status == "pending" and "nicht gelesen" in (rec.status_message or "")
+    assert fake.writes() == []
+    assert fake.libs[fake.key(lib)]["Resistor"].description == "vom Benutzer gezeichnet"
+    manifest = sync._load_manifest(workspace.rel(lib))
+    assert manifest is None or "resistor" not in manifest.components
+    # the next run lists the file, finds the foreign component and takes it over – it is never overwritten
+    rec = sync.ensure_symbols([generated])[0]
+    assert rec.status == "ok" and rec.source == "imported"
+    assert fake.writes() == []
+    assert fake.libs[fake.key(lib)]["Resistor"].description == "vom Benutzer gezeichnet"
+
+
+def test_imported_component_removed_in_altium_is_not_resurrected(fake: FakeWriter, workspace):
+    """An imported component's registry spec is only a lossy read-back: when the user deletes the component in
+    Altium, the sync must not write that copy back – the record becomes ``missing`` (re-import brings it back)."""
+    lib = workspace.symbols_dir / "Import" / "Hersteller" / "Opamps.SchLib"
+    foreign = resistor_symbol("LM358")
+    fake.put(lib, [foreign])
+    libwriter.forget_component_names()
+    registry.upsert_symbol(SymbolRecord(name="LM358", library=workspace.rel(lib), source="imported", spec=foreign,
+                                        pin_count=len(foreign.pins), status="ok",
+                                        status_message="Beim Speichern aus PartForge ginge verloren: Pin-Symbole."))
+    fake.libs[fake.key(lib)].clear()  # deleted in Altium and saved
+    fake._touch(lib)
+    libwriter.forget_component_names()
+    fake.calls.clear()
+    sync.sync_pending()
+    rec = registry.get_symbol("LM358")
+    assert fake.writes() == [] and fake.names(lib) == []
+    assert rec is not None and rec.status == "missing" and "erneut importieren" in (rec.status_message or "")
+    # the file check says the same instead of scheduling a rewrite
+    registry.set_symbol_status("LM358", "ok", None)
+    result = sync.scan_workspace()
+    updated = [u for u in result["updated"] if u["name"] == "LM358"]
+    assert updated and updated[0]["status"] == "missing"
+    assert registry.get_symbol("LM358").status == "missing"
+    # a generated component in the same situation is still rewritten (INT-06)
+    fake.calls.clear()
+    generated = sync.ensure_symbols([_sym("GenOpamp")])[0]
+    gen_lib = workspace.abs(generated.library)
+    fake.libs[fake.key(gen_lib)].pop("GenOpamp")
+    fake._touch(gen_lib)
+    libwriter.forget_component_names()
+    sync.sync_pending()
+    assert "GenOpamp" in fake.names(gen_lib) and registry.get_symbol("GenOpamp").status == "ok"
+
+
+class _WedgedBridge(FakeBridge):
+    """Altium runs, but the bridge cannot read document states (a script paused in the debugger)."""
+
+    def is_running(self) -> bool:
+        return True
+
+    def document_states(self, paths):
+        raise BridgeWedgedError("never_started", seconds=45)
+
+    def document_state(self, path: Path) -> DocumentState:
+        raise BridgeWedgedError("never_started", seconds=45)
+
+
+def test_unknown_altium_state_blocks_writes_while_altium_runs(fake: FakeWriter, workspace, monkeypatch):
+    """Whether Altium holds the library open and modified cannot be read: nothing is written while Altium runs
+    (an open, modified library could be overwritten); without Altium nothing can be open and the write goes on."""
+    rec = sync.ensure_symbols([_sym("AAA")])[0]
+    assert rec.status == "ok"
+    monkeypatch.setattr(sync, "altium_bridge", lambda: _WedgedBridge())
+    fake.calls.clear()
+    rec = sync.ensure_symbols([_sym("AAA", description="geändert")])[0]
+    assert rec.status == "error" and "Skript anhalten" in (rec.status_message or "")
+    assert fake.writes() == []
+
+    class _Gone(_WedgedBridge):
+        def is_running(self) -> bool:
+            return False
+
+    monkeypatch.setattr(sync, "altium_bridge", lambda: _Gone())
+    rec = sync.ensure_symbols([_sym("AAA", description="geändert")])[0]
+    assert rec.status == "ok" and fake.writes()
+
+
+def test_prefetched_altium_states_are_asked_again_for_long_batches(workspace, monkeypatch):
+    """A batch over many files prefetches the document states once; after PREFETCH_TTL_S they are asked for
+    again (one script run), so a library the user opened in Altium meanwhile is not overwritten."""
+    lib = _passives(workspace)
+    lib.parent.mkdir(parents=True, exist_ok=True)
+    lib.write_bytes(b"x")
+
+    class _Bridge(FakeBridge):
+        def __init__(self) -> None:
+            super().__init__()
+            self.batches = 0
+            self.modified_now = False
+
+        def is_running(self) -> bool:
+            return True
+
+        def document_states(self, paths):
+            self.batches += 1
+            return {os.path.normcase(str(p)): DocumentState(path=str(p), open=self.modified_now, modified=self.modified_now)
+                    for p in paths}
+
+    bridge = _Bridge()
+    monkeypatch.setattr(sync, "altium_bridge", lambda: bridge)
+    guard = sync._AltiumGuard()
+    guard.prefetch([lib])
+    assert guard.refusal(lib) is None and bridge.batches == 1
+    bridge.modified_now = True
+    assert guard.refusal(lib) is None  # within the TTL the prefetched answer counts
+    monkeypatch.setattr(sync, "PREFETCH_TTL_S", 0.0)
+    assert guard.refusal(lib) == sync.ALTIUM_MODIFIED_MESSAGE
+    assert bridge.batches == 2 and bridge.calls == []  # never one script run per file
 
 
 # --------------------------------------------------------------------------- full regeneration only when lossless

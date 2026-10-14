@@ -50,9 +50,9 @@ from ..domain.text import plural
 from ..jobs import JobContext
 from ..workspace import Workspace, current
 from . import compound
-from .libwriter import library_file_kind
-from .rustwriter import RustLibraryOps, RustWriterError, is_inside
-from .sync import SyncError, _register_imported, _rel_key, _Session
+from .libwriter import forget_component_names, library_file_kind
+from .rustwriter import RustLibraryOps, RustWriterError, is_inside, library_backup_dir, store_backup
+from .sync import SyncError, _library_held, _register_imported, _rel_key, _Session
 
 log = logging.getLogger(__name__)
 
@@ -652,6 +652,11 @@ def run_import(options: LibraryImportOptions, *, ctx: JobContext | None = None) 
         }
         claimed: dict[tuple[str, str], str] = {}
         imported_rels: set[str] = set()  # source files now in the library (copied or unchanged)
+        # files a replacement would overwrite: ask Altium once whether it has them open (one script run)
+        session.altium.prefetch([
+            target for target in (ws.abs(_target_rel(ws, folder, e.rel, e.kind)) for e in files if not e.problem)
+            if target is not None and target.is_file()
+        ])
         for index, entry in enumerate(files):
             session.check_cancelled()
             session.progress(index / max(1, len(files)), f"{entry.rel} …")
@@ -698,14 +703,33 @@ def run_import(options: LibraryImportOptions, *, ctx: JobContext | None = None) 
                 out["errors"].append({"rel": entry.rel, "message": f"Ziel {target_rel} hat keine Bibliotheksendung."})
                 continue
             if state != "same":
-                try:
-                    target.parent.mkdir(parents=True, exist_ok=True)
+                # like every other write of a library file: under its lock, never while Altium has unsaved edits of
+                # it, and with the replaced version (house-styled, edited in Altium …) kept in Backups\lib
+                with _library_held(target) as busy:
+                    if busy:
+                        out["skipped"].append({"rel": entry.rel, "reason": busy})
+                        continue
+                    refusal = session.altium.refusal(target) if state == "different" else None
+                    if refusal:
+                        out["skipped"].append({"rel": entry.rel, "reason": refusal})
+                        session.log(f"{entry.rel}: {refusal}", "warn")
+                        continue
                     temp = target.with_name(f"{target.stem}.pfimport{uuid.uuid4().hex[:8]}{target.suffix}")
-                    shutil.copyfile(source, temp)
-                    os.replace(temp, target)
-                except OSError as exc:
-                    out["errors"].append({"rel": entry.rel, "message": f"Nicht kopiert: {exc}"})
-                    continue
+                    try:
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        if state == "different":
+                            store_backup(target, target, library_backup_dir(ws, target))
+                        shutil.copyfile(source, temp)
+                        os.replace(temp, target)
+                    except OSError as exc:
+                        temp.unlink(missing_ok=True)
+                        out["errors"].append({"rel": entry.rel, "message": f"Nicht kopiert: {exc}"})
+                        continue
+                    forget_component_names(target)
+                    if state == "different":
+                        note = session.altium.reload(target)
+                        if note:
+                            session.log(note)
                 out["copied"] += 1
             else:
                 out["unchanged"] += 1

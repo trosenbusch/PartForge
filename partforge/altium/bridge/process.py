@@ -14,19 +14,32 @@ from ..models import BackendStatus
 
 log = logging.getLogger(__name__)
 
-__all__ = ["is_process_running", "file_version", "altium_backend_status", "X2_IMAGE"]
+__all__ = ["is_process_running", "process_ids", "file_version", "altium_backend_status", "X2_IMAGE"]
 
 X2_IMAGE = "X2.EXE"
 _version_cache: dict[tuple[str, int], str | None] = {}
 
 
 def is_process_running(image: str = X2_IMAGE) -> bool:
-    """True if a process with this executable name runs (Windows Toolhelp snapshot).
+    """True if a process with this executable name runs (Windows Toolhelp snapshot; ``False`` when the
+    process list cannot be read).
 
     ``PARTFORGE_NO_ALTIUM=1`` makes PartForge treat Altium as not running (development and
     UI test servers must never start scripts in the user's Altium session)."""
-    if os.name != "nt" or os.environ.get("PARTFORGE_NO_ALTIUM") == "1":
+    try:
+        return bool(process_ids(image))
+    except OSError as exc:
+        log.debug("Prozessliste nicht verfügbar: %s", exc)
         return False
+
+
+def process_ids(image: str = X2_IMAGE) -> list[int]:
+    """Process ids of every running process with this executable name (Windows Toolhelp snapshot).
+
+    ``[]`` outside Windows or with ``PARTFORGE_NO_ALTIUM=1``; :class:`OSError` when the process list cannot be
+    read – which is no evidence that the process is gone."""
+    if os.name != "nt" or os.environ.get("PARTFORGE_NO_ALTIUM") == "1":
+        return []
     import ctypes
     from ctypes import wintypes
 
@@ -57,18 +70,18 @@ def is_process_running(image: str = X2_IMAGE) -> bool:
     snapshot = kernel32.CreateToolhelp32Snapshot(0x00000002, 0)  # TH32CS_SNAPPROCESS
     invalid = wintypes.HANDLE(-1).value
     if not snapshot or snapshot == invalid:
-        log.debug("Prozessliste nicht verfügbar (Fehler %s)", ctypes.get_last_error())
-        return False
+        raise OSError(f"Prozessliste nicht verfügbar (Fehler {ctypes.get_last_error()})")
     wanted = image.lower()
+    found: list[int] = []
     try:
         entry = PROCESSENTRY32W()
         entry.dwSize = ctypes.sizeof(PROCESSENTRY32W)
         ok = kernel32.Process32FirstW(snapshot, ctypes.byref(entry))
         while ok:
             if entry.szExeFile.lower() == wanted:
-                return True
+                found.append(int(entry.th32ProcessID))
             ok = kernel32.Process32NextW(snapshot, ctypes.byref(entry))
-        return False
+        return found
     finally:
         kernel32.CloseHandle(snapshot)
 

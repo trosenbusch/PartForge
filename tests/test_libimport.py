@@ -29,7 +29,7 @@ from test_writer_samples import chip_0603, ic8_symbol, resistor_symbol, soic8
 
 from partforge.altium import housestyle, libimport, libwriter, sync
 from partforge.altium.libimport import ImportError_, ImportScan, LibraryImportOptions, SourceFile
-from partforge.altium.rustwriter import RustLibraryOps, is_inside, shutdown_client
+from partforge.altium.rustwriter import RustLibraryOps, is_inside, library_backup_dir, library_backups, shutdown_client
 from partforge.db import registry
 from partforge.db.models import FootprintRecord, RecordSource, SymbolRecord
 from partforge.geometry.model import FootprintLink, FootprintSpec, SymbolSpec
@@ -802,6 +802,11 @@ def test_changed_source_is_replaced_only_on_request(workspace: Workspace, source
     assert (replaced["copied"], replaced["symbols"], replaced["libraries"]) == (1, 2, [target])
     assert replaced["skipped"] == [] and replaced["conflicts"] == []
     assert _abs(workspace, target).read_bytes() == sources.passives_v2
+    # the replaced version is kept like every other overwritten library file (its own backup folder)
+    backups = library_backups(_abs(workspace, target), library_backup_dir(workspace, _abs(workspace, target)))
+    assert len(backups) == 1 and backups[0].read_bytes() == sources.passives
+    assert backups[0].parent == workspace.backups_dir / "lib" / "Symbols" / "Import" / "Hersteller"
+    assert not list(workspace.symbols_dir.rglob("*.pfimport*"))
     res = registry.get_symbol("LI_RES")
     assert res is not None and res.spec is not None and res.spec.description == "Widerstand, Version 2"
 

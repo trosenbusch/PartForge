@@ -41,6 +41,7 @@ from ..models import ComponentInfo, WriteResult
 from ..rustwriter import (
     RustWriterError,
     is_inside,
+    library_backup_dir,
     library_kind,
     library_lock,
     store_backup,
@@ -140,10 +141,10 @@ class AltiumLibraryWriter:
         return Path(os.path.abspath(path))
 
     def _backups_dir(self, library: Path) -> Path:
-        """``<workspace>/Backups/lib``, or the library's own folder outside a workspace."""
+        """``<workspace>/Backups/lib`` (:func:`library_backup_dir`), or the library's own folder outside a workspace."""
         ws = self.workspace
         if ws is not None and is_inside(library, ws.root):
-            return ws.backups_dir / "lib"
+            return library_backup_dir(ws, library)
         return library.parent
 
     def _backup(self, library: Path) -> Path | None:

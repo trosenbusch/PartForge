@@ -252,6 +252,60 @@ def test_response_with_utf8_byte_order_mark_is_read(tmp_path):
     assert exc.value.last_step == "create free SCHLIB"
 
 
+def test_canonical_path_keeps_the_users_spelling(tmp_path):
+    """Altium compares document paths literally: a junction (or mapped drive) the user opened a library through
+    must not be resolved away, and a library of the open workspace is spelled below the folder it was opened as."""
+    from partforge.workspace import Workspace, current_or_none, set_current
+
+    real = tmp_path / "Real"
+    (real / "Symbols").mkdir(parents=True)
+    (real / "Symbols" / "PF_X.SchLib").write_bytes(b"x")
+    link = tmp_path / "Link"
+    done = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(real)], capture_output=True)
+    if done.returncode != 0:
+        pytest.skip(f"keine Verzeichnisverknüpfung möglich: {done.stderr.decode(errors='replace').strip()}")
+    spelled = canonical_path(link / "symbols" / "pf_x.schlib")
+    assert str(spelled) == str(link / "Symbols" / "PF_X.SchLib")  # spelling from disk, the junction kept
+    assert (link / "Symbols" / "PF_X.SchLib").resolve() == real / "Symbols" / "PF_X.SchLib"  # what resolving did
+    assert str(canonical_path(link / "Symbols" / "New.SchLib")) == str(link / "Symbols" / "New.SchLib")
+    previous = current_or_none()
+    ws = Workspace.create(link / "Lib", name="Test")
+    set_current(ws)
+    try:
+        assert ws.root == real / "Lib" and str(ws.opened_as) == str(link / "Lib")
+        wanted = ws.root / "Symbols" / "PF_Passives.SchLib"  # how PartForge derives library paths
+        assert altium_safe_path(wanted) == str(link / "Lib" / "Symbols" / "PF_Passives.SchLib")
+        assert altium_safe_path(tmp_path / "Elsewhere.SchLib") == str(tmp_path / "Elsewhere.SchLib")
+    finally:
+        set_current(previous)
+
+
+def test_wedge_marker_is_dropped_when_altium_was_restarted(tmp_path):
+    """The marker names the Altium processes of the wedge: a restarted Altium has no paused script."""
+    bridge, _ = make_bridge(tmp_path, FakeAltium(tmp_path, mode="dead"), start_timeout_s=0.3, process_ids=lambda: [4711])
+    with pytest.raises(BridgeWedgedError):
+        bridge.ping()
+    assert bridge.last_wedge is not None and bridge.last_wedge["altium_pids"] == [4711]
+    bridge._process_ids = lambda: [4711, 99]  # the same Altium still runs
+    assert bridge.last_wedge is not None
+    bridge._process_ids = lambda: [99]
+    assert bridge.last_wedge is None and not (bridge.exchange_dir / "wedged.json").exists()
+
+
+def test_unreadable_process_list_does_not_end_the_wait(tmp_path):
+    calls = {"n": 0}
+
+    def flaky() -> bool:
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return True
+        raise OSError("Prozessliste nicht verfügbar")
+
+    bridge, _ = make_bridge(tmp_path, FakeAltium(tmp_path, lambda c, a: ["KV|version|26.10"], delay=0.4), running=flaky)
+    assert bridge.ping() == "26.10"
+    assert calls["n"] >= 2
+
+
 def test_stop_command_line(tmp_path):
     bridge, _ = make_bridge(tmp_path)
     assert STOP_PROCESS == "EditScript:Stop"

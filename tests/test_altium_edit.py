@@ -238,6 +238,18 @@ def test_idle_sessions_end_and_altium_exit_ends_them(watched):
     assert gone.sessions() == []
 
 
+def test_watcher_ends_the_session_when_the_library_file_disappears(watched):
+    """A deleted library file (the sync removed its last component) ends the session instead of being watched
+    forever – after a second look, so a file Altium replaces while saving is not taken for a deletion."""
+    s = watched
+    assert s.service.poll() == []
+    s.lib.unlink()
+    assert s.service.poll() == [] and s.service.sessions()
+    s.clock.now += 1
+    assert s.service.poll() == []
+    assert s.service.sessions() == [] and editing._load_sessions() == [] and s.fake.submitted == []
+
+
 def test_sessions_are_stored_in_the_library_and_loaded_again(watched):
     s = watched
     again = AltiumEditService(job_manager=FakeJobs(), altium_running=None)

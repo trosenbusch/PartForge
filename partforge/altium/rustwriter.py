@@ -2976,6 +2976,23 @@ def library_backups(library: Path, folder: Path) -> list[Path]:
     return sorted(found, key=age)
 
 
+def library_backup_dir(ws: Workspace, library: str | os.PathLike[str]) -> Path:
+    """Folder of the ``.bak`` backups of a workspace library: ``Backups\\lib`` for a library directly in
+    ``Symbols\\`` or ``Footprints\\``, else ``Backups\\lib\\<its folder relative to the library root>``.
+
+    Imports keep their source folders (``Symbols\\Import\\VendorA\\Resistors.SchLib``), and same-named
+    libraries in different folders must never share one backup pool: the writes of one would prune the
+    other's backups and "restore from backup" could restore the wrong file.
+    """
+    root = ws.backups_dir / "lib"
+    parent = Path(os.path.abspath(os.fspath(library))).parent
+    if any(_norm(parent) == _norm(top) for top in (ws.symbols_dir, ws.footprints_dir)):
+        return root
+    if not is_inside(parent, ws.root):  # outside the library folder: the callers keep such files beside themselves
+        return root
+    return root / os.path.relpath(parent, ws.root)
+
+
 def prune_backups(library: Path, folder: Path, keep: int) -> None:
     """Delete all but the ``keep`` newest backups of ``library`` in ``folder``."""
     if keep <= 0:
@@ -3261,13 +3278,25 @@ def library_lock(path: Path) -> LibraryLock:
         return lock
 
 
+#: Temporary copies PartForge makes beside a library, ``<stem>.pf<tag><hex8><suffix>``: ``pfwork`` working copies
+#: of the Rust writer, ``pfhdr``/``pfhgt`` header and height patches, ``pfstd``/``pfundo`` house style and its undo,
+#: ``pfimport`` library import, ``pffont`` font patch, ``pf<hex8>`` bridge rebuild – and the writer's ``.bak`` files
+#: of them (matched against the name after the stem).
+_TEMP_COPY_RE: Final = re.compile(r"^\.pf[a-z]*[0-9a-f]{8}\.", re.IGNORECASE)
+
+
 def work_copy_files(library: Path) -> list[Path]:
-    """Working copies of ``library`` (``<stem>.pfwork<hex8><suffix>``) and the writer's ``.bak`` files of them."""
+    """Temporary copies of ``library`` beside it: the working copies (``<stem>.pfwork<hex8><suffix>``) with the
+    writer's ``.bak`` files of them, and the leftovers of every other copy-then-replace operation (header, height,
+    house-style, undo, import and font patches, bridge rebuilds) a crashed process left behind."""
     folder = library.parent
     if not folder.is_dir():
         return []
-    prefix = f"{library.stem}.{WORK_TAG}".lower()
-    return sorted(p for p in folder.iterdir() if p.is_file() and p.name.lower().startswith(prefix))
+    stem = library.stem.lower()
+    return sorted(
+        p for p in folder.iterdir()
+        if p.is_file() and p.name.lower().startswith(stem) and _TEMP_COPY_RE.match(p.name[len(stem):])
+    )
 
 
 class _LibraryTransaction:
@@ -3561,7 +3590,7 @@ class RustLibraryOps:
     def backups_dir(self, library: Path) -> Path | None:
         ws = self.workspace
         if ws is not None and is_inside(library, ws.root):
-            return ws.backups_dir / "lib"
+            return library_backup_dir(ws, library)
         return None
 
     # -- helpers --------------------------------------------------------------------
