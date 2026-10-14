@@ -1,5 +1,23 @@
 # altium-mcp bridge study (UNDERSTAND phase, for PartForge)
 
+> **Update 2026-10-14** – the checkout was pulled to upstream `31732f0` (0.5.x, 52 commits). What matters for
+> PartForge's own bridge (everything else is schematic building, project validation tools, screenshots, venv setup):
+>
+> * **Wedge recovery without hands** (`dev/unwedge.py`, verified upstream): `X2.EXE -REditScript:Stop` dispatches
+>   Altium's "Stop Debugging" process into the running instance; Ctrl+F3 only reaches the debugger while the script
+>   editor is the active document. Taken over as `AltiumBridge.stop_script` ("Skript anhalten").
+> * **Exchange-file encoding** (issue #20, `server/altium_files.py`): `TStringList.SaveToFile` writes the ANSI code
+>   page, and a UTF-8 BOM when Windows runs the "Beta: Use Unicode UTF-8" code page; `LoadFromFile` honours a BOM.
+>   Taken over as `_read_altium_text` (response and step log).
+> * **Open-document lookup** (issue #21, `other_utils.pas` `FindOpenDocument`/`OpenLibraryDocument`): iterates
+>   `Client.ServerModule[i].Documents[j].FileName` and compares case-insensitively with normalised separators,
+>   because `Client.IsDocumentOpen` misses another spelling of the same path and the file is then opened a second
+>   time. PartForge sends canonical spellings (`canonical_path`), so the hazard is small – a port into
+>   `PFLibraries.pas` is **UNVERIFIED on 26.10** and still open.
+> * Upstream no longer shows `ShowMessage` boxes (errors go to `script_errors.log`); `run_altium_script` closes
+>   only dialogs owned by X2.EXE and reports their titles; the exchange dir stays `C:\Users\Public\altium_mcp`.
+> * `dev/DBLIB_FINDINGS.md` (referenced below and in `dblib-format.md`) was removed upstream (company data).
+
 Subject: `<altium-mcp-checkout>` at commit `f2902b5` (2026-07-30, "Confirm update processes are no-ops on a real database-linked part", origin `github.com/coffeenmusic/altium-mcp`). Working tree: only `server/SandboxScript/Sandbox.pas` is modified, because `run_altium_script` rewrites it on every call. The other agent is using the live MCP server right now: `server/altium_mcp.log` shows `run_altium_script` calls on 2026-10-07.
 
 Method: I read all code in `server/main.py`, `server/AltiumScript/*.pas`, `server/SandboxScript/*` and `dev/*`, plus the on-disk evidence this bridge produced on this PC (log, `C:\Users\Public\altium_mcp\*`). I also ran a few local, Altium-free tests in my scratchpad. I did not run Altium and called no `mcp__altium__*` tools.
