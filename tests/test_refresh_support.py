@@ -28,6 +28,7 @@ from partforge.altium.bridge.core import (
     DbLibInstallState,
     DbLibRefreshResult,
     InstalledDbLib,
+    ScriptStopResult,
     dblib_file_name,
 )
 from partforge.altium.bridge.protocol import escape_field, unescape_field
@@ -61,6 +62,7 @@ class FakeBridge:
         self.resolutions: dict[tuple[str, str], DbComponentResolution] = {}
         self.components: dict[str, list[str]] = {}  # library path (normcase) -> component names
         self.opened: list[str] = []
+        self.stop_recovers = True  # stop_script: does the verifying ping succeed?
         self.lock = threading.Lock()
 
     # -- helpers ---------------------------------------------------------------------
@@ -150,6 +152,17 @@ class FakeBridge:
         self._call("uninstall_library", path)
         self.installed = [p for p in self.installed if not same_path(p, path)]
         return True  # like Altium: the hidden document stays open
+
+    def stop_script(self, **kwargs: Any) -> ScriptStopResult:
+        self._call("stop_script")
+        if not self.stop_recovers:
+            return ScriptStopResult(dispatched=True, recovered=False, detail="Skript hängt weiter",
+                                    message="Das Skript konnte nicht beendet werden – Altium führt weiterhin keine "
+                                            "PartForge-Skripte aus. Bitte offene Altium-Meldungen schließen oder "
+                                            "Altium Designer neu starten.")
+        self.last_wedge = None
+        return ScriptStopResult(dispatched=True, recovered=True, version="26.10",
+                                message="Das angehaltene Skript wurde beendet – Altium führt PartForge-Skripte wieder aus.")
 
     def resolve_db_component(self, dblib: Any, table: str, key: str) -> DbComponentResolution:
         self._call("resolve_db_component", dblib, table, key)

@@ -65,6 +65,7 @@ const JOB_MATCH: Partial<Record<ActionKey, (j: Pick<Job, 'kind' | 'title'>) => b
   refreshRebuild: ofKind('altium.refresh'),
   verify: ofKind('altium.verify'),
   open: ofKind('altium.open'),
+  stopScript: ofKind('altium.stop_script'),
   sync: isSyncJob,
   scan: ofKind('libraries.scan'),
   scanSync: (j) => j.kind === 'libraries.scan' || isSyncJob(j),
@@ -89,6 +90,7 @@ const ALL_KEYS: ActionKey[] = [
   'refreshRebuild',
   'verify',
   'open',
+  'stopScript',
   'settings',
   'writer',
   'report',
@@ -482,6 +484,13 @@ export function useAltiumActions() {
 
   const openInAltium = (path?: string) => start('open', tr("Datei konnte nicht in Altium geöffnet werden"), () => altiumApi.open(path))
 
+  /**
+   * „Skript anhalten“: beendet ein im Altium-Debugger hängendes PartForge-Skript über Altiums Prozess `EditScript:Stop`
+   * (kein Fenster, keine Tastatur – Strg+F3 wirkt nur im Skript-Editor) und prüft mit einem Ping, ob Skripte wieder
+   * laufen; der Status wird danach neu geladen (`watched`). Scheitert die Prüfung, endet der Job als Fehler.
+   */
+  const stopScript = () => start('stopScript', tr("Skript anhalten konnte nicht starten"), altiumApi.stopScript)
+
   /** Status, Dateiliste und Prüfbericht neu laden (nach einem Lesefehler) */
   function reload() {
     void qc.invalidateQueries({ queryKey: altiumKeys.status })
@@ -603,6 +612,9 @@ export function useAltiumActions() {
       case 'open':
         void openInAltium()
         break
+      case 'stopScript':
+        void stopScript()
+        break
       case 'settings':
       case 'writer':
         navigate(SETTINGS_PLACE.altium.to)
@@ -640,6 +652,7 @@ export function useAltiumActions() {
     refresh,
     verify,
     openInAltium,
+    stopScript,
     reload,
     normalize,
     ensureAltium,

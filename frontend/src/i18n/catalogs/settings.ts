@@ -146,7 +146,7 @@ const messages: Record<string, string> = {
   "Nicht gefunden": "Not found",
   "Altium-Status nicht verfügbar": "Altium status unavailable",
   "Erneut prüfen": "Check again",
-  "Die Altium-Brücke reagiert nicht – in Altium Strg+F3 drücken oder Altium neu starten.": "The Altium bridge is not responding – press Ctrl+F3 in Altium or restart Altium.",
+  "Die Altium-Brücke reagiert nicht – auf der Altium-Seite „Skript anhalten“ wählen oder Altium neu starten.": "The Altium bridge is not responding – select “Stop script” on the Altium page or restart Altium.",
   "Nicht gestartet": "Not running",
   "Bauteiländerungen erscheinen automatisch": "Part changes appear automatically",
   "Ohne Bibliotheks-Writer entstehen keine Bibliotheksdateien – Pfad eintragen oder Altium starten": "Without the library writer, no library files are created – enter its path or start Altium",

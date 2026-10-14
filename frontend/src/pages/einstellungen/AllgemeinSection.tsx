@@ -1177,7 +1177,7 @@ function AltiumStatusTiles({
   const dblib = data.dblib
   const refresh = data.refresh
   const refreshed = refresh.last_refresh ? formatRelativeTime(refresh.last_refresh * 1000) : null
-  const wedged = data.bridge_wedged ? t("Die Altium-Brücke reagiert nicht – in Altium Strg+F3 drücken oder Altium neu starten.") : null
+  const wedged = data.bridge_wedged ? t("Die Altium-Brücke reagiert nicht – auf der Altium-Seite „Skript anhalten“ wählen oder Altium neu starten.") : null
   return (
     <div className="@container py-4">
       <div className="grid grid-cols-1 gap-2 @[36rem]:grid-cols-3">

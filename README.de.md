@@ -179,7 +179,7 @@ Was PartForge außerhalb der Bibliotheksordner ablegt:
 | Problem | Lösung |
 | --- | --- |
 | Neue Bauteile fehlen in Altium | *Altium → In Altium aktualisieren*. Prüfen, dass die DbLib installiert ist. |
-| Altium reagiert nicht auf PartForge | In Altium hängt evtl. ein Skript: **Strg+F3** (Run → Stop) drücken. |
+| Altium reagiert nicht auf PartForge | In Altium hängt vermutlich ein Skript im Debugger: auf der Seite *Altium* **Skript anhalten** wählen (oder in Altium *Run → Stop*; Strg+F3 wirkt nur, solange der Skript-Editor das aktive Dokument ist). |
 | „database is locked“ | Die Datenbank liegt auf einem Netzlaufwerk oder nicht im WAL-Modus – Bibliothek lokal ablegen (mehrere Benutzer: [PostgreSQL](#mehrbenutzerbetrieb-mit-postgresql-nur-quellcode-installation)). |
 | Bibliotheksordner lässt sich nach „Aus Altium deinstallieren“ nicht verschieben oder umbenennen („Zugriff verweigert“) | Altium hält die Datenbank (`PartForge.sqlite`) noch offen. PartForge meldet das beim Deinstallieren: „Ordner erst in etwa einer Minute verschiebbar – Altium hält die Datenbank noch offen (sonst Altium neu starten).“ – dann kurz warten und erneut verschieben; klappt es dann noch nicht, Altium neu starten. Nennt die Meldung ein anderes Programm („Ordner erst nach dem Schließen von … verschiebbar“), dieses schließen. Vorher in PartForge „Bibliothek schließen“. |
 | SchLib/PcbLib wird nicht geschrieben | *Einstellungen → Allgemein → Altium Designer*: Pfad zu `altium-designer-mcp.exe` prüfen; die Bibliothek darf in Altium keine ungespeicherten Änderungen haben. |

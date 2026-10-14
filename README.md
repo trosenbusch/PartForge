@@ -186,7 +186,7 @@ Data stored outside library folders:
 | Problem | Suggested fix |
 | --- | --- |
 | New components do not appear in Altium | Refresh Altium from PartForge's *Altium* page and check that the DbLib is installed. |
-| Altium does not respond to PartForge | A script may be stuck. Press **Ctrl+F3** in Altium (*Run → Stop*). |
+| Altium does not respond to PartForge | A script is probably paused in Altium's debugger. Select **Stop script** on PartForge's *Altium* page (or *Run → Stop* in Altium; Ctrl+F3 only works while the script editor is Altium's active document). |
 | `database is locked` | Keep SQLite libraries on a local drive and use WAL mode. For multiple users, see [PostgreSQL](#postgresql-for-multiple-users--source-installation-only). |
 | Library folder cannot be moved after uninstalling it from Altium | Close the library in PartForge, wait about a minute and retry. Altium may still hold the database open; restart or close Altium if needed. If PartForge names another program holding the file, close that program. |
 | SchLib/PcbLib files are not written | Check the writer's path under *Settings → General → Altium Designer*. The library must not have unsaved edits in Altium. |

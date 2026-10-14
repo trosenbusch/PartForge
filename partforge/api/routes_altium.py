@@ -18,6 +18,8 @@ that talks to Altium runs as a job and returns ``{"job": snapshot}``::
     POST /altium/uninstall         job: release the database in Altium and uninstall the DbLib (then: does Altium still
                                    hold the SQLite database open? -> result database_released / database_holders)
     POST /altium/refresh           job: make Altium re-read the database ("In Altium aktualisieren")
+    POST /altium/stop-script       job: stop a script paused in Altium's debugger (the bridge "hangs") through
+                                   Altium's EditScript:Stop process and check that scripts run again
     POST /altium/verify            job: resolve parts in Altium (symbol, footprints in their libraries, pins,
                                    Comment, Description and parameter values against the database row) – one
                                    Altium script run per 50 parts (resolve_db_components);
@@ -543,6 +545,30 @@ def refresh_altium(
     with altium_errors():
         job = service.refresh_now((body or RefreshIn()).rebuild_index)
     return _job_out(job)
+
+
+# --------------------------------------------------------------------------- stop script
+
+
+def _stop_script_job(ctx: JobContext, bridge: AltiumBridge) -> dict[str, Any]:
+    ctx.progress(0.1, "Angehaltenes Skript wird beendet (EditScript:Stop) …")
+    result = bridge.stop_script()
+    if not result.recovered:
+        ctx.log(result.message, "error")
+        if result.detail:
+            ctx.log(result.detail, "warn")
+        raise BridgeError(result.message)
+    ctx.log(result.message, "success")
+    ctx.progress(1.0, result.message)
+    return {"message": result.message, "recovered": True, "version": result.version}
+
+
+@router.post("/altium/stop-script", response_model=AltiumJobOut)
+def stop_script(bridge: AltiumBridge = Depends(get_bridge)) -> AltiumJobOut:
+    """Job: stop a PartForge script paused in Altium's debugger ("Skript anhalten") and verify that Altium
+    runs scripts again. Explicit user action – it stops any paused script; needs no open library."""
+    _require_altium(bridge)
+    return _job_out(jobs.submit("altium.stop_script", "Altium-Skript anhalten", _stop_script_job, bridge))
 
 
 # --------------------------------------------------------------------------- verify

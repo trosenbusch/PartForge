@@ -670,8 +670,8 @@ class AltiumRefreshService:
             if not bridge.is_running():
                 return "Altium Designer läuft nicht – beim nächsten Start liest Altium den aktuellen Stand.", False
             if bridge.last_wedge:
-                return ("Die Altium-Brücke hängt (Skript im Debugger angehalten?). Bitte in Altium Strg+F3 drücken "
-                        "und danach „In Altium aktualisieren“ wählen."), True
+                return ("Die Altium-Brücke hängt (Skript im Debugger angehalten?). Bitte auf der Altium-Seite "
+                        "„Skript anhalten“ wählen und danach „In Altium aktualisieren“."), True
             state = self._install_state(target.dblib)
             if state is None or (not state.installed and self._install_state_stale(state)):
                 if not self._probe:

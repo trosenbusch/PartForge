@@ -101,7 +101,7 @@ vorher löschen) und starten. Einstellungen, Schlüssel und Bibliotheken bleiben
 | Problem | Lösung |
 | --- | --- |
 | Neue Bauteile fehlen in Altium | Seite *Altium* → „In Altium aktualisieren“; prüfen, dass die DbLib installiert ist. |
-| Altium reagiert nicht auf PartForge | In Altium hängt vermutlich ein Skript: **Strg+F3** (Run → Stop) drücken. |
+| Altium reagiert nicht auf PartForge | In Altium hängt vermutlich ein Skript im Debugger: Seite *Altium* → **Skript anhalten** (oder in Altium *Run → Stop*; Strg+F3 wirkt nur im aktiven Skript-Editor). |
 | „database is locked“ | Die Bibliothek liegt auf einem Netzlaufwerk – Bibliotheksordner auf ein lokales Laufwerk legen. |
 | Bibliotheksordner lässt sich nach „Aus Altium deinstallieren“ nicht verschieben („Zugriff verweigert“) | Altium hält die Datenbank noch offen. Meldung „Ordner erst in etwa einer Minute verschiebbar – Altium hält die Datenbank noch offen …“: kurz warten und erneut versuchen; klappt es dann noch nicht, Altium beenden und dann verschieben. Meldung „Ordner erst nach dem Schließen von … verschiebbar“: das genannte Programm schließen. Vorher in PartForge „Bibliothek schließen“. |
 | SchLib/PcbLib werden nicht geschrieben | *Einstellungen → Allgemein → Altium Designer*: Pfad zu `altium-designer-mcp.exe` prüfen; die Bibliothek darf in Altium keine ungespeicherten Änderungen haben. |

@@ -4,7 +4,18 @@
 
 ## Unveröffentlicht
 
-Noch keine Änderungen.
+### Neu
+
+- **Skript anhalten** (Seite *Altium*, angeboten sobald ein PartForge-Skript in Altium hängt): beendet das im
+  Altium-Debugger angehaltene Skript über Altiums eigenen Befehl `EditScript:Stop` – ohne Tastatur oder Fensterfokus –
+  und prüft, ob Skripte wieder laufen. Strg+F3 wirkt nur, solange der Skript-Editor das aktive Dokument ist; die
+  Hinweise verweisen deshalb jetzt auf diese Aktion.
+
+### Behoben
+
+- Die Altium-Brücke liest Altiums Antwortdateien auch auf Windows-Systemen mit der Codepage „Beta: Unicode UTF-8“,
+  auf denen Altium sie mit einer UTF-8-Byte-Order-Mark schreibt. Bisher scheiterte dort jeder Brückenaufruf mit
+  „unbekanntes Format“.
 
 ## 1.0.0b1 – 2026-10-11
 

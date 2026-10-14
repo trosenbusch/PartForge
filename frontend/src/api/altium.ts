@@ -142,6 +142,13 @@ export interface OpenJobResult {
   was_open: boolean
 }
 
+/** `altium.stop_script` – das angehaltene Skript wurde beendet und ein Prüf-Ping lief durch (sonst endet der Job als Fehler) */
+export interface StopScriptJobResult {
+  message: string
+  recovered: boolean
+  version: string | null
+}
+
 export interface JobStart {
   job: Job
 }
@@ -243,6 +250,8 @@ export const altiumApi = {
   install: (replaceOthers = false) => api.post<JobStart>('/api/altium/install', { replace_others: replaceOthers }),
   uninstall: () => api.post<JobStart>('/api/altium/uninstall'),
   refresh: (rebuildIndex: boolean | null = null) => api.post<JobStart>('/api/altium/refresh', { rebuild_index: rebuildIndex }),
+  /** Hängendes Skript in Altium beenden (EditScript:Stop) und prüfen, ob Skripte wieder laufen */
+  stopScript: () => api.post<JobStart>('/api/altium/stop-script'),
   verify: (input: VerifyInput) => api.post<JobStart>('/api/altium/verify', input),
   /** Letzte abgeschlossene Prüfung der offenen Bibliothek (`null` = noch nie geprüft) */
   verifyLast: (signal?: AbortSignal) => api.get<VerifyRun | null>('/api/altium/verify/last', { signal }),

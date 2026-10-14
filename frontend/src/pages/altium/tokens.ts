@@ -2,6 +2,7 @@ import { t as tr, tc } from '@/lib/i18n'
 import {
   ArchiveRestore,
   Cable,
+  CircleStop,
   FileCode2,
   FileCog,
   Layers,
@@ -43,6 +44,7 @@ export const ACTION_META: Record<ActionKey, { label: string; short: string; icon
   refreshRebuild: { get label() { return tr("Aktualisieren mit Index-Neuaufbau") }, get short() { return tr("Index neu aufbauen") }, icon: RotateCw },
   verify: { get label() { return tr("Bibliothek in Altium prüfen") }, get short() { return tr("In Altium prüfen") }, icon: ScanSearch },
   open: { get label() { return tr("DbLib in Altium öffnen") }, get short() { return tr("In Altium öffnen") }, icon: SquareArrowOutUpRight },
+  stopScript: { get label() { return tr("Skript anhalten") }, get short() { return tr("Skript anhalten") }, icon: CircleStop },
   settings: { get label() { return tr("Altium-Einstellungen") }, get short() { return tr("Einstellungen") }, icon: Settings2 },
   writer: { get label() { return tr("Bibliotheks-Writer einrichten") }, get short() { return tr("Writer einrichten") }, icon: FileCog },
   report: { get label() { return tr("Prüfbericht ansehen") }, get short() { return tr("Prüfbericht") }, icon: ListChecks },

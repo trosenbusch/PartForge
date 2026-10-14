@@ -431,8 +431,20 @@ def test_refresh_endpoint(api, workspace, bridge):
     assert api.post("/api/altium/refresh").status_code == 503
 
 
+def test_stop_script_job(api, bridge):
+    bridge.last_wedge = {"kind": "did_not_finish", "last_step": "x"}
+    snap = run_job(api.post("/api/altium/stop-script"))
+    assert snap["status"] == "done" and snap["kind"] == "altium.stop_script", snap
+    assert snap["result"] == {"message": snap["message"], "recovered": True, "version": "26.10"}
+    assert "wieder aus" in snap["message"] and "stop_script" in bridge.names()
+    assert api.get("/api/altium/status").json()["bridge_wedged"] is None
+    bridge.stop_recovers = False
+    snap = run_job(api.post("/api/altium/stop-script"))
+    assert snap["status"] == "failed" and "neu starten" in snap["error"]
+
+
 @pytest.mark.parametrize("url", ["/api/altium/install", "/api/altium/uninstall", "/api/altium/verify",
-                                 "/api/altium/install-state", "/api/altium/open"])
+                                 "/api/altium/install-state", "/api/altium/open", "/api/altium/stop-script"])
 def test_bridge_jobs_need_running_altium(api, bridge, url):
     bridge.running = False
     response = api.post(url)

@@ -4,7 +4,18 @@ English · [Deutsch](CHANGELOG.de.md)
 
 ## Unreleased
 
-No changes yet.
+### Added
+
+- **Stop script** (*Altium* page, offered whenever a PartForge script hangs in Altium): ends the script paused in
+  Altium's debugger through Altium's own `EditScript:Stop` command – no keyboard or window focus needed – and checks
+  that scripts run again. Ctrl+F3 only works while the script editor is Altium's active document, so the hints now
+  point to this action.
+
+### Fixed
+
+- The Altium bridge reads Altium's response files on Windows systems with the "Beta: Use Unicode UTF-8" code page,
+  where Altium writes them with a UTF-8 byte-order mark. Previously every bridge call failed there with
+  "unknown format".
 
 ## 1.0.0b1 – 2026-10-11
 

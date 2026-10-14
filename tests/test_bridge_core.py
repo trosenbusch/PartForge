@@ -1,6 +1,7 @@
 """AltiumBridge with a fake exchange partner (no Altium needed)."""
 from __future__ import annotations
 
+import codecs
 import os
 import subprocess
 import sys
@@ -18,6 +19,7 @@ from partforge.altium.bridge.core import (
     RECOVERY_HINT,
     RESOLVE_BATCH_SIZE,
     SCRIPT_UNITS,
+    STOP_PROCESS,
     AltiumBridge,
     AltiumNotRunning,
     BridgeBusyError,
@@ -47,15 +49,19 @@ class FakeAltium:
         self.command_lines: list[str] = []
         self.requests: list[tuple[str, dict[str, str]]] = []
         self.errors: list[BaseException] = []
+        self.bom = False  # Windows with the "Beta: Use Unicode UTF-8" code page: SaveToFile writes UTF-8 + BOM
 
     def __call__(self, command_line: str) -> None:
         self.command_lines.append(command_line)
+        if command_line.endswith("-REditScript:Stop"):
+            return  # the Stop process never starts a script
         if self.mode == "dead":
             return
         threading.Thread(target=self._run, daemon=True).start()
 
     def _write(self, path: Path, lines: list[str]) -> None:
-        path.write_bytes(("\r\n".join(lines) + "\r\n").encode("cp1252"))
+        text = "\r\n".join(lines) + "\r\n"
+        path.write_bytes(codecs.BOM_UTF8 + text.encode("utf-8") if self.bom else text.encode("cp1252"))
 
     def _run(self) -> None:
         try:
@@ -229,6 +235,69 @@ def test_script_started_but_not_finished(tmp_path):
 def test_partial_response_is_not_read_early(tmp_path):
     bridge, _ = make_bridge(tmp_path, FakeAltium(tmp_path, lambda c, a: ["KV|version|26.10"], mode="partial"))
     assert bridge.ping() == "26.10"
+
+
+def test_response_with_utf8_byte_order_mark_is_read(tmp_path):
+    """Windows "Beta: Use Unicode UTF-8": TStringList.SaveToFile writes a BOM (found by altium-mcp, #20)."""
+    fake = FakeAltium(tmp_path, lambda c, a: ["KV|version|26.10", "KV|path|" + escape_field("C:\\Bib\\Grün")])
+    fake.bom = True
+    bridge, _ = make_bridge(tmp_path, fake)
+    resp = bridge.execute("ping")
+    assert resp.value("version") == "26.10" and resp.value("path") == "C:\\Bib\\Grün"
+    wedged = FakeAltium(tmp_path, mode="wedge")
+    wedged.bom = True
+    bridge, _ = make_bridge(tmp_path, wedged, timeout_s=0.6)
+    with pytest.raises(BridgeWedgedError) as exc:
+        bridge.ping()
+    assert exc.value.last_step == "create free SCHLIB"
+
+
+def test_stop_command_line(tmp_path):
+    bridge, _ = make_bridge(tmp_path)
+    assert STOP_PROCESS == "EditScript:Stop"
+    assert bridge.stop_command_line() == '"C:\\Program Files\\Altium\\AD22\\X2.EXE" -REditScript:Stop'
+    no_x2 = AltiumBridge(exchange_dir=tmp_path / "e", x2_path=None, process_check=lambda: True)
+    with pytest.raises(BridgeError, match=r"X2\.EXE"):
+        no_x2.stop_script(settle_s=0)
+
+
+def test_stop_script_recovers_the_executor(tmp_path):
+    """A paused script blocks every later run; EditScript:Stop ends it and the verifying ping clears the wedge."""
+    fake = FakeAltium(tmp_path, lambda c, a: ["KV|version|26.10"], mode="dead")
+    bridge, _ = make_bridge(tmp_path, fake, start_timeout_s=0.3)
+    with pytest.raises(BridgeWedgedError):
+        bridge.ping()
+    assert bridge.last_wedge is not None
+
+    def launcher(command_line: str) -> None:
+        if command_line.endswith("-REditScript:Stop"):
+            fake.mode = "ok"  # the debugger lets go
+        fake(command_line)
+
+    bridge._launcher = launcher
+    result = bridge.stop_script(settle_s=0, verify_timeout_s=3.0)
+    assert result.dispatched and result.recovered and result.version == "26.10"
+    assert "wieder aus" in result.message
+    assert fake.command_lines[-2].endswith("-REditScript:Stop") and "RunScript" in fake.command_lines[-1]
+    assert bridge.last_wedge is None
+
+
+def test_stop_script_reports_a_still_blocked_executor(tmp_path):
+    """A modal message or a compile error: the Stop process does not help – reported, never guessed."""
+    fake = FakeAltium(tmp_path, mode="dead")
+    bridge, _ = make_bridge(tmp_path, fake, start_timeout_s=0.3)
+    with pytest.raises(BridgeWedgedError):
+        bridge.ping()
+    result = bridge.stop_script(settle_s=0, verify_timeout_s=0.5)
+    assert result.dispatched and not result.recovered and result.version is None
+    assert "neu starten" in result.message and result.detail and "nicht gestartet" in result.detail
+    assert bridge.last_wedge is not None
+    bridge._launcher = lambda command_line: (_ for _ in ()).throw(FileNotFoundError("X2.EXE fehlt"))
+    with pytest.raises(BridgeError, match="nicht angesprochen"):
+        bridge.stop_script(settle_s=0)
+    bridge, _ = make_bridge(tmp_path, running=lambda: False)
+    with pytest.raises(AltiumNotRunning):
+        bridge.stop_script(settle_s=0)
 
 
 def test_altium_closed_during_wait(tmp_path):

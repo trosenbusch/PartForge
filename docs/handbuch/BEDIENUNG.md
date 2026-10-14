@@ -520,7 +520,10 @@ In der IC-Pinliste: **Strg+D** dupliziert einen Pin, **Strg+Entf** löscht ihn, 
 **Altium liest keine Bauteile.** Den „SQLite3 ODBC Driver“ (64 Bit) installieren, dann auf der Seite *Altium*
 **ODBC testen**.
 
-**Altium reagiert nicht auf PartForge.** In Altium hängt vermutlich ein Skript: in Altium **Strg+F3** drücken.
+**Altium reagiert nicht auf PartForge.** In Altium hängt vermutlich ein Skript im Debugger: auf der Seite *Altium*
+**Skript anhalten** wählen – PartForge beendet das Skript über Altiums eigenen Befehl (ohne Tastatur oder Fenster)
+und prüft, ob Skripte wieder laufen. Alternativ in Altium *Run → Stop* (Strg+F3 wirkt nur, solange der
+Skript-Editor das aktive Dokument ist). Hilft beides nicht, offene Altium-Meldungen schließen oder Altium neu starten.
 
 **„database is locked“.** Die Bibliothek liegt auf einem Netzlaufwerk – den Bibliotheksordner auf ein lokales
 Laufwerk legen.

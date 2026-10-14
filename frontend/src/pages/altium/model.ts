@@ -35,6 +35,8 @@ export type ActionKey =
   | 'refreshRebuild'
   | 'verify'
   | 'open'
+  /** Hängendes PartForge-Skript in Altium beenden (`EditScript:Stop`) und prüfen, ob Skripte wieder laufen */
+  | 'stopScript'
   | 'settings'
   /** Bibliotheks-Writer einrichten (Einstellungen › Allgemein › Altium Designer) – ohne Writer entstehen keine Dateien */
   | 'writer'
@@ -58,6 +60,7 @@ export const NEEDS_ALTIUM: readonly ActionKey[] = [
   'refreshRebuild',
   'verify',
   'open',
+  'stopScript',
 ]
 
 export interface ChainNode {
@@ -466,7 +469,14 @@ export function summarizeAltium(status: AltiumStatus | undefined, error?: string
   }
   const running = { running: true, installed, short: tr("Altium läuft{0}", { "0": String(version) }) }
   if (status.bridge_wedged) {
-    return { ...running, level: 'error', value: tr("Skript hängt{0}", { 0: String(version) }), detail: tr("In Altium Strg+F3 drücken"), short: tr("Altium-Skript hängt") }
+    return {
+      ...running,
+      level: 'error',
+      value: tr("Skript hängt{0}", { 0: String(version) }),
+      detail: tr("Angehaltenes Skript beenden"),
+      short: tr("Altium-Skript hängt"),
+      fix: { action: 'stopScript', label: tr("Skript anhalten") },
+    }
   }
   if (status.refresh.running) {
     return { ...running, level: 'busy', value: tr("Läuft{0}", { 0: String(version) }), detail: tr("Wird gerade aktualisiert …") }
@@ -537,7 +547,7 @@ export interface AfterWriteNotice {
   tone: 'ok' | 'busy' | 'manual' | 'warn' | 'error' | 'off'
   text: string
   /** nächster Schritt: Aktion der Altium-Seite (`useAltiumActions`) bzw. die Seite selbst */
-  next?: { action: 'install' | 'refresh' | 'page'; label: string }
+  next?: { action: 'install' | 'refresh' | 'stopScript' | 'page'; label: string }
 }
 
 /**
@@ -554,7 +564,11 @@ export function altiumAfterWrite(status: AltiumStatus | undefined): AfterWriteNo
   const installed = dblib?.installed_in_altium ?? null
   const refreshNext = { action: 'refresh', label: tr("In Altium aktualisieren") } as const
   if (status.bridge_wedged) {
-    return { tone: 'error', text: tr("Das Altium-Skript hängt – in Altium Designer Strg+F3 drücken, danach aktualisieren."), next: refreshNext }
+    return {
+      tone: 'error',
+      text: tr("Das Altium-Skript hängt – erst das angehaltene Skript beenden, danach aktualisieren."),
+      next: { action: 'stopScript', label: tr("Skript anhalten") },
+    }
   }
   if (!status.altium_running) {
     return {
@@ -889,8 +903,8 @@ function headline(m: {
       tone: 'danger',
       eyebrow: tr("Altium reagiert nicht"),
       title: tr("Ein PartForge-Skript hängt in Altium"),
-      text: tr("Das letzte Skript wurde nicht beendet{0}. In Altium Strg+F3 drücken (Skript anhalten) und die Aktion danach erneut starten.", { "0": String(step) }),
-      primary: null,
+      text: tr("Das letzte Skript wurde nicht beendet{0}. „Skript anhalten“ beendet es in Altium (ohne Tastatur oder Fenster) und prüft, ob Skripte wieder laufen – danach die Aktion erneut starten.", { "0": String(step) }),
+      primary: running ? 'stopScript' : null,
     }
   }
   // 2. Gleichnamige DbLib
@@ -1099,6 +1113,6 @@ export function altiumBlocker(status: AltiumStatus | undefined, statusError?: st
   if (!status) return statusError ? tr("Altium-Status nicht verfügbar – erst „Erneut versuchen“") : tr("Altium-Status wird geprüft …")
   if (!status.altium_exe) return tr("Altium Designer nicht gefunden – Pfad zu X2.EXE unter {0} festlegen", { "0": String(SETTINGS_PLACE.altium.label) })
   if (!status.altium_running) return tr("Altium Designer starten – Installieren, Aktualisieren und Prüfen brauchen ein laufendes Altium Designer")
-  if (status.bridge_wedged) return tr("Ein PartForge-Skript hängt in Altium – dort Strg+F3 drücken")
+  if (status.bridge_wedged) return tr("Ein PartForge-Skript hängt in Altium – erst „Skript anhalten“ wählen")
   return null
 }

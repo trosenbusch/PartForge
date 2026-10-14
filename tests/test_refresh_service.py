@@ -313,7 +313,7 @@ def test_wedged_bridge_pauses_automatic_refresh(harness):
     h.service.request()
     h.idle()
     assert h.refreshes() == [] and h.service.status().pending
-    assert "Strg+F3" in h.service.status().last_skip_reason
+    assert "Skript anhalten" in h.service.status().last_skip_reason
     wait_job_in(h, h.service.refresh_now())  # the manual action still tries
     assert len(h.refreshes()) == 1
 

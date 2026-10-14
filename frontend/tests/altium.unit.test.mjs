@@ -259,7 +259,7 @@ describe('altiumAfterWrite (Erfolgsansichten: was Altium von neuen Bauteilen sie
     )
     const wedged = model.altiumAfterWrite(status({ wedged: { last_step: 'refresh' } }))
     assert.equal(wedged.tone, 'error')
-    assert.equal(wedged.next.action, 'refresh')
+    assert.deepEqual(wedged.next, { action: 'stopScript', label: 'Skript anhalten' })
     const issues = [{ code: 'duplicates', severity: 'error', message: 'Diese DbLib ist in Altium nicht installiert, aber …' }]
     const dup = model.altiumAfterWrite(status({ installed: false, issues }))
     assert.equal(dup.tone, 'warn')

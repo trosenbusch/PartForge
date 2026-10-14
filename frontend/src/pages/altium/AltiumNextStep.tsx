@@ -18,7 +18,9 @@ export function AltiumNextStep({ next, className }: { next: NonNullable<AfterWri
   const pending =
     next.action === 'install'
       ? actions.pending.install || actions.pending.installReplace
-      : next.action === 'refresh' && actions.pending.refresh
+      : next.action === 'refresh'
+        ? actions.pending.refresh
+        : next.action === 'stopScript' && actions.pending.stopScript
   return (
     <button
       type="button"

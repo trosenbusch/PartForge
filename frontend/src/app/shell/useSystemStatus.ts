@@ -143,7 +143,7 @@ export function useSystemStatus(): StatusItem[] {
         level: 'error',
         title: tr("Altium-Skript hängt"),
         short: tr("Skript hängt"),
-        detail: tr("Ein PartForge-Skript hängt in Altium – dort Strg+F3 drücken (Skript anhalten) und erneut versuchen."),
+        detail: tr("Ein PartForge-Skript hängt in Altium – auf der Altium-Seite „Skript anhalten“ wählen und erneut versuchen."),
         to: '/altium',
       }
     } else if (st.altium_running) {

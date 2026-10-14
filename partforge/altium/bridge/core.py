@@ -12,7 +12,12 @@ Mechanics (``recherche/bridge-study.md``, ``altium-live.md``):
 * No log after ``start_timeout_s`` -> the script never started (a previous script is
   paused in the debugger, a compile error, or Altium is busy); log without response
   after ``timeout_s`` -> the script died -> :class:`BridgeWedgedError` with the recovery
-  hint "Strg+F3 in Altium". PartForge never closes or touches dialogs of any process.
+  hint ("Skript anhalten" on the Altium page = :meth:`AltiumBridge.stop_script`, which
+  dispatches Altium's ``EditScript:Stop`` process and verifies with a ping). PartForge
+  never closes or touches dialogs of any process.
+* Altium writes the response and log files with ``TStringList.SaveToFile``: ANSI code
+  page, or UTF-8 with a byte-order mark when Windows runs with the "Beta: Use Unicode
+  UTF-8" code page (found by altium-mcp, issue #20) – :func:`_read_altium_text`.
 * A cross-process lock file serialises PartForge instances; the script project is
   generated from the templates in ``scripts/`` with the exchange path baked in.
 * Altium activates its main window when a RunScript command arrives; :func:`.focus.keep_foreground`
@@ -20,6 +25,7 @@ Mechanics (``recherche/bridge-study.md``, ``altium-live.md``):
 """
 from __future__ import annotations
 
+import codecs
 import contextlib
 import json
 import logging
@@ -61,6 +67,8 @@ __all__ = [
     "DocumentState",
     "InstalledDbLib",
     "RECOVERY_HINT",
+    "STOP_PROCESS",
+    "ScriptStopResult",
     "SCRIPTS_DIR",
     "default_exchange_dir",
     "canonical_path",
@@ -79,8 +87,16 @@ EXCHANGE_PLACEHOLDER: Final = "@@PF_EXCHANGE_DIR@@"
 RESOLVE_BATCH_SIZE: Final = 50
 
 RECOVERY_HINT: Final = (
-    "Bitte in Altium Designer ein angehaltenes Skript mit Strg+F3 (Run › Stop) beenden und offene "
+    "Bitte auf der Altium-Seite „Skript anhalten“ wählen (oder in Altium Designer das angehaltene Skript über "
+    "Run › Stop beenden – Strg+F3 wirkt nur, solange der Skript-Editor das aktive Dokument ist) und offene "
     "Altium-Meldungen selbst schließen; danach erneut versuchen. PartForge schließt niemals Dialoge."
+)
+#: Altium's "Stop Debugging" process. ``X2.EXE -REditScript:Stop`` hands it to the running instance through the
+#: same command-line channel that starts the bridge script – no window focus, no keystrokes (altium-mcp,
+#: dev/unwedge.py: Strg+F3 only reaches the debugger while the script editor is the active document).
+STOP_PROCESS: Final = "EditScript:Stop"
+_NO_X2: Final = (
+    "Altium Designer (X2.EXE) wurde nicht gefunden – Pfad unter Einstellungen › Allgemein › Altium Designer eintragen."
 )
 
 
@@ -134,6 +150,16 @@ class BridgeWriteResult(BaseModel):
     warnings: list[str] = Field(default_factory=list)
     created: int = 0
     duration_s: float = 0.0
+
+
+class ScriptStopResult(BaseModel):
+    """Outcome of :meth:`AltiumBridge.stop_script` ("Skript anhalten")."""
+
+    dispatched: bool = False  # EditScript:Stop was handed to the running Altium
+    recovered: bool = False  # the verifying ping succeeded: Altium runs PartForge scripts again
+    version: str | None = None  # Altium version reported by the ping
+    message: str = ""  # German outcome sentence
+    detail: str | None = None  # the ping's error when not recovered
 
 
 class DocumentState(BaseModel):
@@ -358,6 +384,19 @@ def parse_db_resolutions(
     return out
 
 
+def _read_altium_text(path: Path) -> str:
+    """Text of a file the bridge script wrote with ``TStringList.SaveToFile``.
+
+    Altium writes the ANSI code page – or UTF-8 **with a byte-order mark** when Windows runs with the
+    "Beta: Use Unicode UTF-8" code page (VERIFIED by altium-mcp, issue #20). Decoded like Altium's own
+    ``LoadFromFile``: UTF-8 after a mark, otherwise cp1252 (the responses are ASCII by construction;
+    the step log may carry paths)."""
+    data = path.read_bytes()
+    if data.startswith(codecs.BOM_UTF8):
+        return data[len(codecs.BOM_UTF8):].decode("utf-8", errors="replace")
+    return data.decode("cp1252", errors="replace")
+
+
 def _short_path(path: Path) -> str:
     """8.3 short path (ASCII) of an existing path on Windows, else the path itself."""
     if os.name != "nt":
@@ -523,11 +562,7 @@ class AltiumBridge:
 
     def status(self) -> BackendStatus:
         if not self.x2_path:
-            return BackendStatus(
-                name="altium",
-                available=False,
-                message="Altium Designer (X2.EXE) wurde nicht gefunden – Pfad unter Einstellungen › Allgemein › Altium Designer eintragen.",
-            )
+            return BackendStatus(name="altium", available=False, message=_NO_X2)
         version = file_version(self.x2_path)
         if not self.is_running():
             return BackendStatus(
@@ -577,9 +612,56 @@ class AltiumBridge:
     def command_line(self, project: Path | None = None) -> str:
         """``"<X2.EXE>" -RScriptingSystem:RunScript(ProjectName="<prj>"|ProcName="PartForgeBridge>Run")``."""
         if not self.x2_path:
-            raise BridgeError("Altium Designer (X2.EXE) wurde nicht gefunden – Pfad unter Einstellungen › Allgemein › Altium Designer eintragen.")
+            raise BridgeError(_NO_X2)
         prj = project or self.project_path
         return f'"{self.x2_path}" -RScriptingSystem:RunScript(ProjectName="{prj}"|ProcName="{UNIT_NAME}>Run")'
+
+    def stop_command_line(self) -> str:
+        """``"<X2.EXE>" -REditScript:Stop`` – Altium's "Stop Debugging" process for the running instance."""
+        if not self.x2_path:
+            raise BridgeError(_NO_X2)
+        return f'"{self.x2_path}" -R{STOP_PROCESS}'
+
+    def stop_script(self, *, verify_timeout_s: float = 20.0, settle_s: float = 1.5) -> ScriptStopResult:
+        """"Skript anhalten": stop a script paused in Altium's debugger – the usual cause of a wedge – and
+        prove that the executor runs PartForge scripts again.
+
+        Dispatches :data:`STOP_PROCESS` through the command line (no window focus, no keystrokes: Strg+F3
+        reaches the debugger only while the script editor is the active document), waits ``settle_s`` for
+        Altium to act on it and verifies with a ``ping`` (start deadline ``verify_timeout_s``) – a successful
+        ping also clears :attr:`last_wedge`. It stops **any** paused script, also one the user is debugging,
+        so it runs only on the user's request. Not recovered (a modal Altium message, a compile error,
+        Altium busy) is reported, never guessed.
+        """
+        if not self.is_running():
+            raise AltiumNotRunning("Altium Designer ist nicht gestartet. Bitte Altium starten und erneut versuchen.")
+        command_line = self.stop_command_line()
+        log.info("Altium-Brücke: Skript anhalten (%s)", STOP_PROCESS)
+        try:
+            # Altium may activate its window when the command arrives (see execute)
+            real = self._launcher is _default_launcher
+            with keep_foreground() if real else contextlib.nullcontext():
+                self._launcher(command_line)
+        except OSError as exc:
+            raise BridgeError(f"Altium Designer konnte nicht angesprochen werden ({self.x2_path}): {exc}") from exc
+        time.sleep(settle_s)
+        try:
+            version = self.execute("ping", timeout_s=verify_timeout_s).value("version")
+        except BridgeWedgedError as exc:
+            log.warning("Altium-Brücke: Skript anhalten hat nicht geholfen (%s)", exc.kind)
+            return ScriptStopResult(
+                dispatched=True,
+                recovered=False,
+                message="Das Skript konnte nicht beendet werden – Altium führt weiterhin keine PartForge-Skripte aus. "
+                        "Bitte offene Altium-Meldungen schließen oder Altium Designer neu starten.",
+                detail=str(exc),
+            )
+        return ScriptStopResult(
+            dispatched=True,
+            recovered=True,
+            version=version or None,
+            message="Das angehaltene Skript wurde beendet – Altium führt PartForge-Skripte wieder aus.",
+        )
 
     # -- exchange -------------------------------------------------------------------
     def _paths(self, request_id: str) -> dict[str, Path]:
@@ -593,7 +675,7 @@ class AltiumBridge:
 
     def _last_log_line(self, path: Path) -> str | None:
         with contextlib.suppress(OSError):
-            lines = [line.strip() for line in path.read_text(encoding="cp1252", errors="replace").splitlines() if line.strip()]
+            lines = [line.strip() for line in _read_altium_text(path).splitlines() if line.strip()]
             if lines:
                 parts = lines[-1].split(" ", 1)
                 return parts[1] if len(parts) == 2 and parts[0].isdigit() else lines[-1]
@@ -608,7 +690,7 @@ class AltiumBridge:
         while True:
             if paths["response"].exists():
                 try:
-                    text = paths["response"].read_text(encoding="cp1252", errors="replace")
+                    text = _read_altium_text(paths["response"])
                 except OSError:
                     text = ""
                 parsed = parse_response(text, request_id) if text else None
@@ -674,7 +756,7 @@ class AltiumBridge:
         if not self.is_running():
             raise AltiumNotRunning("Altium Designer ist nicht gestartet. Bitte Altium starten und erneut versuchen.")
         if not self.x2_path:
-            raise BridgeError("Altium Designer (X2.EXE) wurde nicht gefunden – Pfad unter Einstellungen › Allgemein › Altium Designer eintragen.")
+            raise BridgeError(_NO_X2)
         arguments = dict(args or {})
         timeout = float(timeout_s if timeout_s is not None else self.timeout_s)
         self.exchange_dir.mkdir(parents=True, exist_ok=True)

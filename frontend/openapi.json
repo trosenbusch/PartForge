@@ -6312,6 +6312,28 @@
         }
       }
     },
+    "/api/altium/stop-script": {
+      "post": {
+        "tags": [
+          "altium"
+        ],
+        "summary": "Stop Script",
+        "description": "Job: stop a PartForge script paused in Altium's debugger (\"Skript anhalten\") and verify that Altium\nruns scripts again. Explicit user action – it stops any paused script; needs no open library.",
+        "operationId": "stop_script_api_altium_stop_script_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AltiumJobOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/altium/verify": {
       "post": {
         "tags": [

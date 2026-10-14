@@ -1098,8 +1098,13 @@ component_thumbnail(spec, theme="dark") -> str        # das eine Vorschaubild (R
 Eigenes Austauschverzeichnis (`bridge_exchange_dir`, Standard `%LOCALAPPDATA%\PartForge\bridge`), eigenes,
 aus Vorlagen erzeugtes Skriptprojekt, Daten über Spec-Dateien, Start über
 `"<X2.EXE>" -RScriptingSystem:RunScript(ProjectName=…|ProcName="PartForgeBridge>Run")`, Schritt-Log und Timeout
-`script_timeout_s`. Hängt ein Skript, meldet `BridgeWedgedError` „In Altium Strg+F3 drücken“. PartForge schließt
-**niemals** Dialoge anderer Prozesse. Funktionen: Status, DbLib installieren/deinstallieren/Installationszustand,
+`script_timeout_s`. Hängt ein Skript, meldet `BridgeWedgedError` den Hinweis „Skript anhalten“ (Altium-Seite):
+`AltiumBridge.stop_script` schickt Altiums Prozess `EditScript:Stop` (`"<X2.EXE>" -REditScript:Stop`, kein Fenster,
+keine Tastatur – Strg+F3 wirkt nur im aktiven Skript-Editor; Erkenntnis aus altium-mcp `dev/unwedge.py`) und prüft
+mit `ping`, ob der Skript-Executor wieder läuft (Job `altium.stop_script`, `POST /altium/stop-script`; nur auf
+Benutzerwunsch, weil es jedes angehaltene Skript beendet). Antwort- und Log-Dateien liest `_read_altium_text` wie
+Altiums `LoadFromFile`: UTF-8 nach einer Byte-Order-Mark (Windows-Codepage „Beta: UTF-8“), sonst cp1252. PartForge
+schließt **niemals** Dialoge anderer Prozesse. Funktionen: Status, DbLib installieren/deinstallieren/Installationszustand,
 DbLib aktualisieren, Dokument öffnen/Zustand/neu laden, Bauteil zum Bearbeiten zeigen (`edit_component`, §8.9),
 Zustand vieler Dokumente in einem Lauf
 (`document_states`: je Pfad geöffnet/geändert, höchstens 200 Pfade je Skriptlauf – Import und Stapelbearbeitung

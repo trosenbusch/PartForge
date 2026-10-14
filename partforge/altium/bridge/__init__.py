@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:  # pragma: no cover - static typing only
     from .core import (
         RECOVERY_HINT,
+        STOP_PROCESS,
         AltiumBridge,
         AltiumNotRunning,
         BridgeBusyError,
@@ -26,6 +27,7 @@ if TYPE_CHECKING:  # pragma: no cover - static typing only
         ComponentFocus,
         DbComponentResolution,
         DocumentState,
+        ScriptStopResult,
         default_exchange_dir,
     )
     from .process import altium_backend_status, is_process_running
@@ -35,6 +37,8 @@ if TYPE_CHECKING:  # pragma: no cover - static typing only
 
 _EXPORTS: dict[str, str] = {
     "RECOVERY_HINT": "core",
+    "STOP_PROCESS": "core",
+    "ScriptStopResult": "core",
     "AltiumBridge": "core",
     "AltiumNotRunning": "core",
     "BridgeBusyError": "core",
@@ -58,6 +62,7 @@ _EXPORTS: dict[str, str] = {
 
 __all__ = [
     "RECOVERY_HINT",
+    "STOP_PROCESS",
     "AltiumBridge",
     "AltiumDataLossError",
     "AltiumLibraryWriter",
@@ -74,6 +79,7 @@ __all__ = [
     "ComponentFocus",
     "DbComponentResolution",
     "DocumentState",
+    "ScriptStopResult",
     "altium_backend_status",
     "default_exchange_dir",
     "is_process_running",
