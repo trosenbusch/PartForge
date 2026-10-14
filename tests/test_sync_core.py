@@ -674,6 +674,7 @@ def test_library_health(fake: FakeWriter, workspace):
 # --------------------------------------------------------------------------- external libraries
 
 
+@pytest.mark.windows
 def test_external_library_registration_and_use(fake: FakeWriter, workspace, tmp_path: Path):
     ext = tmp_path / "Hersteller" / "Vendor.SchLib"
     fake.put(ext, [resistor_symbol("VENDOR_R"), ic8_symbol("VENDOR_IC"), resistor_symbol("Resistor")])
@@ -743,6 +744,7 @@ def test_scan_library_errors(fake: FakeWriter, workspace, tmp_path: Path):
 # --------------------------------------------------------------------------- layer stack job, helpers
 
 
+@pytest.mark.windows
 def test_apply_layer_stack_patches_workspace_pcblibs(fake: FakeWriter, workspace, written):
     path = synthetic_pcblib(workspace.footprints_dir / "PF_OLD.PcbLib")
     result = sync.apply_layer_stack()
@@ -754,6 +756,7 @@ def test_apply_layer_stack_patches_workspace_pcblibs(fake: FakeWriter, workspace
     assert again["unchanged"] == [str(path)] and again["patched"] == []
 
 
+@pytest.mark.windows
 def test_altium_backend_pcblibs_get_the_layer_stack(workspace, monkeypatch):
     class AltiumFake(FakeWriter):
         name = "altium"
@@ -772,6 +775,7 @@ def test_altium_backend_pcblibs_get_the_layer_stack(workspace, monkeypatch):
     assert stackup.pcblib_layer_problems(lib, eff) == []  # patched again after the rebuild
 
 
+@pytest.mark.windows
 def test_apply_layer_stack_switched_off(fake: FakeWriter, workspace, monkeypatch):
     synthetic_pcblib(workspace.footprints_dir / "PF_OLD.PcbLib")
     monkeypatch.setattr(stackup, "HEADER_PATCH_ENABLED", False)
@@ -779,6 +783,7 @@ def test_apply_layer_stack_switched_off(fake: FakeWriter, workspace, monkeypatch
     assert result["patched"] == [] and "abgeschaltet" in result["warnings"][0]
 
 
+@pytest.mark.windows
 def test_validate_planned_library_and_slow_writes(fake: FakeWriter, workspace, monkeypatch, tmp_path):
     assert sync.validate_spec(_resistor()) == []
     assert sync.validate_spec(resistor_symbol("A|B"))
@@ -844,6 +849,7 @@ def test_progress_messages_count_properly(fake: FakeWriter, workspace):
     assert rec["refused"]["Resistor"] == "Symbol „Resistor“ wird von 2 Bauteilen verwendet und wird daher nicht gelöscht."
 
 
+@pytest.mark.windows
 def test_scan_and_layer_jobs_end_with_an_outcome(fake: FakeWriter, workspace):
     from partforge.jobs import jobs
 

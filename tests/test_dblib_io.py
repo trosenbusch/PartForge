@@ -232,7 +232,7 @@ def _short_name(path: Path) -> str | None:
     return short if short and Path(short).name.casefold() != path.name.casefold() else None
 
 
-@pytest.mark.parametrize("alias_kind", ["hardlink", "short_name"])
+@pytest.mark.parametrize("alias_kind", ["hardlink", pytest.param("short_name", marks=pytest.mark.windows)])
 def test_dblib_naming_the_database_under_another_file_name(workspace, alias_kind: str):
     write_dblib(workspace)
     if alias_kind == "hardlink":
@@ -257,6 +257,7 @@ def test_dblib_naming_the_database_under_another_file_name(workspace, alias_kind
     assert status_model(workspace).db_path_ok and read_dblib(workspace.dblib_path).database_path == str(workspace.sqlite_path)
 
 
+@pytest.mark.windows
 def test_same_database_file(tmp_path: Path):
     db = tmp_path / "Bib" / "PartForge.sqlite"
     db.parent.mkdir()
@@ -518,6 +519,7 @@ def test_duplicate_advice_grammar():
 # --------------------------------------------------------------------------- install cache
 
 
+@pytest.mark.windows
 def test_install_cache(tmp_path: Path):
     lib = tmp_path / "Bib" / "PartForge.DbLib"
     assert cached_install_state(lib) is None

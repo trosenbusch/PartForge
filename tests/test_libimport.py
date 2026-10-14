@@ -299,6 +299,7 @@ def test_extract_zip_never_writes_outside_the_cache(tmp_path: Path, cache_dir: P
     assert stray == []
 
 
+@pytest.mark.windows
 def test_extract_zip_expands_an_intlib(tmp_path: Path, cache_dir: Path) -> None:
     sch, pcb = _compound(tmp_path, "sch.bin", b"SchLib"), _compound(tmp_path, "pcb.bin", b"PcbLib")
     intlib = build_compound(tmp_path / "Murata.IntLib", {
@@ -386,6 +387,7 @@ def test_extract_zip_keeps_members_whose_names_differ_only_in_case(tmp_path: Pat
 # --------------------------------------------------------------------------- IntLib
 
 
+@pytest.mark.windows
 def test_extract_intlib_members(tmp_path: Path, cache_dir: Path) -> None:
     sch = _compound(tmp_path, "sch.bin", b"SchLib")
     pcb1, pcb2 = _compound(tmp_path, "pcb1.bin", b"PcbLib 1"), _compound(tmp_path, "pcb2.bin", b"PcbLib 2")
@@ -410,6 +412,7 @@ def test_extract_intlib_members(tmp_path: Path, cache_dir: Path) -> None:
     assert libimport.extract_intlib(intlib) == members  # cached
 
 
+@pytest.mark.windows
 def test_extract_intlib_errors(tmp_path: Path) -> None:
     text = tmp_path / "Text.IntLib"
     text.write_bytes(b"hello")

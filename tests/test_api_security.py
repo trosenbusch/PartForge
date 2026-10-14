@@ -301,6 +301,7 @@ UNC_SPELLINGS = [
 ]
 
 
+@pytest.mark.windows
 def test_put_settings_rejects_unsafe_writer_paths(bare_client, tmp_path) -> None:
     base = bare_client.get("/api/settings").json()["settings"]
     for bad in UNC_SPELLINGS:
@@ -318,6 +319,7 @@ def test_put_settings_rejects_unsafe_writer_paths(bare_client, tmp_path) -> None
     assert r.status_code == 200 and r.json()["rust_writer"] == good
 
 
+@pytest.mark.windows
 def test_put_settings_requires_x2_exe_named_x2(bare_client, tmp_path) -> None:
     base = bare_client.get("/api/settings").json()["settings"]
     other = _exe(tmp_path, "AltiumNX.exe")  # exists, .exe, but not named X2.EXE
@@ -332,6 +334,7 @@ def test_put_settings_requires_x2_exe_named_x2(bare_client, tmp_path) -> None:
     assert bare_client.put("/api/settings", json=body).status_code == 200
 
 
+@pytest.mark.windows
 def test_put_settings_rejects_unc_key_file(bare_client, tmp_path) -> None:
     base = bare_client.get("/api/settings").json()["settings"]
     body = {**base, "ai": {**base["ai"], "api_key_file": r"\\host\share\key.txt"}}
@@ -346,6 +349,7 @@ def test_put_settings_rejects_unc_key_file(bare_client, tmp_path) -> None:
     assert bare_client.put("/api/settings", json=body).status_code == 200
 
 
+@pytest.mark.windows
 def test_bridge_exchange_dir_must_be_local(bare_client, tmp_path) -> None:
     """Altium runs the script project PartForge writes into the exchange folder: never from a share."""
     base = bare_client.get("/api/settings").json()["settings"]
@@ -382,6 +386,7 @@ def test_altium_status_reports_an_ignored_unc_writer(client, monkeypatch) -> Non
     assert not rust["available"] and ("UNC" in rust["message"] or "nicht verwendet" in rust["message"])
 
 
+@pytest.mark.windows
 def test_altium_status_names_why_a_local_writer_is_ignored(client, monkeypatch, tmp_path) -> None:
     """A hand-edited writer path to an existing non-.exe file is not run; the status says why (not "missing")."""
     from partforge.config import load_settings
@@ -397,6 +402,7 @@ def test_altium_status_names_why_a_local_writer_is_ignored(client, monkeypatch, 
 # --------------------------------------------------------------------------- 2. key file content
 
 
+@pytest.mark.windows
 def test_key_file_only_used_when_it_looks_like_an_anthropic_key(monkeypatch, tmp_path) -> None:
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     # arbitrary file content is never used (no exfiltration of other files to the API)
@@ -443,6 +449,7 @@ def test_first_start_does_not_discover_key_files(monkeypatch, tmp_path, isolated
     assert config.load_settings(reload=True).ai.api_key_file is None
 
 
+@pytest.mark.windows
 def test_explicit_key_file_is_preserved_after_settings_reload(monkeypatch, tmp_path) -> None:
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     monkeypatch.delenv("PARTFORGE_NO_AI_KEY", raising=False)
@@ -456,6 +463,7 @@ def test_explicit_key_file_is_preserved_after_settings_reload(monkeypatch, tmp_p
     assert config.api_key_source(settings) == "file"
 
 
+@pytest.mark.windows
 def test_ai_status_says_the_key_file_holds_no_key(bare_client, monkeypatch, tmp_path) -> None:
     """A key file that points at some other file: the AI status names the problem, the content goes nowhere."""
     from partforge.config import load_settings

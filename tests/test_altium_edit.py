@@ -6,7 +6,7 @@ No test reaches Altium: the bridge is a fake that records ``edit_component``.
 """
 from __future__ import annotations
 
-import time
+import os
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -173,12 +173,19 @@ def watched(workspace):
     return SimpleNamespace(ws=workspace, lib=lib, fake=fake, clock=clock, service=service)
 
 
-def _touch(path: Path, data: bytes) -> None:
-    path.write_bytes(data)
+def _newer_mtime(path: Path, before_ns: int) -> None:
+    """Give a file written behind PartForge's back a modification time after ``before_ns``, as a later save in
+    Altium has. Two quick writes can share one time stamp (Windows' clock ticks every ~15.6 ms, FAT and network
+    drives are coarser), and with the size unchanged (compound files grow in whole sectors) the watcher, which
+    compares size and time only, would not see the save."""
     stat = path.stat()
-    import os
+    os.utime(path, ns=(stat.st_atime_ns, max(stat.st_mtime_ns, before_ns + 10_000_000)))
 
-    os.utime(path, ns=(stat.st_atime_ns, stat.st_mtime_ns + 10_000_000))
+
+def _touch(path: Path, data: bytes) -> None:
+    before = path.stat().st_mtime_ns
+    path.write_bytes(data)
+    _newer_mtime(path, before)
 
 
 def test_watcher_waits_until_the_saved_file_settles(watched):
@@ -318,9 +325,10 @@ def _take_over(lib: SimpleNamespace, session_id: str, **kwargs: Any) -> dict[str
 
 def _save_in_altium(lib: SimpleNamespace, spec: FootprintSpec) -> None:
     """Change the library file the way a save in Altium does: behind PartForge's back (no manifest)."""
-    time.sleep(0.02)
+    before = lib.path.stat().st_mtime_ns
     result = lib.writer.write_footprints(lib.path, [spec])
     assert not result.errors, result.errors
+    _newer_mtime(lib.path, before)
     libwriter.forget_component_names(lib.path)
 
 
@@ -420,7 +428,6 @@ def test_rename_in_altium_is_reported_and_the_new_name_registered(chip_library):
     session_id = _start(lib, lib.names[0])["session"]
     spec = registry.get_footprint(lib.names[0]).spec
     renamed = spec.model_copy(update={"name": "MY_CHIP", "generator": None})
-    time.sleep(0.02)
     lib.writer.delete_components(lib.path, [lib.names[0]])
     _save_in_altium(lib, renamed)
     result = _take_over(lib, session_id)
@@ -514,9 +521,10 @@ def test_symbol_pin_change_in_altium_is_taken_over_with_a_hint(workspace, monkey
     assert job.status == "done", job.error
     session_id = job.result["session"]
     pins = [p.model_copy(update={"name": "X"}) if p.designator == "1" else p for p in rec.spec.pins]
-    time.sleep(0.02)
+    before = path.stat().st_mtime_ns
     writer = libwriter.get_writer(workspace=workspace)
     assert not writer.write_symbols(path, [rec.spec.model_copy(update={"pins": pins, "generator": None})]).errors
+    _newer_mtime(path, before)
     libwriter.forget_component_names(path)
     result = _take_over(lib, session_id)
     assert result["edited"] == [rec.name]

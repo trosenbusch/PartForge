@@ -631,6 +631,7 @@ def test_altium_safe_path(tmp_path):
         assert all(ord(c) <= 0xFF for c in value) and value.endswith("PF.SchLib")
 
 
+@pytest.mark.windows
 def test_paths_are_sent_in_one_canonical_spelling(tmp_path):
     folder = tmp_path / "Lib"
     folder.mkdir()

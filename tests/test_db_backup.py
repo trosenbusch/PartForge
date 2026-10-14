@@ -214,6 +214,7 @@ def test_backup_failure_leaves_no_temp_file(workspace: Workspace, monkeypatch: p
     assert not [f for f in os.listdir(workspace.backups_dir) if f.endswith(".tmp")]
 
 
+@pytest.mark.windows
 def test_restoring_a_backup_from_before_a_move_moves_its_links(workspace: Workspace) -> None:
     """A backup keeps the folder it was written in (pf_meta workspace_root); restored after the
     library moved, its absolute links follow the library like at every open."""

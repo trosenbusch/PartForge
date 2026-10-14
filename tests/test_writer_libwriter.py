@@ -119,6 +119,7 @@ def _altium_running(monkeypatch, running: bool) -> None:
     monkeypatch.setattr("partforge.altium.bridge.process.is_process_running", lambda image="X2.EXE": running)
 
 
+@pytest.mark.windows
 def test_get_writer_rust_modes(no_detection, fake_exe):
     writer = get_writer(_settings("rust", rust=fake_exe))
     assert isinstance(writer, RustLibraryWriter) and writer.name == "rust"
@@ -128,6 +129,7 @@ def test_get_writer_rust_modes(no_detection, fake_exe):
         get_writer(_settings("rust"))
 
 
+@pytest.mark.windows
 def test_get_writer_altium_modes(no_detection, monkeypatch, fake_exe, tmp_path):
     x2 = tmp_path / "AD" / "X2.EXE"
     x2.parent.mkdir()
@@ -148,6 +150,7 @@ def test_get_writer_altium_modes(no_detection, monkeypatch, fake_exe, tmp_path):
         get_writer(_settings("altium"))
 
 
+@pytest.mark.windows
 def test_backend_status(no_detection, monkeypatch, fake_exe, tmp_path):
     _altium_running(monkeypatch, False)
     statuses = backend_status(_settings("auto", rust=fake_exe))
@@ -180,6 +183,7 @@ def test_backend_status_with_real_executable():
     assert status.available and status.version and status.version[0].isdigit()
 
 
+@pytest.mark.windows
 def test_no_writer_message_puts_the_remedy_first(no_detection, monkeypatch, tmp_path):
     """Review finding F2 (UX): the remedy must survive a 200-character clip, name the real settings place
     and never end in ``(… gestartet.).``."""

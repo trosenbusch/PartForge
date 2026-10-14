@@ -54,6 +54,7 @@ def test_unsupported_language_is_rejected_without_changing_settings(bare_client:
     assert bare_client.get("/api/settings").json()["settings"]["language"] == original
 
 
+@pytest.mark.windows
 def test_configured_writer_path_is_never_replaced_silently(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     exe = tmp_path / "altium-designer-mcp.exe"
     exe.write_bytes(b"MZ")

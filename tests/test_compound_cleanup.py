@@ -16,6 +16,7 @@ def _temp_copies(folder: Path) -> list[str]:
     return sorted(p.name for p in folder.iterdir() if ".pf" in p.name)
 
 
+@pytest.mark.windows
 def test_failed_patch_releases_com_objects_and_removes_its_copy(tmp_path, monkeypatch):
     lib = synthetic_pcblib(tmp_path / "PF_CHIP.PcbLib", heights={"RESC1608X55N": "0mil", "SOIC-8": "0mil"})
     calls = {"n": 0}
@@ -33,6 +34,7 @@ def test_failed_patch_releases_com_objects_and_removes_its_copy(tmp_path, monkey
     assert _temp_copies(tmp_path) == []
 
 
+@pytest.mark.windows
 def test_missing_win32timezone_is_a_clear_error_and_leaves_nothing_behind(tmp_path, monkeypatch):
     lib = synthetic_pcblib(tmp_path / "PF_CHIP.PcbLib", heights={"RESC1608X55N": "21.6535mil", "SOIC-8": "0mil"})
     monkeypatch.setitem(sys.modules, "win32timezone", None)  # "No module named 'win32timezone'" (frozen build)

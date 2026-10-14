@@ -568,6 +568,7 @@ def test_workspace_opened_sets_the_baseline(workspace, harness):
 # --------------------------------------------------------------------------- cache / messages
 
 
+@pytest.mark.windows
 def test_refresh_updates_install_cache_and_describes_result(harness):
     h = harness()
     other = r"D:\Alt\PartForge.DbLib"
@@ -763,6 +764,7 @@ def test_get_refresh_service_is_a_singleton():
         refresh.set_refresh_service(previous)
 
 
+@pytest.mark.windows
 def test_default_bridge_uses_settings(tmp_path: Path):
     settings = AppSettings()
     settings.altium.bridge_exchange_dir = str(tmp_path / "tausch")
@@ -779,6 +781,7 @@ def test_default_bridge_never_reaches_altium_in_the_test_suite(monkeypatch):
     assert refresh.live_altium_allowed() is True
 
 
+@pytest.mark.windows
 def test_altium_started_at_reads_process_start_times():
     assert refresh.altium_started_at("pf-gibt-es-nicht-4711.exe") is None
     started = refresh.altium_started_at(Path(sys.executable).name)

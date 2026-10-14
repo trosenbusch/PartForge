@@ -127,6 +127,7 @@ def test_ranges() -> None:
     assert parse_field_range("1 … 2 … 3", "mm") is None
 
 
+@pytest.mark.windows
 def test_int_bool_enum_date_url_path(tmp_path: Path) -> None:
     assert normalize_cell(fd("Ch", "int"), "2.0").value == "2"
     assert normalize_cell(fd("Ch", "int"), 3).value == "3"

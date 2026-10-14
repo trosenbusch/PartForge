@@ -389,6 +389,7 @@ def test_install_never_replaces_the_dblib_of_another_library(api, workspace, bri
     assert "anderen Bibliothek" in issue["message"] and status["install"]["duplicate_kinds"] == {foreign: "other_database"}
 
 
+@pytest.mark.windows
 def test_install_replaces_a_dead_entry_but_not_an_unreachable_one(api, workspace, bridge, tmp_path: Path):
     dead = str(tmp_path / "Verschoben" / "PartForge.DbLib")  # drive there, file gone
     bridge.installed = [dead]
@@ -1065,7 +1066,8 @@ def test_lifespan_starts_services_and_parts_changes_reach_them(workspace, bridge
         assert bridge.names() == ["install_state"]  # unknown install state: read-only check first
         response = c.post("/api/parts/Resistors", json={"values": {"Part Number": "R-LIVE", **PART}})
         assert response.status_code in (200, 201), response.text
-        assert wait_for(lambda: service.status().last_skip_reason is not None, 5)
+        # wait for this change's gate, not just any skip reason: the start-up announcement may have left one
+        assert service.wait_idle(5) and service.status().last_skip_reason is not None
         status = c.get("/api/altium/status").json()["refresh"]
         assert status["pending"] is False and "nicht installiert" in status["last_skip_reason"]
         assert bridge.names() == ["install_state"]  # known as not installed: no further script
